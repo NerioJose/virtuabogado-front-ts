@@ -1,26 +1,27 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@layer components {
+	.glass-card {
+		@apply bg-glass-white backdrop-blur-lg border border-white/10 rounded-xl shadow-lg;
+	}
+
+	.btn-primary {
+		@apply bg-vinotinto hover:bg-vinotinto-light text-white font-medium py-3 px-6 rounded-xl transition-all duration-300;
+	}
+
+	.text-vinotinto {
+		@apply text-[rgb(120_29_43)];
+	}
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+	--breakpoint-3xl: 120rem;
+	--color-vinotinto: #8e2427;
+	--color-vinotinto-light: #a83137;
+	--color-azul-primario: #1961a0;
+	--color-azul-claro: #e8f4fd;
+	--color-glass-white: rgba(255, 255, 255, 0.15);
+	--ease-fluid: cubic-bezier(0.3, 0, 0, 1);
+	--ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+	/* ... */
 }

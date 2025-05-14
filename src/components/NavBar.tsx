@@ -176,11 +176,13 @@ const Navbar = () => {
 									Iniciar sesión
 								</button>
 							</Link>
-							{/*<Link href="/register">
-								<button className="ml-2 px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300">
-									Registrarse
-								</button>
-							</Link>*/}
+							{
+								<Link href="/registro">
+									<button className="ml-2 px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300">
+										Registrarse
+									</button>
+								</Link>
+							}
 						</>
 					)}
 				</div>

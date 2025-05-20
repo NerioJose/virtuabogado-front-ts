@@ -22,6 +22,17 @@ const Navbar = () => {
 	useEffect(() => {
 		const fetchUser = async () => {
 			try {
+				// Intentar obtener datos del usuario del localStorage primero
+				const userDataString = localStorage.getItem('user');
+
+				if (userDataString) {
+					// Si hay datos en localStorage, usarlos
+					const userData = JSON.parse(userDataString);
+					setUser(userData);
+					return;
+				}
+
+				// Si no hay datos en localStorage, intentar la API
 				const res = await fetch('http://localhost:3001/api/auth/me', {
 					method: 'GET',
 					credentials: 'include',
@@ -40,7 +51,21 @@ const Navbar = () => {
 		fetchUser();
 	}, []);
 
-	const handleLogout = async () => {
+	const handleLogout = () => {
+		try {
+			// Eliminar los datos del usuario del localStorage
+			localStorage.removeItem('user');
+
+			// Cerrar el menú de usuario
+			//setIsUserMenuOpen(false);
+
+			// Redirigir al usuario a la página de login
+			router.push('/login');
+		} catch (error) {
+			console.error('Error al cerrar sesión:', error);
+		}
+	};
+	/*const handleLogout = async () => {
 		try {
 			await fetch('http://localhost:3001/api/auth/logout', {
 				method: 'POST',
@@ -53,7 +78,7 @@ const Navbar = () => {
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
 		}
-	};
+	};*/
 
 	const navItems = ['Nosotros', 'Servicios', 'Contacto', 'Clientes'];
 

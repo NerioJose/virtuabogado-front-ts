@@ -32,7 +32,8 @@ const Navbar = () => {
 					return;
 				}
 
-				// Si no hay datos en localStorage, intentar la API
+				{
+					/*// Si no hay datos en localStorage, intentar la API
 				const res = await fetch('http://localhost:3001/api/auth/me', {
 					method: 'GET',
 					credentials: 'include',
@@ -41,7 +42,8 @@ const Navbar = () => {
 				if (!res.ok) throw new Error('Error en la respuesta');
 
 				const data = await res.json();
-				setUser(data);
+				setUser(data);*/
+				}
 			} catch (error) {
 				console.error('Error al obtener el usuario:', error);
 				setUser(null);
@@ -202,7 +204,7 @@ const Navbar = () => {
 								</button>
 							</Link>
 							{
-								<Link href="/registro">
+								<Link href="/register">
 									<button className="ml-2 px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300">
 										Registrarse
 									</button>

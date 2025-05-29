@@ -215,6 +215,7 @@ const Navbar = () => {
 				</div>
 				<div className="md:hidden">
 					<button
+						title="Toggle navigation menu"
 						onClick={() => setIsOpen(!isOpen)}
 						className="text-azul-primario p-2 rounded-lg hover:bg-gray-800/10 transition-all duration-300">
 						<svg

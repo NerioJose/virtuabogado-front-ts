@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useMemo } from 'react';
 import { FiEye, FiMessageSquare, FiFileText, FiFilter } from 'react-icons/fi';
 
 interface CasosAbogadoPanelProps {
@@ -16,7 +16,7 @@ interface Caso {
   tipo: string;
 }
 
-export default function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
+function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
   const [casos, setCasos] = useState<Caso[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'en_proceso' | 'completado' | 'cancelado'>('todos');
@@ -93,10 +93,12 @@ export default function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps)
     cargarCasos();
   }, [abogadoId]);
 
-  // Filtrar casos según filtro de estado
-  const casosFiltrados = casos.filter(caso => {
-    return filtroEstado === 'todos' || caso.estado === filtroEstado;
-  });
+  // Filtrar casos según filtro de estado con useMemo
+  const casosFiltrados = useMemo(() => {
+    return casos.filter(caso => {
+      return filtroEstado === 'todos' || caso.estado === filtroEstado;
+    });
+  }, [casos, filtroEstado]);
 
   if (loading) {
     return (
@@ -266,3 +268,5 @@ export default function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps)
     </div>
   );
 }
+
+export default memo(CasosAbogadoPanel);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Abogado } from '@/types/index';
 import {
 	FiBriefcase,
 	FiCalendar,
@@ -30,7 +31,7 @@ interface AbogadoPanelProps {
 export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const router = useRouter();
 	const [seccionActiva, setSeccionActiva] = useState('casos');
-	const [abogado, setAbogado] = useState<any>(null);
+	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [estadisticas, setEstadisticas] = useState({
 		casosActivos: 0,
@@ -109,7 +110,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 					<h2 className="text-xl font-bold text-azul-primario">
 						Panel Abogado
 					</h2>
-					<p className="text-sm text-gray-600 mt-1">{abogado.nombre}</p>
+					<p className="text-sm text-gray-600 mt-1">{abogado?.nombre || 'Cargando...'}</p>
 				</div>
 
 				<nav className="mt-6">
@@ -295,24 +296,35 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 				{/* Contenido dinámico según la sección activa */}
 				<div className="bg-white rounded-xl shadow-md p-6">
-					{seccionActiva === 'casos' && (
-						<CasosAbogadoPanel abogadoId={abogado.id} />
-					)}
-					{seccionActiva === 'agenda' && <AgendaPanel abogadoId={abogado.id} />}
-					{seccionActiva === 'mensajes' && (
-						<MensajesPanel abogadoId={abogado.id} />
-					)}
-					{seccionActiva === 'clientes' && (
-						<ClientesAbogadoPanel abogadoId={abogado.id} />
-					)}
-					{seccionActiva === 'facturacion' && (
-						<FacturacionPanel abogadoId={abogado.id} />
-					)}
-					{seccionActiva === 'documentos' && (
-						<DocumentosPanel abogadoId={abogado.id} />
-					)}
-					{seccionActiva === 'perfil' && (
-						<PerfilAbogadoPanel abogado={abogado} />
+					{abogado ? (
+						<>
+							{seccionActiva === 'casos' && (
+								<CasosAbogadoPanel abogadoId={abogado.id} />
+							)}
+							{seccionActiva === 'agenda' && <AgendaPanel abogadoId={abogado.id} />}
+							{seccionActiva === 'mensajes' && (
+								<MensajesPanel abogadoId={abogado.id} />
+							)}
+							{seccionActiva === 'clientes' && (
+								<ClientesAbogadoPanel abogadoId={abogado.id} />
+							)}
+							{seccionActiva === 'facturacion' && (
+								<FacturacionPanel abogadoId={abogado.id} />
+							)}
+							{seccionActiva === 'documentos' && (
+								<DocumentosPanel abogadoId={abogado.id} />
+							)}
+							{seccionActiva === 'perfil' && (
+								<PerfilAbogadoPanel abogado={abogado} />
+							)}
+						</>
+					) : (
+						<div className="flex justify-center items-center h-64">
+							<div className="text-center">
+								<div className="w-16 h-16 border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+								<p className="text-azul-primario font-medium">Cargando datos del abogado...</p>
+							</div>
+						</div>
 					)}
 				</div>
 			</div>

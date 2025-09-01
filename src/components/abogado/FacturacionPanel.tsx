@@ -10,7 +10,7 @@ import {
 	FiTrendingUp,
 	FiEye,
 	FiCheck,
-	FiPlus
+	FiPlus,
 } from 'react-icons/fi';
 /*import { FiDollarSign, FiDownload, FiFilter, FiCalendar, FiPieChart, FiTrendingUp, FiClock } from 'react-icons/fi';*/
 
@@ -28,13 +28,16 @@ interface Factura {
 	estado: 'pagada' | 'pendiente' | 'vencida';
 }
 
+// Tipo para el periodo de facturación
+type PeriodoFacturacion = 'mes' | 'trimestre' | 'año';
+
 export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	const [facturas, setFacturas] = useState<Factura[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [filtroEstado, setFiltroEstado] = useState<
 		'todas' | 'pagadas' | 'pendientes' | 'vencidas'
 	>('todas');
-	const [periodo, setPeriodo] = useState<'mes' | 'trimestre' | 'año'>('mes');
+	const [periodo, setPeriodo] = useState<PeriodoFacturacion>('mes');
 
 	const [resumenFinanciero, setResumenFinanciero] = useState({
 		ingresosMes: 0,
@@ -196,8 +199,12 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 						<span className="text-sm text-gray-500">Periodo:</span>
 						<div className="relative">
 							<select
+								title="Seleccionar periodo de facturación"
+								aria-label="Seleccionar periodo de facturación"
 								value={periodo}
-								onChange={(e) => setPeriodo(e.target.value as any)}
+								onChange={(e) =>
+									setPeriodo(e.target.value as PeriodoFacturacion)
+								}
 								className="appearance-none bg-gray-100 border border-gray-200 text-gray-700 py-1 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-azul-primario text-sm">
 								<option value="mes">Este mes</option>
 								<option value="trimestre">Este trimestre</option>

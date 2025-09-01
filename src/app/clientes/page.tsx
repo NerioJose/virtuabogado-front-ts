@@ -49,7 +49,7 @@ export default function ClientesPage() {
 			descripcion:
 				'Ayudamos a una empresa tecnológica a resolver un complejo conflicto con un proveedor internacional, evitando un costoso litigio y preservando la relación comercial.',
 			resultado: 'Acuerdo extrajudicial favorable',
-			imagen: '/images/caso-exito-1.jpg',
+			imagen: '/images/asesoria-legal-profesional-sf.png',
 		},
 		{
 			id: 2,
@@ -57,7 +57,7 @@ export default function ClientesPage() {
 			descripcion:
 				'Asesoramos a un grupo de desarrolladores en el registro y protección de su software innovador, asegurando sus derechos ante posibles infracciones.',
 			resultado: 'Registro exitoso de patente',
-			imagen: '/images/caso-exito-2.jpg',
+			imagen: '/images/persona_ejecutiva_sf.png',
 		},
 		{
 			id: 3,
@@ -65,7 +65,7 @@ export default function ClientesPage() {
 			descripcion:
 				'Guiamos a una empresa familiar en su proceso de reestructuración, optimizando su estructura legal y fiscal para facilitar su crecimiento.',
 			resultado: 'Reducción de carga fiscal en un 30%',
-			imagen: '/images/caso-exito-3.jpg',
+			imagen: '/images/dama-justicia-digital.png',
 		},
 	];
 
@@ -114,11 +114,12 @@ export default function ClientesPage() {
 								<div className="flex items-start gap-4 mb-4">
 									<div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden relative flex-shrink-0">
 										<Image
-											src={testimonio.imagen}
-											alt={testimonio.nombre}
-											fill
-											className="object-cover"
-										/>
+										src={testimonio.imagen}
+										alt={testimonio.nombre}
+										fill
+										className="object-cover"
+										loading="lazy"
+									/>
 									</div>
 									<div>
 										<h3 className="text-xl font-bold text-azul-primario">
@@ -166,6 +167,7 @@ export default function ClientesPage() {
 										alt={caso.titulo}
 										fill
 										className="object-cover"
+										loading="lazy"
 									/>
 									<div className="absolute inset-0 bg-gradient-to-t from-azul-primario/80 to-transparent"></div>
 									<div className="absolute bottom-0 left-0 p-4 text-white">
@@ -201,23 +203,18 @@ export default function ClientesPage() {
 					</div>
 
 					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center">
-						{[1, 2, 3, 4, 5, 6].map((logo) => (
-							<motion.div
-								key={logo}
-								initial={{ opacity: 0 }}
-								whileInView={{ opacity: 1 }}
-								transition={{ duration: 0.5 }}
-								viewport={{ once: true }}
-								className="flex items-center justify-center p-4">
-								<div className="relative h-16 w-full opacity-70 hover:opacity-100 transition-opacity">
-									<Image
-										src={`/images/logo-empresa-${logo}.png`}
-										alt={`Logo empresa ${logo}`}
-										fill
-										className="object-contain"
-									/>
-								</div>
-							</motion.div>
+						{['TechCorp', 'Innovación S.A.', 'Desarrollo Plus', 'Consultoría Pro', 'Empresas Unidas', 'Soluciones Digitales'].map((empresa, index) => (
+						<motion.div
+							key={index}
+							initial={{ opacity: 0 }}
+							whileInView={{ opacity: 1 }}
+							transition={{ duration: 0.5 }}
+							viewport={{ once: true }}
+							className="flex items-center justify-center p-4">
+							<div className="h-16 w-full flex items-center justify-center bg-gray-100 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
+								<span className="text-gray-600 font-semibold text-sm text-center">{empresa}</span>
+							</div>
+						</motion.div>
 						))}
 					</div>
 				</div>

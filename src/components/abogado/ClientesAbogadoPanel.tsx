@@ -206,6 +206,7 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
                       width={60}
                       height={60}
                       className="rounded-full"
+                      loading="lazy"
                     />
                   </div>
                   <div>

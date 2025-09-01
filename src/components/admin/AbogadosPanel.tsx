@@ -1,21 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useMemo } from 'react';
 import { FiEdit, FiTrash2, FiEye, FiCheck, FiX, FiFilter } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
+import { ElementoSeleccionable, Abogado } from '@/types/index';
 
 interface AbogadosPanelProps {
   terminoBusqueda: string;
-  abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: any) => void;
+  abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: ElementoSeleccionable) => void;
 }
 
-interface Abogado {
-  id: number;
-  nombre: string;
-  email: string;
-  telefono: string;
-  especialidad: string;
-  numeroColegiado: string;
-  experienciaAnios: number;
+// Extendemos la interfaz Abogado para incluir campos específicos del panel de administración
+interface AbogadoAdmin extends Abogado {
   estado: 'pendiente' | 'activo' | 'inactivo';
   casosAsignados: number;
   casosCompletados: number;
@@ -24,8 +19,8 @@ interface Abogado {
   imagen?: string;
 }
 
-export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
-  const [abogados, setAbogados] = useState<Abogado[]>([]);
+function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
+  const [abogados, setAbogados] = useState<AbogadoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'activo' | 'inactivo'>('todos');
 
@@ -42,6 +37,7 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
           especialidad: 'Derecho Civil',
           numeroColegiado: 'AB12345',
           experienciaAnios: 8,
+          valoracionMedia: 4.5,
           estado: 'activo',
           casosAsignados: 12,
           casosCompletados: 45,
@@ -56,6 +52,7 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
           especialidad: 'Derecho Mercantil',
           numeroColegiado: 'AB23456',
           experienciaAnios: 5,
+          valoracionMedia: 0,
           estado: 'pendiente',
           casosAsignados: 0,
           casosCompletados: 0,
@@ -70,6 +67,7 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
           especialidad: 'Derecho Penal',
           numeroColegiado: 'AB34567',
           experienciaAnios: 12,
+          valoracionMedia: 4.8,
           estado: 'activo',
           casosAsignados: 8,
           casosCompletados: 67,
@@ -84,6 +82,7 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
           especialidad: 'Derecho Laboral',
           numeroColegiado: 'AB45678',
           experienciaAnios: 7,
+          valoracionMedia: 4.2,
           estado: 'inactivo',
           casosAsignados: 0,
           casosCompletados: 23,
@@ -95,17 +94,19 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
     }, 1000);
   }, []);
 
-  // Filtrar abogados según término de búsqueda y filtro de estado
-  const abogadosFiltrados = abogados.filter(abogado => {
-    const coincideTermino = 
-      abogado.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-      abogado.email.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-      abogado.especialidad.toLowerCase().includes(terminoBusqueda.toLowerCase());
-    
-    const coincideEstado = filtroEstado === 'todos' || abogado.estado === filtroEstado;
-    
-    return coincideTermino && coincideEstado;
-  });
+  // Filtrar abogados según término de búsqueda y filtro de estado con useMemo
+  const abogadosFiltrados = useMemo(() => {
+    return abogados.filter(abogado => {
+      const coincideTermino = 
+        abogado.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+        abogado.email.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+        abogado.especialidad.toLowerCase().includes(terminoBusqueda.toLowerCase());
+      
+      const coincideEstado = filtroEstado === 'todos' || abogado.estado === filtroEstado;
+      
+      return coincideTermino && coincideEstado;
+    });
+  }, [abogados, terminoBusqueda, filtroEstado]);
 
   // Función para aprobar o rechazar abogados
   const cambiarEstadoAbogado = (id: number, nuevoEstado: 'activo' | 'inactivo') => {
@@ -222,6 +223,7 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
                             alt={abogado.nombre}
                             fill
                             className="rounded-full object-cover"
+                            loading="lazy"
                           />
                         </div>
                         <div className="ml-4">
@@ -314,3 +316,5 @@ export default function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosP
     </div>
   );
 }
+
+export default memo(AbogadosPanel);

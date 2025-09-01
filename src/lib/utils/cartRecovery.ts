@@ -1,7 +1,13 @@
 // Utilidad para gestionar la recuperación de carritos abandonados
 
+interface ServiceData {
+  nombre: string;
+  descripcion: string;
+  precio: number | string;
+}
+
 // Función para guardar los datos del servicio seleccionado
-export const saveCartData = (serviceData: any) => {
+export const saveCartData = (serviceData: ServiceData) => {
   try {
     // Guardar datos del servicio en localStorage
     localStorage.setItem('abandonedCart', JSON.stringify({

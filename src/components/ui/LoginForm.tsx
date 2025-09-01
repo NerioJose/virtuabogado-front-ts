@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { HTMLMotionProps } from 'framer-motion';
 
 interface AuthLayoutProps {
 	children: React.ReactNode;
@@ -23,7 +24,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 	);
 };
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref'> {
 	children: React.ReactNode;
 	className?: string;
 }
@@ -44,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
 	);
 };
 
-interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+type CheckboxProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 export const Checkbox: React.FC<CheckboxProps> = (props) => {
 	return (
@@ -94,7 +95,7 @@ export const Heading: React.FC<HeadingProps> = ({ children }) => {
 	return <h2 className="text-2xl font-bold text-azul-primario">{children}</h2>;
 };
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 export const Input: React.FC<InputProps> = (props) => {
 	return (
@@ -172,43 +173,21 @@ const LoginForm: React.FC = () => {
 		setError('');
 
 		try {
-			// Para propósitos de prueba, simulamos una autenticación exitosa
-			// Guardamos datos de usuario simulados en localStorage según el rol seleccionado
+			// Modo desarrollo: Login directo sin validación de credenciales
 			const userData = {
 				name: rolSeleccionado === 'admin' ? 'Administrador' : 'Abogado',
-				email: email || 'usuario@ejemplo.com',
-				rol: rolSeleccionado, // 'admin' o 'abogado'
-				picture: '/user.png'
+				email: email || `${rolSeleccionado}@ejemplo.com`,
+				role: rolSeleccionado,
+				picture: '/user.png',
 			};
-			
-			// Simulamos una cookie o token de sesión
+
 			localStorage.setItem('user', JSON.stringify(userData));
-			
-			// Redirigimos a la página correspondiente según el rol
 			router.push(rolSeleccionado === 'admin' ? '/admin' : '/abogado');
 			router.refresh();
-			
-			// Código original comentado para referencia futura
-			/*
-			const response = await fetch('http://localhost:3001/api/auth/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				credentials: 'include',
-				body: JSON.stringify({ email, password }),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Error al iniciar sesión');
-			}
-
-			router.push('/');
-			router.refresh();
-			*/
-		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+		} catch (error) {
+			setError(
+				error instanceof Error ? error.message : 'Error al iniciar sesión'
+			);
 		} finally {
 			setLoading(false);
 		}

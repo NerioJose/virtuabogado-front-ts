@@ -31,8 +31,8 @@ interface Servicio {
 }
 
 // Importar utilidades de recuperación de carrito y analítica
-import { saveCartData } from '../../utils/cartRecovery';
-import { logAbandonment } from '../../utils/analytics';
+import { saveCartData } from '../../lib/utils/cartRecovery';
+import { logAbandonment } from '../../lib/utils/analytics';
 
 export default function PagoPage() {
 	// Estado para el servicio seleccionado (simulado, vendría de la URL o contexto)
@@ -211,14 +211,14 @@ export default function PagoPage() {
 			// Aquí iría la llamada a la API para procesar el pago
 			// Por ahora, simulamos una respuesta después de 2 segundos
 			await new Promise((resolve) => setTimeout(resolve, 2000));
-			
+
 			// Simulación de éxito/error (80% de éxito)
 			const isSuccess = Math.random() > 0.2;
-			
+
 			if (isSuccess) {
 				// Limpiar datos del servicio actual
 				localStorage.removeItem('currentService');
-				
+
 				setPagoCompletado(true);
 			} else {
 				// Registrar abandono por error de pago
@@ -227,12 +227,12 @@ export default function PagoPage() {
 					reason: 'payment_error',
 					errorCode: 'random_failure',
 					serviceId: servicio.id.toString(),
-					serviceName: servicio.nombre
+					serviceName: servicio.nombre,
 				});
-				
+
 				// Guardar datos para recuperación de carrito
 				saveCartData(servicio);
-				
+
 				// Redirigir a página de error
 				window.location.href = '/error-pago?error=random_failure';
 			}

@@ -11,7 +11,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Mercantil',
 			descripcion:
 				'Con más de 15 años de experiencia en asesoría legal para empresas nacionales e internacionales.',
-			imagen: '/images/abogado-1.jpg',
+			imagen: '/images/carlos-rodriguez-sf.png',
 		},
 		{
 			id: 2,
@@ -20,25 +20,25 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Familiar',
 			descripcion:
 				'Especialista en casos de familia, con un enfoque humano y orientado a soluciones pacíficas.',
-			imagen: '/images/abogado-2.jpg',
+			imagen: '/images/maria-gonzalez-sf.png',
 		},
 		{
 			id: 3,
-			nombre: 'Javier Méndez',
+			nombre: 'Miguel Ángel Torres',
 			cargo: 'Abogado',
 			especialidad: 'Derecho Inmobiliario',
 			descripcion:
 				'Experto en transacciones inmobiliarias y resolución de conflictos relacionados con propiedades.',
-			imagen: '/images/abogado-3.jpg',
+			imagen: '/images/miguel-angel-torres-sf.jpg',
 		},
 		{
 			id: 4,
-			nombre: 'Laura Sánchez',
+			nombre: 'Laura Martínez',
 			cargo: 'Abogada',
 			especialidad: 'Derecho Laboral',
 			descripcion:
 				'Dedicada a la defensa de los derechos laborales con amplia experiencia en negociaciones colectivas.',
-			imagen: '/images/abogado-4.jpg',
+			imagen: '/images/laura-martinez-sf.png',
 		},
 	];
 	return (
@@ -71,6 +71,7 @@ export default function NuestroEquipoSection() {
 										alt={miembro.nombre}
 										fill
 										className="object-cover"
+										loading="lazy"
 									/>
 								</div>
 								<div className="p-6">

@@ -54,6 +54,7 @@ export default function SectionTestimonios() {
 										alt={testimonial.name}
 										fill
 										className="object-cover"
+										loading="lazy"
 									/>
 								</div>
 								<div>

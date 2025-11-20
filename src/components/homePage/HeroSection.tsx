@@ -54,6 +54,8 @@ export default function HeroSection() {
 									fill
 									className="object-cover rounded-xl shadow-lg"
 									priority
+									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+									quality={85}
 								/>
 								<div className="absolute inset-0 bg-gradient-to-tr from-azul-primario/20 to-transparent rounded-xl"></div>
 							</div>

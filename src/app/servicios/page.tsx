@@ -167,13 +167,11 @@ export default function ServiciosPage() {
 								whileInView={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.6, delay: index * 0.1 }}
 								viewport={{ once: true }}
-								className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-center ${
-									index % 2 !== 0 ? 'lg:flex-row-reverse' : ''
-								}`}>
-								<div
-									className={`space-y-6 ${
-										index % 2 !== 0 ? 'lg:order-2' : ''
+								className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-center ${index % 2 !== 0 ? 'lg:flex-row-reverse' : ''
 									}`}>
+								<div
+									className={`space-y-6 ${index % 2 !== 0 ? 'lg:order-2' : ''
+										}`}>
 									<div className="w-16 h-16 bg-azul-claro rounded-lg flex items-center justify-center text-azul-primario">
 										{servicio.icono}
 									</div>
@@ -193,9 +191,8 @@ export default function ServiciosPage() {
 									</Link>
 								</div>
 								<div
-									className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-lg ${
-										index % 2 !== 0 ? 'lg:order-1' : ''
-									}`}>
+									className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-lg ${index % 2 !== 0 ? 'lg:order-1' : ''
+										}`}>
 									<Image
 										src={servicio.imagen}
 										alt={servicio.titulo}

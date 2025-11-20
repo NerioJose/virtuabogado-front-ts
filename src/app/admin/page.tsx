@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, 
+import {
+  FiUsers, FiUserCheck, FiBriefcase, FiDollarSign,
   FiPieChart, FiSettings, FiLogOut, FiSearch,
   FiPlus, FiEdit, FiTrash2, FiEye, FiCheck
 } from 'react-icons/fi';
@@ -35,17 +35,17 @@ export default function AdminPage() {
       try {
         // Para propósitos de prueba, verificamos los datos simulados en localStorage
         const userDataString = localStorage.getItem('user');
-        
+
         if (!userDataString) {
           throw new Error('No autenticado');
         }
-        
+
         const userData = JSON.parse(userDataString);
-        
+
         if (userData.rol !== 'admin') {
           throw new Error('No autorizado');
         }
-        
+
         setUser(userData);
         setLoading(false);
       } catch (error) {
@@ -53,7 +53,7 @@ export default function AdminPage() {
         router.push('/login');
       }
     };
-    
+
     verificarAdmin();
   }, [router]);
 
@@ -63,7 +63,7 @@ export default function AdminPage() {
     setElementoSeleccionado(elemento || null);
     setModalAbierto(true);
   };
-  
+
   const cerrarModal = () => {
     setModalAbierto(false);
     setElementoSeleccionado(null);
@@ -74,7 +74,7 @@ export default function AdminPage() {
     try {
       // Eliminar los datos del usuario del localStorage
       localStorage.removeItem('user');
-      
+
       // Redirigir al usuario a la página de login
       router.push('/login');
     } catch (error) {
@@ -96,12 +96,12 @@ export default function AdminPage() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar 
-        seccionActiva={seccionActiva} 
-        setSeccionActiva={setSeccionActiva} 
+      <Sidebar
+        seccionActiva={seccionActiva}
+        setSeccionActiva={setSeccionActiva}
         handleLogout={handleLogout}
       />
-      
+
       {/* Contenido principal */}
       <div className="flex-1 ml-64">
         {/* Barra superior */}
@@ -115,7 +115,7 @@ export default function AdminPage() {
             {seccionActiva === 'estadisticas' && 'Estadísticas y Reportes'}
             {seccionActiva === 'configuracion' && 'Configuración'}
           </h1>
-          
+
           <div className="flex items-center space-x-4">
             {seccionActiva !== 'dashboard' && seccionActiva !== 'configuracion' && (
               <div className="relative">
@@ -129,7 +129,7 @@ export default function AdminPage() {
                 />
               </div>
             )}
-            
+
             {(seccionActiva === 'abogados' || seccionActiva === 'casos') && (
               <button
                 onClick={() => abrirModal('crear')}
@@ -141,44 +141,44 @@ export default function AdminPage() {
             )}
           </div>
         </div>
-        
+
         {/* Contenido dinámico según la sección activa */}
         <div className="p-6">
           {seccionActiva === 'dashboard' && <DashboardStats />}
           {seccionActiva === 'abogados' && (
-            <AbogadosPanel 
-              terminoBusqueda={terminoBusqueda} 
-              abrirModal={abrirModal} 
+            <AbogadosPanel
+              terminoBusqueda={terminoBusqueda}
+              abrirModal={abrirModal}
             />
           )}
           {seccionActiva === 'clientes' && (
-            <ClientesPanel 
-              terminoBusqueda={terminoBusqueda} 
-              abrirModal={abrirModal} 
+            <ClientesPanel
+              terminoBusqueda={terminoBusqueda}
+              abrirModal={abrirModal}
             />
           )}
           {seccionActiva === 'casos' && (
-            <CasosPanel 
-              terminoBusqueda={terminoBusqueda} 
-              abrirModal={abrirModal} 
+            <CasosPanel
+              terminoBusqueda={terminoBusqueda}
+              abrirModal={abrirModal}
             />
           )}
           {seccionActiva === 'finanzas' && (
-            <FinanzasPanel 
-              terminoBusqueda={terminoBusqueda} 
-              abrirModal={abrirModal} 
+            <FinanzasPanel
+              terminoBusqueda={terminoBusqueda}
+              abrirModal={abrirModal}
             />
           )}
           {seccionActiva === 'estadisticas' && <EstadisticasPanel />}
           {seccionActiva === 'configuracion' && <ConfiguracionPanel />}
         </div>
       </div>
-      
+
       {/* Modal dinámico */}
       {modalAbierto && (
         <ModalContainer
           tipo={tipoModal}
-          seccion={seccionActiva}
+          seccion={seccionActiva as 'casos' | 'clientes' | 'abogados' | 'finanzas' | 'configuracion'}
           elemento={elementoSeleccionado}
           cerrarModal={cerrarModal}
         />

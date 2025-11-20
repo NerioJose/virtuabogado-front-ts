@@ -1,54 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAuthGuard } from '@/features/auth/hooks/useAuthGuard';
+import { UserRole } from '@/shared/types/entities.types';
+import { FullPageLoader } from '@/shared/components/feedback/Loader';
 import AbogadoPanel from '@/components/abogado/AbogadoPanel';
 
 export default function AbogadoPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuthGuard({
+    requiredRole: UserRole.ABOGADO,
+  });
 
-  // Verificar autenticación y rol de abogado
-  useEffect(() => {
-    const verificarAbogado = async () => {
-      try {
-        // Para propósitos de prueba, verificamos los datos simulados en localStorage
-        const userDataString = localStorage.getItem('user');
-        
-        if (!userDataString) {
-          throw new Error('No autenticado');
-        }
-        
-        const userData = JSON.parse(userDataString);
-        
-        if (userData.rol !== 'abogado') {
-          throw new Error('No autorizado');
-        }
-        
-        setUser(userData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error de autenticación:', error);
-        router.push('/login');
-      }
-    };
-    
-    verificarAbogado();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-azul-primario font-medium">Cargando panel de abogado...</p>
-        </div>
-      </div>
-    );
+  if (isLoading || !user) {
+    return <FullPageLoader text="Cargando panel de abogado..." />;
   }
 
-  return (
-    <AbogadoPanel abogadoId={user.id} />
-  );
+  return <AbogadoPanel abogadoId={user.id} />;
 }

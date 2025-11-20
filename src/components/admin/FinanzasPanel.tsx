@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiDollarSign, FiTrendingUp, FiFilter, FiDownload, FiCalendar, FiCreditCard, FiUser, FiEye, FiEdit, FiTrash2, FiCheck, FiX, FiPieChart } from 'react-icons/fi';
+import { FiDollarSign, FiTrendingUp, FiFilter, FiDownload, FiCalendar, FiCreditCard, FiUser, FiEye, FiEdit, FiTrash2, FiCheck, FiX, FiPieChart, FiUserCheck } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
 interface FinanzasPanelProps {
@@ -26,7 +26,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'ingreso' | 'gasto' | 'pago_abogado'>('todos');
   const [filtroFecha, setFiltroFecha] = useState<'todos' | 'hoy' | 'semana' | 'mes'>('mes');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'completado' | 'pendiente' | 'cancelado'>('todos');
-  
+
   const [resumenFinanciero, setResumenFinanciero] = useState({
     ingresosMes: 0,
     gastosMes: 0,
@@ -121,26 +121,26 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
           caso: 'Asesoría fiscal para autónomos'
         }
       ];
-      
+
       setTransacciones(transaccionesEjemplo);
-      
+
       // Calcular resumen financiero
       const ingresosMes = transaccionesEjemplo
         .filter(t => t.tipo === 'ingreso' && t.estado === 'completado')
         .reduce((sum, t) => sum + t.monto, 0);
-        
+
       const gastosMes = transaccionesEjemplo
         .filter(t => t.tipo === 'gasto' && t.estado === 'completado')
         .reduce((sum, t) => sum + t.monto, 0);
-        
+
       const pagosAbogadosMes = transaccionesEjemplo
         .filter(t => t.tipo === 'pago_abogado' && t.estado === 'completado')
         .reduce((sum, t) => sum + t.monto, 0);
-        
+
       const ingresosPendientes = transaccionesEjemplo
         .filter(t => t.tipo === 'ingreso' && t.estado === 'pendiente')
         .reduce((sum, t) => sum + t.monto, 0);
-      
+
       setResumenFinanciero({
         ingresosMes,
         gastosMes,
@@ -148,22 +148,22 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
         balanceMes: ingresosMes - gastosMes - pagosAbogadosMes,
         ingresosPendientes
       });
-      
+
       setLoading(false);
     }, 1000);
   }, []);
 
   // Filtrar transacciones según término de búsqueda y filtros
   const transaccionesFiltradas = transacciones.filter(transaccion => {
-    const coincideTermino = 
+    const coincideTermino =
       transaccion.concepto.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
       (transaccion.cliente && transaccion.cliente.toLowerCase().includes(terminoBusqueda.toLowerCase())) ||
       (transaccion.abogado && transaccion.abogado.toLowerCase().includes(terminoBusqueda.toLowerCase())) ||
       (transaccion.caso && transaccion.caso.toLowerCase().includes(terminoBusqueda.toLowerCase()));
-    
+
     const coincideTipo = filtroTipo === 'todos' || transaccion.tipo === filtroTipo;
     const coincideEstado = filtroEstado === 'todos' || transaccion.estado === filtroEstado;
-    
+
     // Filtro por fecha
     const fechaTransaccion = new Date(transaccion.fecha);
     const hoy = new Date();
@@ -171,7 +171,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
     unaSemanaAtras.setDate(hoy.getDate() - 7);
     const unMesAtras = new Date();
     unMesAtras.setMonth(hoy.getMonth() - 1);
-    
+
     let coincideFecha = true;
     if (filtroFecha === 'hoy') {
       coincideFecha = fechaTransaccion.toDateString() === hoy.toDateString();
@@ -180,13 +180,13 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
     } else if (filtroFecha === 'mes') {
       coincideFecha = fechaTransaccion >= unMesAtras;
     }
-    
+
     return coincideTermino && coincideTipo && coincideFecha && coincideEstado;
   });
 
   // Función para cambiar el estado de una transacción
   const cambiarEstadoTransaccion = (id: number, nuevoEstado: 'completado' | 'pendiente' | 'cancelado') => {
-    setTransacciones(transacciones.map(transaccion => 
+    setTransacciones(transacciones.map(transaccion =>
       transaccion.id === id ? { ...transaccion, estado: nuevoEstado } : transaccion
     ));
   };
@@ -237,7 +237,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
     <div className="space-y-6">
       {/* Resumen financiero */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
@@ -259,8 +259,8 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
             <span>+8.2% vs mes anterior</span>
           </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
@@ -282,8 +282,8 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
             <span>+3.5% vs mes anterior</span>
           </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
@@ -305,8 +305,8 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
             <span>+12.3% vs mes anterior</span>
           </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.4 }}
@@ -329,7 +329,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
           </div>
         </motion.div>
       </div>
-      
+
       {/* Filtros y acciones */}
       <div className="bg-white rounded-lg shadow-sm p-4">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
@@ -338,7 +338,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
             <div className="flex items-center">
               <FiFilter className="text-gray-500 mr-2" />
               <span className="text-gray-700 font-medium mr-2">Tipo:</span>
-              <select 
+              <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value as any)}
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm"
@@ -349,12 +349,12 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
                 <option value="pago_abogado">Pagos a abogados</option>
               </select>
             </div>
-            
+
             {/* Filtro por fecha */}
             <div className="flex items-center">
               <FiCalendar className="text-gray-500 mr-2" />
               <span className="text-gray-700 font-medium mr-2">Período:</span>
-              <select 
+              <select
                 value={filtroFecha}
                 onChange={(e) => setFiltroFecha(e.target.value as any)}
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm"
@@ -365,12 +365,12 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
                 <option value="mes">Último mes</option>
               </select>
             </div>
-            
+
             {/* Filtro por estado */}
             <div className="flex items-center">
               <FiCheck className="text-gray-500 mr-2" />
               <span className="text-gray-700 font-medium mr-2">Estado:</span>
-              <select 
+              <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value as any)}
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm"
@@ -382,7 +382,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
               </select>
             </div>
           </div>
-          
+
           <div className="flex space-x-2">
             <button
               onClick={() => abrirModal('crear')}
@@ -401,7 +401,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
           </div>
         </div>
       </div>
-      
+
       {/* Tabla de transacciones */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -455,15 +455,15 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorTipo(transaccion.tipo)}`}>
                         {transaccion.tipo === 'ingreso' ? 'Ingreso' :
-                         transaccion.tipo === 'gasto' ? 'Gasto' :
-                         'Pago a abogado'}
+                          transaccion.tipo === 'gasto' ? 'Gasto' :
+                            'Pago a abogado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorEstado(transaccion.estado)}`}>
                         {transaccion.estado === 'completado' ? 'Completado' :
-                         transaccion.estado === 'pendiente' ? 'Pendiente' :
-                         'Cancelado'}
+                          transaccion.estado === 'pendiente' ? 'Pendiente' :
+                            'Cancelado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -500,9 +500,8 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className={`text-sm font-medium ${
-                        transaccion.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                      <div className={`text-sm font-medium ${transaccion.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'
+                        }`}>
                         {transaccion.tipo === 'ingreso' ? '+' : '-'}
                         {transaccion.monto.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                       </div>
@@ -557,7 +556,7 @@ export default function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasP
           </table>
         </div>
       </div>
-      
+
       {/* Resumen de transacciones pendientes */}
       {transacciones.filter(t => t.estado === 'pendiente').length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

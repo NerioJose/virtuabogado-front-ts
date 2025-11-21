@@ -42,7 +42,8 @@ export function Button({
     ...props
 }: ButtonProps) {
     // Extraer props que pueden causar conflictos de tipo con motion
-    const { onDrag, onDragStart, onDragEnd, ...restProps } = props as any;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { onDrag, onDragStart, onDragEnd, ...restProps } = props as Record<string, unknown>;
 
     return (
         <motion.button

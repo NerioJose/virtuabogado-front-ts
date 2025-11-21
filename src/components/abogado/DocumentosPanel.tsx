@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiFile, FiFileText, FiDownload, FiUpload, FiTrash2, FiPlus, FiFolder, FiSearch } from 'react-icons/fi';
+import { FiFile, FiFileText, FiDownload, FiUpload, FiTrash2, FiFolder, FiSearch } from 'react-icons/fi';
 
 interface DocumentosPanelProps {
   abogadoId: number;
@@ -29,7 +29,7 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
         // Aquí iría la llamada a la API para obtener los documentos del abogado
         // Por ahora, simulamos una respuesta después de 1 segundo
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Datos de ejemplo
         setDocumentos([
           {
@@ -81,33 +81,33 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
             url: '/documentos/plantilla-contrato-arrendamiento.docx'
           }
         ]);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error al cargar documentos:', error);
         setLoading(false);
       }
     };
-    
+
     cargarDocumentos();
   }, [abogadoId]);
 
   // Filtrar documentos según término de búsqueda y filtro de tipo
   const documentosFiltrados = documentos.filter(documento => {
-    const coincideTermino = 
+    const coincideTermino =
       documento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       (documento.caso && documento.caso.toLowerCase().includes(busqueda.toLowerCase())) ||
       (documento.cliente && documento.cliente.toLowerCase().includes(busqueda.toLowerCase()));
-    
+
     const coincideTipo = filtroTipo === 'todos' || documento.tipo === filtroTipo;
-    
+
     return coincideTermino && coincideTipo;
   });
 
   // Función para obtener el icono según el tipo de documento
   const obtenerIconoDocumento = (nombre: string) => {
     const extension = nombre.split('.').pop()?.toLowerCase();
-    
+
     if (extension === 'pdf') {
       return <FiFileText className="text-red-500" />;
     } else if (extension === 'docx' || extension === 'doc') {
@@ -131,13 +131,13 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Mis Documentos</h2>
-        
+
         <button className="bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors flex items-center">
           <FiUpload className="mr-2" />
           Subir documento
         </button>
       </div>
-      
+
       <div className="flex flex-col md:flex-row md:items-center gap-4">
         {/* Buscador */}
         <div className="relative flex-1">
@@ -150,55 +150,51 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
           />
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
-        
+
         {/* Filtros */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500 whitespace-nowrap">Filtrar por:</span>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFiltroTipo('todos')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroTipo === 'todos' 
-                  ? 'bg-azul-primario text-white' 
+              className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'todos'
+                  ? 'bg-azul-primario text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Todos
             </button>
             <button
               onClick={() => setFiltroTipo('contratos')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroTipo === 'contratos' 
-                  ? 'bg-blue-500 text-white' 
+              className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'contratos'
+                  ? 'bg-blue-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Contratos
             </button>
             <button
               onClick={() => setFiltroTipo('demandas')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroTipo === 'demandas' 
-                  ? 'bg-amber-500 text-white' 
+              className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'demandas'
+                  ? 'bg-amber-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Demandas
             </button>
             <button
               onClick={() => setFiltroTipo('informes')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroTipo === 'informes' 
-                  ? 'bg-green-500 text-white' 
+              className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'informes'
+                  ? 'bg-green-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Informes
             </button>
           </div>
         </div>
       </div>
-      
+
       {/* Lista de documentos */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {documentosFiltrados.length === 0 ? (
@@ -264,13 +260,13 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button 
+                        <button
                           className="text-azul-primario hover:text-azul-primario/80"
                           title="Descargar"
                         >
                           <FiDownload size={18} />
                         </button>
-                        <button 
+                        <button
                           className="text-red-600 hover:text-red-800"
                           title="Eliminar"
                         >

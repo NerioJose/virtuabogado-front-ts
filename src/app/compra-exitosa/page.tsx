@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { FiCheck, FiClock, FiFileText, FiCalendar, FiArrowRight } from 'react-icons/fi';
 import logo from '../../../public/logo/logo_sf_1.png';
 
@@ -18,10 +17,9 @@ interface DetalleCompra {
 }
 
 export default function CompraExitosaPage() {
-  const router = useRouter();
-  
+
   // Estado para los detalles de la compra (simulado, vendría de localStorage o parámetros de URL)
-  const [detalleCompra, setDetalleCompra] = useState<DetalleCompra>({
+  const [detalleCompra] = useState<DetalleCompra>({
     id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
     servicio: 'Consulta Legal Virtual',
     precio: 99.99,
@@ -34,19 +32,19 @@ export default function CompraExitosaPage() {
     }),
     metodoPago: 'Tarjeta de crédito'
   });
-  
+
   // Simular carga de datos desde localStorage o parámetros
   useEffect(() => {
     // Aquí se podría obtener información real de la compra
     // Por ejemplo, desde localStorage o parámetros de URL
-    
+
     // Ejemplo (comentado):
     // const servicioComprado = localStorage.getItem('servicioComprado');
     // if (servicioComprado) {
     //   setDetalleCompra(JSON.parse(servicioComprado));
     // }
   }, []);
-  
+
   // Pasos siguientes después de la compra
   const pasosSiguientes = [
     {
@@ -65,22 +63,22 @@ export default function CompraExitosaPage() {
       descripcion: "Te contactaremos para programar la fecha y hora de tu consulta legal virtual."
     }
   ];
-  
+
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <Image 
-              src={logo} 
-              alt="VirtuAbogado Logo" 
-              width={180} 
-              height={60} 
+            <Image
+              src={logo}
+              alt="VirtuAbogado Logo"
+              width={180}
+              height={60}
               className="mx-auto"
             />
           </Link>
         </div>
-        
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -96,13 +94,13 @@ export default function CompraExitosaPage() {
               Gracias por confiar en VirtuAbogado. Tu servicio ha sido registrado correctamente.
             </p>
           </div>
-          
+
           <div className="p-6">
             <div className="mb-8">
               <h2 className="text-lg font-medium text-gray-900 mb-4 border-b border-gray-200 pb-2">
                 Detalles de la compra
               </h2>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Número de orden:</span>
@@ -128,12 +126,12 @@ export default function CompraExitosaPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="mb-8">
               <h2 className="text-lg font-medium text-gray-900 mb-4 border-b border-gray-200 pb-2">
                 Próximos pasos
               </h2>
-              
+
               <div className="space-y-4">
                 {pasosSiguientes.map((paso, index) => (
                   <div key={index} className="flex">
@@ -148,7 +146,7 @@ export default function CompraExitosaPage() {
                 ))}
               </div>
             </div>
-            
+
             <div className="bg-gray-50 p-4 rounded-lg mb-6">
               <p className="text-sm text-gray-600 italic">
                 Si tienes alguna pregunta sobre tu compra, no dudes en contactar con nuestro equipo de soporte a través del correo electrónico <span className="font-medium">soporte@virtuabogado.com</span> o llamando al <span className="font-medium">900 123 456</span>.
@@ -156,7 +154,7 @@ export default function CompraExitosaPage() {
             </div>
           </div>
         </motion.div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/mis-servicios">
             <motion.button

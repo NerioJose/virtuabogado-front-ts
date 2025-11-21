@@ -2,7 +2,7 @@
  * Tipos comunes compartidos en toda la aplicación
  */
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     data: T;
     message?: string;
     success: boolean;
@@ -19,7 +19,7 @@ export interface PaginatedData<T> {
 export interface ErrorResponse {
     message: string;
     code?: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
 }
 
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';

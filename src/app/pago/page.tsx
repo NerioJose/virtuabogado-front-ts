@@ -36,7 +36,7 @@ import { logAbandonment } from '../../lib/utils/analytics';
 
 export default function PagoPage() {
 	// Estado para el servicio seleccionado (simulado, vendría de la URL o contexto)
-	const [servicio, setServicio] = useState<Servicio>({
+	const [servicio] = useState<Servicio>({
 		id: 1,
 		nombre: 'Consulta Legal Virtual',
 		descripcion:
@@ -393,19 +393,17 @@ export default function PagoPage() {
 									{metodosPago.map((metodo) => (
 										<div
 											key={metodo.id}
-											className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-												metodoPagoSeleccionado === metodo.id
+											className={`border rounded-lg p-4 cursor-pointer transition-colors ${metodoPagoSeleccionado === metodo.id
 													? 'border-azul-primario bg-azul-claro/10'
 													: 'border-gray-200 hover:border-gray-300'
-											}`}
+												}`}
 											onClick={() => handleMetodoPagoChange(metodo.id)}>
 											<div className="flex items-center">
 												<div
-													className={`flex-shrink-0 h-6 w-6 rounded-full border ${
-														metodoPagoSeleccionado === metodo.id
+													className={`flex-shrink-0 h-6 w-6 rounded-full border ${metodoPagoSeleccionado === metodo.id
 															? 'border-azul-primario'
 															: 'border-gray-300'
-													} flex items-center justify-center`}>
+														} flex items-center justify-center`}>
 													{metodoPagoSeleccionado === metodo.id && (
 														<div className="h-3 w-3 rounded-full bg-azul-primario" />
 													)}
@@ -449,11 +447,10 @@ export default function PagoPage() {
 																name="nombreTitular"
 																value={formData.nombreTitular}
 																onChange={handleInputChange}
-																className={`block w-full px-3 py-2 border ${
-																	errors.nombreTitular
+																className={`block w-full px-3 py-2 border ${errors.nombreTitular
 																		? 'border-red-300'
 																		: 'border-gray-300'
-																} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
+																	} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
 																placeholder="Nombre como aparece en la tarjeta"
 															/>
 															{errors.nombreTitular && (
@@ -480,11 +477,10 @@ export default function PagoPage() {
 																name="numeroTarjeta"
 																value={formData.numeroTarjeta}
 																onChange={handleInputChange}
-																className={`block w-full pl-10 pr-3 py-2 border ${
-																	errors.numeroTarjeta
+																className={`block w-full pl-10 pr-3 py-2 border ${errors.numeroTarjeta
 																		? 'border-red-300'
 																		: 'border-gray-300'
-																} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
+																	} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
 																placeholder="1234 5678 9012 3456"
 															/>
 														</div>
@@ -509,11 +505,10 @@ export default function PagoPage() {
 																	name="fechaExpiracion"
 																	value={formData.fechaExpiracion}
 																	onChange={handleInputChange}
-																	className={`block w-full px-3 py-2 border ${
-																		errors.fechaExpiracion
+																	className={`block w-full px-3 py-2 border ${errors.fechaExpiracion
 																			? 'border-red-300'
 																			: 'border-gray-300'
-																	} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
+																		} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
 																	placeholder="MM/YY"
 																/>
 																{errors.fechaExpiracion && (
@@ -537,11 +532,10 @@ export default function PagoPage() {
 																	name="cvv"
 																	value={formData.cvv}
 																	onChange={handleInputChange}
-																	className={`block w-full px-3 py-2 border ${
-																		errors.cvv
+																	className={`block w-full px-3 py-2 border ${errors.cvv
 																			? 'border-red-300'
 																			: 'border-gray-300'
-																	} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
+																		} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
 																	placeholder="123"
 																/>
 																{errors.cvv && (
@@ -613,11 +607,10 @@ export default function PagoPage() {
 														name="email"
 														value={formData.email}
 														onChange={handleInputChange}
-														className={`block w-full px-3 py-2 border ${
-															errors.email
+														className={`block w-full px-3 py-2 border ${errors.email
 																? 'border-red-300'
 																: 'border-gray-300'
-														} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
+															} rounded-md shadow-sm focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
 														placeholder="tu@email.com"
 													/>
 													{errors.email && (
@@ -644,15 +637,14 @@ export default function PagoPage() {
 												<button
 													type="submit"
 													disabled={isSubmitting}
-													className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario ${
-														isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-													}`}>
+													className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+														}`}>
 													{isSubmitting
 														? 'Procesando...'
 														: `Pagar ${servicio.precio.toLocaleString('es-ES', {
-																style: 'currency',
-																currency: 'EUR',
-														  })}`}
+															style: 'currency',
+															currency: 'EUR',
+														})}`}
 												</button>
 											</div>
 										</form>

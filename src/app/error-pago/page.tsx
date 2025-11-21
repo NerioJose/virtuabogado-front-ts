@@ -1,8 +1,10 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
 import {
 	FiAlertCircle,
 	FiCreditCard,
@@ -147,9 +149,9 @@ export default function ErrorPagoPage() {
 								<p className="font-bold text-azul-primario">
 									{typeof serviceData.precio === 'number'
 										? serviceData.precio.toLocaleString('es-ES', {
-												style: 'currency',
-												currency: 'EUR',
-										  })
+											style: 'currency',
+											currency: 'EUR',
+										})
 										: serviceData.precio}
 								</p>
 							</div>

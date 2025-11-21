@@ -26,7 +26,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/asesoria-legal-profesional-sf.png',
+			imagen: '/images/consulta-legal.jpg',
 		},
 		{
 			id: 2,
@@ -47,7 +47,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/persona_ejecutiva_sf.png',
+			imagen: '/images/revision-documentos.jpg',
 		},
 		{
 			id: 3,
@@ -68,7 +68,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/dama-justicia-digital.png',
+			imagen: '/images/representacion-legal.jpg',
 		},
 		{
 			id: 4,
@@ -89,7 +89,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/asesoria-legal-profesional-sf.png',
+			imagen: '/images/asesoria-empresarial.jpg',
 		},
 		{
 			id: 5,
@@ -110,7 +110,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/persona_ejecutiva_sf.png',
+			imagen: '/images/derecho-familiar.jpg',
 		},
 		{
 			id: 6,
@@ -131,7 +131,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/dama-justicia-digital.png',
+			imagen: '/images/derecho-inmobiliario.jpg',
 		},
 	];
 

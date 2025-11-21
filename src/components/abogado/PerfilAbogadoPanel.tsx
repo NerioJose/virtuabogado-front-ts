@@ -10,7 +10,6 @@ import {
 	FiStar,
 	FiCheck,
 	FiClock,
-	FiPieChart,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';

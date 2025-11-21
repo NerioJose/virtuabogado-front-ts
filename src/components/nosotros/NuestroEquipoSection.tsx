@@ -11,7 +11,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Mercantil',
 			descripcion:
 				'Con más de 15 años de experiencia en asesoría legal para empresas nacionales e internacionales.',
-			imagen: '/images/carlos-rodriguez-sf.png',
+			imagen: '/images/abogado-2.jpg',
 		},
 		{
 			id: 2,
@@ -20,7 +20,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Familiar',
 			descripcion:
 				'Especialista en casos de familia, con un enfoque humano y orientado a soluciones pacíficas.',
-			imagen: '/images/maria-gonzalez-sf.png',
+			imagen: '/images/abogado-4.jpg',
 		},
 		{
 			id: 3,
@@ -29,7 +29,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Inmobiliario',
 			descripcion:
 				'Experto en transacciones inmobiliarias y resolución de conflictos relacionados con propiedades.',
-			imagen: '/images/miguel-angel-torres-sf.jpg',
+			imagen: '/images/abogado-1.jpg',
 		},
 		{
 			id: 4,
@@ -38,7 +38,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Laboral',
 			descripcion:
 				'Dedicada a la defensa de los derechos laborales con amplia experiencia en negociaciones colectivas.',
-			imagen: '/images/laura-martinez-sf.png',
+			imagen: '/images/abogado-3.jpg',
 		},
 	];
 	return (

@@ -56,7 +56,7 @@ export class ApiClient implements HttpClient {
             let errorMessage = 'Error en la solicitud';
 
             try {
-                const errorData: ApiResponse<any> = await response.json();
+                const errorData: ApiResponse<unknown> = await response.json();
                 errorMessage = errorData.message || errorMessage;
             } catch {
                 // Si no se puede parsear el error, usar mensaje genérico

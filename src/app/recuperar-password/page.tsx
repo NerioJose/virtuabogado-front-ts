@@ -11,7 +11,6 @@ export default function RecuperarPasswordPage() {
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [step, setStep] = useState<'email' | 'confirmation'>('email');
 
   const validateEmail = (email: string) => {
@@ -22,7 +21,7 @@ export default function RecuperarPasswordPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEmail(value);
-    
+
     // Limpiar error cuando el usuario comienza a escribir
     if (errors[name]) {
       setErrors({
@@ -34,30 +33,29 @@ export default function RecuperarPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validar formulario
     const newErrors: Record<string, string> = {};
-    
+
     if (!email) {
       newErrors.email = 'El correo electrónico es obligatorio';
     } else if (!validateEmail(email)) {
       newErrors.email = 'Ingresa un correo electrónico válido';
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     // Enviar solicitud
     setIsSubmitting(true);
-    
+
     try {
       // Aquí iría la llamada a la API para solicitar el restablecimiento de contraseña
       // Por ahora, simulamos una respuesta exitosa después de 1 segundo
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSubmitSuccess(true);
+
       setStep('confirmation');
     } catch (error) {
       console.error('Error al enviar la solicitud:', error);
@@ -74,11 +72,11 @@ export default function RecuperarPasswordPage() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Link href="/" className="inline-block">
-            <Image 
-              src={logo} 
-              alt="VirtuAbogado Logo" 
-              width={180} 
-              height={60} 
+            <Image
+              src={logo}
+              alt="VirtuAbogado Logo"
+              width={180}
+              height={60}
               className="mx-auto"
             />
           </Link>
@@ -86,13 +84,13 @@ export default function RecuperarPasswordPage() {
             Recuperar contraseña
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            {step === 'email' ? 
+            {step === 'email' ?
               'Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.' :
               'Revisa tu bandeja de entrada para seguir las instrucciones.'
             }
           </p>
         </div>
-        
+
         {step === 'email' ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -117,9 +115,8 @@ export default function RecuperarPasswordPage() {
                     required
                     value={email}
                     onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
+                    className={`block w-full pl-10 pr-3 py-3 border ${errors.email ? 'border-red-300' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -127,7 +124,7 @@ export default function RecuperarPasswordPage() {
                   <p className="mt-2 text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
-              
+
               {errors.form && (
                 <div className="rounded-md bg-red-50 p-4">
                   <div className="flex">
@@ -137,20 +134,19 @@ export default function RecuperarPasswordPage() {
                   </div>
                 </div>
               )}
-              
+
               <div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario ${
-                    isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-                  }`}
+                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
                 >
                   {isSubmitting ? 'Enviando...' : 'Enviar instrucciones'}
                 </button>
               </div>
             </form>
-            
+
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -162,7 +158,7 @@ export default function RecuperarPasswordPage() {
                   </span>
                 </div>
               </div>
-              
+
               <div className="mt-6 text-center">
                 <Link
                   href="/login"
@@ -191,7 +187,7 @@ export default function RecuperarPasswordPage() {
             <p className="mt-1 text-sm text-gray-500">
               Si no recibes el correo en unos minutos, revisa tu carpeta de spam o correo no deseado.
             </p>
-            
+
             <div className="mt-6">
               <Link
                 href="/login"

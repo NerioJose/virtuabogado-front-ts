@@ -1,10 +1,7 @@
 'use client';
-import RegisterForm from '@/components/ui/RegisterForm';
+import { RegisterForm } from '@/features/auth/components/RegisterForm';
+import { UserRole } from '@/shared/types/entities.types';
 
-export default function RegisterPage() {
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-50">
-			<RegisterForm />
-		</div>
-	);
+export default function RegisterClientPage() {
+	return <RegisterForm defaultRole={UserRole.CLIENTE} />;
 }

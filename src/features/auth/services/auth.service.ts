@@ -2,13 +2,13 @@
  * Servicio de autenticación
  */
 
-import { apiClient } from '@/infrastructure/api/client';
+// import { apiClient } from '@/infrastructure/api/client';
 import { localStorageAdapter } from '@/infrastructure/storage/localStorage.adapter';
 import { User, UserRole } from '@/shared/types/entities.types';
 import {
     LoginCredentials,
     RegisterData,
-    AuthResponse,
+    // AuthResponse will be used when connecting to real API
 } from '../types/auth.types';
 
 export class AuthService {

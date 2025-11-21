@@ -7,21 +7,21 @@ const testimonios = [
 		role: 'Empresaria',
 		testimonial:
 			'El servicio fue excelente. Recibí asesoría clara y profesional para mi caso de derecho mercantil.',
-		avatar: '/images/maria-gonzalez-sf.png',
+		avatar: '/images/avatar-1.jpg',
 	},
 	{
 		name: 'Carlos Rodríguez',
 		role: 'Propietario',
 		testimonial:
 			'Gracias a VirtuAbogado pude resolver rápidamente un problema de arrendamiento que tenía pendiente.',
-		avatar: '/images/carlos-rodriguez-sf.png',
+		avatar: '/images/avatar-2.jpg',
 	},
 	{
 		name: 'Laura Martínez',
 		role: 'Profesional',
 		testimonial:
 			'La plataforma es muy intuitiva y los abogados son realmente profesionales. Totalmente recomendado.',
-		avatar: '/images/laura-martinez-sf.png',
+		avatar: '/images/avatar-3.jpg',
 	},
 ];
 

@@ -26,7 +26,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/consulta-legal.jpg',
+			imagen: '/images/asesoria-legal-profesional-sf.png',
 		},
 		{
 			id: 2,
@@ -47,7 +47,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/revision-documentos.jpg',
+			imagen: '/images/persona_ejecutiva_sf.png',
 		},
 		{
 			id: 3,
@@ -68,7 +68,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/representacion-legal.jpg',
+			imagen: '/images/dama-justicia-digital.png',
 		},
 		{
 			id: 4,
@@ -89,7 +89,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/asesoria-empresarial.jpg',
+			imagen: '/images/asesoria-legal-profesional-sf.png',
 		},
 		{
 			id: 5,
@@ -110,7 +110,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/derecho-familiar.jpg',
+			imagen: '/images/persona_ejecutiva_sf.png',
 		},
 		{
 			id: 6,
@@ -131,7 +131,7 @@ export default function ServiciosPage() {
 					/>
 				</svg>
 			),
-			imagen: '/images/derecho-inmobiliario.jpg',
+			imagen: '/images/dama-justicia-digital.png',
 		},
 	];
 
@@ -198,6 +198,7 @@ export default function ServiciosPage() {
 										alt={servicio.titulo}
 										fill
 										className="object-cover"
+										loading="lazy"
 									/>
 									<div className="absolute inset-0 bg-gradient-to-tr from-azul-primario/20 to-transparent"></div>
 								</div>

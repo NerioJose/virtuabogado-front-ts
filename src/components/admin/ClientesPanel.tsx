@@ -2,19 +2,15 @@ import { useState, useEffect } from 'react';
 import { FiEdit, FiTrash2, FiEye, FiFilter, FiMail, FiPhone } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
+import { ElementoSeleccionable, Cliente } from '@/types/index';
 
 interface ClientesPanelProps {
   terminoBusqueda: string;
-  abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: any) => void;
+  abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: ElementoSeleccionable) => void;
 }
 
-interface Cliente {
-  id: number;
-  nombre: string;
-  email: string;
-  telefono: string;
-  fechaRegistro: string;
-  casosActivos: number;
+// Extendemos la interfaz Cliente para incluir campos específicos del panel de administración
+interface ClienteAdmin extends Cliente {
   casosCompletados: number;
   gastoTotal: number;
   ultimaActividad: string;
@@ -22,7 +18,20 @@ interface Cliente {
 }
 
 export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientes, setClientes] = useState<ClienteAdmin[]>([]);
+
+  // Función para convertir ClienteAdmin a Cliente
+  const convertirACliente = (clienteAdmin: ClienteAdmin): Cliente => {
+    return {
+      id: clienteAdmin.id,
+      nombre: clienteAdmin.nombre,
+      email: clienteAdmin.email,
+      telefono: clienteAdmin.telefono,
+      fechaRegistro: clienteAdmin.fechaRegistro,
+      estado: clienteAdmin.estado,
+      casosActivos: clienteAdmin.casosActivos
+    };
+  };
   const [loading, setLoading] = useState(true);
   const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
 
@@ -37,6 +46,7 @@ export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesP
           email: 'juan.perez@ejemplo.com',
           telefono: '+34 612 345 678',
           fechaRegistro: '2023-01-15',
+          estado: 'activo',
           casosActivos: 2,
           casosCompletados: 3,
           gastoTotal: 750,
@@ -48,6 +58,7 @@ export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesP
           email: 'maria.garcia@ejemplo.com',
           telefono: '+34 623 456 789',
           fechaRegistro: '2023-02-20',
+          estado: 'activo',
           casosActivos: 1,
           casosCompletados: 0,
           gastoTotal: 250,
@@ -59,6 +70,7 @@ export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesP
           email: 'pedro.sanchez@ejemplo.com',
           telefono: '+34 634 567 890',
           fechaRegistro: '2023-03-05',
+          estado: 'inactivo',
           casosActivos: 0,
           casosCompletados: 2,
           gastoTotal: 500,
@@ -70,6 +82,7 @@ export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesP
           email: 'ana.martinez@ejemplo.com',
           telefono: '+34 645 678 901',
           fechaRegistro: '2023-04-10',
+          estado: 'activo',
           casosActivos: 1,
           casosCompletados: 1,
           gastoTotal: 350,
@@ -200,6 +213,7 @@ export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesP
                             alt={cliente.nombre}
                             fill
                             className="rounded-full object-cover"
+                            loading="lazy"
                           />
                         </div>
                         <div className="ml-4">
@@ -248,21 +262,21 @@ export default function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesP
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
-                          onClick={() => abrirModal('ver', cliente)}
+                          onClick={() => abrirModal('ver', convertirACliente(cliente))}
                           className="text-azul-primario hover:text-azul-primario/80"
                           title="Ver detalles"
                         >
                           <FiEye />
                         </button>
                         <button
-                          onClick={() => abrirModal('editar', cliente)}
+                          onClick={() => abrirModal('editar', convertirACliente(cliente))}
                           className="text-amber-500 hover:text-amber-600"
                           title="Editar"
                         >
                           <FiEdit />
                         </button>
                         <button
-                          onClick={() => abrirModal('eliminar', cliente)}
+                          onClick={() => abrirModal('eliminar', convertirACliente(cliente))}
                           className="text-red-500 hover:text-red-600"
                           title="Eliminar"
                         >

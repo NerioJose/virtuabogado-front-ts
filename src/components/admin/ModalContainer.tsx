@@ -1,293 +1,591 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiAlertTriangle, FiCheck } from 'react-icons/fi';
+import {
+	FiX,
+	FiAlertTriangle,
+	FiCheck,
+	FiUser,
+	FiUsers,
+	FiBriefcase,
+	FiDollarSign,
+} from 'react-icons/fi';
+import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
 
-// Interfaces para los diferentes tipos de elementos
-interface Abogado {
-  id: number;
-  nombre: string;
-  email: string;
-  telefono: string;
-  especialidad: string;
-  disponibilidad: string;
-  fechaRegistro: string;
-  estado: 'activo' | 'inactivo' | 'pendiente';
-  casosActivos: number;
-  casosCompletados: number;
-  valoracionMedia: number;
-}
-
-interface Cliente {
-  id: number;
-  nombre: string;
-  email: string;
-  telefono: string;
-  fechaRegistro: string;
-  casosActivos: number;
-  casosCompletados: number;
-  gastoTotal: number;
-  ultimaActividad: string;
-  imagen?: string;
-}
-
-interface Caso {
-  id: number;
-  titulo: string;
-  cliente: string;
-  abogado?: string;
-  fechaCreacion: string;
-  fechaAsignacion?: string;
-  estado: 'pendiente' | 'asignado' | 'en_proceso' | 'completado' | 'cancelado';
-  prioridad: 'baja' | 'media' | 'alta';
-  tipo: string;
-  descripcion: string;
-}
-
-interface Transaccion {
-  id: number;
-  concepto: string;
-  monto: number;
-  fecha: string;
-  tipo: 'ingreso' | 'gasto' | 'pago_abogado';
-  estado: 'completado' | 'pendiente' | 'cancelado';
-  cliente?: string;
-  abogado?: string;
-  caso?: string;
-  metodoPago?: string;
-}
-
-// Tipo unión para todos los posibles elementos
+// Tipo unión para todos los posibles elementos (excluyendo null)
 type ElementoModal = Abogado | Cliente | Caso | Transaccion;
 
-// Tipo para el formulario
-type FormDataType = Record<string, string | number | boolean>;
+// Tipo para el formulario con tipado más específico
+type FormDataType = Record<
+	string,
+	string | number | boolean | Date | null | undefined
+>;
+
+// Tipo para los campos del formulario
+type CampoFormulario = {
+	key: string;
+	label: string;
+	type: string;
+	required: boolean;
+	options?: string[];
+};
 
 interface ModalContainerProps {
-  tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar';
-  seccion: 'abogados' | 'clientes' | 'casos' | 'finanzas' | 'configuracion';
-  elemento: ElementoModal;
-  cerrarModal: () => void;
+	tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar';
+	seccion: 'abogados' | 'clientes' | 'casos' | 'finanzas' | 'configuracion';
+	elemento: ElementoModal | null;
+	onClose: () => void;
+	onSave?: (data: FormDataType) => Promise<void> | void;
 }
 
-export default function ModalContainer({ tipo, seccion, elemento, cerrarModal }: ModalContainerProps) {
-  // Estado para el formulario
-  const [formData, setFormData] = useState<FormDataType>({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  
-  // Cargar datos del elemento si es edición o visualización
-  useEffect(() => {
-    if (elemento && (tipo === 'editar' || tipo === 'ver' || tipo === 'eliminar' || tipo === 'asignar')) {
-      setFormData({ ...elemento });
-    }
-  }, [elemento, tipo]);
-  
-  // Función para manejar cambios en el formulario
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    
-    if (type === 'checkbox') {
-      const { checked } = e.target as HTMLInputElement;
-      setFormData({
-        ...formData,
-        [name]: checked,
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
-  };
-  
-  // Función para enviar el formulario
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    try {
-      // Aquí iría la lógica para enviar los datos a la API según el tipo de acción
-      // Por ahora, simulamos una respuesta exitosa después de 1 segundo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccess(true);
-      
-      // Cerrar el modal después de 1.5 segundos
-      setTimeout(() => {
-        cerrarModal();
-      }, 1500);
-    } catch (err) {
-      setError('Ocurrió un error al procesar la solicitud. Por favor, inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Función para confirmar eliminación
-  const confirmarEliminacion = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      // Aquí iría la lógica para eliminar el elemento
-      // Por ahora, simulamos una respuesta exitosa después de 1 segundo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccess(true);
-      
-      // Cerrar el modal después de 1.5 segundos
-      setTimeout(() => {
-        cerrarModal();
-      }, 1500);
-    } catch (err) {
-      setError('Ocurrió un error al eliminar. Por favor, inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Obtener título del modal según tipo y sección
-  const obtenerTitulo = () => {
-    const accion = 
-      tipo === 'crear' ? 'Crear nuevo' :
-      tipo === 'editar' ? 'Editar' :
-      tipo === 'eliminar' ? 'Eliminar' :
-      tipo === 'ver' ? 'Detalles de' :
-      'Asignar';
-    
-    const entidad = 
-      seccion === 'abogados' ? 'abogado' :
-      seccion === 'clientes' ? 'cliente' :
-      seccion === 'casos' ? 'caso' :
-      seccion === 'finanzas' ? 'transacción' :
-      'elemento';
-    
-    return `${accion} ${entidad}`;
-  };
-  
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-      >
-        {/* Cabecera del modal */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900">{obtenerTitulo()}</h2>
-          <button
-            onClick={cerrarModal}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <FiX className="h-5 w-5" />
-          </button>
-        </div>
-        
-        {/* Contenido del modal */}
-        <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
-          {success ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                  <FiCheck className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {tipo === 'eliminar' ? 'Eliminado correctamente' : 'Guardado correctamente'}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {tipo === 'eliminar' 
-                    ? 'El elemento ha sido eliminado de la base de datos.' 
-                    : 'Los cambios han sido guardados correctamente.'}
-                </p>
-              </div>
-            </div>
-          ) : tipo === 'eliminar' ? (
-            <div className="py-4">
-              <div className="flex items-center justify-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <FiAlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-              </div>
-              <h3 className="text-lg font-medium text-center text-gray-900 mb-2">
-                ¿Estás seguro de que deseas eliminar este elemento?
-              </h3>
-              <p className="text-sm text-center text-gray-500 mb-6">
-                Esta acción no se puede deshacer. Se eliminarán permanentemente los datos asociados.
-              </p>
-              
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-                  {error}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              {/* Aquí iría el formulario específico según la sección y tipo */}
-              <p className="text-gray-500 mb-4">
-                {tipo === 'ver' 
-                  ? 'Detalles del elemento seleccionado.' 
-                  : 'Completa el formulario con la información requerida.'}
-              </p>
-              
-              {/* Ejemplo de formulario genérico */}
-              <form onSubmit={handleSubmit}>
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-                    {error}
-                  </div>
-                )}
-                
-                <div className="space-y-4">
-                  {/* Aquí se renderizarían los campos específicos según la sección */}
-                  <p className="text-sm text-gray-500 italic">
-                    Los campos del formulario se generarían dinámicamente según el tipo de elemento.
-                  </p>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
-        
-        {/* Pie del modal con botones de acción */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-          {!success && (
-            <>
-              <button
-                type="button"
-                onClick={cerrarModal}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario"
-              >
-                Cancelar
-              </button>
-              
-              {tipo === 'eliminar' ? (
-                <button
-                  type="button"
-                  onClick={confirmarEliminacion}
-                  disabled={loading}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Eliminando...' : 'Eliminar'}
-                </button>
-              ) : tipo !== 'ver' && (
-                <button
-                  type="submit"
-                  form="modal-form"
-                  disabled={loading}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Guardando...' : 'Guardar'}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
+// Función para obtener campos por sección
+const obtenerCamposPorSeccion = (seccion: string) => {
+	switch (seccion) {
+		case 'abogados':
+			return [
+				{
+					key: 'nombre',
+					label: 'Nombre completo',
+					type: 'text',
+					required: true,
+				},
+				{ key: 'email', label: 'Email', type: 'email', required: true },
+				{ key: 'telefono', label: 'Teléfono', type: 'tel', required: false },
+				{
+					key: 'especialidad',
+					label: 'Especialidad',
+					type: 'text',
+					required: true,
+				},
+				{
+					key: 'colegiatura',
+					label: 'Número de colegiatura',
+					type: 'text',
+					required: true,
+				},
+			];
+		case 'clientes':
+			return [
+				{
+					key: 'nombre',
+					label: 'Nombre completo',
+					type: 'text',
+					required: true,
+				},
+				{ key: 'email', label: 'Email', type: 'email', required: true },
+				{ key: 'telefono', label: 'Teléfono', type: 'tel', required: true },
+				{ key: 'direccion', label: 'Dirección', type: 'text', required: false },
+				{ key: 'dni', label: 'DNI/RUC', type: 'text', required: true },
+			];
+		case 'casos':
+			return [
+				{
+					key: 'titulo',
+					label: 'Título del caso',
+					type: 'text',
+					required: true,
+				},
+				{
+					key: 'descripcion',
+					label: 'Descripción',
+					type: 'textarea',
+					required: true,
+				},
+				{
+					key: 'estado',
+					label: 'Estado',
+					type: 'select',
+					required: true,
+					options: ['activo', 'pendiente', 'cerrado', 'archivado'],
+				},
+				{
+					key: 'prioridad',
+					label: 'Prioridad',
+					type: 'select',
+					required: true,
+					options: ['baja', 'media', 'alta', 'urgente'],
+				},
+				{
+					key: 'fechaInicio',
+					label: 'Fecha de inicio',
+					type: 'date',
+					required: true,
+				},
+			];
+		case 'finanzas':
+			return [
+				{ key: 'concepto', label: 'Concepto', type: 'text', required: true },
+				{ key: 'monto', label: 'Monto', type: 'number', required: true },
+				{
+					key: 'tipo',
+					label: 'Tipo',
+					type: 'select',
+					required: true,
+					options: ['ingreso', 'gasto', 'honorario', 'reembolso'],
+				},
+				{ key: 'fecha', label: 'Fecha', type: 'date', required: true },
+				{
+					key: 'metodoPago',
+					label: 'Método de pago',
+					type: 'select',
+					required: false,
+					options: ['efectivo', 'transferencia', 'tarjeta', 'cheque'],
+				},
+			];
+		default:
+			return [];
+	}
+};
+
+export default function ModalContainer({
+	tipo,
+	seccion,
+	elemento,
+	onClose,
+	onSave,
+}: ModalContainerProps) {
+	// Estado para el formulario
+	const [formData, setFormData] = useState<FormDataType>({});
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState('');
+	const [success, setSuccess] = useState(false);
+	const [validationErrors, setValidationErrors] = useState<
+		Record<string, string>
+	>({});
+
+	// Cargar datos del elemento si es edición o visualización
+	useEffect(() => {
+		if (
+			elemento &&
+			(tipo === 'editar' ||
+				tipo === 'ver' ||
+				tipo === 'eliminar' ||
+				tipo === 'asignar')
+		) {
+			setFormData({ ...elemento });
+		} else if (tipo === 'crear') {
+			// Inicializar formulario vacío para crear
+			const campos = obtenerCamposPorSeccion(seccion);
+			const initialData: FormDataType = {};
+			campos.forEach((campo) => {
+				initialData[campo.key] = campo.type === 'number' ? 0 : '';
+			});
+			setFormData(initialData);
+		}
+	}, [elemento, tipo, seccion]);
+
+	// Función para manejar cambios en el formulario
+	const handleInputChange = useCallback(
+		(key: string, value: string | number | boolean) => {
+			setFormData((prev) => ({
+				...prev,
+				[key]: value,
+			}));
+
+			// Limpiar error de validación si existe
+			if (validationErrors[key]) {
+				setValidationErrors((prev) => {
+					const newErrors = { ...prev };
+					delete newErrors[key];
+					return newErrors;
+				});
+			}
+		},
+		[validationErrors]
+	);
+
+	// Función para validar el formulario
+	const validateForm = useCallback((): boolean => {
+		const campos = obtenerCamposPorSeccion(seccion);
+		const errors: Record<string, string> = {};
+
+		campos.forEach((campo) => {
+			if (campo.required) {
+				const value = formData[campo.key];
+				if (!value || (typeof value === 'string' && value.trim() === '')) {
+					errors[campo.key] = `${campo.label} es obligatorio`;
+				}
+			}
+
+			// Validaciones específicas
+			if (campo.type === 'email' && formData[campo.key]) {
+				const email = formData[campo.key] as string;
+				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+				if (!emailRegex.test(email)) {
+					errors[campo.key] = 'Formato de email inválido';
+				}
+			}
+
+			if (campo.type === 'number' && formData[campo.key] !== undefined) {
+				const value = Number(formData[campo.key]);
+				if (isNaN(value) || value < 0) {
+					errors[campo.key] = 'Debe ser un número válido mayor o igual a 0';
+				}
+			}
+		});
+
+		setValidationErrors(errors);
+		return Object.keys(errors).length === 0;
+	}, [formData, seccion]);
+
+	// Función para enviar el formulario
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (tipo === 'ver') return;
+
+		if (!validateForm()) {
+			setError('Por favor, corrige los errores en el formulario');
+			return;
+		}
+
+		setLoading(true);
+		setError('');
+
+		try {
+			if (onSave) {
+				await onSave(formData);
+			} else {
+				// Simulación de API call
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+
+			setSuccess(true);
+
+			// Cerrar el modal después de 1.5 segundos
+			setTimeout(() => {
+				onClose();
+			}, 1500);
+		} catch (error) {
+			setError(
+				error instanceof Error
+					? error.message
+					: 'Ocurrió un error al procesar la solicitud. Por favor, inténtalo de nuevo.'
+			);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Función para confirmar eliminación
+	const confirmarEliminacion = async () => {
+		setLoading(true);
+		setError('');
+
+		try {
+			if (onSave) {
+				await onSave({ id: elemento?.id });
+			} else {
+				// Simulación de API call
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+
+			setSuccess(true);
+
+			// Cerrar el modal después de 1.5 segundos
+			setTimeout(() => {
+				onClose();
+			}, 1500);
+		} catch (error) {
+			setError(
+				error instanceof Error
+					? error.message
+					: 'Ocurrió un error al eliminar. Por favor, inténtalo de nuevo.'
+			);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Obtener título del modal según tipo y sección
+	const obtenerTitulo = () => {
+		const acciones = {
+			crear: 'Crear nuevo',
+			editar: 'Editar',
+			eliminar: 'Eliminar',
+			ver: 'Detalles de',
+			asignar: 'Asignar',
+		};
+
+		const entidades = {
+			abogados: 'abogado',
+			clientes: 'cliente',
+			casos: 'caso',
+			finanzas: 'transacción',
+			configuracion: 'configuración',
+		};
+
+		return `${acciones[tipo]} ${entidades[seccion]}`;
+	};
+
+	// Obtener icono según la sección
+	const obtenerIcono = () => {
+		const iconos = {
+			abogados: <FiUser className="h-6 w-6" />,
+			clientes: <FiUsers className="h-6 w-6" />,
+			casos: <FiBriefcase className="h-6 w-6" />,
+			finanzas: <FiDollarSign className="h-6 w-6" />,
+			configuracion: <FiX className="h-6 w-6" />,
+		};
+
+		return iconos[seccion] || <FiX className="h-6 w-6" />;
+	};
+
+	// Renderizar campo del formulario
+	const renderCampo = (campo: CampoFormulario) => {
+		const value = formData[campo.key] || '';
+		const hasError = validationErrors[campo.key];
+		const isReadonly = tipo === 'ver';
+
+		const baseClasses = `w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${
+			hasError ? 'border-red-300' : 'border-gray-300'
+		} ${isReadonly ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`;
+
+		switch (campo.type) {
+			case 'textarea':
+				return (
+					<div
+						key={campo.key}
+						className="space-y-1">
+						<label className="block text-sm font-medium text-gray-700">
+							{campo.label}
+							{campo.required && <span className="text-red-500 ml-1">*</span>}
+						</label>
+						<textarea
+							title={campo.label}
+							placeholder={`Ingrese ${campo.label.toLowerCase()}`}
+							value={value as string}
+							onChange={(e) => handleInputChange(campo.key, e.target.value)}
+							className={`${baseClasses} resize-none`}
+							rows={3}
+							readOnly={isReadonly}
+							required={campo.required}
+						/>
+						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
+					</div>
+				);
+
+			case 'select':
+				return (
+					<div
+						key={campo.key}
+						className="space-y-1">
+						<label className="block text-sm font-medium text-gray-700">
+							{campo.label}
+							{campo.required && <span className="text-red-500 ml-1">*</span>}
+						</label>
+						<select
+							title={campo.label}
+							value={value as string}
+							onChange={(e) => handleInputChange(campo.key, e.target.value)}
+							className={baseClasses}
+							disabled={isReadonly}
+							required={campo.required}>
+							<option value="">Seleccionar...</option>
+							{campo.options?.map((option: string) => (
+								<option
+									key={option}
+									value={option}>
+									{option.charAt(0).toUpperCase() + option.slice(1)}
+								</option>
+							))}
+						</select>
+						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
+					</div>
+				);
+
+			case 'number':
+				return (
+					<div
+						key={campo.key}
+						className="space-y-1">
+						<label className="block text-sm font-medium text-gray-700">
+							{campo.label}
+							{campo.required && <span className="text-red-500 ml-1">*</span>}
+						</label>
+						<input
+							title={campo.label}
+							placeholder={`Ingrese ${campo.label.toLowerCase()}`}
+							type="number"
+							value={value as number}
+							onChange={(e) =>
+								handleInputChange(campo.key, parseFloat(e.target.value) || 0)
+							}
+							className={baseClasses}
+							readOnly={isReadonly}
+							required={campo.required}
+							min="0"
+							step="0.01"
+						/>
+						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
+					</div>
+				);
+
+			default:
+				return (
+					<div
+						key={campo.key}
+						className="space-y-1">
+						<label className="block text-sm font-medium text-gray-700">
+							{campo.label}
+							{campo.required && <span className="text-red-500 ml-1">*</span>}
+						</label>
+						<input
+							title={campo.label}
+							placeholder={`Ingrese ${campo.label.toLowerCase()}`}
+							type={campo.type}
+							value={value as string}
+							onChange={(e) => handleInputChange(campo.key, e.target.value)}
+							className={baseClasses}
+							readOnly={isReadonly}
+							required={campo.required}
+						/>
+						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
+					</div>
+				);
+		}
+	};
+
+	return (
+		<div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+			<motion.div
+				initial={{ opacity: 0, scale: 0.9 }}
+				animate={{ opacity: 1, scale: 1 }}
+				exit={{ opacity: 0, scale: 0.9 }}
+				transition={{ duration: 0.2 }}
+				className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+				{/* Cabecera del modal */}
+				<div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+					<div className="flex items-center space-x-3">
+						<div className="text-azul-primario">{obtenerIcono()}</div>
+						<h2 className="text-lg font-medium text-gray-900">
+							{obtenerTitulo()}
+						</h2>
+					</div>
+					<button
+						onClick={onClose}
+						className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-azul-primario rounded-md p-1"
+						aria-label="Cerrar modal">
+						<FiX className="h-5 w-5" />
+					</button>
+				</div>
+
+				{/* Contenido del modal */}
+				<div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
+					{success ? (
+						<div className="flex items-center justify-center py-8">
+							<div className="text-center">
+								<div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+									<FiCheck className="h-6 w-6 text-green-600" />
+								</div>
+								<h3 className="text-lg font-medium text-gray-900 mb-2">
+									{tipo === 'eliminar'
+										? 'Eliminado correctamente'
+										: 'Guardado correctamente'}
+								</h3>
+								<p className="text-sm text-gray-500">
+									{tipo === 'eliminar'
+										? 'El elemento ha sido eliminado de la base de datos.'
+										: 'Los cambios han sido guardados correctamente.'}
+								</p>
+							</div>
+						</div>
+					) : tipo === 'eliminar' ? (
+						<div className="py-4">
+							<div className="flex items-center justify-center mb-4">
+								<div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+									<FiAlertTriangle className="h-6 w-6 text-red-600" />
+								</div>
+							</div>
+							<h3 className="text-lg font-medium text-center text-gray-900 mb-2">
+								¿Estás seguro de que deseas eliminar este elemento?
+							</h3>
+							<p className="text-sm text-center text-gray-500 mb-6">
+								Esta acción no se puede deshacer. Se eliminarán permanentemente
+								los datos asociados.
+							</p>
+
+							{/* Mostrar información del elemento a eliminar */}
+							{elemento && (
+								<div className="bg-gray-50 p-4 rounded-md mb-4">
+									<h4 className="font-medium text-gray-900 mb-2">
+										Información del elemento:
+									</h4>
+									<div className="text-sm text-gray-600 space-y-1">
+										{Object.entries(elemento)
+											.slice(0, 3)
+											.map(([key, value]) => (
+												<div
+													key={key}
+													className="flex">
+													<span className="font-medium capitalize w-20">
+														{key}:
+													</span>
+													<span>{String(value)}</span>
+												</div>
+											))}
+									</div>
+								</div>
+							)}
+
+							{error && (
+								<div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+									{error}
+								</div>
+							)}
+						</div>
+					) : (
+						<div>
+							<form
+								onSubmit={handleSubmit}
+								id="modal-form">
+								{error && (
+									<div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+										{error}
+									</div>
+								)}
+
+								<div className="space-y-4">
+									{obtenerCamposPorSeccion(seccion).map(renderCampo)}
+								</div>
+							</form>
+						</div>
+					)}
+				</div>
+
+				{/* Pie del modal con botones de acción */}
+				<div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+					{!success && (
+						<>
+							<button
+								type="button"
+								onClick={onClose}
+								className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario">
+								Cancelar
+							</button>
+
+							{tipo === 'eliminar' ? (
+								<button
+									type="button"
+									onClick={confirmarEliminacion}
+									disabled={loading}
+									className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
+									{loading ? 'Eliminando...' : 'Eliminar'}
+								</button>
+							) : (
+								tipo !== 'ver' && (
+									<button
+										type="submit"
+										form="modal-form"
+										disabled={loading}
+										className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario disabled:opacity-50 disabled:cursor-not-allowed">
+										{loading ? 'Guardando...' : 'Guardar'}
+									</button>
+								)
+							)}
+						</>
+					)}
+				</div>
+			</motion.div>
+		</div>
+	);
 }

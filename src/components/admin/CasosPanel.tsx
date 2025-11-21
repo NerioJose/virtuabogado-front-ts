@@ -1,28 +1,41 @@
 import { useState, useEffect } from 'react';
 import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserCheck, FiClock } from 'react-icons/fi';
+import { ElementoSeleccionable, Caso } from '@/types/index';
 
 interface CasosPanelProps {
   terminoBusqueda: string;
-  abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: any) => void;
+  abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: ElementoSeleccionable) => void;
 }
 
-interface Caso {
-  id: number;
-  titulo: string;
-  cliente: string;
-  abogado?: string;
-  fechaCreacion: string;
+// Extendemos la interfaz Caso para incluir campos específicos del panel de administración
+interface CasoAdmin extends Omit<Caso, 'abogado' | 'estado'> {
+  abogado?: string; // Opcional para casos pendientes
   fechaAsignacion?: string;
   estado: 'pendiente' | 'asignado' | 'en_proceso' | 'completado' | 'cancelado';
-  prioridad: 'baja' | 'media' | 'alta';
   tipo: string;
   descripcion: string;
 }
 
 export default function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
-  const [casos, setCasos] = useState<Caso[]>([]);
+  const [casos, setCasos] = useState<CasoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'asignado' | 'en_proceso' | 'completado' | 'cancelado'>('todos');
+
+  // Función para convertir CasoAdmin a Caso
+  const convertirACaso = (casoAdmin: CasoAdmin): Caso => {
+    return {
+      id: casoAdmin.id,
+      titulo: casoAdmin.titulo,
+      cliente: casoAdmin.cliente,
+      abogado: casoAdmin.abogado || 'Sin asignar',
+      estado: casoAdmin.estado === 'asignado' || casoAdmin.estado === 'en_proceso' ? 'en_progreso' : 
+              casoAdmin.estado === 'completado' ? 'completado' : 
+              casoAdmin.estado === 'cancelado' ? 'cancelado' : 'pendiente',
+      fechaCreacion: casoAdmin.fechaCreacion,
+      prioridad: casoAdmin.prioridad,
+      descripcion: casoAdmin.descripcion
+    };
+  };
 
   useEffect(() => {
     // Aquí se haría la llamada a la API para obtener los casos
@@ -267,14 +280,14 @@ export default function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelPr
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
-                          onClick={() => abrirModal('ver', caso)}
+                          onClick={() => abrirModal('ver', convertirACaso(caso))}
                           className="text-azul-primario hover:text-azul-primario/80"
                           title="Ver detalles"
                         >
                           <FiEye />
                         </button>
                         <button
-                          onClick={() => abrirModal('editar', caso)}
+                          onClick={() => abrirModal('editar', convertirACaso(caso))}
                           className="text-amber-500 hover:text-amber-600"
                           title="Editar"
                         >
@@ -282,7 +295,7 @@ export default function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelPr
                         </button>
                         {caso.estado === 'pendiente' && (
                           <button
-                            onClick={() => abrirModal('asignar', caso)}
+                            onClick={() => abrirModal('asignar', convertirACaso(caso))}
                             className="text-blue-500 hover:text-blue-600"
                             title="Asignar abogado"
                           >
@@ -290,7 +303,7 @@ export default function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelPr
                           </button>
                         )}
                         <button
-                          onClick={() => abrirModal('eliminar', caso)}
+                          onClick={() => abrirModal('eliminar', convertirACaso(caso))}
                           className="text-red-500 hover:text-red-600"
                           title="Eliminar"
                         >

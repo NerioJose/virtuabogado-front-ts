@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import NavBar from '../components/NavBar'; // Asegúrate de que la ruta sea correcta
-import Footer from '@/components/Footer';
-import AbandonedCartReminder from '../components/AbandonedCartReminder';
+import NavBar from '../components/layout/NavBar'; // Asegúrate de que la ruta sea correcta
+import Footer from '@/components/layout/Footer';
+import AbandonedCartReminder from '../components/layout/AbandonedCartReminder';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',

@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import logo from '../../public/logo/logo_sf_1.png';
-import userImage from '../../public/user.png';
+import logo from '/public/logo/logo_sf_1.png';
+import userImage from '/public/user.png';
 
 interface User {
 	name?: string;
@@ -22,27 +22,13 @@ const Navbar = () => {
 	useEffect(() => {
 		const fetchUser = async () => {
 			try {
-				// Intentar obtener datos del usuario del localStorage primero
 				const userDataString = localStorage.getItem('user');
 
 				if (userDataString) {
-					// Si hay datos en localStorage, usarlos
 					const userData = JSON.parse(userDataString);
 					setUser(userData);
-					return;
-				}
-
-				{
-					/*// Si no hay datos en localStorage, intentar la API
-				const res = await fetch('http://localhost:3001/api/auth/me', {
-					method: 'GET',
-					credentials: 'include',
-				});
-
-				if (!res.ok) throw new Error('Error en la respuesta');
-
-				const data = await res.json();
-				setUser(data);*/
+				} else {
+					setUser(null);
 				}
 			} catch (error) {
 				console.error('Error al obtener el usuario:', error);
@@ -51,6 +37,36 @@ const Navbar = () => {
 		};
 
 		fetchUser();
+
+		// Escuchar cambios en localStorage
+		const handleStorageChange = (e: StorageEvent) => {
+			if (e.key === 'user') {
+				if (e.newValue) {
+					try {
+						const userData = JSON.parse(e.newValue);
+						setUser(userData);
+					} catch (error) {
+						console.error('Error parsing user data:', error);
+						setUser(null);
+					}
+				} else {
+					setUser(null);
+				}
+			}
+		};
+
+		// Escuchar eventos personalizados para cambios de auth
+		const handleAuthChange = () => {
+			fetchUser();
+		};
+
+		window.addEventListener('storage', handleStorageChange);
+		window.addEventListener('authChange', handleAuthChange);
+
+		return () => {
+			window.removeEventListener('storage', handleStorageChange);
+			window.removeEventListener('authChange', handleAuthChange);
+		};
 	}, []);
 
 	const handleLogout = () => {
@@ -58,35 +74,30 @@ const Navbar = () => {
 			// Eliminar los datos del usuario del localStorage
 			localStorage.removeItem('user');
 
-			// Cerrar el menú de usuario
-			//setIsUserMenuOpen(false);
+			// Actualizar el estado inmediatamente
+			setUser(null);
+
+			// Cerrar el menú móvil si está abierto
+			setIsOpen(false);
+
+			// Disparar evento personalizado para notificar el cambio
+			window.dispatchEvent(new Event('authChange'));
 
 			// Redirigir al usuario a la página de login
 			router.push('/login');
+
+			// Opcional: forzar refresh de la página si es necesario
+			// router.refresh();
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
 		}
 	};
-	/*const handleLogout = async () => {
-		try {
-			await fetch('http://localhost:3001/api/auth/logout', {
-				method: 'POST',
-				credentials: 'include',
-			});
-
-			setUser(null);
-			router.push('/login');
-			router.refresh();
-		} catch (error) {
-			console.error('Error al cerrar sesión:', error);
-		}
-	};*/
 
 	const navItems = ['Nosotros', 'Servicios', 'Contacto', 'Clientes'];
 
 	return (
 		<motion.nav
-			className="w-full fixed z-50 glass-card h-16" // Altura fija de 4rem (64px)
+			className="w-full fixed z-50 glass-card h-16"
 			initial={{ opacity: 0, y: -20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{
@@ -94,8 +105,6 @@ const Navbar = () => {
 				ease: 'easeOut',
 			}}>
 			<div className="container mx-auto px-6 py-2 flex justify-between items-center h-full">
-				{' '}
-				{/* py-2 en lugar de py-4 */} {/* Agregar max-w-screen-xl */}
 				<Link href="/">
 					<motion.div
 						className="relative flex items-center"
@@ -107,13 +116,13 @@ const Navbar = () => {
 							width={150}
 							height={70}
 							className="relative z-10"
+							priority
 						/>
 					</motion.div>
 				</Link>
+
 				{/* Menú Desktop */}
 				<div className="hidden md:flex space-x-6 items-center overflow-x-auto">
-					{' '}
-					{/* Agregar overflow-x-auto */}
 					{navItems.map((item) => (
 						<motion.div
 							key={item}
@@ -133,6 +142,7 @@ const Navbar = () => {
 							/>
 						</motion.div>
 					))}
+
 					{user?.role === 'admin' && (
 						<motion.div className="relative group">
 							<Link
@@ -148,6 +158,8 @@ const Navbar = () => {
 							/>
 						</motion.div>
 					)}
+
+					{/* Renderizado condicional mejorado */}
 					{user ? (
 						<div className="flex items-center space-x-4">
 							<div className="relative w-10 h-10">
@@ -156,6 +168,7 @@ const Navbar = () => {
 									alt="User"
 									fill
 									className="rounded-full border-2 border-azul-primario object-cover"
+									loading="lazy"
 								/>
 							</div>
 							<span className="text-azul-primario font-medium hidden sm:inline">
@@ -167,54 +180,27 @@ const Navbar = () => {
 								aria-label="Cerrar sesión">
 								Cerrar sesión
 							</button>
-
-							<button
-								onClick={() => setIsOpen(!isOpen)}
-								className="text-azul-primario p-2 rounded-lg hover:bg-gray-800/10 transition-all duration-300"
-								aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}>
-								<svg
-									className="w-6 h-6"
-									fill="none"
-									viewBox="0 0 24 24">
-									{isOpen ? (
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M6 18L18 6M6 6l12 12"
-											className="stroke-azul-primario"
-										/>
-									) : (
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M4 6h16M4 12h16M4 18h16"
-											className="stroke-azul-primario"
-										/>
-									)}
-								</svg>
-							</button>
 						</div>
 					) : (
-						<>
+						<div className="flex items-center space-x-2">
 							<Link href="/login">
 								<button className="btn-primary px-5 py-2">
 									Iniciar sesión
 								</button>
 							</Link>
-							{
-								<Link href="/register">
-									<button className="ml-2 px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300">
-										Registrarse
-									</button>
-								</Link>
-							}
-						</>
+							<Link href="/register">
+								<button className="ml-2 px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300">
+									Registrarse
+								</button>
+							</Link>
+						</div>
 					)}
 				</div>
+
+				{/* Botón menú móvil */}
 				<div className="md:hidden">
 					<button
+						title="Toggle navigation menu"
 						onClick={() => setIsOpen(!isOpen)}
 						className="text-azul-primario p-2 rounded-lg hover:bg-gray-800/10 transition-all duration-300">
 						<svg
@@ -243,6 +229,7 @@ const Navbar = () => {
 				</div>
 			</div>
 
+			{/* Menú móvil */}
 			<AnimatePresence>
 				{isOpen && (
 					<motion.div
@@ -272,6 +259,47 @@ const Navbar = () => {
 									Dashboard
 								</Link>
 							</motion.div>
+						)}
+
+						{/* Opciones de auth en menú móvil */}
+						{user ? (
+							<div className="border-t pt-4 space-y-3">
+								<div className="flex items-center space-x-3">
+									<div className="relative w-8 h-8">
+										<Image
+											src={user.picture || userImage}
+											alt="User"
+											fill
+											className="rounded-full border-2 border-azul-primario object-cover"
+										/>
+									</div>
+									<span className="text-azul-primario font-medium">
+										{user?.name || 'Usuario'}
+									</span>
+								</div>
+								<button
+									onClick={handleLogout}
+									className="w-full btn-primary hover:bg-vinotinto-light px-4 py-2 text-left">
+									Cerrar sesión
+								</button>
+							</div>
+						) : (
+							<div className="border-t pt-4 space-y-3">
+								<Link href="/login">
+									<button
+										className="w-full btn-primary px-5 py-2"
+										onClick={() => setIsOpen(false)}>
+										Iniciar sesión
+									</button>
+								</Link>
+								<Link href="/register">
+									<button
+										className="w-full px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300"
+										onClick={() => setIsOpen(false)}>
+										Registrarse
+									</button>
+								</Link>
+							</div>
 						)}
 					</motion.div>
 				)}

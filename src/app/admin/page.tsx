@@ -1,188 +1,365 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  FiUsers, FiUserCheck, FiBriefcase, FiDollarSign,
-  FiPieChart, FiSettings, FiLogOut, FiSearch,
-  FiPlus, FiEdit, FiTrash2, FiEye, FiCheck
+	FiUsers,
+	FiUserCheck,
+	FiBriefcase,
+	FiDollarSign,
+	FiPieChart,
+	FiSettings,
+	FiSearch,
+	FiPlus,
 } from 'react-icons/fi';
 
-// Importar componentes
+// Importar componentes principales
 import Sidebar from '@/components/admin/Sidebar';
 import DashboardStats from '@/components/admin/DashboardStats';
-import AbogadosPanel from '@/components/admin/AbogadosPanel';
-import ClientesPanel from '@/components/admin/ClientesPanel';
-import CasosPanel from '@/components/admin/CasosPanel';
-import FinanzasPanel from '@/components/admin/FinanzasPanel';
-import EstadisticasPanel from '@/components/admin/EstadisticasPanel';
-import ConfiguracionPanel from '@/components/admin/ConfiguracionPanel';
-import ModalContainer from '@/components/admin/ModalContainer';
+
+// Lazy loading para componentes pesados
+const AbogadosPanel = lazy(() => import('@/components/admin/AbogadosPanel'));
+const ClientesPanel = lazy(() => import('@/components/admin/ClientesPanel'));
+const CasosPanel = lazy(() => import('@/components/admin/CasosPanel'));
+const FinanzasPanel = lazy(() => import('@/components/admin/FinanzasPanel'));
+const EstadisticasPanel = lazy(
+	() => import('@/components/admin/EstadisticasPanel')
+);
+const ConfiguracionPanel = lazy(
+	() => import('@/components/admin/ConfiguracionPanel')
+);
+const ModalContainer = lazy(() => import('@/components/admin/ModalContainer'));
+
+// Importar tipos
+import { AdminUser, ElementoSeleccionable, SeccionAdmin } from '@/types/index';
+
+// Componente de Loading reutilizable
+const LoadingSpinner = ({
+	size = 'normal',
+	text = 'Cargando...',
+}: {
+	size?: 'small' | 'normal';
+	text?: string;
+}) => (
+	<div className="flex justify-center items-center h-64">
+		<div className="text-center">
+			<div
+				className={`border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4 ${
+					size === 'small' ? 'w-8 h-8' : 'w-16 h-16'
+				}`}></div>
+			<p className="text-azul-primario font-medium">{text}</p>
+		</div>
+	</div>
+);
 
 export default function AdminPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [seccionActiva, setSeccionActiva] = useState('dashboard');
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [tipoModal, setTipoModal] = useState<'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar'>('ver');
-  const [elementoSeleccionado, setElementoSeleccionado] = useState<any>(null);
-  const [terminoBusqueda, setTerminoBusqueda] = useState('');
+	const router = useRouter();
+	const [user, setUser] = useState<AdminUser | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [seccionActiva, setSeccionActiva] = useState<SeccionAdmin>('dashboard');
+	const [modalAbierto, setModalAbierto] = useState(false);
+	const [tipoModal, setTipoModal] = useState<
+		'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar'
+	>('ver');
+	const [elementoSeleccionado, setElementoSeleccionado] =
+		useState<ElementoSeleccionable>(null);
+	const [terminoBusqueda, setTerminoBusqueda] = useState('');
 
-  // Verificar autenticación y rol de administrador
-  useEffect(() => {
-    const verificarAdmin = async () => {
-      try {
-        // Para propósitos de prueba, verificamos los datos simulados en localStorage
-        const userDataString = localStorage.getItem('user');
+	// Verificar autenticación y rol de administrador
+	useEffect(() => {
+		const verificarAdmin = async () => {
+			try {
+				// Verificar si estamos en el cliente (browser)
+				if (typeof window === 'undefined') {
+					return;
+				}
 
-        if (!userDataString) {
-          throw new Error('No autenticado');
-        }
+				// Para propósitos de prueba, verificamos los datos simulados en localStorage
+				const userDataString = localStorage.getItem('user');
 
-        const userData = JSON.parse(userDataString);
+				if (!userDataString) {
+					throw new Error('No autenticado');
+				}
 
-        if (userData.rol !== 'admin') {
-          throw new Error('No autorizado');
-        }
+				const userData: AdminUser = JSON.parse(userDataString);
 
-        setUser(userData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error de autenticación:', error);
-        router.push('/login');
-      }
-    };
+				// Validar estructura del objeto userData
+				if (!userData || typeof userData !== 'object') {
+					throw new Error('Datos de usuario inválidos');
+				}
 
-    verificarAdmin();
-  }, [router]);
+				if (userData.role !== 'admin') {
+					throw new Error('No autorizado');
+				}
 
-  // Funciones para modales
-  const abrirModal = (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: any) => {
-    setTipoModal(tipo);
-    setElementoSeleccionado(elemento || null);
-    setModalAbierto(true);
-  };
+				setUser(userData);
+			} catch (error) {
+				console.error('Error de autenticación:', error);
+				// Redirigir solo si estamos en el cliente
+				if (typeof window !== 'undefined') {
+					router.push('/login');
+				}
+			} finally {
+				setLoading(false);
+			}
+		};
 
-  const cerrarModal = () => {
-    setModalAbierto(false);
-    setElementoSeleccionado(null);
-  };
+		verificarAdmin();
+	}, [router]);
 
-  // Manejador de cierre de sesión
-  const handleLogout = async () => {
-    try {
-      // Eliminar los datos del usuario del localStorage
-      localStorage.removeItem('user');
+	// Funciones para modales
+	const abrirModal = (
+		tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar',
+		elemento?: ElementoSeleccionable
+	) => {
+		setTipoModal(tipo);
+		setElementoSeleccionado(elemento || null);
+		setModalAbierto(true);
+	};
 
-      // Redirigir al usuario a la página de login
-      router.push('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
+	const cerrarModal = () => {
+		setModalAbierto(false);
+		setElementoSeleccionado(null);
+	};
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-azul-primario font-medium">Cargando panel de administración...</p>
-        </div>
-      </div>
-    );
-  }
+	// Manejador de cierre de sesión
+	const handleLogout = async () => {
+		try {
+			// Verificar si estamos en el cliente
+			if (typeof window === 'undefined') {
+				return;
+			}
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar
-        seccionActiva={seccionActiva}
-        setSeccionActiva={setSeccionActiva}
-        handleLogout={handleLogout}
-      />
+			// Eliminar los datos del usuario del localStorage
+			localStorage.removeItem('user');
 
-      {/* Contenido principal */}
-      <div className="flex-1 ml-64">
-        {/* Barra superior */}
-        <div className="bg-white shadow-sm p-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-azul-primario">
-            {seccionActiva === 'dashboard' && 'Panel Principal'}
-            {seccionActiva === 'abogados' && 'Gestión de Abogados'}
-            {seccionActiva === 'clientes' && 'Gestión de Clientes'}
-            {seccionActiva === 'casos' && 'Gestión de Casos'}
-            {seccionActiva === 'finanzas' && 'Gestión Financiera'}
-            {seccionActiva === 'estadisticas' && 'Estadísticas y Reportes'}
-            {seccionActiva === 'configuracion' && 'Configuración'}
-          </h1>
+			// Redirigir al usuario a la página de login
+			router.push('/login');
+		} catch (error) {
+			console.error('Error al cerrar sesión:', error);
+		}
+	};
 
-          <div className="flex items-center space-x-4">
-            {seccionActiva !== 'dashboard' && seccionActiva !== 'configuracion' && (
-              <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar..."
-                  value={terminoBusqueda}
-                  onChange={(e) => setTerminoBusqueda(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario"
-                />
-              </div>
-            )}
+	// Función para obtener el icono según la sección
+	const getSeccionIcon = (seccion: SeccionAdmin) => {
+		const iconProps = { className: 'mr-2', size: 20 };
 
-            {(seccionActiva === 'abogados' || seccionActiva === 'casos') && (
-              <button
-                onClick={() => abrirModal('crear')}
-                className="flex items-center space-x-2 bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors"
-              >
-                <FiPlus />
-                <span>Nuevo {seccionActiva === 'abogados' ? 'Abogado' : 'Caso'}</span>
-              </button>
-            )}
-          </div>
-        </div>
+		switch (seccion) {
+			case 'dashboard':
+				return <FiPieChart {...iconProps} />;
+			case 'abogados':
+				return <FiUserCheck {...iconProps} />;
+			case 'clientes':
+				return <FiUsers {...iconProps} />;
+			case 'casos':
+				return <FiBriefcase {...iconProps} />;
+			case 'finanzas':
+				return <FiDollarSign {...iconProps} />;
+			case 'estadisticas':
+				return <FiPieChart {...iconProps} />;
+			case 'configuracion':
+				return <FiSettings {...iconProps} />;
+			default:
+				return null;
+		}
+	};
 
-        {/* Contenido dinámico según la sección activa */}
-        <div className="p-6">
-          {seccionActiva === 'dashboard' && <DashboardStats />}
-          {seccionActiva === 'abogados' && (
-            <AbogadosPanel
-              terminoBusqueda={terminoBusqueda}
-              abrirModal={abrirModal}
-            />
-          )}
-          {seccionActiva === 'clientes' && (
-            <ClientesPanel
-              terminoBusqueda={terminoBusqueda}
-              abrirModal={abrirModal}
-            />
-          )}
-          {seccionActiva === 'casos' && (
-            <CasosPanel
-              terminoBusqueda={terminoBusqueda}
-              abrirModal={abrirModal}
-            />
-          )}
-          {seccionActiva === 'finanzas' && (
-            <FinanzasPanel
-              terminoBusqueda={terminoBusqueda}
-              abrirModal={abrirModal}
-            />
-          )}
-          {seccionActiva === 'estadisticas' && <EstadisticasPanel />}
-          {seccionActiva === 'configuracion' && <ConfiguracionPanel />}
-        </div>
-      </div>
+	// Función para obtener el título según la sección
+	const getSeccionTitulo = (seccion: SeccionAdmin): string => {
+		const titulos: Record<SeccionAdmin, string> = {
+			dashboard: 'Panel Principal',
+			abogados: 'Gestión de Abogados',
+			clientes: 'Gestión de Clientes',
+			casos: 'Gestión de Casos',
+			finanzas: 'Gestión Financiera',
+			estadisticas: 'Estadísticas y Reportes',
+			configuracion: 'Configuración',
+		};
 
-      {/* Modal dinámico */}
-      {modalAbierto && (
-        <ModalContainer
-          tipo={tipoModal}
-          seccion={seccionActiva as 'casos' | 'clientes' | 'abogados' | 'finanzas' | 'configuracion'}
-          elemento={elementoSeleccionado}
-          cerrarModal={cerrarModal}
-        />
-      )}
-    </div>
-  );
+		return titulos[seccion] || 'Panel de Administración';
+	};
+
+	// Función para obtener el texto del botón "Nuevo"
+	const getNuevoButtonText = (seccion: SeccionAdmin): string => {
+		const textos: Record<string, string> = {
+			abogados: 'Abogado',
+			casos: 'Caso',
+			clientes: 'Cliente',
+		};
+
+		return textos[seccion] || 'Elemento';
+	};
+
+	// Verificar si la sección permite búsqueda
+	const allowsSearch = (seccion: SeccionAdmin): boolean => {
+		return !['dashboard', 'configuracion', 'estadisticas'].includes(seccion);
+	};
+
+	// Verificar si la sección permite crear nuevos elementos
+	const allowsCreate = (seccion: SeccionAdmin): boolean => {
+		return ['abogados', 'casos', 'clientes'].includes(seccion);
+	};
+
+	// Renderizar contenido de la sección
+	const renderSeccionContent = () => {
+		const fallback = (
+			<LoadingSpinner
+				size="small"
+				text="Cargando contenido..."
+			/>
+		);
+
+		switch (seccionActiva) {
+			case 'dashboard':
+				return <DashboardStats />;
+			case 'abogados':
+				return (
+					<Suspense fallback={fallback}>
+						<AbogadosPanel
+							terminoBusqueda={terminoBusqueda}
+							abrirModal={abrirModal}
+						/>
+					</Suspense>
+				);
+			case 'clientes':
+				return (
+					<Suspense fallback={fallback}>
+						<ClientesPanel
+							terminoBusqueda={terminoBusqueda}
+							abrirModal={abrirModal}
+						/>
+					</Suspense>
+				);
+			case 'casos':
+				return (
+					<Suspense fallback={fallback}>
+						<CasosPanel
+							terminoBusqueda={terminoBusqueda}
+							abrirModal={abrirModal}
+						/>
+					</Suspense>
+				);
+			case 'finanzas':
+				return (
+					<Suspense fallback={fallback}>
+						<FinanzasPanel
+							terminoBusqueda={terminoBusqueda}
+							abrirModal={abrirModal}
+						/>
+					</Suspense>
+				);
+			case 'estadisticas':
+				return (
+					<Suspense fallback={fallback}>
+						<EstadisticasPanel />
+					</Suspense>
+				);
+			case 'configuracion':
+				return (
+					<Suspense fallback={fallback}>
+						<ConfiguracionPanel />
+					</Suspense>
+				);
+			default:
+				return (
+					<div className="text-center text-gray-500">Sección no encontrada</div>
+				);
+		}
+	};
+
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center min-h-screen bg-gray-100">
+				<LoadingSpinner text="Cargando panel de administración..." />
+			</div>
+		);
+	}
+
+	// Si no hay usuario autenticado, mostrar mensaje de error
+	if (!user) {
+		return (
+			<div className="flex items-center justify-center min-h-screen bg-gray-100">
+				<div className="text-center">
+					<p className="text-red-600 font-medium mb-4">
+						Error de autenticación. Redirigiendo...
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex min-h-screen bg-gray-100">
+			{/* Sidebar */}
+			<Sidebar
+				seccionActiva={seccionActiva}
+				setSeccionActiva={setSeccionActiva}
+				handleLogout={handleLogout}
+			/>
+
+			{/* Contenido principal */}
+			<div className="flex-1 ml-64">
+				{/* Barra superior */}
+				<div className="bg-white shadow-sm p-4 flex justify-between items-center">
+					<h1 className="text-2xl font-bold text-azul-primario flex items-center">
+						{getSeccionIcon(seccionActiva)}
+						{getSeccionTitulo(seccionActiva)}
+					</h1>
+
+					<div className="flex items-center space-x-4">
+						{allowsSearch(seccionActiva) && (
+							<div className="relative">
+								<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+								<input
+									type="text"
+									placeholder="Buscar..."
+									value={terminoBusqueda}
+									onChange={(e) => setTerminoBusqueda(e.target.value)}
+									className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario"
+									aria-label="Buscar elementos"
+								/>
+							</div>
+						)}
+
+						{allowsCreate(seccionActiva) && (
+							<button
+								onClick={() => abrirModal('crear')}
+								className="flex items-center space-x-2 bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors focus:outline-none focus:ring-2 focus:ring-azul-primario focus:ring-offset-2"
+								aria-label={`Crear nuevo ${getNuevoButtonText(seccionActiva)}`}>
+								<FiPlus size={16} />
+								<span>Nuevo {getNuevoButtonText(seccionActiva)}</span>
+							</button>
+						)}
+					</div>
+				</div>
+
+				{/* Contenido dinámico según la sección activa */}
+				<div className="p-6">{renderSeccionContent()}</div>
+			</div>
+
+			{/* Modal dinámico */}
+			{modalAbierto && (
+				<Suspense
+					fallback={
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+							<div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+						</div>
+					}>
+					<ModalContainer
+						seccion={
+							seccionActiva as
+								| 'abogados'
+								| 'clientes'
+								| 'casos'
+								| 'finanzas'
+								| 'configuracion'
+						}
+						tipo={tipoModal}
+						elemento={elementoSeleccionado}
+						onClose={cerrarModal}
+					/>
+				</Suspense>
+			)}
+		</div>
+	);
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiPieChart, FiBarChart2, FiTrendingUp, FiCalendar, FiDownload, FiFilter } from 'react-icons/fi';
+import { FiBarChart2, FiTrendingUp, FiDownload, FiFilter, FiPieChart } from 'react-icons/fi';
 
 export default function EstadisticasPanel() {
   const [periodo, setPeriodo] = useState<'mes' | 'trimestre' | 'año'>('mes');

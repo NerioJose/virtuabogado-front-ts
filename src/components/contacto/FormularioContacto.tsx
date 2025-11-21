@@ -47,7 +47,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
     asunto: '',
     mensaje: ''
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -90,7 +90,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Para campos que no usan debounce, validar inmediatamente
     if (name === 'asunto' || name === 'mensaje') {
       const fieldError = validateField(name as keyof FormData, value);
@@ -100,7 +100,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
   const validateForm = useCallback((): FormErrors => {
     const newErrors: FormErrors = {};
-    
+
     Object.keys(formData).forEach(key => {
       const fieldName = key as keyof FormData;
       if (fieldName !== 'telefono') { // telefono es opcional
@@ -108,25 +108,25 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
         if (error) newErrors[fieldName] = error;
       }
     });
-    
+
     return newErrors;
   }, [formData, validateField]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Aquí iría la lógica para enviar los datos al backend
       console.log('Datos del formulario:', formData);
-      
+
       // Simulación de envío exitoso
       setTimeout(() => {
         setIsSubmitting(false);
@@ -139,15 +139,15 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
           mensaje: ''
         });
         setErrors({});
-        
+
         onSubmitSuccess?.();
-        
+
         // Resetear el mensaje de éxito después de 5 segundos
         setTimeout(() => {
           setSubmitSuccess(false);
         }, 5000);
       }, 1500);
-      
+
     } catch (error) {
       console.error('Error al enviar el formulario:', error);
       setIsSubmitting(false);
@@ -172,20 +172,19 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -30 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6 }}
-      viewport={{ once: true }}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.25 }}
       className="glass-card p-8"
     >
       <h2 className="text-2xl font-bold text-azul-primario mb-6">Envíanos un mensaje</h2>
-      
+
       {submitSuccess && (
         <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
           ¡Gracias por tu mensaje! Te contactaremos pronto.
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="nombre" className="block text-sm font-medium text-azul-primario mb-1">
@@ -202,7 +201,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
           />
           {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>}
         </div>
-        
+
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-azul-primario mb-1">
             Correo electrónico *
@@ -218,7 +217,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
           />
           {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
         </div>
-        
+
         <div>
           <label htmlFor="telefono" className="block text-sm font-medium text-azul-primario mb-1">
             Teléfono (opcional)
@@ -233,7 +232,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             placeholder="+34 XXX XXX XXX"
           />
         </div>
-        
+
         <div>
           <label htmlFor="asunto" className="block text-sm font-medium text-azul-primario mb-1">
             Asunto *
@@ -253,7 +252,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
           </select>
           {errors.asunto && <p className="mt-1 text-sm text-red-600">{errors.asunto}</p>}
         </div>
-        
+
         <div>
           <label htmlFor="mensaje" className="block text-sm font-medium text-azul-primario mb-1">
             Mensaje *
@@ -269,7 +268,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
           ></textarea>
           {errors.mensaje && <p className="mt-1 text-sm text-red-600">{errors.mensaje}</p>}
         </div>
-        
+
         <div>
           <button
             type="submit"

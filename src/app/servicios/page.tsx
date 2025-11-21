@@ -164,9 +164,10 @@ export default function ServiciosPage() {
 							<motion.div
 								key={servicio.id}
 								initial={{ opacity: 0, y: 30 }}
-								whileInView={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.6, delay: index * 0.1 }}
-								viewport={{ once: true }}
+								animate={index === 0 ? { opacity: 1, y: 0 } : undefined}
+								whileInView={index === 0 ? undefined : { opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+								viewport={index === 0 ? undefined : { once: true, amount: 0.2 }}
 								className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-center ${index % 2 !== 0 ? 'lg:flex-row-reverse' : ''
 									}`}>
 								<div

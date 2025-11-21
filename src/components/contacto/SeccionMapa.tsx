@@ -5,27 +5,39 @@ import { motion } from 'framer-motion';
 
 const SeccionMapa = React.memo(() => {
   return (
-    <section className="py-16 bg-azul-claro/20">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-azul-primario mb-4">Nuestra ubicación</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">Visítanos en nuestra oficina central en Madrid.</p>
-        </div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="rounded-xl overflow-hidden shadow-lg h-[400px] relative"
-        >
-          {/* Aquí iría un mapa real, por ahora usamos una imagen de placeholder */}
-          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-            <p className="text-gray-500">Mapa de ubicación</p>
-          </div>
-        </motion.div>
-      </div>
-    </section>
+    <div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="text-center mb-8"
+      >
+        <h2 className="text-3xl font-bold text-azul-primario mb-4">
+          Nuestra Ubicación
+        </h2>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Nos encontramos en el estado Carabobo, Venezuela. Aquí puedes ver nuestra ubicación en el mapa.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="w-full h-[450px] rounded-xl overflow-hidden shadow-lg"
+      >
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d507183.4768929463!2d-68.1994!3d10.1621!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e8063ac94b61481%3A0x1d1b0f4c1c1c1c1c!2sEstado%20Carabobo%2C%20Venezuela!5e0!3m2!1ses!2sve!4v1732206000000!5m2!1ses!2sve&z=9"
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="Mapa de Carabobo, Venezuela"
+        />
+      </motion.div>
+    </div>
   );
 });
 

@@ -9,7 +9,7 @@ export default function CallToAction() {
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.8 }}
+					transition={{ duration: 0.3 }}
 					viewport={{ once: true }}
 					className="max-w-3xl mx-auto space-y-6">
 					<h2 className="text-3xl md:text-4xl font-bold">

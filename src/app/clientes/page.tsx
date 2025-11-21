@@ -77,7 +77,7 @@ export default function ClientesPage() {
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.8 }}
+						transition={{ duration: 0.3 }}
 						className="text-center max-w-3xl mx-auto">
 						<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-azul-primario leading-tight mb-6">
 							Nuestros <span className="text-vinotinto">Clientes</span>
@@ -108,7 +108,7 @@ export default function ClientesPage() {
 								key={testimonio.id}
 								initial={{ opacity: 0, y: 20 }}
 								whileInView={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.5, delay: index * 0.1 }}
+								transition={{ duration: 0.2 }}
 								viewport={{ once: true }}
 								className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
 								<div className="flex items-start gap-4 mb-4">
@@ -158,7 +158,7 @@ export default function ClientesPage() {
 								key={caso.id}
 								initial={{ opacity: 0, scale: 0.95 }}
 								whileInView={{ opacity: 1, scale: 1 }}
-								transition={{ duration: 0.5, delay: index * 0.1 }}
+								transition={{ duration: 0.2 }}
 								viewport={{ once: true }}
 								className="glass-card overflow-hidden">
 								<div className="relative h-48 w-full">
@@ -208,7 +208,7 @@ export default function ClientesPage() {
 								key={index}
 								initial={{ opacity: 0 }}
 								whileInView={{ opacity: 1 }}
-								transition={{ duration: 0.5, delay: index * 0.1 }}
+								transition={{ duration: 0.2 }}
 								viewport={{ once: true }}
 								className="flex items-center justify-center p-6">
 								<div className="relative h-32 w-full flex items-center justify-center bg-white rounded-lg shadow-sm border border-gray-100 p-4">

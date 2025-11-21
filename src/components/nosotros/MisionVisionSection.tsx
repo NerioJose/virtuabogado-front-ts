@@ -50,7 +50,7 @@ export default function MisionVisionSection() {
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							whileInView={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5, delay: 0.2 }}
+							transition={{ duration: 0.5, delay: 0 }}
 							viewport={{ once: true }}
 							className="glass-card p-8">
 							<div className="w-16 h-16 bg-azul-claro rounded-lg flex items-center justify-center text-azul-primario mb-6">

@@ -150,7 +150,7 @@ export default function ResumenCompraPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0 }}
           className="bg-white shadow overflow-hidden sm:rounded-lg mb-8"
         >
           <div className="px-4 py-5 sm:px-6 border-b border-gray-200">

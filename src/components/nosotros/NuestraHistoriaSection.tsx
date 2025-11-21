@@ -11,7 +11,7 @@ export default function NuestraHistoria() {
 						<motion.div
 							initial={{ opacity: 0, x: -30 }}
 							whileInView={{ opacity: 1, x: 0 }}
-							transition={{ duration: 0.6 }}
+							transition={{ duration: 0.25 }}
 							viewport={{ once: true }}
 							className="space-y-6">
 							<h2 className="text-3xl font-bold text-azul-primario">
@@ -41,7 +41,7 @@ export default function NuestraHistoria() {
 						<motion.div
 							initial={{ opacity: 0, x: 30 }}
 							whileInView={{ opacity: 1, x: 0 }}
-							transition={{ duration: 0.6, delay: 0.2 }}
+							transition={{ duration: 0.25, delay: 0 }}
 							viewport={{ once: true }}
 							className="relative h-[400px] w-full rounded-xl overflow-hidden shadow-lg">
 							<Image

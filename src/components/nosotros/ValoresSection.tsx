@@ -136,7 +136,7 @@ export default function ValoresSection() {
 								key={index}
 								initial={{ opacity: 0, y: 20 }}
 								whileInView={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.5, delay: index * 0.1 }}
+								transition={{ duration: 0.2 }}
 								viewport={{ once: true }}
 								className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
 								<div className="w-14 h-14 bg-azul-claro rounded-lg flex items-center justify-center text-azul-primario mb-4">

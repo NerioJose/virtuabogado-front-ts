@@ -13,7 +13,7 @@ export default function HeroSection() {
 						<motion.div
 							initial={{ opacity: 0, x: -20 }}
 							animate={{ opacity: 1, x: 0 }}
-							transition={{ duration: 0.8 }}
+							transition={{ duration: 0.3 }}
 							className="space-y-6">
 							<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-azul-primario leading-tight">
 								Asesoría legal{' '}
@@ -45,7 +45,7 @@ export default function HeroSection() {
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.8, delay: 0.2 }}
+							transition={{ duration: 0.3, delay: 0 }}
 							className="relative">
 							<div className="relative h-[400px] w-full">
 								<Image

@@ -42,9 +42,9 @@ export default function SectionTestimonios() {
 					{testimonios.map((testimonial, index) => (
 						<motion.div
 							key={index}
-							initial={{ opacity: 0, scale: 0.9 }}
+							initial={{ opacity: 0, scale: 0.95 }}
 							whileInView={{ opacity: 1, scale: 1 }}
-							transition={{ duration: 0.5, delay: index * 0.1 }}
+							transition={{ duration: 0.2 }}
 							viewport={{ once: true }}
 							className="bg-white p-6 rounded-xl shadow-md">
 							<div className="flex items-center gap-4 mb-4">

@@ -9,7 +9,7 @@ export default function HeroSection() {
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.8 }}
+						transition={{ duration: 0.3 }}
 						className="text-center max-w-3xl mx-auto">
 						<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-azul-primario leading-tight mb-6">
 							Sobre <span className="text-vinotinto">Nosotros</span>

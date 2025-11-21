@@ -46,8 +46,8 @@ const InformacionContacto = React.memo(() => {
         </svg>
       ),
       title: 'Dirección',
-      primary: 'Calle Principal 123',
-      secondary: '28001 Madrid, España'
+      primary: 'Estado Carabobo',
+      secondary: 'Venezuela'
     }
   ], []);
 
@@ -109,8 +109,8 @@ const InformacionContacto = React.memo(() => {
 
   const SocialLinkItem = React.memo(function SocialLinkItem({ link }: { link: SocialLink }) {
     return (
-      <a 
-        href={link.href} 
+      <a
+        href={link.href}
         className="w-10 h-10 bg-azul-claro rounded-full flex items-center justify-center text-azul-primario hover:bg-azul-primario hover:text-white transition-all duration-300"
         aria-label={link.label}
       >
@@ -121,10 +121,9 @@ const InformacionContacto = React.memo(() => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 30 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      viewport={{ once: true }}
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.25 }}
       className="space-y-8"
     >
       <div>
@@ -132,14 +131,14 @@ const InformacionContacto = React.memo(() => {
         <p className="text-gray-600 mb-8">
           Si prefieres contactarnos directamente, aquí tienes nuestros datos de contacto. Estaremos encantados de atenderte.
         </p>
-        
+
         <div className="space-y-6">
           {contactInfo.map((info, index) => (
             <ContactInfoItem key={index} info={info} />
           ))}
         </div>
       </div>
-      
+
       <div className="mt-12">
         <h3 className="text-xl font-bold text-azul-primario mb-4">Síguenos en redes sociales</h3>
         <div className="flex gap-4">

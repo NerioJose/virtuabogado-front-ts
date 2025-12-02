@@ -8,6 +8,17 @@ export enum UserRole {
     CLIENTE = 'cliente',
 }
 
+export interface Servicio {
+    id: number;
+    nombre?: string; // For checkout
+    titulo?: string; // For services page
+    descripcion: string;
+    precio?: number;
+    duracion?: string;
+    imagen?: string;
+    icono?: React.ReactNode;
+}
+
 export interface User {
     id: number;
     email: string;

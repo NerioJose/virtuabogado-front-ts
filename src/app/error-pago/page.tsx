@@ -80,8 +80,8 @@ export default function ErrorPagoPage() {
 	}, [searchParams]);
 
 	// Función para volver a intentar el pago
-	const reintentarPago = () => {
-		router.push('/pago');
+	const handleReintentar = () => {
+		router.push('/servicios');
 	};
 
 	// Función para solicitar ayuda
@@ -226,11 +226,11 @@ export default function ErrorPagoPage() {
 					<motion.button
 						whileHover={{ scale: 1.05 }}
 						whileTap={{ scale: 0.95 }}
-						onClick={reintentarPago}
+						onClick={handleReintentar}
 						className="btn-primary flex items-center justify-center">
 						<FiRefreshCw className="mr-2" /> Intentar nuevamente
 					</motion.button>
-					<Link href="/resumen-compra">
+					<Link href="/servicios">
 						<motion.button
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}

@@ -27,7 +27,7 @@ export default function MisServiciosPage() {
   // Estado para los servicios del cliente (simulado, vendría de una API)
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [cargando, setCargando] = useState(true);
-  
+
   // Simular carga de datos desde una API
   useEffect(() => {
     // Aquí se haría la llamada a la API para obtener los servicios del cliente
@@ -35,7 +35,7 @@ export default function MisServiciosPage() {
     const cargarServicios = async () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Datos de ejemplo
         const serviciosEjemplo: Servicio[] = [
           {
@@ -76,7 +76,7 @@ export default function MisServiciosPage() {
             estado: 'pendiente'
           }
         ];
-        
+
         setServicios(serviciosEjemplo);
       } catch (error) {
         console.error('Error al cargar los servicios:', error);
@@ -84,9 +84,9 @@ export default function MisServiciosPage() {
         setCargando(false);
       }
     };
-    
+
     cargarServicios();
-    
+
     // Comprobar si hay un servicio recién comprado en localStorage
     const servicioComprado = localStorage.getItem('servicioComprado');
     if (servicioComprado) {
@@ -95,7 +95,7 @@ export default function MisServiciosPage() {
       try {
         const nuevoServicio = JSON.parse(servicioComprado);
         setServicios(prevServicios => [nuevoServicio, ...prevServicios]);
-        
+
         // Limpiar localStorage después de usar el dato
         localStorage.removeItem('servicioComprado');
       } catch (error) {
@@ -103,7 +103,7 @@ export default function MisServiciosPage() {
       }
     }
   }, []);
-  
+
   // Función para obtener el color según el estado
   const obtenerColorEstado = (estado: Servicio['estado']) => {
     switch (estado) {
@@ -117,7 +117,7 @@ export default function MisServiciosPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-  
+
   // Función para obtener el texto del estado
   const obtenerTextoEstado = (estado: Servicio['estado']) => {
     switch (estado) {
@@ -131,18 +131,18 @@ export default function MisServiciosPage() {
         return 'Estado desconocido';
     }
   };
-  
+
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div className="mb-4 sm:mb-0">
             <Link href="/" className="inline-block">
-              <Image 
-                src={logo} 
-                alt="VirtuAbogado Logo" 
-                width={150} 
-                height={50} 
+              <Image
+                src={logo}
+                alt="VirtuAbogado Logo"
+                width={150}
+                height={50}
                 className="mb-4"
               />
             </Link>
@@ -161,7 +161,7 @@ export default function MisServiciosPage() {
             </motion.button>
           </Link>
         </div>
-        
+
         {cargando ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-azul-primario"></div>
@@ -192,7 +192,7 @@ export default function MisServiciosPage() {
           </motion.div>
         ) : (
           <div className="space-y-6">
-            {servicios.map((servicio, index) => (
+            {servicios.map((servicio) => (
               <motion.div
                 key={servicio.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -212,9 +212,9 @@ export default function MisServiciosPage() {
                       Contratado el {servicio.fecha}
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-600 mb-4">{servicio.descripcion}</p>
-                  
+
                   {servicio.estado === 'programado' && servicio.fechaCita && (
                     <div className="flex items-center mb-4 p-3 bg-blue-50 rounded-lg">
                       <FiCalendar className="text-blue-600 mr-2" />
@@ -226,7 +226,7 @@ export default function MisServiciosPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {servicio.estado === 'pendiente' && (
                     <div className="flex items-center mb-4 p-3 bg-yellow-50 rounded-lg">
                       <FiClock className="text-yellow-600 mr-2" />
@@ -235,7 +235,7 @@ export default function MisServiciosPage() {
                       </p>
                     </div>
                   )}
-                  
+
                   {servicio.documentos && servicio.documentos.length > 0 && (
                     <div className="mt-4 border-t border-gray-200 pt-4">
                       <h3 className="text-sm font-medium text-gray-900 mb-2">Documentos disponibles:</h3>
@@ -256,7 +256,7 @@ export default function MisServiciosPage() {
                       </ul>
                     </div>
                   )}
-                  
+
                   <div className="mt-6 flex flex-wrap gap-3">
                     {servicio.estado === 'programado' && (
                       <Link href={`/videollamada/${servicio.id}`}>
@@ -270,7 +270,7 @@ export default function MisServiciosPage() {
                         </motion.button>
                       </Link>
                     )}
-                    
+
                     <Link href={`/chat/${servicio.id}`}>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -281,7 +281,7 @@ export default function MisServiciosPage() {
                         Chat con abogado
                       </motion.button>
                     </Link>
-                    
+
                     <Link href={`/detalle-servicio/${servicio.id}`}>
                       <motion.button
                         whileHover={{ scale: 1.05 }}

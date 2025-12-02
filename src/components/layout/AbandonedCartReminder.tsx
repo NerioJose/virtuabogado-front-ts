@@ -81,9 +81,9 @@ export default function AbandonedCartReminder() {
 								<p className="text-azul-primario font-medium mt-2">
 									{typeof abandonedService.precio === 'number'
 										? abandonedService.precio.toLocaleString('es-ES', {
-												style: 'currency',
-												currency: 'EUR',
-										  })
+											style: 'currency',
+											currency: 'EUR',
+										})
 										: abandonedService.precio}
 								</p>
 							</div>
@@ -94,7 +94,7 @@ export default function AbandonedCartReminder() {
 									className="text-gray-500 hover:text-gray-700 text-sm">
 									No, gracias
 								</button>
-								<Link href="/resumen-compra">
+								<Link href="/servicios">
 									<button
 										onClick={handleContinue}
 										className="bg-azul-primario text-white px-4 py-2 rounded-md hover:bg-azul-primario/90 transition-colors flex items-center">

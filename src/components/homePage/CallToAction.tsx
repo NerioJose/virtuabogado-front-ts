@@ -19,7 +19,7 @@ export default function CallToAction() {
 						Únete a nuestra plataforma y conecta con abogados especializados.
 					</p>
 					<div className="pt-4">
-						<Link href="/register">
+						<Link href="/servicios">
 							<motion.button
 								whileHover={{ scale: 1.05 }}
 								whileTap={{ scale: 0.95 }}

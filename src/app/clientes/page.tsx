@@ -103,7 +103,7 @@ export default function ClientesPage() {
 					</div>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-						{testimonios.map((testimonio, index) => (
+						{testimonios.map((testimonio) => (
 							<motion.div
 								key={testimonio.id}
 								initial={{ opacity: 0, y: 20 }}
@@ -153,7 +153,7 @@ export default function ClientesPage() {
 					</div>
 
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-						{casosExito.map((caso, index) => (
+						{casosExito.map((caso) => (
 							<motion.div
 								key={caso.id}
 								initial={{ opacity: 0, scale: 0.95 }}

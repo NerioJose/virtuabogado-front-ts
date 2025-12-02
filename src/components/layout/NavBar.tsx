@@ -1,93 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import logo from '/public/logo/logo_sf_1.png';
 import userImage from '/public/user.png';
-
-interface User {
-	name?: string;
-	picture?: string;
-	role?: string;
-}
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 const Navbar = () => {
 	const [isOpen, setIsOpen] = useState(false);
-	const [user, setUser] = useState<User | null>(null);
 	const router = useRouter();
 
-	useEffect(() => {
-		const fetchUser = async () => {
-			try {
-				const userDataString = localStorage.getItem('user');
+	// Usar authStore para estado de autenticación
+	const { user, logout } = useAuthStore();
 
-				if (userDataString) {
-					const userData = JSON.parse(userDataString);
-					setUser(userData);
-				} else {
-					setUser(null);
-				}
-			} catch (error) {
-				console.error('Error al obtener el usuario:', error);
-				setUser(null);
-			}
-		};
 
-		fetchUser();
-
-		// Escuchar cambios en localStorage
-		const handleStorageChange = (e: StorageEvent) => {
-			if (e.key === 'user') {
-				if (e.newValue) {
-					try {
-						const userData = JSON.parse(e.newValue);
-						setUser(userData);
-					} catch (error) {
-						console.error('Error parsing user data:', error);
-						setUser(null);
-					}
-				} else {
-					setUser(null);
-				}
-			}
-		};
-
-		// Escuchar eventos personalizados para cambios de auth
-		const handleAuthChange = () => {
-			fetchUser();
-		};
-
-		window.addEventListener('storage', handleStorageChange);
-		window.addEventListener('authChange', handleAuthChange);
-
-		return () => {
-			window.removeEventListener('storage', handleStorageChange);
-			window.removeEventListener('authChange', handleAuthChange);
-		};
-	}, []);
 
 	const handleLogout = () => {
 		try {
-			// Eliminar los datos del usuario del localStorage
-			localStorage.removeItem('user');
-
-			// Actualizar el estado inmediatamente
-			setUser(null);
-
-			// Cerrar el menú móvil si está abierto
 			setIsOpen(false);
-
-			// Disparar evento personalizado para notificar el cambio
-			window.dispatchEvent(new Event('authChange'));
-
-			// Redirigir al usuario a la página de login
+			logout();
 			router.push('/login');
-
-			// Opcional: forzar refresh de la página si es necesario
-			// router.refresh();
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
 		}
@@ -122,7 +57,7 @@ const Navbar = () => {
 				</Link>
 
 				{/* Menú Desktop */}
-				<div className="hidden md:flex space-x-6 items-center overflow-x-auto">
+				<div className="hidden md:flex space-x-6 items-center">
 					{navItems.map((item) => (
 						<motion.div
 							key={item}
@@ -143,7 +78,7 @@ const Navbar = () => {
 						</motion.div>
 					))}
 
-					{user?.role === 'admin' && (
+					{user?.rol === 'admin' && (
 						<motion.div className="relative group">
 							<Link
 								href="/dashboard"
@@ -172,7 +107,7 @@ const Navbar = () => {
 								/>
 							</div>
 							<span className="text-azul-primario font-medium hidden sm:inline">
-								{user?.name || 'Usuario'}
+								{user?.nombre || 'Usuario'}
 							</span>
 							<button
 								onClick={handleLogout}
@@ -182,18 +117,14 @@ const Navbar = () => {
 							</button>
 						</div>
 					) : (
-						<div className="flex items-center space-x-2">
-							<Link href="/login">
-								<button className="btn-primary px-5 py-2">
-									Iniciar sesión
-								</button>
-							</Link>
-							<Link href="/register">
-								<button className="ml-2 px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300">
-									Registrarse
-								</button>
-							</Link>
-						</div>
+						<Link href="/login">
+							<motion.button
+								whileHover={{ scale: 1.05 }}
+								whileTap={{ scale: 0.95 }}
+								className="btn-primary">
+								Iniciar Sesión
+							</motion.button>
+						</Link>
 					)}
 				</div>
 
@@ -250,7 +181,7 @@ const Navbar = () => {
 							</motion.div>
 						))}
 
-						{user?.role === 'admin' && (
+						{user?.rol === 'admin' && (
 							<motion.div whileHover={{ scale: 1.05 }}>
 								<Link
 									href="/dashboard"
@@ -274,7 +205,7 @@ const Navbar = () => {
 										/>
 									</div>
 									<span className="text-azul-primario font-medium">
-										{user?.name || 'Usuario'}
+										{user?.nombre || 'Usuario'}
 									</span>
 								</div>
 								<button
@@ -290,13 +221,6 @@ const Navbar = () => {
 										className="w-full btn-primary px-5 py-2"
 										onClick={() => setIsOpen(false)}>
 										Iniciar sesión
-									</button>
-								</Link>
-								<Link href="/register">
-									<button
-										className="w-full px-5 py-2 bg-azul-primario hover:bg-azul-primario/90 text-white rounded-xl shadow-lg transition-all duration-300"
-										onClick={() => setIsOpen(false)}>
-										Registrarse
 									</button>
 								</Link>
 							</div>

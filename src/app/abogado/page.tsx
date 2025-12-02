@@ -1,43 +1,28 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AbogadoPanel from '@/components/abogado/AbogadoPanel';
-import { Abogado } from '@/types';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 export default function AbogadoPage() {
 	const router = useRouter();
-	const [user, setUser] = useState<Abogado | null>(null);
-	const [loading, setLoading] = useState(true);
+	const { user, isAuthenticated, checkAuth } = useAuthStore();
 
 	// Verificar autenticación y rol de abogado
 	useEffect(() => {
-		const verificarAbogado = async () => {
-			try {
-				// Para propósitos de prueba, verificamos los datos simulados en localStorage
-				const userDataString = localStorage.getItem('user');
+		checkAuth();
+	}, [checkAuth]);
 
-				if (!userDataString) {
-					throw new Error('No autenticado');
-				}
+	useEffect(() => {
+		if (!isAuthenticated && user === null) {
+			router.push('/login');
+		} else if (user && user.rol !== 'abogado') {
+			console.error('No autorizado');
+			router.push('/login');
+		}
+	}, [isAuthenticated, user, router]);
 
-				const userData: Abogado = JSON.parse(userDataString);
-
-				if (userData.role !== 'abogado') {
-					throw new Error('No autorizado');
-				}
-
-				setUser(userData);
-				setLoading(false);
-			} catch (error) {
-				console.error('Error de autenticación:', error);
-				router.push('/login');
-			}
-		};
-
-		verificarAbogado();
-	}, [router]);
-
-	if (loading) {
+	if (!isAuthenticated || !user) {
 		return (
 			<div className="flex items-center justify-center min-h-screen bg-gray-100">
 				<div className="text-center">
@@ -50,5 +35,5 @@ export default function AbogadoPage() {
 		);
 	}
 
-	return <AbogadoPanel abogadoId={user!.id} />;
+	return <AbogadoPanel abogadoId={user.id} />;
 }

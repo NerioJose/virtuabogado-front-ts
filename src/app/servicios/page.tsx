@@ -3,13 +3,18 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { CheckoutModal, useCheckout } from '@/features/checkout';
 
 export default function ServiciosPage() {
+	const { openCheckout } = useCheckout();
+
 	// Datos de los servicios
 	const servicios = [
 		{
 			id: 1,
+			nombre: 'Consultas Legales',
 			titulo: 'Consultas Legales',
+			precio: 99.99,
 			descripcion:
 				'Resuelve tus dudas legales con abogados especializados en diferentes áreas del derecho. Nuestros profesionales te brindarán asesoramiento claro y preciso para ayudarte a tomar las mejores decisiones.',
 			icono: (
@@ -30,9 +35,11 @@ export default function ServiciosPage() {
 		},
 		{
 			id: 2,
+			nombre: 'Revisión de Documentos',
 			titulo: 'Revisión de Documentos',
+			precio: 149.99,
 			descripcion:
-				'Análisis y revisión de contratos, acuerdos y documentos legales por profesionales. Asegúrate de que tus documentos cumplan con todos los requisitos legales y protejan tus intereses.',
+				'Análisis yrevisión de contratos, acuerdos y documentos legales por profesionales. Asegúrate de que tus documentos cumplan con todos los requisitos legales y protejan tus intereses.',
 			icono: (
 				<svg
 					className="w-10 h-10"
@@ -51,7 +58,9 @@ export default function ServiciosPage() {
 		},
 		{
 			id: 3,
+			nombre: 'Representación Legal',
 			titulo: 'Representación Legal',
+			precio: 299.99,
 			descripcion:
 				'Representación profesional en procesos judiciales y extrajudiciales. Nuestros abogados te acompañarán en cada etapa del proceso, defendiendo tus derechos e intereses con dedicación y profesionalismo.',
 			icono: (
@@ -72,7 +81,9 @@ export default function ServiciosPage() {
 		},
 		{
 			id: 4,
+			nombre: 'Asesoría Empresarial',
 			titulo: 'Asesoría Empresarial',
+			precio: 199.99,
 			descripcion:
 				'Servicios legales especializados para empresas y emprendedores. Desde la constitución de sociedades hasta la resolución de conflictos comerciales, te brindamos el apoyo legal que tu negocio necesita.',
 			icono: (
@@ -93,7 +104,9 @@ export default function ServiciosPage() {
 		},
 		{
 			id: 5,
+			nombre: 'Derecho Familiar',
 			titulo: 'Derecho Familiar',
+			precio: 179.99,
 			descripcion:
 				'Asesoramiento en asuntos de familia como divorcios, custodia, pensiones alimenticias y más. Abordamos estos temas sensibles con empatía y profesionalismo, buscando siempre las mejores soluciones para todas las partes involucradas.',
 			icono: (
@@ -114,7 +127,9 @@ export default function ServiciosPage() {
 		},
 		{
 			id: 6,
+			nombre: 'Derecho Inmobiliario',
 			titulo: 'Derecho Inmobiliario',
+			precio: 249.99,
 			descripcion:
 				'Servicios legales relacionados con propiedades, compraventas, arrendamientos y conflictos inmobiliarios. Te ayudamos a proteger tus inversiones y a resolver cualquier problema legal relacionado con bienes raíces.',
 			icono: (
@@ -182,14 +197,13 @@ export default function ServiciosPage() {
 									<p className="text-gray-600 leading-relaxed">
 										{servicio.descripcion}
 									</p>
-									<Link href="/resumen-compra">
-										<motion.button
-											whileHover={{ scale: 1.05 }}
-											whileTap={{ scale: 0.95 }}
-											className="btn-primary mt-4">
-											Solicitar este servicio
-										</motion.button>
-									</Link>
+									<motion.button
+										onClick={() => openCheckout(servicio)}
+										whileHover={{ scale: 1.05 }}
+										whileTap={{ scale: 0.95 }}
+										className="btn-primary mt-4">
+										Solicitar este servicio
+									</motion.button>
 								</div>
 								<div
 									className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-lg ${index % 2 !== 0 ? 'lg:order-1' : ''
@@ -302,6 +316,9 @@ export default function ServiciosPage() {
 					</div>
 				</div>
 			</section>
+
+			{/* Checkout Modal */}
+			<CheckoutModal />
 		</main>
 	);
 }

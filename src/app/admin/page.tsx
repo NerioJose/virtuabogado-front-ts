@@ -12,12 +12,14 @@ import {
 	FiSearch,
 	FiPlus,
 } from 'react-icons/fi';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 // Importar componentes principales
 import Sidebar from '@/components/admin/Sidebar';
 import DashboardStats from '@/components/admin/DashboardStats';
 
 // Lazy loading para componentes pesados
+const RecentOrders = lazy(() => import('@/components/admin/RecentOrders'));
 const AbogadosPanel = lazy(() => import('@/components/admin/AbogadosPanel'));
 const ClientesPanel = lazy(() => import('@/components/admin/ClientesPanel'));
 const CasosPanel = lazy(() => import('@/components/admin/CasosPanel'));
@@ -31,7 +33,7 @@ const ConfiguracionPanel = lazy(
 const ModalContainer = lazy(() => import('@/components/admin/ModalContainer'));
 
 // Importar tipos
-import { AdminUser, ElementoSeleccionable, SeccionAdmin } from '@/types/index';
+import { ElementoSeleccionable, SeccionAdmin } from '@/types/index';
 
 // Componente de Loading reutilizable
 const LoadingSpinner = ({
@@ -44,9 +46,8 @@ const LoadingSpinner = ({
 	<div className="flex justify-center items-center h-64">
 		<div className="text-center">
 			<div
-				className={`border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4 ${
-					size === 'small' ? 'w-8 h-8' : 'w-16 h-16'
-				}`}></div>
+				className={`border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4 ${size === 'small' ? 'w-8 h-8' : 'w-16 h-16'
+					}`}></div>
 			<p className="text-azul-primario font-medium">{text}</p>
 		</div>
 	</div>
@@ -54,8 +55,7 @@ const LoadingSpinner = ({
 
 export default function AdminPage() {
 	const router = useRouter();
-	const [user, setUser] = useState<AdminUser | null>(null);
-	const [loading, setLoading] = useState(true);
+	const { user, isAuthenticated, checkAuth } = useAuthStore();
 	const [seccionActiva, setSeccionActiva] = useState<SeccionAdmin>('dashboard');
 	const [modalAbierto, setModalAbierto] = useState(false);
 	const [tipoModal, setTipoModal] = useState<
@@ -67,45 +67,18 @@ export default function AdminPage() {
 
 	// Verificar autenticación y rol de administrador
 	useEffect(() => {
-		const verificarAdmin = async () => {
-			try {
-				// Verificar si estamos en el cliente (browser)
-				if (typeof window === 'undefined') {
-					return;
-				}
+		checkAuth();
+	}, [checkAuth]);
 
-				// Para propósitos de prueba, verificamos los datos simulados en localStorage
-				const userDataString = localStorage.getItem('user');
-
-				if (!userDataString) {
-					throw new Error('No autenticado');
-				}
-
-				const userData: AdminUser = JSON.parse(userDataString);
-
-				// Validar estructura del objeto userData
-				if (!userData || typeof userData !== 'object') {
-					throw new Error('Datos de usuario inválidos');
-				}
-
-				if (userData.role !== 'admin') {
-					throw new Error('No autorizado');
-				}
-
-				setUser(userData);
-			} catch (error) {
-				console.error('Error de autenticación:', error);
-				// Redirigir solo si estamos en el cliente
-				if (typeof window !== 'undefined') {
-					router.push('/login');
-				}
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		verificarAdmin();
-	}, [router]);
+	useEffect(() => {
+		if (!isAuthenticated && user === null) {
+			// Solo redirigir si definitivamente no está autenticado
+			router.push('/login');
+		} else if (user && user.rol !== 'admin') {
+			console.error('No autorizado');
+			router.push('/login');
+		}
+	}, [isAuthenticated, user, router]);
 
 	// Funciones para modales
 	const abrirModal = (
@@ -125,11 +98,6 @@ export default function AdminPage() {
 	// Manejador de cierre de sesión
 	const handleLogout = async () => {
 		try {
-			// Verificar si estamos en el cliente
-			if (typeof window === 'undefined') {
-				return;
-			}
-
 			// Eliminar los datos del usuario del localStorage
 			localStorage.removeItem('user');
 
@@ -211,7 +179,15 @@ export default function AdminPage() {
 
 		switch (seccionActiva) {
 			case 'dashboard':
-				return <DashboardStats />;
+				return (
+					<>
+						<DashboardStats />
+						<Suspense
+							fallback={<LoadingSpinner text="Cargando órdenes..." />}>
+							<RecentOrders />
+						</Suspense>
+					</>
+				);
 			case 'abogados':
 				return (
 					<Suspense fallback={fallback}>
@@ -267,23 +243,10 @@ export default function AdminPage() {
 		}
 	};
 
-	if (loading) {
+	if (!isAuthenticated || !user) {
 		return (
 			<div className="flex items-center justify-center min-h-screen bg-gray-100">
-				<LoadingSpinner text="Cargando panel de administración..." />
-			</div>
-		);
-	}
-
-	// Si no hay usuario autenticado, mostrar mensaje de error
-	if (!user) {
-		return (
-			<div className="flex items-center justify-center min-h-screen bg-gray-100">
-				<div className="text-center">
-					<p className="text-red-600 font-medium mb-4">
-						Error de autenticación. Redirigiendo...
-					</p>
-				</div>
+				<LoadingSpinner text="Verificando permisos..." />
 			</div>
 		);
 	}
@@ -348,11 +311,11 @@ export default function AdminPage() {
 					<ModalContainer
 						seccion={
 							seccionActiva as
-								| 'abogados'
-								| 'clientes'
-								| 'casos'
-								| 'finanzas'
-								| 'configuracion'
+							| 'abogados'
+							| 'clientes'
+							| 'casos'
+							| 'finanzas'
+							| 'configuracion'
 						}
 						tipo={tipoModal}
 						elemento={elementoSeleccionado}

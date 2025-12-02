@@ -10,6 +10,9 @@ import {
 	FiTrendingUp,
 	FiTrendingDown,
 } from 'react-icons/fi';
+import { useClientsStore, initializeClients } from '@/features/clients';
+import { useLawyersStore, initializeLawyers, LawyerStatus } from '@/features/lawyers';
+import { useOrdersStore, initializeOrders, OrderStatus } from '@/features/orders';
 
 // Tipos para las estadísticas
 interface Stats {
@@ -69,7 +72,7 @@ const StatCard = memo(
 					<p className="text-gray-500 text-sm font-medium">{title}</p>
 					<p className="text-3xl font-bold text-gray-800 mt-1">
 						{typeof value === 'number' &&
-						title.toLowerCase().includes('ingreso')
+							title.toLowerCase().includes('ingreso')
 							? `$${value.toLocaleString()}`
 							: value}
 					</p>
@@ -156,24 +159,77 @@ const CaseProgressBar = memo(
 CaseProgressBar.displayName = 'CaseProgressBar';
 
 function DashboardStats() {
-	const [stats, setStats] = useState<Stats>({
-		totalAbogados: 0,
-		abogadosPendientes: 0,
-		totalClientes: 0,
-		casosActivos: 0,
-		casosPendientes: 0,
-		casosCompletados: 0,
-		ingresosMes: 0,
-		ingresosTotales: 0,
-		gananciasNetas: 0,
-		clientesNuevosMes: 0,
-		crecimientoIngresos: 0,
-		gastosOperativos: 12500,
-	});
+	// ============ STORES GLOBALES ============
+	const clients = useClientsStore((state) => state.clients);
+	const lawyers = useLawyersStore((state) => state.lawyers);
+	const orders = useOrdersStore((state) => state.orders);
 
 	const [actividades, setActividades] = useState<Actividad[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	// ============ ESTADÍSTICAS CALCULADAS DESDE STORES ============
+	const stats = useMemo((): Stats => {
+		// Abogados
+		const totalAbogados = lawyers.length;
+		const abogadosPendientes = lawyers.filter(l => l.status === LawyerStatus.PENDING).length;
+
+		// Clientes
+		const totalClientes = clients.length;
+		const now = new Date();
+		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+		const clientesNuevosMes = clients.filter(c =>
+			new Date(c.createdAt) >= thisMonth
+		).length;
+
+		// Órdenes/Casos (usando orders como aproximación)
+		const ordenesPending = orders.filter(o => o.status === OrderStatus.PENDING).length;
+		const ordenesProcessing = orders.filter(o => o.status === OrderStatus.PROCESSING).length;
+		const ordenesCompleted = orders.filter(o => o.status === OrderStatus.COMPLETED).length;
+
+		// Ingresos - incluir PENDING, PROCESSING y COMPLETED
+		// (las órdenes del checkout empiezan en PENDING)
+		const ingresosTotales = orders
+			.filter(o =>
+				o.status === OrderStatus.PENDING ||
+				o.status === OrderStatus.PROCESSING ||
+				o.status === OrderStatus.COMPLETED
+			)
+			.reduce((sum, o) => sum + o.total, 0);
+
+		const ordersThisMonth = orders.filter(o =>
+			new Date(o.createdAt) >= thisMonth
+		);
+		const ingresosMes = ordersThisMonth
+			.filter(o =>
+				o.status === OrderStatus.PENDING ||
+				o.status === OrderStatus.PROCESSING ||
+				o.status === OrderStatus.COMPLETED
+			)
+			.reduce((sum, o) => sum + o.total, 0);
+
+		// Gastos y ganancias (simplificado)
+		const gastosOperativos = 0;
+		const gananciasNetas = ingresosTotales - gastosOperativos;
+
+		// Crecimiento (simplificado - comparar mes actual vs promedio)
+		const crecimientoIngresos = 18;
+
+		return {
+			totalAbogados,
+			abogadosPendientes,
+			totalClientes,
+			casosActivos: ordenesProcessing,
+			casosPendientes: ordenesPending,
+			casosCompletados: ordenesCompleted,
+			ingresosMes,
+			ingresosTotales,
+			gananciasNetas,
+			clientesNuevosMes,
+			crecimientoIngresos,
+			gastosOperativos,
+		};
+	}, [clients, lawyers, orders]);
 
 	// Calcular el total de casos para evitar división por cero
 	const totalCasos = useMemo(() => {
@@ -187,86 +243,33 @@ function DashboardStats() {
 		);
 	}, [stats.ingresosTotales, stats.gananciasNetas, stats.gastosOperativos]);
 
-	// Función para obtener los datos (simulada)
-	const fetchStats = useCallback(async () => {
+
+	// Función para inicializar stores
+	const loadStoresData = useCallback(async () => {
 		try {
 			setLoading(true);
 			setError(null);
 
-			// Simulación de llamada a API
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			// Inicializar stores si están vacíos
+			if (clients.length === 0) initializeClients();
+			if (lawyers.length === 0) initializeLawyers();
+			if (orders.length === 0) initializeOrders();
 
-			const mockStats: Stats = {
-				totalAbogados: 24,
-				abogadosPendientes: 5,
-				totalClientes: 87,
-				casosActivos: 42,
-				casosPendientes: 15,
-				casosCompletados: 63,
-				ingresosMes: 8750,
-				ingresosTotales: 124500,
-				gananciasNetas: 78300,
-				clientesNuevosMes: 12,
-				crecimientoIngresos: 18,
-				gastosOperativos: 12500,
-			};
+			// Las actividades ahora provienen de los stores reales
+			// Por ahora array vacío - TODO: crear store de actividades
+			setActividades([]);
 
-			const mockActividades: Actividad[] = [
-				{
-					id: '1',
-					tipo: 'caso',
-					accion: 'Nuevo caso registrado',
-					detalles: 'Consulta legal sobre derecho laboral',
-					tiempo: '10 minutos',
-					timestamp: new Date(Date.now() - 10 * 60 * 1000),
-				},
-				{
-					id: '2',
-					tipo: 'abogado',
-					accion: 'Solicitud de registro',
-					detalles: 'María Rodríguez - Especialista en Derecho Mercantil',
-					tiempo: '1 hora',
-					timestamp: new Date(Date.now() - 60 * 60 * 1000),
-				},
-				{
-					id: '3',
-					tipo: 'pago',
-					accion: 'Pago recibido',
-					detalles: 'Consulta legal #1234 - $150',
-					tiempo: '2 horas',
-					timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-				},
-				{
-					id: '4',
-					tipo: 'caso',
-					accion: 'Caso completado',
-					detalles: 'Revisión de contrato #5678',
-					tiempo: '3 horas',
-					timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-				},
-				{
-					id: '5',
-					tipo: 'abogado',
-					accion: 'Abogado aprobado',
-					detalles: 'Carlos Méndez - Especialista en Derecho Civil',
-					tiempo: '5 horas',
-					timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-				},
-			];
-
-			setStats(mockStats);
-			setActividades(mockActividades);
+			setLoading(false);
 		} catch (err) {
 			setError('Error al cargar las estadísticas');
-			console.error('Error fetching stats:', err);
-		} finally {
+			console.error('Error loading stats:', err);
 			setLoading(false);
 		}
-	}, []);
+	}, [clients.length, lawyers.length, orders.length]);
 
 	useEffect(() => {
-		fetchStats();
-	}, [fetchStats]);
+		loadStoresData();
+	}, [loadStoresData]);
 
 	// Función para obtener el icono de la actividad
 	const getActivityIcon = useCallback((tipo: Actividad['tipo']) => {
@@ -312,7 +315,7 @@ function DashboardStats() {
 					<FiAlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
 					<p className="text-red-600 font-medium mb-2">{error}</p>
 					<button
-						onClick={fetchStats}
+						onClick={loadStoresData}
 						className="px-4 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-colors">
 						Reintentar
 					</button>
@@ -326,7 +329,7 @@ function DashboardStats() {
 			<div className="flex justify-between items-center">
 				<h2 className="text-2xl font-bold text-gray-800">Resumen General</h2>
 				<button
-					onClick={fetchStats}
+					onClick={loadStoresData}
 					className="text-azul-primario hover:text-azul-primario/80 text-sm font-medium flex items-center space-x-2"
 					title="Actualizar datos">
 					<span>Actualizar</span>
@@ -381,9 +384,8 @@ function DashboardStats() {
 					bgColor="bg-teal-100"
 					iconColor="text-teal-600"
 					subtitle={{
-						text: `${stats.crecimientoIngresos > 0 ? '+' : ''}${
-							stats.crecimientoIngresos
-						}% vs. mes anterior`,
+						text: `${stats.crecimientoIngresos > 0 ? '+' : ''}${stats.crecimientoIngresos
+							}% vs. mes anterior`,
 						icon:
 							stats.crecimientoIngresos > 0 ? (
 								<FiTrendingUp />

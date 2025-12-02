@@ -24,7 +24,7 @@ export default function HeroSection() {
 								tus consultas legales de manera rápida y eficiente.
 							</p>
 							<div className="flex flex-col sm:flex-row gap-4 pt-4">
-								<Link href="/register">
+								<Link href="/servicios">
 									<motion.button
 										whileHover={{ scale: 1.05 }}
 										whileTap={{ scale: 0.95 }}

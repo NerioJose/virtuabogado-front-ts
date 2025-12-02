@@ -10,9 +10,8 @@ export default function NuestraHistoria() {
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 						<motion.div
 							initial={{ opacity: 0, x: -30 }}
-							whileInView={{ opacity: 1, x: 0 }}
+							animate={{ opacity: 1, x: 0 }}
 							transition={{ duration: 0.25 }}
-							viewport={{ once: true }}
 							className="space-y-6">
 							<h2 className="text-3xl font-bold text-azul-primario">
 								Nuestra Historia
@@ -40,9 +39,8 @@ export default function NuestraHistoria() {
 						</motion.div>
 						<motion.div
 							initial={{ opacity: 0, x: 30 }}
-							whileInView={{ opacity: 1, x: 0 }}
-							transition={{ duration: 0.25, delay: 0 }}
-							viewport={{ once: true }}
+							animate={{ opacity: 1, x: 0 }}
+							transition={{ duration: 0.25 }}
 							className="relative h-[400px] w-full rounded-xl overflow-hidden shadow-lg">
 							<Image
 								src="/logo/logo_sf_1.png"

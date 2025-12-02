@@ -57,7 +57,7 @@ export default function NuestroEquipoSection() {
 					</div>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-						{equipo.map((miembro, index) => (
+						{equipo.map((miembro) => (
 							<motion.div
 								key={miembro.id}
 								initial={{ opacity: 0, y: 20 }}

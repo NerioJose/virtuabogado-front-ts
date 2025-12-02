@@ -11,9 +11,6 @@ export const ROUTES = {
 
     // Auth routes
     LOGIN: '/login',
-    REGISTER: '/register',
-    REGISTER_CLIENT: '/register-client',
-    REGISTER_LAWYER: '/register-lawyer',
     RECUPERAR_PASSWORD: '/recuperar-password',
 
     // Dashboard routes
@@ -23,8 +20,6 @@ export const ROUTES = {
 
     // Service routes
     MIS_SERVICIOS: '/mis-servicios',
-    PAGO: '/pago',
-    RESUMEN_COMPRA: '/resumen-compra',
     COMPRA_EXITOSA: '/compra-exitosa',
     ERROR_PAGO: '/error-pago',
 } as const;
@@ -35,9 +30,6 @@ export const PUBLIC_ROUTES = [
     ROUTES.NOSOTROS,
     ROUTES.CONTACTO,
     ROUTES.LOGIN,
-    ROUTES.REGISTER,
-    ROUTES.REGISTER_CLIENT,
-    ROUTES.REGISTER_LAWYER,
     ROUTES.RECUPERAR_PASSWORD,
 ];
 

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import {
 	FiDollarSign,
 	//FiFileText,
@@ -14,12 +15,14 @@ import {
 } from 'react-icons/fi';
 /*import { FiDollarSign, FiDownload, FiFilter, FiCalendar, FiPieChart, FiTrendingUp, FiClock } from 'react-icons/fi';*/
 
+import { OrderStatus } from '@/features/orders/types/orders.types';
+
 interface FacturacionPanelProps {
-	abogadoId: number;
+	abogadoId: string;
 }
 
 interface Factura {
-	id: number;
+	id: string;
 	numero: string;
 	cliente: string;
 	concepto: string;
@@ -32,8 +35,25 @@ interface Factura {
 type PeriodoFacturacion = 'mes' | 'trimestre' | 'año';
 
 export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
-	const [facturas, setFacturas] = useState<Factura[]>([]);
-	const [loading, setLoading] = useState(true);
+	// Use real orders as invoices
+	const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
+
+	// Derive invoices from completed orders
+	const facturas: Factura[] = useMemo(() => {
+		return orders
+			.filter(o => o.status === OrderStatus.COMPLETED)
+			.map(o => ({
+				id: o.id.toString(),
+				numero: `F-${o.id.toString().slice(0, 8)}`,
+				cliente: o.userName || o.userEmail || 'Cliente',
+				concepto: o.items?.[0]?.serviceName || 'Servicios Legales',
+				fecha: new Date(o.completedAt || o.createdAt).toISOString().split('T')[0],
+				importe: Number(o.total),
+				estado: 'pagada' // Assuming completed orders are paid
+			}));
+	}, [orders]);
+
+	const [loading, setLoading] = useState(false); // Managed by React Query
 	const [filtroEstado, setFiltroEstado] = useState<
 		'todas' | 'pagadas' | 'pendientes' | 'vencidas'
 	>('todas');
@@ -50,102 +70,37 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	});
 
 	useEffect(() => {
-		// Simulación de carga de datos
-		const cargarFacturas = async () => {
-			try {
-				// Aquí iría la llamada a la API para obtener las facturas del abogado
-				// Por ahora, simulamos una respuesta después de 1 segundo
-				await new Promise((resolve) => setTimeout(resolve, 1000));
+		if (!facturas) return;
 
-				// Datos de ejemplo
-				const facturasEjemplo: Factura[] = [
-					{
-						id: 1,
-						numero: 'F-2023-001',
-						cliente: 'María González',
-						concepto: 'Consulta inicial caso laboral',
-						fecha: '2023-05-15',
-						importe: 150.0,
-						estado: 'pagada',
-					},
-					{
-						id: 2,
-						numero: 'F-2023-002',
-						cliente: 'Juan Pérez',
-						concepto: 'Redacción de contrato',
-						fecha: '2023-05-20',
-						importe: 300.0,
-						estado: 'pagada',
-					},
-					{
-						id: 3,
-						numero: 'F-2023-003',
-						cliente: 'Elena Díaz',
-						concepto: 'Representación judicial',
-						fecha: '2023-06-05',
-						importe: 500.0,
-						estado: 'pendiente',
-					},
-					{
-						id: 4,
-						numero: 'F-2023-004',
-						cliente: 'Roberto Fernández',
-						concepto: 'Asesoría legal mensual',
-						fecha: '2023-06-10',
-						importe: 250.0,
-						estado: 'pendiente',
-					},
-					{
-						id: 5,
-						numero: 'F-2023-005',
-						cliente: 'Laura Martínez',
-						concepto: 'Consulta caso laboral',
-						fecha: '2023-04-25',
-						importe: 150.0,
-						estado: 'vencida',
-					},
-				];
+		// Calcular resumen financiero
+		const ingresosPagados = facturas
+			.filter((f) => f.estado === 'pagada')
+			.reduce((sum, f) => sum + f.importe, 0);
 
-				setFacturas(facturasEjemplo);
+		const importesPendientes = facturas
+			.filter((f) => f.estado === 'pendiente' || f.estado === 'vencida')
+			.reduce((sum, f) => sum + f.importe, 0);
 
-				// Calcular resumen financiero
-				const ingresosPagados = facturasEjemplo
-					.filter((f) => f.estado === 'pagada')
-					.reduce((sum, f) => sum + f.importe, 0);
+		const facturasPagadas = facturas.filter(
+			(f) => f.estado === 'pagada'
+		).length;
+		const facturasPendientes = facturas.filter(
+			(f) => f.estado === 'pendiente'
+		).length;
+		const facturasVencidas = facturas.filter(
+			(f) => f.estado === 'vencida'
+		).length;
 
-				const importesPendientes = facturasEjemplo
-					.filter((f) => f.estado === 'pendiente' || f.estado === 'vencida')
-					.reduce((sum, f) => sum + f.importe, 0);
-
-				const facturasPagadas = facturasEjemplo.filter(
-					(f) => f.estado === 'pagada'
-				).length;
-				const facturasPendientes = facturasEjemplo.filter(
-					(f) => f.estado === 'pendiente'
-				).length;
-				const facturasVencidas = facturasEjemplo.filter(
-					(f) => f.estado === 'vencida'
-				).length;
-
-				setResumenFinanciero({
-					ingresosMes: ingresosPagados,
-					ingresosTrimestre: ingresosPagados * 3, // Simulación
-					ingresosAnio: ingresosPagados * 12, // Simulación
-					pendienteCobro: importesPendientes,
-					facturasPagadas,
-					facturasPendientes,
-					facturasVencidas,
-				});
-
-				setLoading(false);
-			} catch (error) {
-				console.error('Error al cargar facturas:', error);
-				setLoading(false);
-			}
-		};
-
-		cargarFacturas();
-	}, [abogadoId]);
+		setResumenFinanciero({
+			ingresosMes: ingresosPagados,
+			ingresosTrimestre: ingresosPagados * 3, // Simulación projection
+			ingresosAnio: ingresosPagados * 12, // Simulación projection
+			pendienteCobro: importesPendientes,
+			facturasPagadas,
+			facturasPendientes,
+			facturasVencidas,
+		});
+	}, [facturas]);
 
 	// Filtrar facturas según el estado seleccionado
 	const facturasFiltradas = facturas.filter((factura) => {
@@ -232,16 +187,16 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 									{periodo === 'mes'
 										? 'mensuales'
 										: periodo === 'trimestre'
-										? 'trimestrales'
-										: 'anuales'}
+											? 'trimestrales'
+											: 'anuales'}
 								</p>
 								<p className="text-xl font-bold text-gray-900">
 									{formatearImporte(
 										periodo === 'mes'
 											? resumenFinanciero.ingresosMes
 											: periodo === 'trimestre'
-											? resumenFinanciero.ingresosTrimestre
-											: resumenFinanciero.ingresosAnio
+												? resumenFinanciero.ingresosTrimestre
+												: resumenFinanciero.ingresosAnio
 									)}
 								</p>
 							</div>
@@ -324,38 +279,34 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 					<div className="flex flex-wrap gap-2">
 						<button
 							onClick={() => setFiltroEstado('todas')}
-							className={`px-3 py-1 rounded-full text-sm ${
-								filtroEstado === 'todas'
-									? 'bg-azul-primario text-white'
-									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-							}`}>
+							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'todas'
+								? 'bg-azul-primario text-white'
+								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+								}`}>
 							Todas
 						</button>
 						<button
 							onClick={() => setFiltroEstado('pagadas')}
-							className={`px-3 py-1 rounded-full text-sm ${
-								filtroEstado === 'pagadas'
-									? 'bg-green-500 text-white'
-									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-							}`}>
+							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'pagadas'
+								? 'bg-green-500 text-white'
+								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+								}`}>
 							Pagadas
 						</button>
 						<button
 							onClick={() => setFiltroEstado('pendientes')}
-							className={`px-3 py-1 rounded-full text-sm ${
-								filtroEstado === 'pendientes'
-									? 'bg-yellow-500 text-white'
-									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-							}`}>
+							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'pendientes'
+								? 'bg-yellow-500 text-white'
+								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+								}`}>
 							Pendientes
 						</button>
 						<button
 							onClick={() => setFiltroEstado('vencidas')}
-							className={`px-3 py-1 rounded-full text-sm ${
-								filtroEstado === 'vencidas'
-									? 'bg-red-500 text-white'
-									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-							}`}>
+							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'vencidas'
+								? 'bg-red-500 text-white'
+								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+								}`}>
 							Vencidas
 						</button>
 					</div>

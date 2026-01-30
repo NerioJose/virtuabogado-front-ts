@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { FiFile, FiFileText, FiDownload, FiUpload, FiTrash2, FiFolder, FiSearch } from 'react-icons/fi';
 
 interface DocumentosPanelProps {
-  abogadoId: number;
+  abogadoId: string;
 }
 
 interface Documento {
-  id: number;
+  id: string;
   nombre: string;
   tipo: string;
   caso?: string;
@@ -18,79 +18,12 @@ interface Documento {
 
 export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'contratos' | 'demandas' | 'informes' | 'otros'>('todos');
 
-  useEffect(() => {
-    // Simulación de carga de datos
-    const cargarDocumentos = async () => {
-      try {
-        // Aquí iría la llamada a la API para obtener los documentos del abogado
-        // Por ahora, simulamos una respuesta después de 1 segundo
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Datos de ejemplo
-        setDocumentos([
-          {
-            id: 1,
-            nombre: 'Contrato laboral - María González',
-            tipo: 'contratos',
-            caso: 'Consulta sobre contrato laboral',
-            cliente: 'María González',
-            fechaSubida: '2023-06-18',
-            tamaño: '2.4 MB',
-            url: '/documentos/contrato-laboral-maria.pdf'
-          },
-          {
-            id: 2,
-            nombre: 'Demanda de divorcio - Juan Pérez',
-            tipo: 'demandas',
-            caso: 'Asesoría en divorcio',
-            cliente: 'Juan Pérez',
-            fechaSubida: '2023-06-14',
-            tamaño: '3.1 MB',
-            url: '/documentos/demanda-divorcio-juan.pdf'
-          },
-          {
-            id: 3,
-            nombre: 'Informe pericial - Caso Elena Díaz',
-            tipo: 'informes',
-            caso: 'Consulta sobre herencia',
-            cliente: 'Elena Díaz',
-            fechaSubida: '2023-06-11',
-            tamaño: '5.7 MB',
-            url: '/documentos/informe-pericial-elena.pdf'
-          },
-          {
-            id: 4,
-            nombre: 'Contrato mercantil - Roberto Fernández',
-            tipo: 'contratos',
-            caso: 'Revisión de contrato mercantil',
-            cliente: 'Roberto Fernández',
-            fechaSubida: '2023-06-10',
-            tamaño: '1.8 MB',
-            url: '/documentos/contrato-mercantil-roberto.pdf'
-          },
-          {
-            id: 5,
-            nombre: 'Plantilla de contrato de arrendamiento',
-            tipo: 'otros',
-            fechaSubida: '2023-05-20',
-            tamaño: '1.2 MB',
-            url: '/documentos/plantilla-contrato-arrendamiento.docx'
-          }
-        ]);
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Error al cargar documentos:', error);
-        setLoading(false);
-      }
-    };
-
-    cargarDocumentos();
-  }, [abogadoId]);
+  // TODO: Implement real documents API
+  // For now, clear mock data.
 
   // Filtrar documentos según término de búsqueda y filtro de tipo
   const documentosFiltrados = documentos.filter(documento => {
@@ -158,8 +91,8 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
             <button
               onClick={() => setFiltroTipo('todos')}
               className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'todos'
-                  ? 'bg-azul-primario text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-azul-primario text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Todos
@@ -167,8 +100,8 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
             <button
               onClick={() => setFiltroTipo('contratos')}
               className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'contratos'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Contratos
@@ -176,8 +109,8 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
             <button
               onClick={() => setFiltroTipo('demandas')}
               className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'demandas'
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-amber-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Demandas
@@ -185,8 +118,8 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
             <button
               onClick={() => setFiltroTipo('informes')}
               className={`px-3 py-1 rounded-full text-sm ${filtroTipo === 'informes'
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Informes

@@ -5,9 +5,160 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { FiChevronDown, FiFileText, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import logo from '/public/logo/logo_sf_1.png';
 import userImage from '/public/user.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useOrdersStore } from '@/features/orders';
+import { User, UserRole } from '@/shared/types/entities.types';
+
+// Componente del menú desplegable de usuario
+interface UserMenuProps {
+	user: User;
+	onLogout: () => void;
+}
+
+const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const orders = useOrdersStore((state) => state.orders);
+
+	// Contar servicios activos del usuario (PENDIENTE)
+	const userActiveServices = orders.filter(
+		order =>
+			order.userId === user.id &&
+			order.status === 'PENDIENTE'
+	).length;
+
+	return (
+		<div className="relative">
+			{/* Botón del usuario */}
+			<button
+				onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+				className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors"
+			>
+				<div className="relative w-10 h-10">
+					<Image
+						src={user.picture || userImage}
+						alt="User"
+						fill
+						className="rounded-full border-2 border-azul-primario object-cover"
+						loading="lazy"
+					/>
+				</div>
+				<span className="text-azul-primario font-medium hidden sm:inline">
+					{user?.nombre || 'Usuario'}
+				</span>
+				<FiChevronDown
+					className={`text-azul-primario transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+				/>
+			</button>
+
+			{/* Dropdown */}
+			<AnimatePresence>
+				{isDropdownOpen && (
+					<>
+						{/* Overlay para cerrar al hacer click fuera */}
+						<div
+							className="fixed inset-0 z-40"
+							onClick={() => setIsDropdownOpen(false)}
+						/>
+
+						<motion.div
+							initial={{ opacity: 0, y: -10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -10 }}
+							transition={{ duration: 0.2 }}
+							className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
+						>
+							{/* Info del usuario */}
+							<div className="px-4 py-3 border-b border-gray-100">
+								<p className="text-sm font-semibold text-gray-900">
+									{user.nombre || user.email}
+								</p>
+								<p className="text-xs text-gray-500 mt-1">
+									{user.email}
+								</p>
+							</div>
+
+							{/* Enlaces del menú */}
+							<div className="py-2">
+								{/* Mis Servicios - Visible para todos los logueados */}
+								{/* Mis Servicios - Visible solo para clientes o abogados (no admin) */}
+								{user.rol !== UserRole.ADMIN && (
+									<Link href="/mis-servicios">
+										<button
+											onClick={() => setIsDropdownOpen(false)}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between group transition-colors"
+										>
+											<div className="flex items-center space-x-3">
+												<FiFileText className="text-azul-primario" />
+												<span className="text-gray-700 group-hover:text-azul-primario">
+													Mis Servicios
+												</span>
+											</div>
+											{userActiveServices > 0 && (
+												<span className="bg-azul-primario text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+													{userActiveServices}
+												</span>
+											)}
+										</button>
+									</Link>
+								)}
+
+								{/* Abogado Panel (solo abogado) */}
+								{user.rol === UserRole.ABOGADO && (
+									<Link href="/abogado">
+										<button
+											onClick={() => setIsDropdownOpen(false)}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 group transition-colors"
+										>
+											<FiSettings className="text-azul-primario" />
+											<span className="text-gray-700 group-hover:text-azul-primario">
+												Panel de Abogado
+											</span>
+										</button>
+									</Link>
+								)}
+
+								{/* Admin Dashboard (solo admin) */}
+								{user.rol === UserRole.ADMIN && (
+									<Link href="/admin">
+										<button
+											onClick={() => setIsDropdownOpen(false)}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 group transition-colors"
+										>
+											<FiSettings className="text-azul-primario" />
+											<span className="text-gray-700 group-hover:text-azul-primario">
+												Admin Dashboard
+											</span>
+										</button>
+									</Link>
+								)}
+							</div>
+
+							{/* Cerrar sesión */}
+							<div className="border-t border-gray-100 pt-2">
+								<button
+									onClick={() => {
+										setIsDropdownOpen(false);
+										onLogout();
+									}}
+									className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center space-x-3 group transition-colors"
+								>
+									<FiLogOut className="text-red-600" />
+									<span className="text-red-600 font-medium">
+										Cerrar Sesión
+									</span>
+								</button>
+							</div>
+						</motion.div>
+					</>
+				)}
+			</AnimatePresence>
+		</div>
+	);
+};
+
 
 const Navbar = () => {
 	const [isOpen, setIsOpen] = useState(false);
@@ -58,30 +209,31 @@ const Navbar = () => {
 
 				{/* Menú Desktop */}
 				<div className="hidden md:flex space-x-6 items-center">
-					{navItems.map((item) => (
-						<motion.div
-							key={item}
-							className="relative group"
-							whileHover={{ scale: 1.05 }}
-							transition={{ duration: 0.3 }}>
-							<Link
-								href={`/${item.toLowerCase().replace(/\s+/g, '-')}`}
-								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors duration-200">
-								{item}
-							</Link>
-							<motion.span
-								className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto"
-								initial={{ width: 0 }}
-								animate={{ width: '100%' }}
-								transition={{ duration: 0.5 }}
-							/>
-						</motion.div>
-					))}
+					{/* Links de Navegación */}
+					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
+						<Link href="/nosotros" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Nosotros</Link>
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+					</motion.div>
 
-					{user?.rol === 'admin' && (
+					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
+						<Link href="/servicios" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Servicios</Link>
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+					</motion.div>
+
+					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
+						<Link href="/contacto" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Contacto</Link>
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+					</motion.div>
+
+					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
+						<Link href="/clientes" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Clientes</Link>
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+					</motion.div>
+
+					{user?.rol === UserRole.ADMIN && (
 						<motion.div className="relative group">
 							<Link
-								href="/dashboard"
+								href="/admin"
 								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors duration-200">
 								Dashboard
 							</Link>
@@ -94,28 +246,25 @@ const Navbar = () => {
 						</motion.div>
 					)}
 
+					{user?.rol === UserRole.ABOGADO && (
+						<motion.div className="relative group">
+							<Link
+								href="/abogado"
+								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors duration-200">
+								Mi Panel
+							</Link>
+							<motion.span
+								className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto"
+								initial={{ width: 0 }}
+								animate={{ width: '100%' }}
+								transition={{ duration: 0.5 }}
+							/>
+						</motion.div>
+					)}
+
 					{/* Renderizado condicional mejorado */}
 					{user ? (
-						<div className="flex items-center space-x-4">
-							<div className="relative w-10 h-10">
-								<Image
-									src={user.picture || userImage}
-									alt="User"
-									fill
-									className="rounded-full border-2 border-azul-primario object-cover"
-									loading="lazy"
-								/>
-							</div>
-							<span className="text-azul-primario font-medium hidden sm:inline">
-								{user?.nombre || 'Usuario'}
-							</span>
-							<button
-								onClick={handleLogout}
-								className="btn-primary hover:bg-vinotinto-light px-4 py-1.5 text-sm sm:text-base"
-								aria-label="Cerrar sesión">
-								Cerrar sesión
-							</button>
-						</div>
+						<UserMenu user={user} onLogout={handleLogout} />
 					) : (
 						<Link href="/login">
 							<motion.button
@@ -181,13 +330,24 @@ const Navbar = () => {
 							</motion.div>
 						))}
 
-						{user?.rol === 'admin' && (
+						{user?.rol === UserRole.ADMIN && (
 							<motion.div whileHover={{ scale: 1.05 }}>
 								<Link
-									href="/dashboard"
+									href="/admin"
 									className="block text-azul-primario text-lg font-medium"
 									onClick={() => setIsOpen(false)}>
 									Dashboard
+								</Link>
+							</motion.div>
+						)}
+
+						{user?.rol === UserRole.ABOGADO && (
+							<motion.div whileHover={{ scale: 1.05 }}>
+								<Link
+									href="/abogado"
+									className="block text-azul-primario text-lg font-medium"
+									onClick={() => setIsOpen(false)}>
+									Mi Panel
 								</Link>
 							</motion.div>
 						)}
@@ -208,6 +368,35 @@ const Navbar = () => {
 										{user?.nombre || 'Usuario'}
 									</span>
 								</div>
+								{user.rol !== UserRole.ADMIN && (
+									<Link href="/mis-servicios">
+										<button
+											onClick={() => setIsOpen(false)}
+											className="w-full btn-secondary px-4 py-2 text-left flex items-center justify-between">
+											<span>Mis Servicios</span>
+										</button>
+									</Link>
+								)}
+
+								{user.rol === UserRole.ABOGADO && (
+									<Link href="/abogado">
+										<button
+											onClick={() => setIsOpen(false)}
+											className="w-full btn-secondary px-4 py-2 text-left">
+											Panel de Abogado
+										</button>
+									</Link>
+								)}
+
+								{user.rol === UserRole.ADMIN && (
+									<Link href="/admin">
+										<button
+											onClick={() => setIsOpen(false)}
+											className="w-full btn-secondary px-4 py-2 text-left">
+											Admin Dashboard
+										</button>
+									</Link>
+								)}
 								<button
 									onClick={handleLogout}
 									className="w-full btn-primary hover:bg-vinotinto-light px-4 py-2 text-left">

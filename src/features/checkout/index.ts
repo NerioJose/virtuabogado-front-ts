@@ -1,4 +1,5 @@
 // Checkout Components
+export { CheckoutLayoutWrapper } from './CheckoutLayoutWrapper';
 export { CheckoutModal } from './components/CheckoutModal';
 export { StepIndicator } from './components/StepIndicator';
 export { ServiceSummary } from './components/ServiceSummary';
@@ -8,6 +9,7 @@ export { ConfirmationStep } from './components/ConfirmationStep';
 export { AutoLoginIndicator } from './components/AutoLoginIndicator';
 export { LoadingOverlay } from './components/LoadingOverlay';
 export { ErrorMessage } from './components/ErrorMessage';
+export { CartRecovery } from './components/CartRecovery';
 
 // Hooks
 export { useCheckout } from './hooks/useCheckout';

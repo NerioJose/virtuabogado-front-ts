@@ -1,130 +1,106 @@
 /**
- * Servicio de autenticación
+ * Servicio de autenticación con Supabase
  */
 
-// import { apiClient } from '@/infrastructure/api/client';
-import { localStorageAdapter } from '@/infrastructure/storage/localStorage.adapter';
+import { createClient } from '@/utils/supabase/client';
 import { User, UserRole } from '@/shared/types/entities.types';
-import {
-    LoginCredentials,
-    RegisterData,
-    // AuthResponse will be used when connecting to real API
-} from '../types/auth.types';
+import { LoginCredentials, RegisterData } from '../types/auth.types';
 
 export class AuthService {
-    private readonly STORAGE_KEY = 'auth-storage';
-
     /**
-     * Iniciar sesión
-     * TODO: Reemplazar con llamada real a la API cuando esté disponible
+     * Iniciar sesión con Supabase
      */
     async login(credentials: LoginCredentials): Promise<User> {
-        try {
-            // MOCK: Simular respuesta de la API
-            // En producción, descomente la siguiente línea:
-            // const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+        const supabase = createClient();
 
-            // Simulación para desarrollo
-            await new Promise((resolve) => setTimeout(resolve, 800));
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.password
+        });
 
-            const mockUser: User = {
-                id: credentials.rol === UserRole.ADMIN ? 1 : 2,
-                email: credentials.email || 'usuario@ejemplo.com',
-                nombre:
-                    credentials.rol === UserRole.ADMIN
-                        ? 'Administrador'
-                        : 'Abogado Demo',
-                rol: credentials.rol || UserRole.ABOGADO,
-                picture: '/user.png',
-            };
-
-            return mockUser;
-        } catch (error) {
-            console.error('Error en login:', error);
-            throw new Error('Error al iniciar sesión. Por favor intenta de nuevo.');
+        if (error) {
+            console.error('Error en Supabase login:', error);
+            throw new Error(error.message);
         }
+
+        if (!data.user) {
+            throw new Error("No se pudo obtener el usuario");
+        }
+
+        // Mapear usuario de Supabase a nuestra entidad User
+        return this.mapSupabaseUserToEntity(data.user);
     }
 
     /**
-     * Registrar nuevo usuario
-     * TODO: Reemplazar con llamada real a la API cuando esté disponible
+     * Registrar nuevo usuario en Supabase
      */
     async register(data: RegisterData): Promise<User> {
-        try {
-            // MOCK: Simular respuesta de la API
-            // En producción:
-            // const response = await apiClient.post<AuthResponse>('/auth/register', data);
+        const supabase = createClient();
 
-            // Simulación para desarrollo
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+        const { data: authData, error } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: {
+                data: {
+                    nombre: data.nombre,
+                    telefono: data.telefono,
+                    rol: 'CLIENTE', // Rol por defecto
+                }
+            }
+        });
 
-            const mockUser: User = {
-                id: Math.floor(Math.random() * 10000),
-                email: data.email,
-                nombre: data.nombre,
-                rol: data.rol,
-                telefono: data.telefono,
-            };
-
-            return mockUser;
-        } catch (error) {
-            console.error('Error en registro:', error);
-            throw new Error('Error al registrar usuario. Por favor intenta de nuevo.');
+        if (error) {
+            console.error('Error en Supabase register:', error);
+            throw new Error(error.message);
         }
+
+        if (!authData.user) {
+            throw new Error("Error al crear usuario");
+        }
+
+        return this.mapSupabaseUserToEntity(authData.user);
     }
 
     /**
      * Cerrar sesión
      */
     async logout(): Promise<void> {
-        try {
-            // TODO: Llamar a la API para invalidar el token
-            // await apiClient.post('/auth/logout');
-
-            // Limpiar storage
-            localStorageAdapter.remove(this.STORAGE_KEY);
-        } catch (error) {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signOut();
+        if (error) {
             console.error('Error en logout:', error);
-            throw new Error('Error al cerrar sesión.');
+            throw new Error(error.message);
         }
     }
 
     /**
-     * Verificar si el usuario está autenticado
+     * Obtener usuario actual (Sincrónico - solo verifica sesión activa en cliente)
+     * Nota: Para validación segura usar getUser() asíncrono
      */
-    isAuthenticated(): boolean {
-        const authData = localStorageAdapter.get<{ state: { user: User } }>(
-            this.STORAGE_KEY
-        );
-        return !!authData?.state?.user;
+    async getCurrentUser(): Promise<User | null> {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        return this.mapSupabaseUserToEntity(user);
     }
 
     /**
-     * Obtener usuario actual del storage
+     * Helper para mapear usuario de Supabase a entidad User del dominio
      */
-    getCurrentUser(): User | null {
-        const authData = localStorageAdapter.get<{ state: { user: User } }>(
-            this.STORAGE_KEY
-        );
-        return authData?.state?.user || null;
-    }
-
-    /**
-     * Verificar si el usuario tiene un rol específico
-     */
-    hasRole(role: UserRole): boolean {
-        const user = this.getCurrentUser();
-        return user?.rol === role;
-    }
-
-    /**
-     * Verificar si el usuario tiene alguno de los roles especificados
-     */
-    hasAnyRole(roles: UserRole[]): boolean {
-        const user = this.getCurrentUser();
-        return roles.some((role) => user?.rol === role);
+    private mapSupabaseUserToEntity(supabaseUser: any): User {
+        return {
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            nombre: supabaseUser.user_metadata?.nombre || '',
+            rol: (supabaseUser.user_metadata?.rol as UserRole) || 'CLIENTE',
+            telefono: supabaseUser.user_metadata?.telefono || undefined,
+            especialidad: supabaseUser.user_metadata?.especialidad || undefined,
+            matricula: supabaseUser.user_metadata?.numeroColegiado || supabaseUser.user_metadata?.matricula || undefined,
+            experiencia: supabaseUser.user_metadata?.experienciaAnios || supabaseUser.user_metadata?.experiencia || undefined,
+            createdAt: new Date(supabaseUser.created_at),
+            updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
+        };
     }
 }
 
-// Exportar instancia singleton
 export const authService = new AuthService();

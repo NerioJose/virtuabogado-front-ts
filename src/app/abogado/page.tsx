@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AbogadoPanel from '@/components/abogado/AbogadoPanel';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { UserRole } from '@/shared/types/entities.types';
 
 export default function AbogadoPage() {
 	const router = useRouter();
@@ -16,7 +17,7 @@ export default function AbogadoPage() {
 	useEffect(() => {
 		if (!isAuthenticated && user === null) {
 			router.push('/login');
-		} else if (user && user.rol !== 'abogado') {
+		} else if (user && user.rol !== UserRole.ABOGADO) {
 			console.error('No autorizado');
 			router.push('/login');
 		}

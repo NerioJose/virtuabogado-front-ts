@@ -11,11 +11,13 @@ import {
 	FiMessageSquare,
 	FiUser,
 	FiDollarSign,
-	FiFileText,
-	// FiAlertCircle,
 	FiCheckCircle,
+	FiFileText,
 	FiLogOut,
 } from 'react-icons/fi';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
 import CasosAbogadoPanel from './CasosAbogadoPanel';
 import AgendaPanel from './AgendaPanel';
 import MensajesPanel from './MensajesPanel';
@@ -25,7 +27,7 @@ import DocumentosPanel from './DocumentosPanel';
 import PerfilAbogadoPanel from './PerfilAbogadoPanel';
 
 interface AbogadoPanelProps {
-	abogadoId?: number;
+	abogadoId?: string;
 }
 
 export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
@@ -33,14 +35,6 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const [seccionActiva, setSeccionActiva] = useState('casos');
 	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [estadisticas, setEstadisticas] = useState({
-		casosActivos: 0,
-		casosPendientes: 0,
-		casosCompletados: 0,
-		clientesActivos: 0,
-		proximaCita: '',
-		ingresosMes: 0,
-	});
 
 	// Manejador de cierre de sesión
 	const handleLogout = async () => {
@@ -55,46 +49,72 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		}
 	};
 
-	useEffect(() => {
-		// Simulación de carga de datos del abogado
-		const cargarDatosAbogado = async () => {
-			try {
-				// Aquí iría la llamada a la API para obtener los datos del abogado
-				// Por ahora, simulamos una respuesta después de 1 segundo
-				await new Promise((resolve) => setTimeout(resolve, 1000));
+	// ============ REACT QUERY - REAL DATA ============
+	// Obtener ID del abogado actual (desde las props o, idealmente, desde el auth store si es el usuario logueado)
+	// Nota: Para este MVP, asumimos que si no viene abogadoId, usamos el del usuario logueado o uno por defecto
+	// const user = useAuthStore(state => state.user);
+	// const currentAbogadoId = abogadoId || user?.id || '1'; 
+	const currentAbogadoId = abogadoId || 'abogado-test-id'; // Fallback por ahora
 
-				// Datos de ejemplo
-				setAbogado({
-					id: abogadoId || 1,
-					nombre: 'Carlos Méndez',
-					email: 'carlos.mendez@ejemplo.com',
-					telefono: '+34 612 345 678',
-					especialidad: 'Derecho Civil',
-					numeroColegiado: 'AB12345',
-					experienciaAnios: 8,
-					valoracionMedia: 4.8,
-				});
+	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
 
-				setEstadisticas({
-					casosActivos: 12,
-					casosPendientes: 3,
-					casosCompletados: 45,
-					clientesActivos: 18,
-					proximaCita: '2023-06-20 10:00',
-					ingresosMes: 2500,
-				});
-
-				setLoading(false);
-			} catch (error) {
-				console.error('Error al cargar datos del abogado:', error);
-				setLoading(false);
-			}
+	// Calcular estadísticas en tiempo real
+	const estadisticas = (() => {
+		const stats = {
+			casosActivos: 0,
+			casosPendientes: 0,
+			casosCompletados: 0,
+			clientesActivos: 0,
+			proximaCita: new Date().toISOString(), // Mock por ahora
+			ingresosMes: 0,
 		};
 
-		cargarDatosAbogado();
-	}, [abogadoId]);
+		const uniqueClients = new Set();
 
-	if (loading) {
+		orders.forEach((order: any) => { // Type check fix
+			// Conteo por estado
+			if (order.status === OrderStatus.PROCESSING) {
+				stats.casosActivos++;
+			} else if (order.status === OrderStatus.PENDING) {
+				stats.casosPendientes++;
+			} else if (order.status === OrderStatus.COMPLETED) {
+				stats.casosCompletados++;
+				stats.ingresosMes += Number(order.total);
+			}
+
+			// Clientes únicos
+			if (order.userId) {
+				uniqueClients.add(order.userId);
+			}
+		});
+
+		stats.clientesActivos = uniqueClients.size;
+		return stats;
+	})();
+
+	// User data from Auth Store
+	const user = useAuthStore(state => state.user);
+
+	useEffect(() => {
+		if (user) {
+			setAbogado({
+				id: user.id || currentAbogadoId,
+				nombre: user.nombre || user.email?.split('@')[0] || 'Abogado',
+				email: user.email || '',
+				telefono: user.telefono || '',
+				especialidad: user.especialidad || 'General',
+				numeroColegiado: user.matricula || 'N/A', // Mapped from matricula in User entity
+				experienciaAnios: user.experiencia || 0, // Mapped from experiencia in User entity
+				valoracionMedia: 5.0, // This might need a real rating system later
+			});
+			setLoading(false);
+		} else {
+			// Fallback or wait for auth
+			setLoading(false);
+		}
+	}, [user, currentAbogadoId]);
+
+	if (loading || isLoadingOrders) {
 		return (
 			<div className="flex items-center justify-center h-full">
 				<div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
@@ -118,11 +138,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('casos')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'casos'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'casos'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiBriefcase className="mr-3" />
 								<span>Mis Casos</span>
 							</button>
@@ -130,11 +149,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('agenda')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'agenda'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'agenda'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiCalendar className="mr-3" />
 								<span>Agenda</span>
 							</button>
@@ -142,11 +160,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('mensajes')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'mensajes'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'mensajes'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiMessageSquare className="mr-3" />
 								<span>Mensajes</span>
 							</button>
@@ -154,11 +171,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('clientes')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'clientes'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'clientes'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiUser className="mr-3" />
 								<span>Mis Clientes</span>
 							</button>
@@ -166,11 +182,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('facturacion')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'facturacion'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'facturacion'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiDollarSign className="mr-3" />
 								<span>Facturación</span>
 							</button>
@@ -178,11 +193,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('documentos')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'documentos'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'documentos'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiFileText className="mr-3" />
 								<span>Documentos</span>
 							</button>
@@ -190,11 +204,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						<li>
 							<button
 								onClick={() => setSeccionActiva('perfil')}
-								className={`w-full flex items-center px-6 py-3 text-left ${
-									seccionActiva === 'perfil'
-										? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-										: 'text-gray-600 hover:bg-gray-100'
-								}`}>
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'perfil'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
 								<FiUser className="mr-3" />
 								<span>Mi Perfil</span>
 							</button>

@@ -9,11 +9,12 @@ export enum ClientStatus {
 }
 
 export interface Client {
-    id: number;
+    id: string; // UUID
     nombre: string;
     email: string;
     telefono?: string;
     direccion?: string;
+    dni?: string;
     status: ClientStatus;
     createdAt: Date;
     updatedAt: Date;
@@ -29,7 +30,7 @@ export interface CreateClientRequest {
 }
 
 export interface UpdateClientRequest {
-    id: number;
+    id: string;
     nombre?: string;
     email?: string;
     telefono?: string;
@@ -52,10 +53,11 @@ export interface ClientsState {
 
     // Actions
     addClient: (client: Client) => void;
+    setClients: (clients: Client[]) => void;
     fetchClients: (filters?: ClientsFilters) => Promise<void>;
-    updateClient: (id: number, data: Partial<Client>) => void;
-    deleteClient: (id: number) => void;
-    getClientById: (id: number) => Client | undefined;
+    updateClient: (id: string, data: Partial<Client>) => void;
+    deleteClient: (id: string) => void;
+    getClientById: (id: string) => Client | undefined;
     setFilters: (filters: ClientsFilters) => void;
     clearFilters: () => void;
     reset: () => void;

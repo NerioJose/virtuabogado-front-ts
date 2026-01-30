@@ -9,6 +9,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { User } from '@/shared/types/entities.types';
+import { useCheckoutStore } from '@/features/checkout/store/checkoutStore';
+import { useOrdersStore } from '@/features/orders/store/ordersStore';
+// import { useClientsStore } from '@/features/clients/store/clientsStore';
+// import { useLawyersStore } from '@/features/lawyers/store/lawyersStore';
 
 interface AuthState {
     // Estado
@@ -54,47 +58,57 @@ export const useAuthStore = create<AuthState>()(
                     error: null,
                 });
 
-                // Sincronizar con localStorage legacy
-                if (user) {
-                    localStorage.setItem('user', JSON.stringify(user));
-                } else {
-                    localStorage.removeItem('user');
-                }
-
-                // Disparar evento para componentes legacy
+                // Disparar evento para componentes legacy si es necesario
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new Event('authChange'));
                 }
             },
 
             login: (user: User) => {
-                get().setUser(user);
+                const state = get() as any;
+                state.setUser(user);
             },
 
-            logout: () => {
+            logout: async () => {
+                const { authService } = await import('../services/auth.service');
+                await authService.logout();
+
                 set({
                     user: null,
                     isAuthenticated: false,
                     error: null,
                 });
 
-                localStorage.removeItem('user');
+                // Reset de todos los stores en memoria
+                useCheckoutStore.getState().reset();
+                useOrdersStore.getState().reset();
+                // usage of clients and lawyers stores removed
+                // useClientsStore.getState().reset();
+                // useLawyersStore.getState().reset();
 
+                // Limpiar persistencia de localStorage (Zustand persist)
                 if (typeof window !== 'undefined') {
+                    // No borramos 'user' manualmente pq ya no lo seteamos manualmente
+                    localStorage.removeItem('virtuabogado_checkout');
+                    localStorage.removeItem('virtuabogado-auth'); // Limpiar persistencia de zustand auth
+
+                    // Disparar evento para componentes legacy
                     window.dispatchEvent(new Event('authChange'));
                 }
             },
 
             updateUser: (userData: Partial<User>) => {
-                const currentUser = get().user;
+                const state = get() as any;
+                const currentUser = state.user;
                 if (!currentUser) return;
 
                 const updatedUser = { ...currentUser, ...userData };
-                get().setUser(updatedUser);
+                state.setUser(updatedUser);
             },
 
             clearUser: () => {
-                get().logout();
+                const state = get() as any;
+                state.logout();
             },
 
             // ============ Estado ============
@@ -105,30 +119,52 @@ export const useAuthStore = create<AuthState>()(
 
             // ============ Utilidades ============
 
-            checkAuth: () => {
+            checkAuth: async () => {
                 try {
-                    const userData = localStorage.getItem('user');
-                    if (userData) {
-                        const user: User = JSON.parse(userData);
+                    // Evitar ejecución en servidor si no es necesario, aunque authService maneja client
+                    if (typeof window === 'undefined') return;
+
+                    // Si ya hay un usuario en el store, verificar sesión
+                    const state = get() as any;
+                    const currentUser = state.user;
+                    if (currentUser) {
+                        console.log('✅ Usuario ya en store:', currentUser.email);
+                        return;
+                    }
+                    // -------------------------------------------
+
+                    // set({ isLoading: true }); // Opcional: manejar loading global
+                    const { authService } = await import('../services/auth.service');
+                    const user = await authService.getCurrentUser();
+
+                    if (user) {
                         set({
                             user,
                             isAuthenticated: true,
+                            isLoading: false,
                         });
                     } else {
                         set({
                             user: null,
                             isAuthenticated: false,
+                            isLoading: false,
                         });
                     }
                 } catch (error) {
                     console.error('Error checking auth:', error);
-                    get().clearUser();
+                    set({
+                        user: null,
+                        isAuthenticated: false,
+                        isLoading: false
+                    });
                 }
             },
 
             reset: () => {
                 set(initialState);
-                localStorage.removeItem('user');
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('user');
+                }
 
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new Event('authChange'));
@@ -138,19 +174,20 @@ export const useAuthStore = create<AuthState>()(
         {
             name: 'virtuabogado-auth',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({
+            partialize: (state: AuthState & { [key: string]: any }) => ({
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
             }),
             // Migrar datos antiguos de localStorage si existen
-            onRehydrateStorage: () => (state) => {
-                if (typeof window !== 'undefined' && state) {
+            onRehydrateStorage: () => (stateStr) => {
+                const typedState = stateStr as AuthState;
+                if (typeof window !== 'undefined' && typedState) {
                     // Sincronizar con localStorage legacy al hidratar
                     const oldUserData = localStorage.getItem('user');
-                    if (oldUserData && !state.user) {
+                    if (oldUserData && !typedState.user) {
                         try {
                             const oldUser = JSON.parse(oldUserData);
-                            state.setUser(oldUser);
+                            typedState.setUser(oldUser);
                         } catch (error) {
                             console.error('Error migrating old user data:', error);
                         }
@@ -158,7 +195,7 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
         }
-    )
+    ) as unknown as import('zustand').StateCreator<AuthState>
 );
 
 // Hook de inicialización para usar al montar la app

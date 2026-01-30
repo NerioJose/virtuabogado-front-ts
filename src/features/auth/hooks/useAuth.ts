@@ -88,8 +88,8 @@ export function useAuth() {
         setError(null);
 
         try {
-            await authService.logout();
-            setLogout();
+            // El store ya maneja la llamada a authService.logout
+            await setLogout();
             router.push(ROUTES.LOGIN);
             router.refresh();
         } catch (err) {

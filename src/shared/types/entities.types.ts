@@ -3,9 +3,9 @@
  */
 
 export enum UserRole {
-    ADMIN = 'admin',
-    ABOGADO = 'abogado',
-    CLIENTE = 'cliente',
+    ADMIN = 'ADMIN',
+    ABOGADO = 'ABOGADO',
+    CLIENTE = 'CLIENTE',
 }
 
 export interface Servicio {
@@ -20,11 +20,16 @@ export interface Servicio {
 }
 
 export interface User {
-    id: number;
+    id: string; // UUID de DB
     email: string;
     nombre: string;
     rol: UserRole;
     telefono?: string;
+    direccion?: string;
+    dni?: string;
+    especialidad?: string;
+    matricula?: string;
+    experiencia?: number;
     picture?: string;
     createdAt?: Date;
     updatedAt?: Date;

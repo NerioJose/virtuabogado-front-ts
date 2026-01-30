@@ -1,0 +1,125 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?
+  nombre       String
+  rol          UserRole @default(CLIENTE)
+  telefono     String?
+  direccion    String?
+  dni          String?
+  especialidad String?
+  matricula    String?
+  experiencia  Int?
+  picture      String?
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]       @relation("ClientOrders")
+  cases        Order[]       @relation("LawyerCases")
+  messages     Message[]
+  documents    Document[]
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  titulo      String
+  descripcion String
+  precio      Decimal @db.Decimal(10, 2)
+  imagenUrl   String?
+  activo      Boolean @default(true)
+  orders      Order[]
+}
+
+// Order model moved below to support new relations
+
+
+enum UserRole {
+  CLIENTE
+  ABOGADO
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDIENTE
+  EN_PROGRESO
+  REVISION
+  COMPLETADO
+  CANCELADO
+  FALLIDO
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  numericId Int         @default(autoincrement())
+  userId    String
+  lawyerId  String?     // Abogado asignado
+  serviceId Int
+  total     Decimal     @db.Decimal(10, 2)
+  status    OrderStatus @default(PENDIENTE)
+  paymentId String?
+  activo    Boolean     @default(true)
+  
+  // Timestamps del ciclo de vida
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  assignedAt DateTime?
+  closedAt   DateTime?
+
+  // Relaciones
+  service   Service     @relation(fields: [serviceId], references: [id])
+  user      User        @relation("ClientOrders", fields: [userId], references: [id])
+  lawyer    User?       @relation("LawyerCases", fields: [lawyerId], references: [id])
+  
+  messages  Message[]
+  documents Document[]
+  review    Review?
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  orderId   String
+  senderId  String
+  content   String
+  isSystem  Boolean  @default(false)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  order     Order    @relation(fields: [orderId], references: [id])
+  sender    User     @relation(fields: [senderId], references: [id])
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  orderId   String
+  uploaderId String
+  name      String
+  url       String
+  type      String   // PDF, IMAGE, etc
+  size      Int
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  order     Order    @relation(fields: [orderId], references: [id])
+  uploader  User     @relation(fields: [uploaderId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  rating    Int      @default(5)
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  order     Order    @relation(fields: [orderId], references: [id])
+}

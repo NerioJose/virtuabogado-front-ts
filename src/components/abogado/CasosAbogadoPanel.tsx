@@ -1,106 +1,30 @@
 import { useState, useEffect, memo, useMemo } from 'react';
-import { FiEye, FiMessageSquare, FiFileText, FiFilter } from 'react-icons/fi';
+import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft } from 'react-icons/fi';
+import { ChatWindow } from '@/features/chat/components/ChatWindow';
+import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
 
 interface CasosAbogadoPanelProps {
-  abogadoId: number;
-}
-
-interface Caso {
-  id: number;
-  titulo: string;
-  cliente: string;
-  fechaAsignacion: string;
-  fechaLimite?: string;
-  estado: 'pendiente' | 'en_proceso' | 'completado' | 'cancelado';
-  prioridad: 'baja' | 'media' | 'alta';
-  tipo: string;
+  abogadoId: string;
 }
 
 function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
-  const [casos, setCasos] = useState<Caso[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'en_proceso' | 'completado' | 'cancelado'>('todos');
+  const { data: misCasos = [], isLoading, error } = useOrdersByLawyer(abogadoId);
+  // const { orders, fetchOrders, getOrdersByLawyer, isLoading } = useOrdersStore(); // Deprecated
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
+  const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Simulación de carga de datos
-    const cargarCasos = async () => {
-      try {
-        // Aquí iría la llamada a la API para obtener los casos del abogado
-        // Por ahora, simulamos una respuesta después de 1 segundo
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Datos de ejemplo
-        setCasos([
-          {
-            id: 1,
-            titulo: 'Consulta sobre contrato laboral',
-            cliente: 'María González',
-            fechaAsignacion: '2023-06-16',
-            fechaLimite: '2023-06-23',
-            estado: 'en_proceso',
-            prioridad: 'media',
-            tipo: 'Derecho Laboral'
-          },
-          {
-            id: 2,
-            titulo: 'Asesoría en divorcio',
-            cliente: 'Juan Pérez',
-            fechaAsignacion: '2023-06-14',
-            fechaLimite: '2023-06-28',
-            estado: 'pendiente',
-            prioridad: 'alta',
-            tipo: 'Derecho de Familia'
-          },
-          {
-            id: 3,
-            titulo: 'Consulta sobre herencia',
-            cliente: 'Elena Díaz',
-            fechaAsignacion: '2023-06-11',
-            fechaLimite: '2023-06-18',
-            estado: 'completado',
-            prioridad: 'media',
-            tipo: 'Derecho Civil'
-          },
-          {
-            id: 4,
-            titulo: 'Revisión de contrato mercantil',
-            cliente: 'Roberto Fernández',
-            fechaAsignacion: '2023-06-10',
-            fechaLimite: '2023-06-17',
-            estado: 'en_proceso',
-            prioridad: 'alta',
-            tipo: 'Derecho Mercantil'
-          },
-          {
-            id: 5,
-            titulo: 'Consulta sobre despido improcedente',
-            cliente: 'Laura Martínez',
-            fechaAsignacion: '2023-06-05',
-            fechaLimite: '2023-06-12',
-            estado: 'completado',
-            prioridad: 'media',
-            tipo: 'Derecho Laboral'
-          }
-        ]);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error al cargar casos:', error);
-        setLoading(false);
-      }
-    };
-    
-    cargarCasos();
-  }, [abogadoId]);
+  // Ya no necesitamos useEffect para fetchOrders porque useQuery lo maneja automáticamente
+  // ni useMemo para filtrar por abogado porque el hook ya lo hace en el servidor
 
-  // Filtrar casos según filtro de estado con useMemo
+  // Filtrar casos según filtro de estado
   const casosFiltrados = useMemo(() => {
-    return casos.filter(caso => {
-      return filtroEstado === 'todos' || caso.estado === filtroEstado;
+    return misCasos.filter(caso => {
+      return filtroEstado === 'todos' || caso.status === filtroEstado;
     });
-  }, [casos, filtroEstado]);
+  }, [misCasos, filtroEstado]);
 
-  if (loading) {
+  if (isLoading && misCasos.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
@@ -108,59 +32,113 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
     );
   }
 
+  // Vista de Chat/Detalle
+  if (casoSeleccionado) {
+    const caso = misCasos.find(c => c.id === casoSeleccionado);
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setCasoSeleccionado(null)}
+            className="flex items-center text-gray-600 hover:text-azul-primario transition-colors"
+          >
+            <FiArrowLeft className="mr-2" />
+            Volver a mis casos
+          </button>
+          <h2 className="text-xl font-bold text-gray-800">
+            Chat: {caso?.items[0]?.serviceName || 'Caso'}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Columna Izquierda: Detalles rápidos */}
+          <div className="lg:col-span-1 bg-white p-4 rounded-lg shadow-sm h-fit">
+            <h3 className="font-semibold text-gray-700 mb-4">Información del Caso</h3>
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-gray-500">Cliente</p>
+                <p className="font-medium">{caso?.userName || caso?.userEmail}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Servicio</p>
+                <p className="font-medium">{caso?.items[0]?.serviceName}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Estado</p>
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caso?.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                  caso?.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
+                    caso?.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                  }`}>
+                  {caso?.status}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-500">Fecha de Inicio</p>
+                <p className="font-medium">{caso?.createdAt ? new Date(caso.createdAt).toLocaleDateString() : '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Columna Derecha: Chat */}
+          <div className="lg:col-span-2">
+            <ChatWindow orderId={casoSeleccionado} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Vista de Tabla (Default)
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Mis Casos</h2>
-        
+
         {/* Filtros */}
         <div className="flex items-center gap-2">
           <FiFilter className="text-gray-500" />
           <div className="flex gap-2">
             <button
               onClick={() => setFiltroEstado('todos')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroEstado === 'todos' 
-                  ? 'bg-azul-primario text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'todos'
+                ? 'bg-azul-primario text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Todos
             </button>
             <button
-              onClick={() => setFiltroEstado('pendiente')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroEstado === 'pendiente' 
-                  ? 'bg-yellow-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              onClick={() => setFiltroEstado(OrderStatus.PENDING)}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PENDING
+                ? 'bg-yellow-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Pendientes
             </button>
             <button
-              onClick={() => setFiltroEstado('en_proceso')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroEstado === 'en_proceso' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              onClick={() => setFiltroEstado(OrderStatus.PROCESSING)}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PROCESSING
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               En proceso
             </button>
             <button
-              onClick={() => setFiltroEstado('completado')}
-              className={`px-3 py-1 rounded-full text-sm ${
-                filtroEstado === 'completado' 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              onClick={() => setFiltroEstado(OrderStatus.COMPLETED)}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.COMPLETED
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Completados
             </button>
           </div>
         </div>
       </div>
-      
+
       {/* Tabla de casos */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -173,16 +151,10 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
                 Cliente
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tipo
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fecha Límite
+                Fecha
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Prioridad
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
@@ -192,49 +164,35 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
           <tbody className="bg-white divide-y divide-gray-200">
             {casosFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                  No se encontraron casos con los criterios seleccionados.
+                <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                  No se encontraron casos asignados.
                 </td>
               </tr>
             ) : (
               casosFiltrados.map((caso) => (
                 <tr key={caso.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-azul-primario">{caso.titulo}</div>
+                    <div className="text-sm font-medium text-azul-primario">
+                      {caso.items[0]?.serviceName || 'Servicio Legal'}
+                    </div>
+                    <div className="text-xs text-gray-500">ID: {caso.id.slice(0, 8)}...</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-700">{caso.cliente}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-700">{caso.tipo}</div>
+                    <div className="text-sm text-gray-700">{caso.userName}</div>
+                    <div className="text-xs text-gray-500">{caso.userEmail}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-700">
-                      {caso.fechaLimite ? new Date(caso.fechaLimite).toLocaleDateString('es-ES') : 'No definida'}
+                      {new Date(caso.createdAt).toLocaleDateString('es-ES')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      caso.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                      caso.estado === 'en_proceso' ? 'bg-blue-100 text-blue-800' :
-                      caso.estado === 'completado' ? 'bg-green-100 text-green-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {caso.estado === 'pendiente' ? 'Pendiente' :
-                       caso.estado === 'en_proceso' ? 'En proceso' :
-                       caso.estado === 'completado' ? 'Completado' :
-                       'Cancelado'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      caso.prioridad === 'baja' ? 'bg-green-100 text-green-800' :
-                      caso.prioridad === 'media' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {caso.prioridad === 'baja' ? 'Baja' :
-                       caso.prioridad === 'media' ? 'Media' :
-                       'Alta'}
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caso.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                      caso.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
+                        caso.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                      }`}>
+                      {caso.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -242,20 +200,16 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
                       <button
                         className="text-azul-primario hover:text-azul-primario/80"
                         title="Ver detalles"
+                        onClick={() => setCasoSeleccionado(caso.id)}
                       >
                         <FiEye />
                       </button>
                       <button
                         className="text-green-500 hover:text-green-600"
                         title="Enviar mensaje"
+                        onClick={() => setCasoSeleccionado(caso.id)}
                       >
                         <FiMessageSquare />
-                      </button>
-                      <button
-                        className="text-amber-500 hover:text-amber-600"
-                        title="Ver documentos"
-                      >
-                        <FiFileText />
                       </button>
                     </div>
                   </td>

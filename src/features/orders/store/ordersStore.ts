@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Order, OrdersState, OrdersFilters, OrderStatus } from '../types/orders.types';
+import { apiClient } from '@/lib/apiClient';
 
 const initialState = {
     orders: [],
@@ -16,6 +17,7 @@ const initialState = {
 };
 
 export const useOrdersStore = create<OrdersState>()(
+    // @ts-ignore
     persist(
         (set, get) => ({
             ...initialState,
@@ -35,41 +37,121 @@ export const useOrdersStore = create<OrdersState>()(
                 console.log('🔥 Nueva orden en el array:', get().orders[get().orders.length - 1]);
             },
 
+            setOrders: (orders: Order[]) => {
+                set({ orders, isLoading: false, error: null });
+            },
+
             fetchOrders: async (filters?: OrdersFilters) => {
-                // NO hacer nada aquí - Zustand persist ya carga desde localStorage
-                // Si intentamos hacer set() con array vacío, BORRA todos los datos!
-                // TODO: Cuando tengamos API real, aquí irá la llamada
+                set({ isLoading: true, error: null });
+                try {
+                    // TODO: Implement                try {
+                    const orders = await apiClient.get<Order[]>('/api/orders');
 
-                console.log('⚠️ fetchOrders llamado - ignorando para preservar datos de localStorage');
+                    set({
+                        orders,
+                        isLoading: false,
+                        error: null,
+                    });
 
-                // Solo actualizar filters si se proporcionan
-                if (filters) {
-                    set({ filters });
+                    console.log('✅ OrdersStore: Loaded', orders.length, 'orders from API');
+                } catch (error) {
+                    console.error('❌ OrdersStore: Error fetching orders:', error);
+                    set({
+                        isLoading: false,
+                        error: 'Error al cargar las órdenes'
+                    });
                 }
             },
 
-            updateOrderStatus: (orderId: number, status: OrderStatus, notes?: string) => {
-                set((state) => ({
-                    orders: state.orders.map((order) =>
-                        order.id === orderId
-                            ? {
-                                ...order,
-                                status,
-                                notes,
-                                updatedAt: new Date(),
-                                completedAt: status === OrderStatus.COMPLETED ? new Date() : order.completedAt,
-                            }
-                            : order
-                    ),
-                }));
+            updateOrderStatus: async (orderId: string, status: OrderStatus, notes?: string) => {
+                try {
+                    set({ isLoading: true, error: null });
+                    await apiClient.put(`/api/orders`, { id: orderId, status });
+
+                    set((state) => ({
+                        orders: state.orders.map((order) =>
+                            order.id === orderId
+                                ? {
+                                    ...order,
+                                    status,
+                                    notes,
+                                    updatedAt: new Date(),
+                                    completedAt: status === OrderStatus.COMPLETED ? new Date() : order.completedAt,
+                                }
+                                : order
+                        ),
+                        isLoading: false,
+                    }));
+                    console.log('✅ OrdersStore: Order status updated in API:', orderId);
+                } catch (error) {
+                    console.error('❌ OrdersStore: Error updating order status:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al actualizar el estado de la orden',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
             },
 
-            getOrderById: (orderId: number) => {
+            assignLawyer: async (orderId: string, lawyerId: string) => {
+                try {
+                    set({ isLoading: true, error: null });
+                    await apiClient.put(`/api/orders`, { id: orderId, lawyerId });
+
+                    set((state) => ({
+                        orders: state.orders.map((order) =>
+                            order.id === orderId
+                                ? {
+                                    ...order,
+                                    lawyerId,
+                                    assignedAt: new Date(),
+                                    updatedAt: new Date(),
+                                }
+                                : order
+                        ),
+                        isLoading: false,
+                    }));
+                    console.log(`✅ OrdersStore: Lawyer ${lawyerId} assigned to order ${orderId}`);
+                } catch (error) {
+                    console.error('❌ OrdersStore: Error assigning lawyer:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al asignar abogado',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
+            },
+
+            deleteOrder: async (id: string) => {
+                try {
+                    set({ isLoading: true, error: null });
+                    await apiClient.delete(`/api/orders?id=${id}`);
+
+                    set((state) => ({
+                        orders: state.orders.filter((order) => order.id !== id),
+                        isLoading: false,
+                    }));
+                    console.log('✅ OrdersStore: Order deleted in API (logic delete):', id);
+                } catch (error) {
+                    console.error('❌ OrdersStore: Error deleting order:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al eliminar la orden',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
+            },
+
+            getOrderById: (orderId: string) => {
                 return get().orders.find((order) => order.id === orderId);
             },
 
-            getOrdersByUser: (userId: number) => {
+            getOrdersByUser: (userId: string) => {
                 return get().orders.filter((order) => order.userId === userId);
+            },
+
+            getOrdersByLawyer: (lawyerId: string) => {
+                return get().orders.filter((order) => order.lawyerId === lawyerId);
             },
 
             setFilters: (filters: OrdersFilters) => {
@@ -102,29 +184,11 @@ export const useOrdersStore = create<OrdersState>()(
     )
 );
 
-// ============ CROSS-TAB SYNCHRONIZATION ============
-// Escuchar cambios en localStorage desde otras pestañas
-if (typeof window !== 'undefined') {
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'virtuabogado-orders-v2' && e.newValue) {
-            try {
-                const data = JSON.parse(e.newValue);
-                if (data.state && data.state.orders) {
-                    console.log('🔄 OrdersStore: Sincronizando desde otra pestaña. Orders:', data.state.orders.length);
-                    useOrdersStore.setState({ orders: data.state.orders });
-                }
-            } catch (error) {
-                console.error('Error sincronizando ordersStore:', error);
-            }
-        }
-    });
-}
-
-// Función para inicializar órdenes - SIN mock data
+// Función para inicializar órdenes desde la API
 export const initializeOrders = () => {
     const store = useOrdersStore.getState();
 
-    // Solo cargar desde localStorage si existe
-    // Las órdenes se agregan automáticamente desde el checkout
-    console.log('OrdersStore initialized:', store.orders.length, 'orders');
+    // Disparar carga inicial desde la API
+    console.log('🔄 OrdersStore: Inicializando datos desde la API...');
+    store.fetchOrders();
 };

@@ -19,14 +19,14 @@ export default function DevLoginPage() {
     const loginAs = (role: 'admin' | 'abogado' | 'cliente') => {
         const users = {
             admin: {
-                id: 1,
+                id: '1',
                 email: 'admin@virtuabogado.com',
                 nombre: 'Admin Principal',
                 rol: UserRole.ADMIN,
                 picture: '/user.png',
             },
             abogado: {
-                id: 2,
+                id: '2',
                 email: 'abogado@virtuabogado.com',
                 nombre: 'Dr. Juan Pérez',
                 rol: UserRole.ABOGADO,
@@ -36,7 +36,7 @@ export default function DevLoginPage() {
                 picture: '/user.png',
             },
             cliente: {
-                id: 3,
+                id: '3',
                 email: 'cliente@example.com',
                 nombre: 'María González',
                 rol: UserRole.CLIENTE,
@@ -46,6 +46,9 @@ export default function DevLoginPage() {
 
         // Usar authStore en lugar de localStorage directo
         setUser(users[role]);
+
+        // ACTIVAR BYPASS DE MIDDLEWARE (Cookie)
+        document.cookie = "virtuabogado-dev-bypass=true; path=/; max-age=86400"; // 1 día
 
         // Redirigir según rol
         const redirects = {

@@ -6,6 +6,7 @@ import { FiX } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
 import { useCheckoutStore } from '../store/checkoutStore';
 import { useCheckoutStorage } from '../hooks/useCheckoutStorage';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { StepIndicator } from './StepIndicator';
 import { ServiceSummary } from './ServiceSummary';
 import { UserDataStep } from './UserDataStep';
@@ -25,6 +26,7 @@ export const CheckoutModal: React.FC = () => {
         reset,
     } = useCheckout();
 
+    const { isAuthenticated } = useAuthStore();
     const { clearStorage } = useCheckoutStorage();
 
     // Limpiar storage cuando se completa el checkout
@@ -74,11 +76,17 @@ export const CheckoutModal: React.FC = () => {
         return () => window.removeEventListener('keydown', handleEscape);
     }, [isOpen, isLoading, handleClose]);
 
-    if (!isOpen || !service) return null;
+    // Debug
+    console.log('RENDER Modal:', { isOpen, hasService: !!service, step });
+
+    if (!isOpen || !service) {
+        console.log('❌ Modal no renderiza porque:', { isOpen, noService: !service });
+        return null;
+    }
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                 {/* Overlay */}
                 <motion.div
                     initial={{ opacity: 0 }}

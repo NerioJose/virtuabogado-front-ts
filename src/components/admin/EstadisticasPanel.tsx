@@ -5,18 +5,20 @@
 
 import { useMemo, memo } from 'react';
 import { FiBarChart2, FiTrendingUp, FiDownload, FiFilter, FiPieChart } from 'react-icons/fi';
-import { useOrdersStore } from '@/features/orders';
-import { useClientsStore } from '@/features/clients';
-import { useLawyersStore } from '@/features/lawyers';
+import { useOrders } from '@/features/orders/hooks/useOrders';
+// import { useOrdersStore } from '@/features/orders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
+import { useClients } from '@/features/clients/hooks/useClients';
+import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
 import { useState } from 'react';
 
 function EstadisticasPanel() {
   const [periodo, setPeriodo] = useState<'mes' | 'trimestre' | 'año'>('mes');
 
-  // ============ ZUSTAND STORES ============
-  const orders = useOrdersStore((state) => state.orders);
-  const clients = useClientsStore((state) => state.clients);
-  const lawyers = useLawyersStore((state) => state.lawyers);
+  // ============ STORES GLOBALES & HOOKS ============
+  const { data: orders = [] } = useOrders();
+  const { data: clients = [] } = useClients();
+  const { data: lawyers = [] } = useLawyers();
 
   // Calcular estadísticas reales
   const estadisticas = useMemo(() => {
@@ -55,8 +57,8 @@ function EstadisticasPanel() {
                 key={p}
                 onClick={() => setPeriodo(p)}
                 className={`px-3 py-1 rounded-full text-sm ${periodo === p
-                    ? 'bg-azul-primario text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-azul-primario text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {p === 'mes' ? 'Último mes' :
@@ -162,13 +164,13 @@ function EstadisticasPanel() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Órdenes completadas</span>
                 <span className="text-lg font-medium text-green-600">
-                  {orders.filter(o => o.status === 'completed').length}
+                  {orders.filter(o => o.status === OrderStatus.COMPLETED).length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Órdenes pendientes</span>
                 <span className="text-lg font-medium text-yellow-600">
-                  {orders.filter(o => o.status === 'pending').length}
+                  {orders.filter(o => o.status === OrderStatus.PENDING).length}
                 </span>
               </div>
             </div>

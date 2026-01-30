@@ -9,11 +9,11 @@ import {
 } from 'react-icons/fi';
 
 interface MensajesPanelProps {
-	abogadoId: number;
+	abogadoId: string;
 }
 
 interface Mensaje {
-	id: number;
+	id: string;
 	remitente: string;
 	destinatario: string;
 	contenido: string;
@@ -23,7 +23,7 @@ interface Mensaje {
 }
 
 interface Conversacion {
-	id: number;
+	id: string;
 	participante: string;
 	ultimoMensaje: string;
 	fechaUltimoMensaje: string;
@@ -34,170 +34,18 @@ interface Conversacion {
 export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 	const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
 	const [mensajes, setMensajes] = useState<Mensaje[]>([]);
-	const [conversacionActiva, setConversacionActiva] = useState<number | null>(
+	const [conversacionActiva, setConversacionActiva] = useState<string | null>(
 		null
 	);
 	const [nuevoMensaje, setNuevoMensaje] = useState('');
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(false);
 	const [busqueda, setBusqueda] = useState('');
 
-	useEffect(() => {
-		// Simulación de carga de datos
-		const cargarConversaciones = async () => {
-			try {
-				// Aquí iría la llamada a la API para obtener las conversaciones del abogado
-				// Por ahora, simulamos una respuesta después de 1 segundo
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-
-				// Datos de ejemplo
-				setConversaciones([
-					{
-						id: 1,
-						participante: 'María González',
-						ultimoMensaje: 'Gracias por la información proporcionada',
-						fechaUltimoMensaje: '2023-06-19T14:30:00',
-						noLeidos: 0,
-						caso: 'Consulta sobre contrato laboral',
-					},
-					{
-						id: 2,
-						participante: 'Juan Pérez',
-						ultimoMensaje:
-							'¿Podríamos adelantar la cita para revisar los documentos?',
-						fechaUltimoMensaje: '2023-06-18T09:45:00',
-						noLeidos: 2,
-						caso: 'Asesoría en divorcio',
-					},
-					{
-						id: 3,
-						participante: 'Elena Díaz',
-						ultimoMensaje: 'Le adjunto los documentos solicitados',
-						fechaUltimoMensaje: '2023-06-17T16:20:00',
-						noLeidos: 0,
-						caso: 'Consulta sobre herencia',
-					},
-					{
-						id: 4,
-						participante: 'Roberto Fernández',
-						ultimoMensaje: 'Confirmo la cita para la firma del contrato',
-						fechaUltimoMensaje: '2023-06-15T11:10:00',
-						noLeidos: 0,
-						caso: 'Revisión de contrato mercantil',
-					},
-				]);
-
-				setLoading(false);
-			} catch (error) {
-				console.error('Error al cargar conversaciones:', error);
-				setLoading(false);
-			}
-		};
-
-		cargarConversaciones();
-	}, [abogadoId]);
-
-	// Cargar mensajes de una conversación
-	const cargarMensajes = async (conversacionId: number) => {
+	// TODO: Implement real chat using Supabase Realtime	// Cargar mensajes de una conversación
+	const cargarMensajes = async (conversacionId: string) => {
 		setConversacionActiva(conversacionId);
-
-		try {
-			// Aquí iría la llamada a la API para obtener los mensajes de la conversación
-			// Por ahora, simulamos una respuesta
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
-			// Datos de ejemplo
-			const mensajesEjemplo: Mensaje[] = [
-				{
-					id: 1,
-					remitente: 'María González',
-					destinatario: 'Carlos Méndez',
-					contenido:
-						'Buenos días, tengo algunas dudas sobre mi contrato laboral.',
-					fecha: '2023-06-18T10:15:00',
-					leido: true,
-				},
-				{
-					id: 2,
-					remitente: 'Carlos Méndez',
-					destinatario: 'María González',
-					contenido:
-						'Buenos días María. Por supuesto, dígame qué dudas tiene y las revisaremos juntos.',
-					fecha: '2023-06-18T10:30:00',
-					leido: true,
-				},
-				{
-					id: 3,
-					remitente: 'María González',
-					destinatario: 'Carlos Méndez',
-					contenido:
-						'Principalmente me preocupa la cláusula de no competencia, ¿es legal que sea tan restrictiva?',
-					fecha: '2023-06-18T10:45:00',
-					leido: true,
-				},
-				{
-					id: 4,
-					remitente: 'Carlos Méndez',
-					destinatario: 'María González',
-					contenido:
-						'Tendría que revisar los detalles específicos. ¿Podría enviarme una copia del contrato para analizarlo?',
-					fecha: '2023-06-18T11:00:00',
-					leido: true,
-				},
-				{
-					id: 5,
-					remitente: 'María González',
-					destinatario: 'Carlos Méndez',
-					contenido: 'Claro, se lo envío adjunto en este mensaje.',
-					fecha: '2023-06-18T11:30:00',
-					leido: true,
-				},
-				{
-					id: 6,
-					remitente: 'Carlos Méndez',
-					destinatario: 'María González',
-					contenido:
-						'Perfecto. He revisado el documento y efectivamente hay algunos puntos que podríamos cuestionar. Le recomendaría que programemos una videollamada para discutirlo en detalle.',
-					fecha: '2023-06-19T09:15:00',
-					leido: true,
-				},
-				{
-					id: 7,
-					remitente: 'María González',
-					destinatario: 'Carlos Méndez',
-					contenido: 'Me parece bien. ¿Podría ser mañana por la tarde?',
-					fecha: '2023-06-19T10:00:00',
-					leido: true,
-				},
-				{
-					id: 8,
-					remitente: 'Carlos Méndez',
-					destinatario: 'María González',
-					contenido: 'Tengo disponibilidad a las 16:00h. ¿Le viene bien?',
-					fecha: '2023-06-19T10:30:00',
-					leido: true,
-				},
-				{
-					id: 9,
-					remitente: 'María González',
-					destinatario: 'Carlos Méndez',
-					contenido:
-						'Perfecto, a las 16:00h entonces. Gracias por la información proporcionada.',
-					fecha: '2023-06-19T14:30:00',
-					leido: true,
-				},
-			];
-
-			setMensajes(mensajesEjemplo);
-
-			// Marcar mensajes como leídos
-			setConversaciones((prevConversaciones) =>
-				prevConversaciones.map((conv) =>
-					conv.id === conversacionId ? { ...conv, noLeidos: 0 } : conv
-				)
-			);
-		} catch (error) {
-			console.error('Error al cargar mensajes:', error);
-		}
+		// Clean mock data
+		setMensajes([]);
 	};
 
 	// Enviar un nuevo mensaje
@@ -206,7 +54,7 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 
 		// Crear nuevo mensaje
 		const nuevoMensajeObj: Mensaje = {
-			id: mensajes.length + 1,
+			id: String(mensajes.length + 1),
 			remitente: 'Carlos Méndez',
 			destinatario:
 				conversaciones.find((c) => c.id === conversacionActiva)?.participante ||
@@ -224,11 +72,11 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 			prevConversaciones.map((conv) =>
 				conv.id === conversacionActiva
 					? {
-							...conv,
-							ultimoMensaje: nuevoMensaje,
-							fechaUltimoMensaje: new Date().toISOString(),
-							noLeidos: 0,
-					  }
+						...conv,
+						ultimoMensaje: nuevoMensaje,
+						fechaUltimoMensaje: new Date().toISOString(),
+						noLeidos: 0,
+					}
 					: conv
 			)
 		);
@@ -302,9 +150,8 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 							<div
 								key={conv.id}
 								onClick={() => cargarMensajes(conv.id)}
-								className={`p-4 hover:bg-gray-50 cursor-pointer ${
-									conversacionActiva === conv.id ? 'bg-azul-claro/20' : ''
-								}`}>
+								className={`p-4 hover:bg-gray-50 cursor-pointer ${conversacionActiva === conv.id ? 'bg-azul-claro/20' : ''
+									}`}>
 								<div className="flex justify-between items-start">
 									<div className="flex items-center">
 										<div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
@@ -358,13 +205,13 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 								</h3>
 								{conversaciones.find((c) => c.id === conversacionActiva)
 									?.caso && (
-									<p className="text-xs text-gray-500">
-										{
-											conversaciones.find((c) => c.id === conversacionActiva)
-												?.caso
-										}
-									</p>
-								)}
+										<p className="text-xs text-gray-500">
+											{
+												conversaciones.find((c) => c.id === conversacionActiva)
+													?.caso
+											}
+										</p>
+									)}
 							</div>
 						</div>
 
@@ -373,24 +220,21 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 							{mensajes.map((mensaje) => (
 								<div
 									key={mensaje.id}
-									className={`flex ${
-										mensaje.remitente === 'Carlos Méndez'
-											? 'justify-end'
-											: 'justify-start'
-									}`}>
-									<div
-										className={`max-w-[70%] rounded-lg p-3 ${
-											mensaje.remitente === 'Carlos Méndez'
-												? 'bg-azul-primario text-white'
-												: 'bg-gray-100 text-gray-800'
+									className={`flex ${mensaje.remitente === 'Carlos Méndez'
+										? 'justify-end'
+										: 'justify-start'
 										}`}>
+									<div
+										className={`max-w-[70%] rounded-lg p-3 ${mensaje.remitente === 'Carlos Méndez'
+											? 'bg-azul-primario text-white'
+											: 'bg-gray-100 text-gray-800'
+											}`}>
 										<p>{mensaje.contenido}</p>
 										<div
-											className={`text-xs mt-1 flex justify-end items-center ${
-												mensaje.remitente === 'Carlos Méndez'
-													? 'text-azul-claro'
-													: 'text-gray-500'
-											}`}>
+											className={`text-xs mt-1 flex justify-end items-center ${mensaje.remitente === 'Carlos Méndez'
+												? 'text-azul-claro'
+												: 'text-gray-500'
+												}`}>
 											<FiClock className="mr-1" />
 											{formatearFecha(mensaje.fecha)}
 										</div>

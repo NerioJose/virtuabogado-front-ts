@@ -9,10 +9,38 @@ import {
 	FiBriefcase,
 	FiDollarSign,
 } from 'react-icons/fi';
+// import { useLawyersStore } from '@/features/lawyers';
+import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
+import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
+
+// Wrapper simple para propósitos de tipado en el render condicional
+const ChatWindowSupervision = ({ orderId }: { orderId: string }) => <ChatWindow orderId={orderId} />;
 
 // Tipo unión para todos los posibles elementos (excluyendo null)
 type ElementoModal = Abogado | Cliente | Caso | Transaccion;
+
+const LawyerSelect = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+	const { data: lawyers = [], isLoading } = useLawyers();
+
+	if (isLoading) return <div className="text-sm text-gray-500">Cargando abogados...</div>;
+
+	return (
+		<select
+			className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-azul-primario focus:border-azul-primario bg-white"
+			value={value}
+			onChange={(e) => onChange(e.target.value)}
+			required
+		>
+			<option value="">-- Seleccione un abogado --</option>
+			{lawyers.map(lawyer => (
+				<option key={lawyer.id} value={lawyer.id}>
+					{lawyer.nombre} ({lawyer.especialidad})
+				</option>
+			))}
+		</select>
+	);
+};
 
 // Tipo para el formulario con tipado más específico
 type FormDataType = Record<
@@ -74,7 +102,7 @@ const obtenerCamposPorSeccion = (seccion: string) => {
 				{ key: 'email', label: 'Email', type: 'email', required: true },
 				{ key: 'telefono', label: 'Teléfono', type: 'tel', required: true },
 				{ key: 'direccion', label: 'Dirección', type: 'text', required: false },
-				{ key: 'dni', label: 'DNI/RUC', type: 'text', required: true },
+				{ key: 'dni', label: 'DNI/RUC', type: 'text', required: false },
 			];
 		case 'casos':
 			return [
@@ -198,6 +226,15 @@ export default function ModalContainer({
 		const campos = obtenerCamposPorSeccion(seccion);
 		const errors: Record<string, string> = {};
 
+		// Para 'asignar', solo validamos que haya un abogado seleccionado
+		if (tipo === 'asignar') {
+			if (!formData.lawyerId) {
+				errors.lawyerId = 'Debe seleccionar un abogado';
+			}
+			setValidationErrors(errors);
+			return Object.keys(errors).length === 0;
+		}
+
 		campos.forEach((campo) => {
 			if (campo.required) {
 				const value = formData[campo.key];
@@ -242,6 +279,7 @@ export default function ModalContainer({
 		setError('');
 
 		try {
+			console.log('📝 ModalContainer handleSubmit:', { tipo, formData });
 			if (onSave) {
 				await onSave(formData);
 			} else {
@@ -272,6 +310,7 @@ export default function ModalContainer({
 		setError('');
 
 		try {
+			console.log('🗑️ ModalContainer confirmarEliminacion:', { id: elemento?.id, elemento });
 			if (onSave) {
 				await onSave({ id: elemento?.id });
 			} else {
@@ -336,9 +375,8 @@ export default function ModalContainer({
 		const hasError = validationErrors[campo.key];
 		const isReadonly = tipo === 'ver';
 
-		const baseClasses = `w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${
-			hasError ? 'border-red-300' : 'border-gray-300'
-		} ${isReadonly ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`;
+		const baseClasses = `w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${hasError ? 'border-red-300' : 'border-gray-300'
+			} ${isReadonly ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`;
 
 		switch (campo.type) {
 			case 'textarea':
@@ -532,7 +570,38 @@ export default function ModalContainer({
 									{error}
 								</div>
 							)}
+
 						</div>
+					) : tipo === 'asignar' ? (
+						<div>
+							<h3 className="text-lg font-medium text-gray-900 mb-4">
+								Asignar Abogado al Caso
+							</h3>
+							<p className="text-sm text-gray-500 mb-6">
+								Selecciona un abogado de la lista para gestionar este caso.
+								El abogado recibirá una notificación y acceso a los detalles.
+							</p>
+
+							<form id="modal-form" onSubmit={handleSubmit}>
+								{error && (
+									<div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+										{error}
+									</div>
+								)}
+								<div className="space-y-4">
+									<div className="space-y-1">
+										<label className="block text-sm font-medium text-gray-700">
+											Seleccionar Abogado
+										</label>
+										<LawyerSelect
+											value={formData.lawyerId as string || ''}
+											onChange={(val) => handleInputChange('lawyerId', val)}
+										/>
+									</div>
+								</div>
+							</form>
+						</div>
+
 					) : (
 						<div>
 							<form
@@ -548,6 +617,18 @@ export default function ModalContainer({
 									{obtenerCamposPorSeccion(seccion).map(renderCampo)}
 								</div>
 							</form>
+
+							{/* CHAT DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
+							{tipo === 'ver' && seccion === 'casos' && elemento?.id && (
+								<div className="mt-6 border-t pt-4">
+									<h4 className="font-bold text-gray-800 mb-3 flex items-center">
+										<span className="mr-2">💬</span> Chat de Supervisión
+									</h4>
+									<div className="h-[400px]">
+										<ChatWindowSupervision orderId={elemento.id} />
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 				</div>

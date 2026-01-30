@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import NavBar from '../components/layout/NavBar'; // Asegúrate de que la ruta sea correcta
+import NavBar from '../components/layout/NavBar';
 import Footer from '@/components/layout/Footer';
-import AbandonedCartReminder from '../components/layout/AbandonedCartReminder';
+import { DynamicCheckoutWrapper } from '@/features/checkout/DynamicCheckoutWrapper';
+import Providers from '@/components/providers/Providers';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -29,14 +30,14 @@ export default function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}>
-				<NavBar />
-				<div className="min-h-screen bg-gradient-to-br from-white to-gray-100 pt-24">
-					{' '}
-					{/* Cambiar pt-16 a pt-24 */}
-					{children}
-					<AbandonedCartReminder />
-				</div>
-				<Footer />
+				<Providers>
+					<NavBar />
+					<div className="min-h-screen bg-gradient-to-br from-white to-gray-100 pt-24">
+						{children}
+					</div>
+					<DynamicCheckoutWrapper />
+					<Footer />
+				</Providers>
 			</body>
 		</html>
 	);

@@ -3,9 +3,9 @@
  */
 
 export enum LawyerStatus {
-    ACTIVE = 'active',
-    INACTIVE = 'inactive',
-    PENDING = 'pending',
+    ACTIVE = 'ACTIVO',
+    INACTIVE = 'INACTIVO',
+    PENDING = 'PENDIENTE',
 }
 
 export enum LawyerSpecialty {
@@ -18,7 +18,7 @@ export enum LawyerSpecialty {
 }
 
 export interface Lawyer {
-    id: number;
+    id: string; // UUID
     nombre: string;
     email: string;
     telefono?: string;
@@ -43,7 +43,7 @@ export interface CreateLawyerRequest {
 }
 
 export interface UpdateLawyerRequest {
-    id: number;
+    id: string;
     nombre?: string;
     email?: string;
     telefono?: string;
@@ -67,10 +67,11 @@ export interface LawyersState {
 
     // Actions
     addLawyer: (lawyer: Lawyer) => void;
+    setLawyers: (lawyers: Lawyer[]) => void;
     fetchLawyers: (filters?: LawyersFilters) => Promise<void>;
-    updateLawyer: (id: number, data: Partial<Lawyer>) => void;
-    deleteLawyer: (id: number) => void;
-    getLawyerById: (id: number) => Lawyer | undefined;
+    updateLawyer: (id: string, data: Partial<Lawyer>) => void;
+    deleteLawyer: (id: string) => void;
+    getLawyerById: (id: string) => Lawyer | undefined;
     setFilters: (filters: LawyersFilters) => void;
     clearFilters: () => void;
     reset: () => void;

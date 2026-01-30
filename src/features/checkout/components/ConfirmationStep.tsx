@@ -5,10 +5,11 @@ import { useCheckout } from '../hooks/useCheckout';
 import Link from 'next/link';
 
 export const ConfirmationStep: React.FC = () => {
-    const { orderId, service, userData, reset } = useCheckout();
+    const { orderId, service, userData, closeCheckout, tempPassword } = useCheckout();
 
     const handleClose = () => {
-        reset();
+        // closeCheckout ahora maneja el reset automáticamente si step === 3
+        closeCheckout();
     };
 
     return (
@@ -79,6 +80,18 @@ export const ConfirmationStep: React.FC = () => {
                     <p className="text-blue-700">
                         Hemos enviado los detalles de tu compra a <strong>{userData?.email}</strong>
                     </p>
+                    {tempPassword && (
+                        <div className="mt-4 p-3 bg-white/50 border border-blue-100 rounded-md">
+                            <p className="text-blue-900 font-semibold mb-1">Tus credenciales de acceso:</p>
+                            <div className="flex flex-col gap-1">
+                                <p className="text-blue-800">Email: <span className="font-mono">{userData?.email}</span></p>
+                                <p className="text-blue-800">Clave temporal: <span className="font-mono bg-blue-100 px-1 rounded">{tempPassword}</span></p>
+                            </div>
+                            <p className="text-xs text-blue-600 mt-2 italic">
+                                * Te recomendamos cambiar tu clave al ingresar a tu panel.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </motion.div>
 

@@ -16,16 +16,14 @@ export const ordersService = {
      * Obtener todas las órdenes con filtros opcionales
      */
     async getAll(filters?: OrdersFilters): Promise<Order[]> {
-        try {
-            // TODO: Implementar con apiClient cuando esté disponible
-            console.log('Fetching orders with filters:', filters);
+        const params = new URLSearchParams();
+        if (filters?.lawyerId) params.append('lawyerId', filters.lawyerId);
+        if (filters?.userId) params.append('userId', filters.userId);
+        if (filters?.status) params.append('status', filters.status);
 
-            // Mock: retornar array vacío por ahora
-            return [];
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-            throw error;
-        }
+        const response = await fetch(`/api/orders?${params.toString()}`);
+        if (!response.ok) throw new Error('Error fetching orders');
+        return response.json();
     },
 
     /**

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiMail, FiUser, FiPhone } from 'react-icons/fi';
@@ -6,31 +8,19 @@ import { AutoLoginIndicator } from './AutoLoginIndicator';
 import type { UserCheckoutData } from '../types/checkout.types';
 
 export const UserDataStep: React.FC = () => {
-    const { setUserData, checkExistingUser, isExistingUser, setStep } = useCheckout();
+    const { setUserData, setStep, isLoading } = useCheckout(); // Remove checkExistingUser dependency
+    const [showPassword, setShowPassword] = useState(false);
 
     const [formData, setFormData] = useState<UserCheckoutData>({
         email: '',
+        password: '', // Nuevo campo
         name: '',
+        nombre: '',
         phone: '',
-        createAccount: true, // Siempre true - todos los compradores deben tener cuenta
+        createAccount: true,
     });
 
     const [errors, setErrors] = useState<Partial<Record<keyof UserCheckoutData, string>>>({});
-    const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-
-    // Validar email cuando cambie
-    useEffect(() => {
-        const checkEmail = async () => {
-            if (formData.email && formData.email.includes('@')) {
-                setIsCheckingEmail(true);
-                await checkExistingUser(formData.email);
-                setIsCheckingEmail(false);
-            }
-        };
-
-        const timer = setTimeout(checkEmail, 500);
-        return () => clearTimeout(timer);
-    }, [formData.email, checkExistingUser]);
 
     const validateField = (name: keyof UserCheckoutData, value: string | boolean): string | undefined => {
         switch (name) {
@@ -46,6 +36,10 @@ export const UserDataStep: React.FC = () => {
                     return 'Nombre muy corto';
                 }
                 break;
+            case 'password':
+                if (!value) return 'Contraseña requerida';
+                if (typeof value === 'string' && value.length < 6) return 'Mínimo 6 caracteres';
+                break;
         }
     };
 
@@ -53,9 +47,12 @@ export const UserDataStep: React.FC = () => {
         const { name, value, type, checked } = e.target;
         const newValue = type === 'checkbox' ? checked : value;
 
-        setFormData(prev => ({ ...prev, [name]: newValue }));
+        setFormData(prev => {
+            const newData = { ...prev, [name]: newValue };
+            if (name === 'name') newData.nombre = value as string;
+            return newData;
+        });
 
-        // Limpiar error al escribir
         if (errors[name as keyof UserCheckoutData]) {
             setErrors(prev => ({ ...prev, [name]: undefined }));
         }
@@ -64,22 +61,19 @@ export const UserDataStep: React.FC = () => {
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         const error = validateField(name as keyof UserCheckoutData, value);
-        if (error) {
-            setErrors(prev => ({ ...prev, [name]: error }));
-        }
+        if (error) setErrors(prev => ({ ...prev, [name]: error }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validar todos los campos
         const newErrors: Partial<Record<keyof UserCheckoutData, string>> = {};
 
-        const emailError = validateField('email', formData.email);
-        if (emailError) newErrors.email = emailError;
-
-        const nameError = validateField('name', formData.name);
-        if (nameError) newErrors.name = nameError;
+        // Validar campos
+        ['email', 'name', 'password'].forEach((field) => {
+            const error = validateField(field as keyof UserCheckoutData, formData[field as keyof UserCheckoutData] as string);
+            if (error) newErrors[field as keyof UserCheckoutData] = error;
+        });
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -87,7 +81,17 @@ export const UserDataStep: React.FC = () => {
         }
 
         // Guardar datos y avanzar
+        // La autenticación real ocurrirá en useCheckout -> submitUserData (o similar) 
+        // pero por ahora pasamos los datos al store
         setUserData(formData);
+
+        // NOTA: Para UX fluida, podríamos autenticar AQUÍ mismo antes de pasar al paso 2.
+        // Pero el diseño actual de useCheckout parece manejarlo en el store.
+        // Vamos a asumir que el chequeo de "registerOrLogin" se hace al intentar pagar o al transicionar.
+        // MEJORA: Vamos a disparar la autenticación real en el siguiente paso o modificar el store.
+
+        // En este refactor, simplemente guardamos y avanzamos. 
+        // La lógica en checkoutStore.submitOrder usará esto.
         setStep(2);
     };
 
@@ -99,9 +103,10 @@ export const UserDataStep: React.FC = () => {
             onSubmit={handleSubmit}
             className="space-y-4"
         >
-            {isExistingUser && (
-                <AutoLoginIndicator userName={formData.name || 'usuario'} />
-            )}
+            <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100 flex items-start">
+                <span className="mr-2 text-xl">🛡️</span>
+                <p>Crea tu cuenta segura (o inicia sesión) para proteger tu compra y acceder al chat con tu abogado.</p>
+            </div>
 
             {/* Email */}
             <div>
@@ -117,19 +122,40 @@ export const UserDataStep: React.FC = () => {
                         value={formData.email}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        className={`
-              w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario
-              ${errors.email ? 'border-red-500' : 'border-gray-300'}
-            `}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="tu@email.com"
                     />
-                    {isCheckingEmail && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <div className="w-4 h-4 border-2 border-azul-primario border-t-transparent rounded-full animate-spin" />
-                        </div>
-                    )}
                 </div>
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Contraseña <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        name="password"
+                        value={formData.password || ''}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Crea una contraseña segura"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                        {showPassword ? "Ocultar" : "Mostrar"}
+                    </button>
+                </div>
+                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+                <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres. Si ya tienes cuenta, usa tu contraseña actual.</p>
             </div>
 
             {/* Nombre */}
@@ -146,17 +172,14 @@ export const UserDataStep: React.FC = () => {
                         value={formData.name}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        className={`
-              w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario
-              ${errors.name ? 'border-red-500' : 'border-gray-300'}
-            `}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Juan Pérez"
                     />
                 </div>
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
             </div>
 
-            {/* Teléfono (opcional) */}
+            {/* Teléfono */}
             <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                     Teléfono <span className="text-xs text-gray-500">(opcional)</span>
@@ -175,22 +198,10 @@ export const UserDataStep: React.FC = () => {
                 </div>
             </div>
 
-            {/* Información sobre creación de cuenta automática */}
-            {!isExistingUser && (
-                <div className="p-3 bg-azul-claro/10 rounded-lg border border-azul-primario/20">
-                    <p className="text-sm text-gray-700">
-                        ℹ️ Se creará una cuenta automáticamente para el seguimiento de tu servicio.
-                        <span className="block text-xs text-gray-500 mt-1">
-                            Recibirás las credenciales por email
-                        </span>
-                    </p>
-                </div>
-            )}
-
-            {/* Botón continuar */}
             <button
                 type="submit"
-                className="w-full btn-primary mt-6"
+                disabled={isLoading}
+                className="w-full btn-primary mt-6 flex justify-center items-center"
             >
                 Continuar al Pago →
             </button>

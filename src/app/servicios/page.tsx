@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CheckoutModal, useCheckout } from '@/features/checkout';
+import { CheckoutModal, useCheckout, CartRecovery } from '@/features/checkout';
 
 export default function ServiciosPage() {
 	const { openCheckout } = useCheckout();
@@ -198,7 +198,12 @@ export default function ServiciosPage() {
 										{servicio.descripcion}
 									</p>
 									<motion.button
-										onClick={() => openCheckout(servicio)}
+										onClick={() => {
+											// Sanitizar objeto para evitar guardar ReactNodes en el store
+											const { icono, ...serviceData } = servicio;
+											console.log('🔘 Click en servicio:', serviceData.nombre);
+											openCheckout(serviceData);
+										}}
 										whileHover={{ scale: 1.05 }}
 										whileTap={{ scale: 0.95 }}
 										className="btn-primary mt-4">
@@ -317,8 +322,7 @@ export default function ServiciosPage() {
 				</div>
 			</section>
 
-			{/* Checkout Modal */}
-			<CheckoutModal />
+			{/* Checkout Modal y CartRecovery movidos al layout global */}
 		</main>
 	);
 }

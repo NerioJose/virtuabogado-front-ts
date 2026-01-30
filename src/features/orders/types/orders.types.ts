@@ -5,11 +5,11 @@
 import { Servicio } from '@/shared/types/entities.types';
 
 export enum OrderStatus {
-    PENDING = 'pending',
-    PROCESSING = 'processing',
-    COMPLETED = 'completed',
-    CANCELLED = 'cancelled',
-    FAILED = 'failed',
+    PENDING = 'PENDIENTE',
+    PROCESSING = 'EN_PROGRESO',
+    COMPLETED = 'COMPLETADO',
+    CANCELLED = 'CANCELADO',
+    FAILED = 'FALLIDO',
 }
 
 export enum PaymentMethod {
@@ -21,7 +21,7 @@ export enum PaymentMethod {
 }
 
 export interface OrderItem {
-    id: number;
+    id: string;
     serviceId: number;
     serviceName: string;
     price: number;
@@ -29,8 +29,10 @@ export interface OrderItem {
 }
 
 export interface Order {
-    id: number;
-    userId: number;
+    id: string;
+    numericId?: number;
+    userId: string; // UUID
+    lawyerId?: string; // Abogado asignado
     userName: string;
     userEmail: string;
     items: OrderItem[];
@@ -43,11 +45,12 @@ export interface Order {
     createdAt: Date;
     updatedAt: Date;
     completedAt?: Date;
+    assignedAt?: Date;
     notes?: string;
 }
 
 export interface CreateOrderRequest {
-    userId: number;
+    userId: string;
     userEmail: string;
     userName: string;
     service: Servicio;
@@ -56,14 +59,15 @@ export interface CreateOrderRequest {
 }
 
 export interface UpdateOrderStatusRequest {
-    orderId: number;
+    orderId: string;
     status: OrderStatus;
     notes?: string;
 }
 
 export interface OrdersFilters {
     status?: OrderStatus;
-    userId?: number;
+    lawyerId?: string;
+    userId?: string;
     startDate?: Date;
     endDate?: Date;
     searchQuery?: string;
@@ -77,10 +81,14 @@ export interface OrdersState {
 
     // Actions
     addOrder: (order: Order) => void;
+    setOrders: (orders: Order[]) => void;
     fetchOrders: (filters?: OrdersFilters) => Promise<void>;
-    updateOrderStatus: (orderId: number, status: OrderStatus, notes?: string) => void;
-    getOrderById: (orderId: number) => Order | undefined;
-    getOrdersByUser: (userId: number) => Order[];
+    updateOrderStatus: (orderId: string, status: OrderStatus, notes?: string) => Promise<void>;
+    assignLawyer: (orderId: string, lawyerId: string) => Promise<void>;
+    deleteOrder: (id: string) => Promise<void>;
+    getOrderById: (orderId: string) => Order | undefined;
+    getOrdersByUser: (userId: string) => Order[];
+    getOrdersByLawyer: (lawyerId: string) => Order[];
     setFilters: (filters: OrdersFilters) => void;
     clearFilters: () => void;
     reset: () => void;

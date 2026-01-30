@@ -5,197 +5,229 @@ import type { Servicio } from '@/shared/types/entities.types';
 import { checkoutService } from '../services/checkout.service';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersStore } from '@/features/orders/store/ordersStore';
-import { useClientsStore } from '@/features/clients';
-import { OrderStatus, PaymentMethod as OrderPaymentMethod } from '@/features/orders/types/orders.types';
+import { queryClient } from '@/lib/queryClient';
+import { CLIENT_KEYS } from '@/features/clients/hooks/useClients';
+import { LAWYER_KEYS } from '@/features/lawyers/hooks/useLawyers';
+// import { useClientsStore } from '@/features/clients';
+import { Order, OrderStatus, PaymentMethod as OrderPaymentMethod } from '@/features/orders/types/orders.types';
 import { ClientStatus } from '@/features/clients/types/clients.types';
 
-const initialState = {
-    service: null,
-    userData: null,
-    paymentData: null,
+const getInitialState = () => ({
+    service: null as Servicio | null,
+    userData: null as UserCheckoutData | null,
+    paymentData: null as PaymentData | null,
     paymentMethod: 'card' as PaymentMethod,
-    orderId: undefined,
+    orderId: undefined as string | undefined,
     total: 0,
     step: 1 as CheckoutStep,
     isOpen: false,
     isLoading: false,
-    error: null,
+    error: null as string | null,
     isExistingUser: false,
-};
+    existingUserId: null as string | null,
+    tempPassword: null as string | null,
+    completedAt: null as string | null,
+});
 
 export const useCheckoutStore = create<CheckoutState>()(
-    devtools(
-        (set, get) => ({
-            ...initialState,
+    (set, get) => ({
+        ...getInitialState(),
 
-            openCheckout: (service: Servicio) => {
-                console.log('🛒 openCheckout llamado con servicio:', service);
-                console.log('  - ID:', service.id);
-                console.log('  - Nombre:', service.nombre);
-                console.log('  - Precio:', service.precio);
+        openCheckout: (service: Servicio) => {
+            const currentState = get();
+
+            if (currentState.step === 3) {
+                set(getInitialState());
+                setTimeout(() => {
+                    get().openCheckout(service);
+                }, 50);
+                return;
+            }
+
+            const authUser = useAuthStore.getState().user;
+            const isUserAuthenticated = useAuthStore.getState().isAuthenticated;
+
+            if (isUserAuthenticated && authUser) {
+                const prefilledUserData = {
+                    email: authUser.email,
+                    name: authUser.nombre,
+                    nombre: authUser.nombre,
+                    phone: authUser.telefono || '',
+                    createAccount: false,
+                };
 
                 set({
+                    ...getInitialState(),
+                    completedAt: null,
+                    isOpen: true,
+                    service,
+                    total: service.precio || 0,
+                    step: 2,
+                    userData: prefilledUserData,
+                    isExistingUser: true,
+                });
+            } else {
+                set({
+                    ...getInitialState(),
                     isOpen: true,
                     service,
                     total: service.precio || 0,
                     step: 1,
-                    error: null,
+                    userData: null,
+                    isExistingUser: false,
+                    existingUserId: null,
+                    completedAt: null,
                 });
-            },
+            }
+        },
 
-            closeCheckout: () => {
-                // Solo cerramos, no reseteamos para permitir recovery
+        closeCheckout: () => {
+            const currentState = get();
+            if (currentState.step === 3 || currentState.completedAt) {
+                set(getInitialState());
+            } else {
                 set({ isOpen: false });
-            },
+            }
+        },
 
-            setStep: (step: CheckoutStep) => {
-                set({ step, error: null });
-            },
+        setStep: (step: CheckoutStep) => {
+            set({ step, error: null });
+        },
 
-            setUserData: (data: UserCheckoutData) => {
-                // Normalizar name/nombre
-                const normalizedData = {
-                    ...data,
-                    nombre: data.nombre || data.name, // Asegurar que nombre siempre exista
-                };
-                set({ userData: normalizedData });
-            },
+        setUserData: (data: UserCheckoutData) => {
+            const normalizedData = {
+                ...data,
+                nombre: data.nombre || data.name,
+            };
+            set({ userData: normalizedData });
+        },
 
-            setPaymentData: (paymentData: PaymentData) => {
-                set({ paymentData });
-            },
+        setPaymentData: (paymentData: PaymentData) => {
+            set({ paymentData });
+        },
 
-            setPaymentMethod: (paymentMethod: PaymentMethod) => {
-                set({ paymentMethod });
-            },
+        setPaymentMethod: (paymentMethod: PaymentMethod) => {
+            set({ paymentMethod });
+        },
 
-            checkExistingUser: async (email: string) => {
-                try {
-                    const exists = await checkoutService.checkEmailExists(email);
-                    set({ isExistingUser: exists });
-                    return exists;
-                } catch (error) {
-                    console.error('Error checking user:', error);
-                    return false;
+        checkExistingUser: async (email: string) => {
+            // Deprecated in favor of implicit registration
+            return false;
+        },
+
+        submitOrder: async () => {
+            const state = get();
+
+            if (!state.service || !state.userData || !state.paymentData) {
+                set({ error: 'Datos incompletos. Por favor completa todos los campos.' });
+                return;
+            }
+
+            set({ isLoading: true, error: null });
+
+            try {
+                let currentUserId = state.existingUserId || useAuthStore.getState().user?.id;
+
+                // 1. AUTENTICACIÓN: Auto-login o auto-registro UNIFICADO
+                if (!currentUserId && state.userData) {
+                    try {
+                        const { user } = await checkoutService.registerOrLogin(state.userData);
+                        if (user) {
+                            currentUserId = user.id;
+                            useAuthStore.getState().setUser(user);
+                        }
+                    } catch (authError) {
+                        console.error('Auth error:', authError);
+                        set({
+                            error: authError instanceof Error ? authError.message : 'Error al autenticar',
+                            isLoading: false
+                        });
+                        return;
+                    }
                 }
-            },
 
-            submitOrder: async () => {
-                const state = get();
-
-                if (!state.service || !state.userData || !state.paymentData) {
-                    set({ error: 'Datos incompletos' });
+                if (!currentUserId) {
+                    set({ error: 'No se pudo identificar al usuario', isLoading: false });
                     return;
                 }
 
-                set({ isLoading: true, error: null });
+                // 2. Procesar pago
+                const paymentResult = await checkoutService.processPayment({
+                    service: state.service,
+                    paymentData: state.paymentData,
+                    paymentMethod: state.paymentMethod,
+                    email: state.userData.email,
+                    nombre: state.userData.nombre,
+                    isExistingUser: !!state.existingUserId,
+                    createAccount: state.userData.createAccount,
+                    userId: currentUserId
+                });
 
-                try {
-                    // 1. Auto-login o auto-registro
-                    if (state.isExistingUser) {
-                        await checkoutService.autoLogin(state.userData.email);
-                    } else if (state.userData.createAccount) {
-                        await checkoutService.autoRegister(state.userData);
-                    }
+                // 3. Crear orden
+                const order = await checkoutService.createOrder({
+                    serviceId: state.service.id,
+                    userId: currentUserId,
+                    paymentId: paymentResult.paymentId,
+                    total: state.total,
+                });
 
-                    // 2. Procesar pago
-                    const paymentResult = await checkoutService.processPayment({
-                        service: state.service,
-                        paymentData: state.paymentData,
-                        paymentMethod: state.paymentMethod,
-                        // Agregar campos adicionales
-                        email: state.userData.email,
-                        nombre: state.userData.nombre,
-                        isExistingUser: state.isExistingUser,
-                        createAccount: state.userData.createAccount,
-                    });
+                set({
+                    orderId: order.orderId,
+                    step: 3,
+                    isLoading: false,
+                });
 
-                    // 3. Crear orden
-                    const order = await checkoutService.createOrder({
+                // Integración Stores
+                const currentUser = useAuthStore.getState().user;
+
+                // Invalidate React Query caches to ensure UI updates immediately
+                // This ensures "100% reactivity" for the current user without page refresh
+                await queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all });
+                await queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all });
+                // We don't have ORDER_KEYS constant yet, but we can invalidate by key string
+                // await queryClient.invalidateQueries({ queryKey: ['orders'] }); 
+                // Orders are mostly legacy store for now, but good practice to invalidate if migrated
+
+                const orderForStore: Order = {
+                    id: order.orderId,
+                    userId: paymentResult.userId,
+                    userName: state.userData.nombre,
+                    userEmail: state.userData.email,
+                    items: [{
+                        id: '1',
                         serviceId: state.service.id,
-                        userId: paymentResult.userId,
-                        paymentId: paymentResult.paymentId,
-                        total: state.total,
-                    });
+                        serviceName: state.service.nombre || state.service.titulo || 'Servicio legal',
+                        price: Number(state.service.precio) || 0,
+                        quantity: 1,
+                    }],
+                    subtotal: state.total,
+                    tax: 0,
+                    total: state.total,
+                    status: OrderStatus.PENDING,
+                    paymentMethod: OrderPaymentMethod.CREDIT_CARD,
+                    transactionId: paymentResult.paymentId,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+                useOrdersStore.getState().addOrder(orderForStore);
 
-                    set({
-                        orderId: order.orderId,
-                        step: 3,
-                        isLoading: false,
-                    });
+                await checkoutService.sendConfirmationEmail(order.orderId);
+                set({ completedAt: new Date().toISOString() });
 
-                    // ============ INTEGRACIÓN CON STORES GLOBALES ============
-                    console.log('🔄 Iniciando integración con stores...');
-                    console.log('Estado actual:', { isExistingUser: state.isExistingUser, createAccount: state.userData.createAccount });
+            } catch (error) {
+                set({
+                    error: error instanceof Error ? error.message : 'Error al procesar el pago',
+                    isLoading: false,
+                });
+            }
+        },
 
-                    // 1. Si es usuario NUEVO, agregarlo a authStore y clientsStore
-                    if (!state.isExistingUser && paymentResult.user) {
-                        console.log('✅ Agregando usuario nuevo a authStore y clientsStore');
-                        useAuthStore.getState().setUser(paymentResult.user);
+        markAsCompleted: () => {
+            set({ completedAt: new Date().toISOString() });
+        },
 
-                        // 2. Agregar nuevo cliente al clientsStore
-                        useClientsStore.getState().addClient({
-                            id: paymentResult.user.id,
-                            nombre: state.userData.nombre,
-                            email: state.userData.email,
-                            telefono: state.userData.phone,
-                            status: ClientStatus.ACTIVE,
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            serviciosContratados: 1,
-                            totalGastado: state.total,
-                        });
-                        console.log('✅ Cliente agregado a clientsStore');
-                    } else {
-                        console.log('⚠️ Usuario existente o sin datos de usuario:', {
-                            isExistingUser: state.isExistingUser,
-                            hasUser: !!paymentResult.user
-                        });
-                    }
-
-                    // 3. Agregar orden al ordersStore para dashboard admin
-                    console.log('📦 Agregando orden a ordersStore...');
-                    const orderForStore = {
-                        id: parseInt(order.orderId.replace('ORD-', ''), 10),
-                        userId: paymentResult.userId, // Ya es numérico
-                        userName: state.userData.nombre,
-                        userEmail: state.userData.email,
-                        items: [{
-                            id: 1,
-                            serviceId: state.service.id,
-                            serviceName: state.service.nombre || state.service.titulo || 'Servicio legal',
-                            price: state.service.precio || 0,
-                            quantity: 1,
-                        }],
-                        subtotal: state.total,
-                        tax: 0,
-                        total: state.total,
-                        status: OrderStatus.PENDING,
-                        paymentMethod: OrderPaymentMethod.CREDIT_CARD, // Mapear según state.paymentMethod
-                        transactionId: paymentResult.paymentId,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    };
-                    useOrdersStore.getState().addOrder(orderForStore);
-                    console.log('✅ Orden agregada a ordersStore:', orderForStore);
-
-                    // 6. Enviar email de confirmación
-                    await checkoutService.sendConfirmationEmail(order.orderId);
-
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : 'Error al procesar el pago';
-                    set({
-                        error: errorMessage,
-                        isLoading: false,
-                    });
-                    throw error;
-                }
-            },
-
-            reset: () => {
-                set(initialState);
-            },
-        }),
-        { name: 'checkout-store' }
-    )
+        reset: () => {
+            set(getInitialState());
+        },
+    })
 );

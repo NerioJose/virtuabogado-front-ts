@@ -1,6 +1,6 @@
 // Interfaz para los datos del abogado (ya existe, mantener)
 export interface Abogado {
-	id: number;
+	id: string;
 	nombre: string;
 	email: string;
 	role?: 'abogado';
@@ -73,7 +73,7 @@ export interface ConfiguracionPagos {
 }
 // Interfaz para Usuario Admin
 export interface AdminUser {
-	id: number;
+	id: string;
 	name: string;
 	email: string;
 	role: 'admin';
@@ -81,7 +81,7 @@ export interface AdminUser {
 }
 // Interfaz para Cliente
 export interface Cliente {
-	id: number;
+	id: string;
 	nombre: string;
 	email: string;
 	telefono: string;
@@ -92,7 +92,7 @@ export interface Cliente {
 
 // Interfaz para Caso
 export interface Caso {
-	id: number;
+	id: string;
 	titulo: string;
 	cliente: string;
 	abogado: string;
@@ -105,7 +105,7 @@ export interface Caso {
 
 // Interfaz para transacciones financieras
 export interface Transaccion {
-	id: number;
+	id: string;
 	concepto: string;
 	monto: number;
 	fecha: string;

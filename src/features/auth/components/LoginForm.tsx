@@ -10,16 +10,16 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
 import { Input } from '@/shared/components/ui/Input/Input';
-import { useAuthStore } from '@/features/auth/store/authStore';
 import { ROUTES } from '@/shared/constants/routes';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    // Usar authStore en lugar de useAuth hook
-    const { login, isLoading, error } = useAuthStore();
+    // Usar useAuth hook para lógica de negocio (API + redirección)
+    const { login, isLoading, error } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

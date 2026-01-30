@@ -1,11 +1,7 @@
-/**
- * Store global de clientes - Zustand
- * Gestiona todos los clientes de la aplicación
- */
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Client, ClientsState, ClientsFilters } from '../types/clients.types';
+import { apiClient } from '@/lib/apiClient';
 
 const initialState = {
     clients: [],
@@ -28,46 +24,77 @@ export const useClientsStore = create<ClientsState>()(
                 }));
             },
 
+            setClients: (clients: Client[]) => {
+                set({ clients, isLoading: false, error: null });
+            },
+
             fetchClients: async (filters?: ClientsFilters) => {
                 set({ isLoading: true, error: null });
                 try {
-                    // TODO: Implementar llamada real a la API
-                    console.log('Fetching clients with filters:', filters);
-
-                    // Mock: Cargar clientes del localStorage por ahora
-                    const storedClients = localStorage.getItem('clients');
-                    const clients = storedClients ? JSON.parse(storedClients) : [];
+                    const clients = await apiClient.get<Client[]>('/api/clients');
 
                     set({
                         clients,
                         isLoading: false,
                         filters: filters || {},
                     });
+
+                    console.log('✅ ClientsStore: Clients fetched from API:', clients.length);
                 } catch (error) {
+                    console.error('❌ ClientsStore: Error fetching clients:', error);
+                    // Don't break UI for demo/offline mode
                     set({
-                        error: error instanceof Error ? error.message : 'Error al cargar clientes',
+                        error: 'Error de conexión (Modo Offline)',
                         isLoading: false,
                     });
                 }
             },
 
-            updateClient: (id: number, data: Partial<Client>) => {
-                set((state) => ({
-                    clients: state.clients.map((client) =>
-                        client.id === id
-                            ? { ...client, ...data, updatedAt: new Date() }
-                            : client
-                    ),
-                }));
+            updateClient: async (id: string, data: Partial<Client>) => {
+                try {
+                    console.log('🔄 ClientsStore: updateClient called with:', { id, data });
+                    set({ isLoading: true, error: null });
+                    const updatedClient = await apiClient.put<Client>(`/api/clients/${id}`, data);
+                    console.log('📥 ClientsStore: API response:', updatedClient);
+
+                    set((state) => ({
+                        clients: state.clients.map((client) =>
+                            client.id === id ? { ...client, ...updatedClient } : client
+                        ),
+                        isLoading: false,
+                    }));
+                    console.log('✅ ClientsStore: Client updated in API:', id);
+                } catch (error) {
+                    console.error('❌ ClientsStore: Error updating client:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al actualizar el cliente',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
             },
 
-            deleteClient: (id: number) => {
-                set((state) => ({
-                    clients: state.clients.filter((client) => client.id !== id),
-                }));
+            deleteClient: async (id: string) => {
+                try {
+                    set({ isLoading: true, error: null });
+                    await apiClient.delete(`/api/clients/${id}`);
+
+                    set((state) => ({
+                        clients: state.clients.filter((client) => client.id !== id),
+                        isLoading: false,
+                    }));
+                    console.log('✅ ClientsStore: Client deleted in API (logic delete):', id);
+                } catch (error) {
+                    console.error('❌ ClientsStore: Error deleting client:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al eliminar el cliente',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
             },
 
-            getClientById: (id: number) => {
+            getClientById: (id: string) => {
                 return get().clients.find((client) => client.id === id);
             },
 
@@ -84,7 +111,7 @@ export const useClientsStore = create<ClientsState>()(
             },
         }),
         {
-            name: 'virtuabogado-clients-v2', // v2 para limpiar datos mock del localStorage
+            name: 'virtuabogado-clients-v2',
             storage: createJSONStorage(() => localStorage),
             onRehydrateStorage: () => {
                 console.log('🔄 ClientsStore: Iniciando rehydration desde localStorage');
@@ -95,35 +122,14 @@ export const useClientsStore = create<ClientsState>()(
                         console.log('✅ ClientsStore: Rehydration completada. Clients:', state?.clients.length || 0);
                     }
                 };
-            },
-            // Removido partialize - causaba problemas de persistencia
+            }
         }
     )
 );
 
-// ============ CROSS-TAB SYNCHRONIZATION ============
-// Escuchar cambios en localStorage desde otras pestañas
-if (typeof window !== 'undefined') {
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'virtuabogado-clients-v2' && e.newValue) {
-            try {
-                const data = JSON.parse(e.newValue);
-                if (data.state && data.state.clients) {
-                    console.log('🔄 ClientsStore: Sincronizando desde otra pestaña. Clients:', data.state.clients.length);
-                    useClientsStore.setState({ clients: data.state.clients });
-                }
-            } catch (error) {
-                console.error('Error sincronizando clientsStore:', error);
-            }
-        }
-    });
-}
-
-// Función para inicializar clientes - SIN mock data
+// Función para inicializar clientes desde la API
 export const initializeClients = () => {
     const store = useClientsStore.getState();
-
-    // IMPORTANTE: Si ves datos mock, limpia el localStorage del navegador
-    // Presiona F12 -> Application -> Local Storage -> localhost:3000 -> Clear All
-    console.log('ClientsStore initialized:', store.clients.length, 'clients');
+    console.log('🔄 ClientsStore: Inicializando datos desde la API...');
+    store.fetchClients();
 };

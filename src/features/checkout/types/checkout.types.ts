@@ -7,8 +7,9 @@ export type CheckoutStep = 1 | 2 | 3;
 export interface UserCheckoutData {
     email: string;
     name: string;
-    nombre: string; // Alias para compatibilidad
+    nombre: string;
     phone?: string;
+    password?: string; // Para registro
     createAccount: boolean;
 }
 
@@ -34,6 +35,7 @@ export interface PaymentRequest {
     nombre: string;
     isExistingUser: boolean;
     createAccount: boolean;
+    userId?: string; // UUID opcional para usuarios logueados
 }
 
 // Estado completo del checkout
@@ -44,6 +46,7 @@ export interface CheckoutData {
     paymentMethod: PaymentMethod;
     orderId?: string;
     total: number;
+    completedAt?: string | null;  // Timestamp de compra exitosa
 }
 
 // Estado del store
@@ -53,6 +56,9 @@ export interface CheckoutState extends CheckoutData {
     isLoading: boolean;
     error: string | null;
     isExistingUser: boolean;
+    existingUserId: string | null;
+    tempPassword: string | null;
+    completedAt: string | null;  // Timestamp cuando se completó exitosamente
 
     // Actions
     openCheckout: (service: Servicio) => void;
@@ -63,6 +69,7 @@ export interface CheckoutState extends CheckoutData {
     setPaymentMethod: (method: PaymentMethod) => void;
     checkExistingUser: (email: string) => Promise<boolean>;
     submitOrder: () => Promise<void>;
+    markAsCompleted: () => void;
     reset: () => void;
 }
 
@@ -77,14 +84,14 @@ export interface OrderResponse {
 // Resultado del procesamiento de pago
 export interface PaymentResult {
     paymentId: string;
-    userId: number; // Cambiado a number
+    userId: string; // Cambiado a string (UUID)
     status: 'approved' | 'pending' | 'rejected';
     // Usuario opcional para nuevos registros
     user?: {
-        id: number;
+        id: string; // Cambiado a string (UUID)
         email: string;
         nombre: string;
-        rol: 'cliente';
+        rol: import('@/shared/types/entities.types').UserRole;
     };
 }
 

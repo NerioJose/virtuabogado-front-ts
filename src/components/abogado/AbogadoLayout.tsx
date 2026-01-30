@@ -7,7 +7,7 @@ import { useAbogadoData } from '@/hooks/useAbogadoData';
 import { SeccionAbogado } from '@/types/index';
 
 interface AbogadoLayoutProps {
-	abogadoId: number;
+	abogadoId: string;
 }
 
 export default function AbogadoLayout({ abogadoId }: AbogadoLayoutProps) {

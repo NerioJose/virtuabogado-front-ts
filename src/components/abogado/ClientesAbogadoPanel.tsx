@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { FiUser, FiMail, FiPhone, FiFileText, FiMessageSquare, FiSearch, FiFilter } from 'react-icons/fi';
+import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
+import { OrderStatus } from '@/features/orders/types/orders.types';
 
 interface ClientesAbogadoPanelProps {
-  abogadoId: number;
+  abogadoId: string;
 }
 
 interface Cliente {
-  id: number;
+  id: string;
   nombre: string;
   email: string;
   telefono: string;
@@ -20,82 +22,48 @@ interface Cliente {
 }
 
 export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanelProps) {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use real data from orders to derive clients
+  const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
   const [busqueda, setBusqueda] = useState('');
   const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
 
-  useEffect(() => {
-    // Simulación de carga de datos
-    const cargarClientes = async () => {
-      try {
-        // Aquí iría la llamada a la API para obtener los clientes del abogado
-        // Por ahora, simulamos una respuesta después de 1 segundo
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Datos de ejemplo
-        setClientes([
-          {
-            id: 1,
-            nombre: 'María González',
-            email: 'maria.gonzalez@ejemplo.com',
-            telefono: '+34 612 345 678',
-            fechaAsignacion: '2023-05-15',
-            casosActivos: 1,
-            casosCompletados: 0,
-            ultimaActividad: '2023-06-19'
-          },
-          {
-            id: 2,
-            nombre: 'Juan Pérez',
-            email: 'juan.perez@ejemplo.com',
-            telefono: '+34 623 456 789',
-            fechaAsignacion: '2023-04-20',
-            casosActivos: 1,
-            casosCompletados: 1,
-            ultimaActividad: '2023-06-18'
-          },
-          {
-            id: 3,
-            nombre: 'Elena Díaz',
-            email: 'elena.diaz@ejemplo.com',
-            telefono: '+34 634 567 890',
-            fechaAsignacion: '2023-03-10',
-            casosActivos: 0,
-            casosCompletados: 2,
-            ultimaActividad: '2023-06-17'
-          },
-          {
-            id: 4,
-            nombre: 'Roberto Fernández',
-            email: 'roberto.fernandez@ejemplo.com',
-            telefono: '+34 645 678 901',
-            fechaAsignacion: '2023-06-05',
-            casosActivos: 1,
-            casosCompletados: 0,
-            ultimaActividad: '2023-06-15'
-          },
-          {
-            id: 5,
-            nombre: 'Laura Martínez',
-            email: 'laura.martinez@ejemplo.com',
-            telefono: '+34 656 789 012',
-            fechaAsignacion: '2023-02-18',
-            casosActivos: 0,
-            casosCompletados: 1,
-            ultimaActividad: '2023-05-20'
-          }
-        ]);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error al cargar clientes:', error);
-        setLoading(false);
+  // Derive unique clients from orders
+  const clientes: Cliente[] = useMemo(() => {
+    if (!orders) return [];
+
+    const clientMap = new Map<string, Cliente>();
+
+    orders.forEach(order => {
+      if (!order.userId || !order.userEmail) return;
+
+      const existingClient = clientMap.get(order.userId);
+
+      const fechaActualizacion = new Date(order.updatedAt);
+      const fechaCreacion = new Date(order.createdAt);
+
+      if (existingClient) {
+        existingClient.casosActivos += (order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) ? 1 : 0;
+        existingClient.casosCompletados += order.status === OrderStatus.COMPLETED ? 1 : 0;
+        // Update last activity if newer
+        if (fechaActualizacion > new Date(existingClient.ultimaActividad)) {
+          existingClient.ultimaActividad = fechaActualizacion.toISOString();
+        }
+      } else {
+        clientMap.set(order.userId, {
+          id: order.userId,
+          nombre: order.userName || order.userEmail.split('@')[0], // Fallback name
+          email: order.userEmail,
+          telefono: 'No registrado', // userPhone no existe en Order, placeholder por ahora
+          fechaAsignacion: fechaCreacion.toISOString(),
+          casosActivos: (order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) ? 1 : 0,
+          casosCompletados: order.status === OrderStatus.COMPLETED ? 1 : 0,
+          ultimaActividad: (order.updatedAt ? fechaActualizacion : fechaCreacion).toISOString()
+        });
       }
-    };
-    
-    cargarClientes();
-  }, [abogadoId]);
+    });
+
+    return Array.from(clientMap.values());
+  }, [orders]);
 
   // Calcular si un cliente ha estado activo recientemente (últimos 30 días)
   const esClienteReciente = (ultimaActividad: string) => {
@@ -107,19 +75,19 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
 
   // Filtrar clientes según término de búsqueda y filtro de actividad
   const clientesFiltrados = clientes.filter(cliente => {
-    const coincideTermino = 
+    const coincideTermino =
       cliente.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       cliente.email.toLowerCase().includes(busqueda.toLowerCase()) ||
       cliente.telefono.includes(busqueda);
-    
+
     if (filtroActividad === 'todos') return coincideTermino;
     if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.ultimaActividad);
     if (filtroActividad === 'inactivo') return coincideTermino && !esClienteReciente(cliente.ultimaActividad);
-    
+
     return coincideTermino;
   });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
@@ -131,7 +99,7 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Mis Clientes</h2>
-        
+
         <div className="flex items-center gap-4">
           {/* Buscador */}
           <div className="relative">
@@ -144,38 +112,35 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
             />
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
-          
+
           {/* Filtros */}
           <div className="flex items-center gap-2">
             <FiFilter className="text-gray-500" />
             <div className="flex gap-2">
               <button
                 onClick={() => setFiltroActividad('todos')}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  filtroActividad === 'todos' 
-                    ? 'bg-azul-primario text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-3 py-1 rounded-full text-sm ${filtroActividad === 'todos'
+                  ? 'bg-azul-primario text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 Todos
               </button>
               <button
                 onClick={() => setFiltroActividad('reciente')}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  filtroActividad === 'reciente' 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-3 py-1 rounded-full text-sm ${filtroActividad === 'reciente'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 Activos
               </button>
               <button
                 onClick={() => setFiltroActividad('inactivo')}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  filtroActividad === 'inactivo' 
-                    ? 'bg-gray-500 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-3 py-1 rounded-full text-sm ${filtroActividad === 'inactivo'
+                  ? 'bg-gray-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 Inactivos
               </button>
@@ -183,7 +148,7 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
           </div>
         </div>
       </div>
-      
+
       {/* Lista de clientes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {clientesFiltrados.length === 0 ? (
@@ -214,7 +179,7 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
                     <p className="text-sm text-gray-500">Cliente desde {new Date(cliente.fechaAsignacion).toLocaleDateString('es-ES')}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm">
                     <FiMail className="text-gray-400 mr-2" />
@@ -225,7 +190,7 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
                     <a href={`tel:${cliente.telefono}`} className="text-gray-700">{cliente.telefono}</a>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between text-sm text-gray-500 mb-4">
                   <div>
                     <span className="font-medium text-azul-primario">{cliente.casosActivos}</span> casos activos
@@ -234,7 +199,7 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
                     <span className="font-medium text-green-600">{cliente.casosCompletados}</span> completados
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <button className="flex items-center text-sm text-azul-primario hover:text-azul-primario/80">
                     <FiFileText className="mr-1" />

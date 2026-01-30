@@ -1,5 +1,8 @@
+'use client';
+
 import { useEffect } from 'react';
 import { useCheckoutStore } from '../store/checkoutStore';
+import { useAuthStore } from '@/features/auth';
 import type { CheckoutStorageData } from '../types/checkout.types';
 
 const STORAGE_KEY = 'virtuabogado_checkout';
@@ -59,12 +62,20 @@ export const useCheckoutStorage = () => {
             // Recuperar estado si hay datos válidos
             if (data.service) {
                 const store = useCheckoutStore.getState();
+                const isAuth = useAuthStore.getState().isAuthenticated;
+
                 store.openCheckout(data.service);
+
                 if (data.userData) {
                     store.setUserData(data.userData);
                 }
-                if (data.step) {
+
+                // Solo restaurar el paso si el usuario está autenticado.
+                // Si es invitado, siempre forzar paso 1 por seguridad.
+                if (data.step && isAuth) {
                     store.setStep(data.step);
+                } else {
+                    store.setStep(1);
                 }
             }
         } catch (error) {

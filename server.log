@@ -1,0 +1,62 @@
+
+> virtuabogado-front@0.1.0 dev /home/nerio/Descargas/virtuabogado-front-ts
+> next dev
+
+ ⚠ Port 3000 is in use, using available port 3001 instead.
+   ▲ Next.js 15.3.2
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.34:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 14.5s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 11.2s (159 modules)
+ ○ Compiling / ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled / in 31.7s (1938 modules)
+ GET / 200 in 35018ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 9.1s (1027 modules)
+ GET /favicon.ico 200 in 4873ms
+ GET /favicon.ico 200 in 12178ms
+ ○ Compiling /servicios ...
+ ✓ Compiled /servicios in 14.4s (1949 modules)
+ GET /servicios 200 in 14812ms
+ GET /servicios 200 in 90ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 73s (1933 modules)
+ GET /login 200 in 126860ms
+ ○ Compiling /api/auth/register ...
+ ✓ Compiled /api/auth/register in 13.3s (1981 modules)
+🔐 Intentando registro server-side para: comprador1@virtuabogado.com
+✨ Usuario registrado exitosamente (server-side): fd2b0272-e8ef-4074-919b-a6eab5bde871
+ POST /api/auth/register 200 in 35889ms
+🔐 Intentando registro server-side para: comprador1@virtuabogado.com
+✅ Usuario ya existe, login exitoso: fd2b0272-e8ef-4074-919b-a6eab5bde871
+ POST /api/auth/register 200 in 6497ms
+ GET / 200 in 40789ms
+ GET / 200 in 634ms
+ ✓ Compiled in 170.2s (1939 modules)
+ GET / 200 in 30127ms
+ GET / 200 in 235ms
+ GET / 200 in 21ms
+Error: fetch failed
+    at context.fetch (/home/nerio/Descargas/virtuabogado-front-ts/node_modules/.pnpm/next@15.3.2_react-dom@19.2.0_react@19.2.0__react@19.2.0/node_modules/next/dist/server/web/sandbox/context.js:322:60)
+    at eval (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/lib/helpers.js:120:25)
+    at _handleRequest (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/lib/fetch.js:106:24)
+    at _request (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/lib/fetch.js:96:24)
+    at eval (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1297:82)
+    at SupabaseAuthClient._useSession (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1183:26)
+    at async SupabaseAuthClient._getUser (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1287:20)
+    at async eval (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1271:20)
+    at async eval (webpack-internal:///(middleware)/./node_modules/.pnpm/@supabase+auth-js@2.93.3/node_modules/@supabase/auth-js/dist/module/GoTrueClient.js:1128:28) {
+  
+}
+ GET /servicios 200 in 61075ms
+ GET /servicios 200 in 1633ms
+ GET /servicios 200 in 672ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 260.8s (1929 modules)
+ GET /servicios 404 in 285629ms
+ GET / 200 in 1657ms

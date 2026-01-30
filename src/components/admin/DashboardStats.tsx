@@ -10,9 +10,12 @@ import {
 	FiTrendingUp,
 	FiTrendingDown,
 } from 'react-icons/fi';
-import { useClientsStore, initializeClients } from '@/features/clients';
-import { useLawyersStore, initializeLawyers, LawyerStatus } from '@/features/lawyers';
-import { useOrdersStore, initializeOrders, OrderStatus } from '@/features/orders';
+import { useClients } from '@/features/clients/hooks/useClients';
+import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
+import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
+import { useOrders } from '@/features/orders/hooks/useOrders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
+// import { useOrdersStore, initializeOrders, OrderStatus } from '@/features/orders';
 
 // Tipos para las estadísticas
 interface Stats {
@@ -159,16 +162,17 @@ const CaseProgressBar = memo(
 CaseProgressBar.displayName = 'CaseProgressBar';
 
 function DashboardStats() {
-	// ============ STORES GLOBALES ============
-	const clients = useClientsStore((state) => state.clients);
-	const lawyers = useLawyersStore((state) => state.lawyers);
-	const orders = useOrdersStore((state) => state.orders);
+	// ============ STORES GLOBALES & HOOKS ============
+	const { data: clients = [] } = useClients();
+	const { data: lawyers = [] } = useLawyers();
+	const { data: orders = [] } = useOrders();
+	// const orders = useOrdersStore((state) => state.orders);
 
 	const [actividades, setActividades] = useState<Actividad[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	// ============ ESTADÍSTICAS CALCULADAS DESDE STORES ============
+	// ============ ESTADÍSTICAS CALCULADAS ============
 	const stats = useMemo((): Stats => {
 		// Abogados
 		const totalAbogados = lawyers.length;
@@ -247,13 +251,12 @@ function DashboardStats() {
 	// Función para inicializar stores
 	const loadStoresData = useCallback(async () => {
 		try {
+			// React Query maneja el loading de clients automáticamente, pero mantenemos esto para los otros stores por ahora
 			setLoading(true);
 			setError(null);
 
-			// Inicializar stores si están vacíos
-			if (clients.length === 0) initializeClients();
-			if (lawyers.length === 0) initializeLawyers();
-			if (orders.length === 0) initializeOrders();
+			// Inicializar stores legacy si están vacíos
+			// if (orders.length === 0) initializeOrders();
 
 			// Las actividades ahora provienen de los stores reales
 			// Por ahora array vacío - TODO: crear store de actividades
@@ -265,7 +268,7 @@ function DashboardStats() {
 			console.error('Error loading stats:', err);
 			setLoading(false);
 		}
-	}, [clients.length, lawyers.length, orders.length]);
+	}, [lawyers.length, orders.length]);
 
 	useEffect(() => {
 		loadStoresData();

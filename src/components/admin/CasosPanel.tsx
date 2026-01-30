@@ -4,9 +4,11 @@
  */
 
 import { useMemo, memo } from 'react';
-import { FiEdit, FiTrash2, FiEye, FiFilter } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserPlus } from 'react-icons/fi';
 import { ElementoSeleccionable } from '@/types/index';
-import { useOrdersStore, OrderStatus } from '@/features/orders';
+// import { useOrdersStore } from '@/features/orders';
+import { useOrders } from '@/features/orders/hooks/useOrders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useState } from 'react';
 
 interface CasosPanelProps {
@@ -15,8 +17,8 @@ interface CasosPanelProps {
 }
 
 function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
-  // ============ ZUSTAND STORE ============
-  const orders = useOrdersStore((state) => state.orders);
+  // ============ REACT QUERY HOOK ============
+  const { data: orders = [] } = useOrders();
 
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
 
@@ -49,32 +51,32 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
           <button
             onClick={() => setFiltroEstado('todos')}
             className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'todos'
-                ? 'bg-azul-primario text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-azul-primario text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             Todos
           </button>
           <button
             onClick={() => setFiltroEstado(OrderStatus.PENDING)}
             className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PENDING
-                ? 'bg-yellow-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-yellow-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             Pendientes
           </button>
           <button
             onClick={() => setFiltroEstado(OrderStatus.PROCESSING)}
             className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PROCESSING
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             En proceso
           </button>
           <button
             onClick={() => setFiltroEstado(OrderStatus.COMPLETED)}
             className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.COMPLETED
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-green-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             Completados
           </button>
@@ -123,7 +125,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                 ordenesFiltradas.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-azul-primario">#{order.id}</div>
+                      <div className="text-sm font-medium text-azul-primario">#{order.numericId}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{order.userName}</div>
@@ -146,10 +148,10 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
-                            order.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
-                              order.status === OrderStatus.CANCELLED ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
+                        order.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
+                          order.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
+                            order.status === OrderStatus.CANCELLED ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
                         }`}>
                         {order.status === OrderStatus.PENDING ? 'Pendiente' :
                           order.status === OrderStatus.PROCESSING ? 'En proceso' :
@@ -160,6 +162,12 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => abrirModal('asignar', order as unknown as ElementoSeleccionable)}
+                          className="text-green-600 hover:text-green-700"
+                          title="Asignar Abogado">
+                          <FiUserPlus />
+                        </button>
                         <button
                           onClick={() => abrirModal('ver', order as unknown as ElementoSeleccionable)}
                           className="text-azul-primario hover:text-azul-primario/80"

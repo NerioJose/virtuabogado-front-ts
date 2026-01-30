@@ -45,12 +45,11 @@ const statusConfig = {
 };
 
 export default function RecentOrders() {
-    const { orders, fetchOrders, isLoading, ordersCount, totalRevenue } = useOrders();
+    const { data: orders = [], isLoading } = useOrders();
 
-    useEffect(() => {
-        // Cargar órdenes al montar
-        fetchOrders();
-    }, [fetchOrders]);
+    // Derived state
+    const ordersCount = orders.length;
+    const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
 
     // Mostrar solo las 5 órdenes más recientes
     const recentOrders = orders.slice(0, 5);
@@ -66,7 +65,7 @@ export default function RecentOrders() {
                     <div>
                         <h2 className="text-xl font-bold text-azul-primario">Órdenes Recientes</h2>
                         <p className="text-sm text-gray-500">
-                            {ordersCount} {ordersCount === 1 ? 'orden' : 'órdenes'} · ${totalRevenue.toFixed(2)} total
+                            {ordersCount} {ordersCount === 1 ? 'orden' : 'órdenes'} · ${(totalRevenue || 0).toFixed(2)} total
                         </p>
                     </div>
                 </div>

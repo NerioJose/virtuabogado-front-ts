@@ -1,16 +1,11 @@
-/**
- * Panel de Clientes - Conectado a clientsStore
- * Muestra y gestiona clientes en tiempo real
- */
-
-import { useMemo, memo } from 'react';
-import { FiEdit, FiTrash2, FiEye, FiFilter, FiMail, FiPhone } from 'react-icons/fi';
+import { useState, useMemo, memo } from 'react';
+import { FiUsers, FiSearch, FiEdit, FiTrash2, FiEye, FiMoreVertical, FiMail, FiPhone, FiFilter } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
-import { ElementoSeleccionable } from '@/types/index';
-import { useClientsStore, ClientStatus } from '@/features/clients';
-import { useState } from 'react';
+import { useClients } from '@/features/clients/hooks/useClients';
+import { ClientStatus } from '@/features/clients/types/clients.types';
 import { useOrdersStore } from '@/features/orders';
+import { ElementoSeleccionable } from '@/types/index';
 
 interface ClientesPanelProps {
   terminoBusqueda: string;
@@ -18,26 +13,29 @@ interface ClientesPanelProps {
 }
 
 function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
-  // ============ ZUSTAND STORES ============
-  const clients = useClientsStore((state) => state.clients);
-  const orders = useOrdersStore((state) => state.orders);
+  // ============ REACT QUERY ============
+  const { data: clients = [], isLoading, error } = useClients();
+  const orders = useOrdersStore((state) => state.orders); // Keep using orders store for now until that is refactored globally or locally
 
   const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
 
   // Calcular si un cliente ha estado activo recientemente (últimos 30 días)
-  const esClienteReciente = (createdAt: Date) => {
+  const esClienteReciente = (createdAt: Date | string) => {
     const hoy = new Date();
-    const diferenciaDias = Math.floor((hoy.getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+    const fechaRegistro = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
+    const diferenciaDias = Math.floor((hoy.getTime() - fechaRegistro.getTime()) / (1000 * 60 * 60 * 24));
     return diferenciaDias <= 30;
   };
 
   // Filtrar clientes según término de búsqueda y filtro de actividad
   const clientesFiltrados = useMemo(() => {
+    const term = terminoBusqueda.toLowerCase();
+
     return clients.filter(cliente => {
       const coincideTermino =
-        cliente.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-        cliente.email.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-        (cliente.telefono && cliente.telefono.includes(terminoBusqueda));
+        cliente.nombre.toLowerCase().includes(term) ||
+        cliente.email.toLowerCase().includes(term) ||
+        (cliente.telefono && cliente.telefono.includes(term));
 
       if (filtroActividad === 'todos') return coincideTermino;
       if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.createdAt);
@@ -48,9 +46,17 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
   }, [clients, terminoBusqueda, filtroActividad]);
 
   // Obtener órdenes del cliente
-  const getClientOrders = (clientId: number) => {
+  const getClientOrders = (clientId: string) => {
     return orders.filter(order => order.userId === clientId);
   };
+
+  if (isLoading && clients.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

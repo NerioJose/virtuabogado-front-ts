@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Abogado, Estadisticas, UseAbogadoDataReturn } from '../types';
 
-export function useAbogadoData(abogadoId?: number): UseAbogadoDataReturn {
+export function useAbogadoData(abogadoId?: string): UseAbogadoDataReturn {
 	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [estadisticas, setEstadisticas] = useState<Estadisticas>({
@@ -19,7 +19,7 @@ export function useAbogadoData(abogadoId?: number): UseAbogadoDataReturn {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 
 			setAbogado({
-				id: abogadoId || 1,
+				id: abogadoId || '1',
 				nombre: 'Carlos Méndez',
 				email: 'carlos.mendez@ejemplo.com',
 				telefono: '+34 612 345 678',

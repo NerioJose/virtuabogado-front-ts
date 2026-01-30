@@ -1,11 +1,7 @@
-/**
- * Store global de abogados - Zustand
- * Gestiona todos los abogados de la aplicación
- */
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Lawyer, LawyersState, LawyersFilters } from '../types/lawyers.types';
+import { apiClient } from '@/lib/apiClient';
 
 const initialState = {
     lawyers: [],
@@ -28,46 +24,74 @@ export const useLawyersStore = create<LawyersState>()(
                 }));
             },
 
+            setLawyers: (lawyers: Lawyer[]) => {
+                set({ lawyers, isLoading: false, error: null });
+            },
+
             fetchLawyers: async (filters?: LawyersFilters) => {
                 set({ isLoading: true, error: null });
                 try {
-                    // TODO: Implementar llamada real a la API
-                    console.log('Fetching lawyers with filters:', filters);
-
-                    // Mock: Cargar abogados del localStorage por ahora
-                    const storedLawyers = localStorage.getItem('lawyers');
-                    const lawyers = storedLawyers ? JSON.parse(storedLawyers) : [];
+                    const lawyers = await apiClient.get<Lawyer[]>('/api/lawyers');
 
                     set({
                         lawyers,
                         isLoading: false,
                         filters: filters || {},
                     });
+
+                    console.log('✅ LawyersStore: Lawyers fetched from API:', lawyers.length);
                 } catch (error) {
+                    console.error('❌ LawyersStore: Error fetching lawyers:', error);
                     set({
-                        error: error instanceof Error ? error.message : 'Error al cargar abogados',
+                        error: 'Error de conexión (Modo Offline)',
                         isLoading: false,
                     });
                 }
             },
 
-            updateLawyer: (id: number, data: Partial<Lawyer>) => {
-                set((state) => ({
-                    lawyers: state.lawyers.map((lawyer) =>
-                        lawyer.id === id
-                            ? { ...lawyer, ...data, updatedAt: new Date() }
-                            : lawyer
-                    ),
-                }));
+            updateLawyer: async (id: string, data: Partial<Lawyer>) => {
+                try {
+                    set({ isLoading: true, error: null });
+                    const updatedLawyer = await apiClient.put<Lawyer>(`/api/lawyers/${id}`, data);
+
+                    set((state) => ({
+                        lawyers: state.lawyers.map((lawyer) =>
+                            lawyer.id === id ? { ...lawyer, ...updatedLawyer } : lawyer
+                        ),
+                        isLoading: false,
+                    }));
+                    console.log('✅ LawyersStore: Lawyer updated in API:', id);
+                } catch (error) {
+                    console.error('❌ LawyersStore: Error updating lawyer:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al actualizar el abogado',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
             },
 
-            deleteLawyer: (id: number) => {
-                set((state) => ({
-                    lawyers: state.lawyers.filter((lawyer) => lawyer.id !== id),
-                }));
+            deleteLawyer: async (id: string) => {
+                try {
+                    set({ isLoading: true, error: null });
+                    await apiClient.delete(`/api/lawyers/${id}`);
+
+                    set((state) => ({
+                        lawyers: state.lawyers.filter((lawyer) => lawyer.id !== id),
+                        isLoading: false,
+                    }));
+                    console.log('✅ LawyersStore: Lawyer deleted in API (logic delete):', id);
+                } catch (error) {
+                    console.error('❌ LawyersStore: Error deleting lawyer:', error);
+                    set({
+                        error: error instanceof Error ? error.message : 'Error al eliminar el abogado',
+                        isLoading: false,
+                    });
+                    throw error;
+                }
             },
 
-            getLawyerById: (id: number) => {
+            getLawyerById: (id: string) => {
                 return get().lawyers.find((lawyer) => lawyer.id === id);
             },
 
@@ -84,20 +108,15 @@ export const useLawyersStore = create<LawyersState>()(
             },
         }),
         {
-            name: 'virtuabogado-lawyers-v2', // v2 para limpiar datos mock del localStorage
+            name: 'virtuabogado-lawyers-v2',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({
-                lawyers: state.lawyers,
-            }),
         }
     )
 );
 
-// Función para inicializar abogados - SIN mock data
+// Función para inicializar abogados desde la API
 export const initializeLawyers = () => {
     const store = useLawyersStore.getState();
-
-    // Solo cargar desde localStorage si existe
-    // Los abogados se agregan manualmente por el admin
-    console.log('LawyersStore initialized:', store.lawyers.length, 'lawyers');
+    console.log('🔄 LawyersStore: Inicializando datos desde la API...');
+    store.fetchLawyers();
 };

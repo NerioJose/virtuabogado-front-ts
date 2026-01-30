@@ -1,3 +1,5 @@
+'use client';
+
 import { useCheckoutStore } from '../store/checkoutStore';
 
 /**
@@ -20,6 +22,8 @@ export const useCheckout = () => {
         isLoading: store.isLoading,
         error: store.error,
         isExistingUser: store.isExistingUser,
+        tempPassword: store.tempPassword,
+        completedAt: store.completedAt,
 
         // Acciones
         openCheckout: store.openCheckout,
@@ -30,6 +34,7 @@ export const useCheckout = () => {
         setPaymentMethod: store.setPaymentMethod,
         checkExistingUser: store.checkExistingUser,
         submitOrder: store.submitOrder,
+        markAsCompleted: store.markAsCompleted,
         reset: store.reset,
     };
 };

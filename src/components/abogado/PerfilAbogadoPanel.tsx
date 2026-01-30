@@ -16,7 +16,7 @@ import userImage from '../../../public/images/user-placeholder.png';
 
 interface PerfilAbogadoPanelProps {
 	abogado: {
-		id: number;
+		id: string;
 		nombre: string;
 		email: string;
 		telefono: string;

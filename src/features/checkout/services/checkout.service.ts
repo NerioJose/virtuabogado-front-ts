@@ -1,196 +1,171 @@
 import {
     UserCheckoutData,
-    PaymentData,
     OrderResponse,
-    PaymentMethod,
     PaymentRequest,
     PaymentResult
 } from '../types/checkout.types';
-import type { Servicio } from '@/shared/types/entities.types';
+import { apiClient } from '@/lib/apiClient';
+import { createClient } from '@/utils/supabase/client';
 
 interface OrderRequest {
     serviceId: number;
-    userId: number; // Cambiado a number
+    userId: string;
     paymentId: string;
     total: number;
 }
 
 class CheckoutService {
+    private supabase = createClient();
+
     /**
-     * Verifica si un email ya existe en el sistema
+     * Intenta registrar al usuario usando el API server-side primero.
+     * Si falla, usa cliente directo con delay para evitar rate limits.
      */
-    async checkEmailExists(email: string): Promise<boolean> {
-        try {
-            // TODO: Integrar con API real
-            // const response = await apiClient.get(`/users/check-email?email=${email}`);
-            // return response.data.exists;
+    async registerOrLogin(userData: UserCheckoutData): Promise<{ user: any, isNewUser: boolean }> {
+        const email = userData.email.trim();
+        const { password, nombre, phone } = userData;
 
-            console.log('Checking email:', email);
-
-            // Revisar localStorage para simular verificación
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const exists = users.some((u: { email: string }) => u.email === email);
-
-            console.log('Email exists in system:', exists);
-            return exists;
-        } catch (error) {
-            console.error('Error checking email:', error);
-            return false; // En caso de error, asumir que no existe
+        if (!password) {
+            throw new Error("Se requiere contraseña para crear la cuenta o iniciar sesión.");
         }
-    }
 
-    /**
-     * Auto-login silencioso para usuarios existentes
-     */
-    async autoLogin(email: string): Promise<void> {
+        // ESTRATEGIA 1: Intentar API server-side (sin rate limits)
+        console.log('🔐 Intentando registro via API server-side:', email);
+
         try {
-            // TODO: Integrar con authService existente
-            // await authService.login(email, temporaryPassword);
-
-            console.log('Auto-login for:', email);
-            // Simulación
-            await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (error) {
-            console.error('Error in auto-login:', error);
-            throw new Error('No se pudo iniciar sesión automáticamente');
-        }
-    }
-
-    /**
-     * Auto-registro para nuevos usuarios
-     */
-    async autoRegister(userData: UserCheckoutData): Promise<void> {
-        try {
-            // TODO: Integrar con authService existente
-            // const tempPassword = generateTemporaryPassword();
-            // await authService.register({ ...userData, password: tempPassword });
-            // await emailService.sendWelcomeEmail(userData.email, tempPassword);
-
-            console.log('Auto-register for:', userData.email);
-
-            // Simulación: guardar en localStorage
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            users.push({
-                email: userData.email,
-                name: userData.name,
-                phone: userData.phone,
-                createdAt: new Date().toISOString(),
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    nombre: nombre || 'Usuario',
+                    telefono: phone || ''
+                })
             });
-            localStorage.setItem('users', JSON.stringify(users));
 
-            await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (error) {
-            console.error('Error in auto-register:', error);
-            throw new Error('No se pudo crear la cuenta automáticamente');
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`✅ ${data.isNewUser ? 'Registro' : 'Login'} exitoso (server-side):`, data.user.id);
+
+                // Crear sesión en el cliente
+                const { error: signInError } = await this.supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (signInError) {
+                    console.warn('⚠️ Error al crear sesión cliente:', signInError.message);
+                }
+
+                return {
+                    user: data.user,
+                    isNewUser: data.isNewUser
+                };
+            } else {
+                const errorData = await response.json();
+                console.warn('⚠️ API server-side falló:', errorData.error);
+                // Continuar con fallback
+            }
+        } catch (apiError) {
+            console.warn('⚠️ API server-side no disponible, usando fallback:', apiError);
         }
+
+        // ESTRATEGIA 2: Fallback a cliente directo (con delay para evitar rate limits)
+        console.log('🔄 Usando autenticación cliente directa...');
+
+        // Delay de 1 segundo para evitar rate limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Intentar login primero
+        const { data: signInData, error: signInError } = await this.supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (signInData.user && !signInError) {
+            console.log('✅ Login exitoso (cliente):', signInData.user.id);
+            return { user: signInData.user, isNewUser: false };
+        }
+
+        // Si login falla, intentar registro
+        const { data: signUpData, error: signUpError } = await this.supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    nombre: nombre || 'Usuario',
+                    telefono: phone || '',
+                    rol: 'CLIENTE'
+                }
+            }
+        });
+
+        if (signUpData.user && !signUpError) {
+            console.log('✨ Usuario registrado (cliente):', signUpData.user.id);
+            return { user: signUpData.user, isNewUser: true };
+        }
+
+        // Manejo de errores
+        if (signUpError) {
+            if (signUpError.message.includes('already registered')) {
+                throw new Error("Usuario ya existe pero la contraseña es incorrecta.");
+            }
+            if (signUpError.message.toLowerCase().includes('rate limit')) {
+                throw new Error("Demasiados registros. Por favor espera 1 minuto e intenta de nuevo, o usa una cuenta existente.");
+            }
+            throw new Error(signUpError.message || "Error al crear la cuenta.");
+        }
+
+        throw new Error("Error inesperado en autenticación.");
     }
 
     /**
-     * Procesa el pago
+     * Procesa el pago (Simulado)
      */
     async processPayment(request: PaymentRequest): Promise<PaymentResult> {
-        try {
-            // TODO: Integrar con gateway de pago real (Stripe, PayPal, etc.)
-            // const response = await paymentGateway.processPayment({
-            //   amount: request.service.precio,
-            //   method: request.paymentMethod,
-            //   card: request.paymentData,
-            // });
+        // MOCK: Aquí iría la integración con Stripe/PayPal
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simular latencia de red
 
-            console.log('Processing payment for:', request.service.nombre);
-
-            // Simulación de procesamiento
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Validación básica del número de tarjeta (solo para simulación)
-            const cardNumber = request.paymentData.cardNumber.replace(/\s/g, '');
-            if (cardNumber.length < 15 || cardNumber.length > 16) {
-                throw new Error('Número de tarjeta inválido');
-            }
-
-            // Generar IDs numéricos
-            const timestamp = Date.now();
-            const userId = timestamp % 1000000; // ID numérico de 6 dígitos
-
-            return {
-                paymentId: `PAY-${timestamp}`,
-                userId: userId, // Ahora es un número
-                status: 'approved',
-                // Agregar datos del usuario para nuevos registros
-                user: !request.isExistingUser && request.createAccount ? {
-                    id: userId,
-                    email: request.email,
-                    nombre: request.nombre || '',
-                    rol: 'cliente' as const,
-                } : undefined,
-            };
-        } catch (error) {
-            console.error('Error processing payment:', error);
-            throw error instanceof Error ? error : new Error('Error al procesar el pago');
-        }
+        return {
+            paymentId: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            userId: request.userId ?? '',
+            status: 'approved'
+        };
     }
 
     /**
-     * Crea la orden en el sistema
+     * Crea la orden en el sistema (Supabase DB via API o directa)
      */
     async createOrder(orderData: OrderRequest): Promise<OrderResponse> {
         try {
-            // TODO: Integrar con API real
-            // const response = await apiClient.post('/orders', orderData);
-            // return response.data;
+            console.log('📤 Creando orden via API:', orderData);
 
-            console.log('Creating order:', orderData);
-
-            // Simulación
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const timestamp = Date.now();
-            const numericOrderId = timestamp % 1000000; // ID numérico
-            const orderId = `ORD-${timestamp}`;
-
-            // Guardar en localStorage para demo
-            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-            orders.push({
-                ...orderData,
-                orderId,
-                numericId: numericOrderId,
-                status: 'completed',
-                createdAt: new Date().toISOString(),
+            const response = await apiClient.post<any>('/api/orders', {
+                serviceId: orderData.serviceId,
+                userId: orderData.userId,
+                total: orderData.total,
+                paymentId: orderData.paymentId
             });
-            localStorage.setItem('orders', JSON.stringify(orders));
+
+            console.log('✅ Orden creada exitosamente:', response);
 
             return {
-                orderId,
+                orderId: response.uuid || response.id, // API returns both
                 status: 'success',
-                message: 'Orden creada exitosamente',
+                message: 'Orden creada exitosamente'
             };
-        } catch (error) {
-            console.error('Error creating order:', error);
-            throw new Error('No se pudo crear la orden');
+
+        } catch (error: any) {
+            console.error('❌ Error creating order via API:', error);
+            throw new Error(error.message || "Error al procesar la orden en el servidor.");
         }
     }
 
-    /**
-     * Envía email de confirmación
-     */
     async sendConfirmationEmail(orderId: string): Promise<void> {
-        try {
-            // TODO: Integrar con servicio de emails
-            // await emailService.sendOrderConfirmation(orderId);
-
-            console.log('Sending confirmation email for order:', orderId);
-            await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (error) {
-            // No lanzamos error aquí, solo logueamos
-            console.error('Error sending confirmation email:', error);
-        }
-    }
-
-    /**
-     * Genera un password temporal
-     */
-    private generateTemporaryPassword(): string {
-        return Math.random().toString(36).slice(-8);
+        console.log('📧 (Simulado) Enviando email para orden:', orderId);
     }
 }
 

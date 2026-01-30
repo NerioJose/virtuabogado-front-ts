@@ -13,6 +13,15 @@ import {
 	FiPlus,
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { UserRole } from '@/shared/types/entities.types';
+import { useOrdersStore } from '@/features/orders/store/ordersStore';
+// import { initializeOrders } from '@/features/orders';
+import { useUpdateOrder } from '@/features/orders/hooks/useOrders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
+// import { initializeClients, useClientsStore } from '@/features/clients';
+// import { initializeLawyers, useLawyersStore } from '@/features/lawyers';
+import { useDeleteClient, useUpdateClient } from '@/features/clients/hooks/useClients';
+import { useDeleteLawyer, useUpdateLawyer } from '@/features/lawyers/hooks/useLawyers';
 
 // Importar componentes principales
 import Sidebar from '@/components/admin/Sidebar';
@@ -55,7 +64,7 @@ const LoadingSpinner = ({
 
 export default function AdminPage() {
 	const router = useRouter();
-	const { user, isAuthenticated, checkAuth } = useAuthStore();
+	const { user, isAuthenticated, checkAuth, logout: storeLogout } = useAuthStore();
 	const [seccionActiva, setSeccionActiva] = useState<SeccionAdmin>('dashboard');
 	const [modalAbierto, setModalAbierto] = useState(false);
 	const [tipoModal, setTipoModal] = useState<
@@ -70,11 +79,20 @@ export default function AdminPage() {
 		checkAuth();
 	}, [checkAuth]);
 
+	// Inicializar datos del dashboard
+	useEffect(() => {
+		if (isAuthenticated && user?.rol === UserRole.ADMIN) {
+			console.log('📊 AdminPage: Inicializando datos...');
+			// initializeOrders(); -- Legacy removed, using React Query
+			// React Query handles clients and lawyers automatically
+		}
+	}, [isAuthenticated, user]);
+
 	useEffect(() => {
 		if (!isAuthenticated && user === null) {
 			// Solo redirigir si definitivamente no está autenticado
 			router.push('/login');
-		} else if (user && user.rol !== 'admin') {
+		} else if (user && user.rol !== UserRole.ADMIN) {
 			console.error('No autorizado');
 			router.push('/login');
 		}
@@ -95,13 +113,70 @@ export default function AdminPage() {
 		setElementoSeleccionado(null);
 	};
 
+	// ============ REACT QUERY MUTATIONS ============
+	const deleteClientMutation = useDeleteClient();
+	const updateClientMutation = useUpdateClient();
+	const deleteLawyerMutation = useDeleteLawyer();
+	const updateLawyerMutation = useUpdateLawyer();
+	const updateOrderMutation = useUpdateOrder();
+
+	// Manejador para guardar o eliminar datos desde el modal
+	const handleSave = async (data: any) => {
+		try {
+			const id = elementoSeleccionado?.id;
+			console.log('🎯 Admin handleSave called:', { seccionActiva, tipoModal, id, data });
+
+			switch (seccionActiva) {
+				case 'clientes':
+					if (tipoModal === 'eliminar' && id) {
+						await deleteClientMutation.mutateAsync(id);
+					} else if (tipoModal === 'editar' && id) {
+						await updateClientMutation.mutateAsync({ id, data });
+					}
+					// TODO: Implementar crear cliente si es necesario
+					break;
+
+				case 'abogados':
+					if (tipoModal === 'eliminar' && id) {
+						await deleteLawyerMutation.mutateAsync(id);
+					} else if (tipoModal === 'editar' && id) {
+						await updateLawyerMutation.mutateAsync({ id, data });
+					}
+					// TODO: Implementar crear abogado si es necesario
+					break;
+
+				case 'casos':
+					if (tipoModal === 'eliminar' && id) {
+						await useOrdersStore.getState().deleteOrder(id);
+					} else if (tipoModal === 'editar' && id) {
+						await useOrdersStore.getState().updateOrderStatus(id, data.status);
+					} else if (tipoModal === 'asignar' && id) {
+						// Usar la mutación de React Query para asignar abogado
+						// Actualizamos también el estado a "EN_PROGRESO" (PROCESSING)
+						await updateOrderMutation.mutateAsync({
+							id,
+							data: {
+								lawyerId: data.lawyerId,
+								status: OrderStatus.PROCESSING,
+								assignedAt: new Date().toISOString()
+							}
+						});
+					}
+					break;
+
+				default:
+					console.warn('Acción no implementada para la sección:', seccionActiva);
+			}
+		} catch (error) {
+			console.error('Error al procesar acción en admin:', error);
+			throw error;
+		}
+	};
+
 	// Manejador de cierre de sesión
 	const handleLogout = async () => {
 		try {
-			// Eliminar los datos del usuario del localStorage
-			localStorage.removeItem('user');
-
-			// Redirigir al usuario a la página de login
+			storeLogout();
 			router.push('/login');
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
@@ -320,6 +395,7 @@ export default function AdminPage() {
 						tipo={tipoModal}
 						elemento={elementoSeleccionado}
 						onClose={cerrarModal}
+						onSave={handleSave}
 					/>
 				</Suspense>
 			)}

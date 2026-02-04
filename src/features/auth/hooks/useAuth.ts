@@ -38,7 +38,7 @@ export function useAuth() {
                         : ROUTES.HOME;
 
             router.push(redirectPath);
-            router.refresh();
+            // Removed router.refresh() - it causes unnecessary delay. Next.js automatically fetches fresh data on route change.
 
             return user;
         } catch (err) {
@@ -67,7 +67,7 @@ export function useAuth() {
                 user.rol === UserRole.ABOGADO ? ROUTES.ABOGADO : ROUTES.HOME;
 
             router.push(redirectPath);
-            router.refresh();
+            // Removed router.refresh() - it causes unnecessary delay. Next.js automatically fetches fresh data on route change.
 
             return user;
         } catch (err) {
@@ -91,7 +91,7 @@ export function useAuth() {
             // El store ya maneja la llamada a authService.logout
             await setLogout();
             router.push(ROUTES.LOGIN);
-            router.refresh();
+            // Removed router.refresh() - not needed for logout redirect
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : 'Error al cerrar sesión';

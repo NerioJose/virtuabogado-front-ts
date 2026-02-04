@@ -1,11 +1,293 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
 	FiSave,
 	FiRefreshCw,
 	FiAlertTriangle,
 	FiCheck,
 	FiDownload,
+	FiDollarSign,
+	FiTrendingUp,
+	FiAlertCircle,
 } from 'react-icons/fi';
+import { useFinancialSettings, useUpdateFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
+import { financialSettingsService } from '@/features/financial-settings/services/financial-settings.service';
+import { useOrders } from '@/features/orders/hooks/useOrders';
+
+// Componente para configuración financiera
+function FinancialSettingsSection() {
+	const { data: financialSettings, isLoading: loadingSettings } = useFinancialSettings();
+	const { data: orders = [] } = useOrders();
+	const updateSettings = useUpdateFinancialSettings();
+
+	// Estados locales para edición - siempre con valores definidos
+	const [lawyerCommission, setLawyerCommission] = useState<number>(70);
+	const [operationalCosts, setOperationalCosts] = useState<number>(10);
+	const [isSaving, setIsSaving] = useState(false);
+	const [saveMessage, setSaveMessage] = useState('');
+
+	// Sincronizar con datos del servidor cuando se carguen
+	useEffect(() => {
+		if (financialSettings) {
+			setLawyerCommission(financialSettings.lawyerCommissionPercentage);
+			setOperationalCosts(financialSettings.operationalCostsPercentage);
+		}
+	}, [financialSettings]);
+
+
+	// Validaciones en tiempo real
+	const validation = useMemo(() => {
+		return financialSettingsService.validateSettings({
+			lawyerCommissionPercentage: lawyerCommission,
+			operationalCostsPercentage: operationalCosts,
+		});
+	}, [lawyerCommission, operationalCosts]);
+
+	// Preview con datos reales
+	const previewData = useMemo(() => {
+		const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+		return financialSettingsService.calculatePreview(
+			totalRevenue,
+			lawyerCommission,
+			operationalCosts
+		);
+	}, [orders, lawyerCommission, operationalCosts]);
+
+	const handleSave = async () => {
+		if (!validation.isValid) return;
+
+		setIsSaving(true);
+		setSaveMessage('');
+
+		try {
+			await updateSettings.mutateAsync({
+				lawyerCommissionPercentage: lawyerCommission,
+				operationalCostsPercentage: operationalCosts,
+			});
+			setSaveMessage('Configuración financiera guardada correctamente');
+			setTimeout(() => setSaveMessage(''), 3000);
+		} catch (error) {
+			console.error('Error saving financial settings:', error);
+			setSaveMessage('Error al guardar la configuración');
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	if (loadingSettings) {
+		return (
+			<div className="bg-white rounded-lg shadow-sm overflow-hidden p-6">
+				<div className="animate-pulse">
+					<div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+					<div className="h-32 bg-gray-200 rounded"></div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="bg-white rounded-lg shadow-sm overflow-hidden">
+			<div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
+				<div className="flex items-center">
+					<FiDollarSign className="text-green-600 text-2xl mr-3" />
+					<div>
+						<h2 className="text-lg font-medium text-gray-900">
+							Configuración Financiera
+						</h2>
+						<p className="mt-1 text-sm text-gray-500">
+							Define los porcentajes de comisiones y gastos operativos
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="p-6">
+				{/* Mensajes de éxito/error */}
+				{saveMessage && (
+					<div className={`mb-4 p-3 rounded-lg flex items-center ${saveMessage.includes('Error')
+						? 'bg-red-50 border border-red-200 text-red-700'
+						: 'bg-green-50 border border-green-200 text-green-700'
+						}`}>
+						<FiCheck className="mr-2" />
+						{saveMessage}
+					</div>
+				)}
+
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+					{/* Columna izquierda: Configuración */}
+					<div className="space-y-4">
+						<div>
+							<label
+								htmlFor="lawyerCommission"
+								className="block text-sm font-medium text-gray-700 mb-1">
+								Comisión para Abogados (%)
+							</label>
+							<input
+								type="number"
+								id="lawyerCommission"
+								min="0"
+								max="100"
+								step="0.01"
+								value={lawyerCommission}
+								onChange={(e) => setLawyerCommission(parseFloat(e.target.value) || 0)}
+								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-azul-primario focus:ring-azul-primario sm:text-sm"
+							/>
+							<p className="mt-1 text-xs text-gray-500">
+								Porcentaje del total de la orden que recibe el abogado
+							</p>
+						</div>
+
+						<div>
+							<label
+								htmlFor="operationalCosts"
+								className="block text-sm font-medium text-gray-700 mb-1">
+								Gastos Operativos (%)
+							</label>
+							<input
+								type="number"
+								id="operationalCosts"
+								min="0"
+								max="100"
+								step="0.01"
+								value={operationalCosts}
+								onChange={(e) => setOperationalCosts(parseFloat(e.target.value) || 0)}
+								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-azul-primario focus:ring-azul-primario sm:text-sm"
+							/>
+							<p className="mt-1 text-xs text-gray-500">
+								Porcentaje de los ingresos totales destinado a gastos operativos
+							</p>
+						</div>
+
+						{/* Validaciones y Advertencias */}
+						{validation.errors.length > 0 && (
+							<div className="bg-red-50 border border-red-200 rounded-lg p-3">
+								<div className="flex">
+									<FiAlertCircle className="text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+									<div>
+										<h4 className="text-sm font-medium text-red-800">Errores de validación:</h4>
+										<ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+											{validation.errors.map((error, idx) => (
+												<li key={idx}>{error}</li>
+											))}
+										</ul>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{validation.warnings.length > 0 && validation.isValid && (
+							<div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+								<div className="flex">
+									<FiAlertTriangle className="text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
+									<div>
+										<h4 className="text-sm font-medium text-yellow-800">Advertencias:</h4>
+										<ul className="mt-1 text-sm text-yellow-700 list-disc list-inside">
+											{validation.warnings.map((warning, idx) => (
+												<li key={idx}>{warning}</li>
+											))}
+										</ul>
+									</div>
+								</div>
+							</div>
+						)}
+
+						<button
+							onClick={handleSave}
+							disabled={!validation.isValid || isSaving}
+							className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario disabled:opacity-50 disabled:cursor-not-allowed">
+							{isSaving ? (
+								<>
+									<svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+										<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+										<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									</svg>
+									Guardando...
+								</>
+							) : (
+								<>
+									<FiSave className="mr-2" />
+									Guardar Cambios
+								</>
+							)}
+						</button>
+					</div>
+
+					{/* Columna derecha: Preview en tiempo real */}
+					<div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-lg p-6 border border-blue-100">
+						<div className="flex items-center mb-4">
+							<FiTrendingUp className="text-blue-600 text-xl mr-2" />
+							<h3 className="text-lg font-semibold text-gray-900">Preview en Tiempo Real</h3>
+						</div>
+						<p className="text-sm text-gray-600 mb-4">
+							Simulación con ingresos actuales: <span className="font-bold">${previewData.totalRevenue?.toLocaleString() || 0}</span>
+						</p>
+
+						<div className="space-y-3">
+							<div className="bg-white rounded p-3 shadow-sm">
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-gray-600">Pago a Abogados ({lawyerCommission}%)</span>
+									<span className="text-sm font-bold text-blue-600">
+										${previewData.lawyerPayments?.toLocaleString() || 0}
+									</span>
+								</div>
+							</div>
+
+							<div className="bg-white rounded p-3 shadow-sm">
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-gray-600">Gastos Operativos ({operationalCosts}%)</span>
+									<span className="text-sm font-bold text-orange-600">
+										${previewData.operationalCosts?.toLocaleString() || 0}
+									</span>
+								</div>
+							</div>
+
+							<div className="bg-white rounded p-3 shadow-sm border-2 border-green-200">
+								<div className="flex justify-between items-center">
+									<span className="text-sm font-semibold text-gray-700">Ganancia Neta Plataforma</span>
+									<span className="text-lg font-bold text-green-600">
+										${previewData.netProfit?.toLocaleString() || 0}
+									</span>
+								</div>
+								<div className="mt-1 text-xs text-gray-500">
+									Margen: {previewData.profitMargin?.toFixed(2) || 0}%
+								</div>
+							</div>
+						</div>
+
+						{/* Indicador visual del margen */}
+						<div className="mt-4">
+							<div className="flex justify-between text-xs text-gray-600 mb-1">
+								<span>Distribución</span>
+								<span>{100 - (lawyerCommission + operationalCosts)}% para plataforma</span>
+							</div>
+							<div className="h-3 bg-gray-200 rounded-full overflow-hidden flex">
+								<div
+									style={{ width: `${lawyerCommission}%` }}
+									className="bg-blue-500 transition-all duration-300"
+									title={`Abogados: ${lawyerCommission}%`}
+								></div>
+								<div
+									style={{ width: `${operationalCosts}%` }}
+									className="bg-orange-500 transition-all duration-300"
+									title={`Gastos: ${operationalCosts}%`}
+								></div>
+								<div
+									style={{ width: `${100 - (lawyerCommission + operationalCosts)}%` }}
+									className="bg-green-500 transition-all duration-300"
+									title={`Ganancia: ${100 - (lawyerCommission + operationalCosts)}%`}
+								></div>
+							</div>
+							<div className="flex justify-between text-xs text-gray-500 mt-1">
+								<span>Abogados</span>
+								<span>Gastos</span>
+								<span>Ganancia</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
 
 export default function ConfiguracionPanel() {
 	// Estados para los diferentes grupos de configuración
@@ -67,8 +349,8 @@ export default function ConfiguracionPanel() {
 			...configuracionPagos,
 			[name]:
 				name === 'comisionPlataforma' ||
-				name === 'diasPagoAbogados' ||
-				name === 'ivaAplicado'
+					name === 'diasPagoAbogados' ||
+					name === 'ivaAplicado'
 					? parseInt(value)
 					: value,
 		});
@@ -452,6 +734,10 @@ export default function ConfiguracionPanel() {
 				</div>
 			</div>
 
+
+		{/* Configuración Financiera Dinámica */}
+		<FinancialSettingsSection />
+
 			{/* Botones de acción */}
 			<div className="flex justify-end space-x-4">
 				<button
@@ -543,6 +829,7 @@ export default function ConfiguracionPanel() {
 								id="copiasAutomaticas"
 								name="copiasAutomaticas"
 								checked={true}
+onChange={() => {}}
 								className="h-4 w-4 rounded border-gray-300 text-azul-primario focus:ring-azul-primario"
 							/>
 							<label

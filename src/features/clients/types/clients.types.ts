@@ -39,7 +39,7 @@ export interface UpdateClientRequest {
 }
 
 export interface ClientsFilters {
-    status?: ClientStatus;
+    status?: ClientStatus | 'ALL';
     searchQuery?: string;
     startDate?: Date;
     endDate?: Date;

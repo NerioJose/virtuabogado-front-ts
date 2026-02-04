@@ -15,6 +15,7 @@ export function useOrders(filters?: OrdersFilters) {
     return useQuery({
         queryKey: ORDER_KEYS.list(filters || {}),
         queryFn: () => ordersService.getAll(filters),
+        staleTime: 1000 * 60 * 2, // 2 minutes - orders change frequently
     });
 }
 
@@ -30,7 +31,8 @@ export function useOrder(id: string) {
     return useQuery({
         queryKey: ORDER_KEYS.detail(id),
         queryFn: () => ordersService.getById(Number(id)),
-        enabled: !!id,
+        enabled: !!id && id !== 'new', // Don't fetch for new orders
+        staleTime: 1000 * 60 * 5, // 5 minutes - individual order details change less frequently
     });
 }
 
@@ -41,9 +43,32 @@ export const useCreateOrder = () => {
         mutationFn: async (orderData: any) => {
             return apiClient.post<any>('/api/orders', orderData);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
-            console.log('✅ Orden creada y caché invalidada');
+        onMutate: async (newOrder) => {
+            // Cancel any outgoing refetches to avoid overwriting optimistic update
+            await queryClient.cancelQueries({ queryKey: ORDER_KEYS.all });
+
+            // Snapshot the previous value
+            const previousOrders = queryClient.getQueryData(ORDER_KEYS.list({}));
+
+            // Optimistically update to show the new order immediately
+            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any[] = []) => {
+                return [...old, { ...newOrder, id: 'temp-' + Date.now(), createdAt: new Date() }];
+            });
+
+            // Return context with snapshot for rollback
+            return { previousOrders };
+        },
+        onError: (err, newOrder, context) => {
+            // Rollback to previous state on error
+            if (context?.previousOrders) {
+                queryClient.setQueryData(ORDER_KEYS.list({}), context.previousOrders);
+            }
+            console.error('❌ Error creating order:', err);
+        },
+        onSuccess: (data) => {
+            // Only invalidate related queries, not all
+            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.lists() });
+            console.log('✅ Orden creada y caché actualizada selectivamente');
         },
     });
 };
@@ -53,12 +78,60 @@ export const useUpdateOrder = () => {
 
     return useMutation({
         mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
-            // Using PATCH for partial updates (e.g. assigning lawyer)
             return apiClient.patch<any>(`/api/orders/${id}`, data);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
-            console.log('✅ Orden actualizada y caché invalidada');
+        onMutate: async ({ id, data }) => {
+            const orderId = String(id);
+
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ORDER_KEYS.detail(orderId) });
+            await queryClient.cancelQueries({ queryKey: ORDER_KEYS.lists() });
+
+            // Snapshot previous values
+            const previousOrder = queryClient.getQueryData(ORDER_KEYS.detail(orderId));
+            const previousLists = queryClient.getQueriesData({ queryKey: ORDER_KEYS.lists() });
+
+            // Optimistically update detail view
+            queryClient.setQueryData(ORDER_KEYS.detail(orderId), (old: any) => {
+                return old ? { ...old, ...data, updatedAt: new Date() } : old;
+            });
+
+            // Optimistically update all list queries that might contain this order
+            queryClient.setQueriesData({ queryKey: ORDER_KEYS.lists() }, (old: any[] = []) => {
+                return old.map((order: any) =>
+                    String(order.id) === orderId
+                        ? { ...order, ...data, updatedAt: new Date() }
+                        : order
+                );
+            });
+
+            return { previousOrder, previousLists, orderId };
+        },
+        onError: (err, variables, context) => {
+            // Rollback on error
+            if (context?.previousOrder) {
+                queryClient.setQueryData(ORDER_KEYS.detail(context.orderId), context.previousOrder);
+            }
+            if (context?.previousLists) {
+                context.previousLists.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
+            console.error('❌ Error updating order:', err);
+        },
+        onSuccess: (data, { id }) => {
+            // Selective invalidation - only invalidate queries that need fresh data
+            const orderId = String(id);
+            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.detail(orderId) });
+
+            // Invalidate lists that might show this order
+            queryClient.invalidateQueries({
+                queryKey: ORDER_KEYS.lists(),
+                refetchType: 'active' // Only refetch currently active queries
+            });
+
+            console.log('✅ Orden actualizada con invalidación selectiva');
         },
     });
 };
+

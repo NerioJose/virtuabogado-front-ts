@@ -201,7 +201,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                             {order.status === OrderStatus.PROCESSING && (
                                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
                                     <div className="flex items-start">
-                                        <FiUser className="text-blue-600 mt-1 mr-3 flex-shrink-0" />
+                                        <FiClock className="text-blue-600 mt-1 mr-3 flex-shrink-0" />
                                         <div>
                                             <p className="font-medium text-blue-900">Servicio en proceso</p>
                                             <p className="text-sm text-blue-700 mt-1">

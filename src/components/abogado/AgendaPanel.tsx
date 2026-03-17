@@ -1,30 +1,14 @@
-import { useState, useEffect } from 'react';
-import { FiCalendar, FiClock, FiUser, FiMapPin, FiPlus, FiChevronLeft, FiChevronRight, FiVideo, FiLink } from 'react-icons/fi';
+import { useState, useMemo } from 'react';
+import { FiCalendar, FiClock, FiUser, FiChevronLeft, FiChevronRight, FiBriefcase } from 'react-icons/fi';
+import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 
 interface AgendaPanelProps {
   abogadoId: string;
 }
 
-interface Cita {
-  id: string;
-  titulo: string;
-  cliente: string;
-  fecha: string;
-  hora: string;
-  duracion: string;
-  tipo: 'presencial' | 'virtual';
-  ubicacion?: string;
-  enlaceVirtual?: string;
-  notas?: string;
-}
-
 export default function AgendaPanel({ abogadoId }: AgendaPanelProps) {
-  const [citas, setCitas] = useState<Cita[]>([]);
-  const [loading, setLoading] = useState(false); // No data to load yet
+  const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
-
-  // Pending implementation of real appointments API
-  // For now, render empty state to avoid confusion with mock data
 
   // Función para formatear fecha
   const formatearFecha = (fecha: Date): string => {
@@ -43,13 +27,15 @@ export default function AgendaPanel({ abogadoId }: AgendaPanelProps) {
     setFechaSeleccionada(nuevaFecha);
   };
 
-  // Filtrar citas por fecha seleccionada
-  const citasDelDia = citas.filter(cita => {
-    const fechaCita = new Date(cita.fecha);
-    return fechaCita.toDateString() === fechaSeleccionada.toDateString();
-  });
+  // Filtrar órdenes por fecha de creación o actualización para la "agenda"
+  const casosDelDia = useMemo(() => {
+    return orders.filter(order => {
+      const fechaOrder = new Date(order.createdAt);
+      return fechaOrder.toDateString() === fechaSeleccionada.toDateString();
+    });
+  }, [orders, fechaSeleccionada]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
@@ -57,127 +43,99 @@ export default function AgendaPanel({ abogadoId }: AgendaPanelProps) {
     );
   }
 
-  // Ordenar citas por hora
-  const citasOrdenadas = [...citasDelDia].sort((a, b) => {
-    return a.hora.localeCompare(b.hora);
-  });
-
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-medium text-gray-900">Mi Agenda</h2>
+    <div className="bg-white rounded-xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/30">
+        <h2 className="text-lg font-bold text-gray-800">Mi Agenda de Casos</h2>
       </div>
 
       {/* Selector de fecha */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between px-6 py-6 border-b border-gray-50">
         <button
           onClick={() => cambiarDia(-1)}
-          className="p-2 rounded-full hover:bg-gray-100"
+          className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
         >
-          <FiChevronLeft className="text-gray-600" />
+          <FiChevronLeft className="text-gray-600" size={20} />
         </button>
 
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-sm font-bold text-gray-900 capitalize">
             {formatearFecha(fechaSeleccionada)}
           </h3>
-          <p className="text-sm text-gray-500">
-            {citasDelDia.length} {citasDelDia.length === 1 ? 'cita' : 'citas'} programadas
+          <p className="text-xs text-azul-primario font-medium mt-1">
+            {casosDelDia.length} {casosDelDia.length === 1 ? 'caso iniciado' : 'casos iniciados'} hoy
           </p>
         </div>
 
         <button
           onClick={() => cambiarDia(1)}
-          className="p-2 rounded-full hover:bg-gray-100"
+          className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
         >
-          <FiChevronRight className="text-gray-600" />
+          <FiChevronRight className="text-gray-600" size={20} />
         </button>
       </div>
 
-      {/* Lista de citas */}
-      <div className="px-6 py-4">
-        {citasOrdenadas.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FiCalendar className="text-gray-400 text-xl" />
+      {/* Lista de Casos */}
+      <div className="p-6">
+        {casosDelDia.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mx-auto w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 text-gray-300">
+              <FiCalendar size={32} />
             </div>
-            <h3 className="text-gray-900 font-medium">No hay citas programadas</h3>
-            <p className="text-gray-500 mt-1">No tienes citas programadas para este día</p>
+            <h3 className="text-gray-900 font-bold">Sin actividad programada</h3>
+            <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">
+              No hay nuevos casos asignados o hitos programados para este día.
+            </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {citasOrdenadas.map((cita) => (
-              <div key={cita.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div className="space-y-4">
+            {casosDelDia.map((caso) => (
+              <div key={caso.id} className="group border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:border-azul-primario/30 transition-all bg-white">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 mr-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${cita.tipo === 'virtual'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'bg-green-100 text-green-600'
-                      }`}>
-                      {cita.tipo === 'virtual' ? <FiVideo size={20} /> : <FiMapPin size={20} />}
+                    <div className="w-12 h-12 rounded-xl bg-azul-primario/10 text-azul-primario flex items-center justify-center group-hover:bg-azul-primario group-hover:text-white transition-colors">
+                      <FiBriefcase size={24} />
                     </div>
                   </div>
 
                   <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900">{cita.titulo}</h3>
-                      <span className="bg-azul-claro/20 text-azul-primario text-xs px-2 py-1 rounded-full">
-                        {cita.duracion}
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-bold text-gray-900">
+                        {caso.items?.[0]?.serviceName || 'Servicio Legal'}
+                      </h3>
+                      <span className="bg-gray-50 text-gray-500 text-[10px] px-2 py-1 rounded-lg font-bold">
+                        ID: #{caso.numericId || caso.id.slice(0, 4)}
                       </span>
                     </div>
 
-                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <div className="flex items-center text-gray-600">
-                        <FiUser className="mr-2 text-gray-400" />
-                        <span>{cita.cliente}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center text-xs text-gray-500">
+                        <FiUser className="mr-2 text-azul-primario" />
+                        <span className="font-medium text-gray-700">{caso.userName}</span>
                       </div>
 
-                      <div className="flex items-center text-gray-600">
-                        <FiClock className="mr-2 text-gray-400" />
-                        <span>{cita.hora}</span>
+                      <div className="flex items-center text-xs text-gray-500">
+                        <FiClock className="mr-2 text-azul-primario" />
+                        <span>Recibido: {new Date(caso.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-
-                      {cita.tipo === 'presencial' && cita.ubicacion && (
-                        <div className="flex items-center text-gray-600">
-                          <FiMapPin className="mr-2 text-gray-400" />
-                          <span>{cita.ubicacion}</span>
-                        </div>
-                      )}
-
-                      {cita.tipo === 'virtual' && cita.enlaceVirtual && (
-                        <div className="flex items-center text-gray-600">
-                          <FiLink className="mr-2 text-gray-400" />
-                          <a
-                            href={cita.enlaceVirtual}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-azul-primario hover:underline"
-                          >
-                            Enlace de reunión
-                          </a>
-                        </div>
-                      )}
                     </div>
-
-                    {cita.notas && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-md text-sm text-gray-600">
-                        <p>{cita.notas}</p>
-                      </div>
-                    )}
+                    
+                    <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                       <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase ${
+                        caso.status === 'COMPLETADO' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                       }`}>
+                        {caso.status}
+                       </span>
+                       <button className="text-xs font-bold text-azul-primario hover:underline">
+                         Ver Detalles
+                       </button>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Botón para añadir nueva cita */}
-      <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
-        <button className="flex items-center px-4 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-colors">
-          <FiPlus className="mr-2" />
-          Nueva cita
-        </button>
       </div>
     </div>
   );

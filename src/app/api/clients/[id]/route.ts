@@ -5,7 +5,44 @@ export async function PUT(
     request: Request,
     { params }: { params: { id: string } }
 ) {
-    try {
+        const supabase = await createClient();
+        // Verificar autenticación
+        let { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        // Fallbacks
+        if (!user) {
+            const authHeader = request.headers.get('Authorization');
+            if (authHeader?.startsWith('Bearer ')) {
+                const token = authHeader.split(' ')[1];
+                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
+                if (headerUser) user = headerUser;
+            }
+        }
+        if (!user) {
+            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
+            if (devBypass) {
+                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
+                console.log('🚧 Clients [ID] API: Auth bypass via Dev Cookie (PUT)');
+            }
+        }
+
+        if (!user) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        // Verificar rol (Saltar si es bypass)
+        if (user.id !== 'dev-bypass-admin') {
+            const { data: userData } = await supabase
+                .from('User')
+                .select('rol')
+                .eq('id', user.id)
+                .single();
+
+            if (userData?.rol !== 'ADMIN' && userData?.rol !== 'ABOGADO') {
+                return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
+            }
+        }
+
         const id = params.id;
         const body = await request.json();
         const { nombre, email, telefono, direccion, dni } = body;
@@ -52,6 +89,41 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        const supabase = await createClient();
+        // Verificar autenticación
+        let { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        // Fallbacks
+        if (!user) {
+            const authHeader = request.headers.get('Authorization');
+            if (authHeader?.startsWith('Bearer ')) {
+                const token = authHeader.split(' ')[1];
+                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
+                if (headerUser) user = headerUser;
+            }
+        }
+        if (!user) {
+            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
+            if (devBypass) user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
+        }
+
+        if (!user) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        // Solo ADMIN puede borrar
+        let isAdmin = false;
+        if (user.id === 'dev-bypass-admin') {
+            isAdmin = true;
+        } else {
+            const { data: userData } = await supabase.from('User').select('rol').eq('id', user.id).single();
+            isAdmin = userData?.rol === 'ADMIN';
+        }
+
+        if (!isAdmin) {
+            return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
+        }
+
         const id = params.id;
 
         // Borrado lógico

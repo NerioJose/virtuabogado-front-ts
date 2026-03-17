@@ -12,6 +12,13 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersStore } from '@/features/orders';
 import { User, UserRole } from '@/shared/types/entities.types';
 
+// Helper for extracting name from raw or mapped user
+const getDisplayName = (user: any) => {
+	if (!user) return 'Usuario';
+	const name = user.nombre || user.user_metadata?.nombre || user.name || user.email;
+	return name !== 'Usuario' ? name : user.email;
+};
+
 // Componente del menú desplegable de usuario
 interface UserMenuProps {
 	user: User;
@@ -46,7 +53,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 					/>
 				</div>
 				<span className="text-azul-primario font-medium hidden sm:inline">
-					{user?.nombre || 'Usuario'}
+					{getDisplayName(user)}
 				</span>
 				<FiChevronDown
 					className={`text-azul-primario transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
@@ -73,7 +80,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 							{/* Info del usuario */}
 							<div className="px-4 py-3 border-b border-gray-100">
 								<p className="text-sm font-semibold text-gray-900">
-									{user.nombre || user.email}
+									{getDisplayName(user)}
 								</p>
 								<p className="text-xs text-gray-500 mt-1">
 									{user.email}
@@ -183,13 +190,7 @@ const Navbar = () => {
 
 	return (
 		<motion.nav
-			className="w-full fixed z-50 glass-card h-16"
-			initial={{ opacity: 0, y: -20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{
-				duration: 0.5,
-				ease: 'easeOut',
-			}}>
+			className="w-full fixed z-50 glass-card h-16 bg-white/80">
 			<div className="container mx-auto px-6 py-2 flex justify-between items-center h-full">
 				<Link href="/">
 					<motion.div
@@ -202,6 +203,7 @@ const Navbar = () => {
 							width={150}
 							height={70}
 							className="relative z-10"
+							style={{ height: 'auto' }}
 							priority
 						/>
 					</motion.div>
@@ -365,7 +367,7 @@ const Navbar = () => {
 										/>
 									</div>
 									<span className="text-azul-primario font-medium">
-										{user?.nombre || 'Usuario'}
+										{getDisplayName(user)}
 									</span>
 								</div>
 								{user.rol !== UserRole.ADMIN && (

@@ -14,9 +14,8 @@ import {
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
-import { useOrdersStore } from '@/features/orders/store/ordersStore';
 // import { initializeOrders } from '@/features/orders';
-import { useUpdateOrder } from '@/features/orders/hooks/useOrders';
+import { useUpdateOrder, useDeleteOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 // import { initializeClients, useClientsStore } from '@/features/clients';
 // import { initializeLawyers, useLawyersStore } from '@/features/lawyers';
@@ -119,6 +118,7 @@ export default function AdminPage() {
 	const deleteLawyerMutation = useDeleteLawyer();
 	const updateLawyerMutation = useUpdateLawyer();
 	const updateOrderMutation = useUpdateOrder();
+	const deleteOrderMutation = useDeleteOrder();
 
 	// Manejador para guardar o eliminar datos desde el modal
 	const handleSave = async (data: any) => {
@@ -147,9 +147,13 @@ export default function AdminPage() {
 
 				case 'casos':
 					if (tipoModal === 'eliminar' && id) {
-						await useOrdersStore.getState().deleteOrder(id);
+						await deleteOrderMutation.mutateAsync(id);
 					} else if (tipoModal === 'editar' && id) {
-						await useOrdersStore.getState().updateOrderStatus(id, data.status);
+						// Usar la mutación de React Query para actualizar estado
+						await updateOrderMutation.mutateAsync({
+							id,
+							data: { status: data.status }
+						});
 					} else if (tipoModal === 'asignar' && id) {
 						// Usar la mutación de React Query para asignar abogado
 						// Actualizamos también el estado a "EN_PROGRESO" (PROCESSING)

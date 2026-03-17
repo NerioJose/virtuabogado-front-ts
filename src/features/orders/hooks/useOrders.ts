@@ -30,7 +30,7 @@ export function useOrdersByUser(userId: string) {
 export function useOrder(id: string) {
     return useQuery({
         queryKey: ORDER_KEYS.detail(id),
-        queryFn: () => ordersService.getById(Number(id)),
+        queryFn: () => ordersService.getById(id),
         enabled: !!id && id !== 'new', // Don't fetch for new orders
         staleTime: 1000 * 60 * 5, // 5 minutes - individual order details change less frequently
     });
@@ -131,6 +131,38 @@ export const useUpdateOrder = () => {
             });
 
             console.log('✅ Orden actualizada con invalidación selectiva');
+        },
+    });
+};
+
+export const useDeleteOrder = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string | number) => {
+            return apiClient.delete<any>(`/api/orders/${id}`);
+        },
+        onMutate: async (id) => {
+            const orderId = String(id);
+            await queryClient.cancelQueries({ queryKey: ORDER_KEYS.all });
+
+            const previousOrders = queryClient.getQueryData(ORDER_KEYS.list({}));
+
+            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any[] = []) => {
+                return old.filter((order: any) => String(order.id) !== orderId);
+            });
+
+            return { previousOrders };
+        },
+        onError: (err, id, context) => {
+            if (context?.previousOrders) {
+                queryClient.setQueryData(ORDER_KEYS.list({}), context.previousOrders);
+            }
+            console.error('❌ Error deleting order:', err);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.lists() });
+            console.log('✅ Orden eliminada y caché actualizada');
         },
     });
 };

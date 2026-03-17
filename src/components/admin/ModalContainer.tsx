@@ -55,6 +55,7 @@ type CampoFormulario = {
 	type: string;
 	required: boolean;
 	options?: string[];
+	readonly?: boolean;
 };
 
 interface ModalContainerProps {
@@ -107,36 +108,39 @@ const obtenerCamposPorSeccion = (seccion: string) => {
 		case 'casos':
 			return [
 				{
-					key: 'titulo',
-					label: 'Título del caso',
+					key: 'numericId',
+					label: 'ID de Orden',
+					type: 'number',
+					required: false,
+					readonly: true,
+				},
+				{
+					key: 'userName',
+					label: 'Cliente',
 					type: 'text',
-					required: true,
+					required: false,
+					readonly: true,
 				},
 				{
-					key: 'descripcion',
-					label: 'Descripción',
-					type: 'textarea',
-					required: true,
-				},
-				{
-					key: 'estado',
+					key: 'status',
 					label: 'Estado',
 					type: 'select',
+					options: ['PENDIENTE', 'EN_PROGRESO', 'COMPLETADO', 'CANCELADO'],
 					required: true,
-					options: ['activo', 'pendiente', 'cerrado', 'archivado'],
 				},
 				{
-					key: 'prioridad',
-					label: 'Prioridad',
-					type: 'select',
-					required: true,
-					options: ['baja', 'media', 'alta', 'urgente'],
+					key: 'total',
+					label: 'Monto Total',
+					type: 'number',
+					required: false,
+					readonly: true,
 				},
 				{
-					key: 'fechaInicio',
-					label: 'Fecha de inicio',
+					key: 'createdAt',
+					label: 'Fecha de Creación',
 					type: 'date',
-					required: true,
+					required: false,
+					readonly: true,
 				},
 			];
 		case 'finanzas':
@@ -189,7 +193,25 @@ export default function ModalContainer({
 				tipo === 'eliminar' ||
 				tipo === 'asignar')
 		) {
-			setFormData({ ...elemento });
+			// Clonar y formatear fechas para inputs HTML
+			const initialForm: any = { ...elemento };
+
+			// Mapear campos para ver cuáles son de tipo 'date'
+			const campos = obtenerCamposPorSeccion(seccion);
+			campos.forEach(campo => {
+				if (campo.type === 'date' && initialForm[campo.key]) {
+					try {
+						const date = new Date(initialForm[campo.key]);
+						if (!isNaN(date.getTime())) {
+							initialForm[campo.key] = date.toISOString().split('T')[0];
+						}
+					} catch (e) {
+						console.warn(`Error formatting date for field ${campo.key}:`, e);
+					}
+				}
+			});
+
+			setFormData(initialForm);
 		} else if (tipo === 'crear') {
 			// Inicializar formulario vacío para crear
 			const campos = obtenerCamposPorSeccion(seccion);
@@ -371,9 +393,9 @@ export default function ModalContainer({
 
 	// Renderizar campo del formulario
 	const renderCampo = (campo: CampoFormulario) => {
-		const value = formData[campo.key] || '';
+		const value = formData[campo.key] || (campo.type === 'number' ? 0 : '');
 		const hasError = validationErrors[campo.key];
-		const isReadonly = tipo === 'ver';
+		const isReadonly = tipo === 'ver' || campo.readonly;
 
 		const baseClasses = `w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${hasError ? 'border-red-300' : 'border-gray-300'
 			} ${isReadonly ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`;
@@ -419,13 +441,15 @@ export default function ModalContainer({
 							disabled={isReadonly}
 							required={campo.required}>
 							<option value="">Seleccionar...</option>
-							{campo.options?.map((option: string) => (
-								<option
-									key={option}
-									value={option}>
-									{option.charAt(0).toUpperCase() + option.slice(1)}
-								</option>
-							))}
+							{campo.options?.map((option: string) => {
+								let display = option.charAt(0).toUpperCase() + option.slice(1).toLowerCase();
+								if (option === 'EN_PROGRESO') display = 'En progreso';
+								return (
+									<option key={option} value={option}>
+										{display}
+									</option>
+								);
+							})}
 						</select>
 						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
 					</div>
@@ -619,13 +643,27 @@ export default function ModalContainer({
 							</form>
 
 							{/* CHAT DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
-							{tipo === 'ver' && seccion === 'casos' && elemento?.id && (
-								<div className="mt-6 border-t pt-4">
+							{tipo === 'ver' && seccion === 'casos' && (elemento as any)?.id && (
+								<div className="mt-6 border-t pt-6">
+									<div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
+										<h4 className="font-bold text-azul-primario mb-3 flex items-center">
+											<FiBriefcase className="mr-2" /> Servicios Contratados
+										</h4>
+										<div className="space-y-2">
+											{(elemento as any)?.items?.map((item: any, i: number) => (
+												<div key={i} className="flex justify-between items-center bg-white p-3 rounded border border-gray-100 shadow-sm">
+													<span className="text-sm font-medium text-gray-700">{item.serviceName}</span>
+													<span className="text-sm font-bold text-azul-primario">${item.price.toLocaleString()}</span>
+												</div>
+											))}
+										</div>
+									</div>
+
 									<h4 className="font-bold text-gray-800 mb-3 flex items-center">
 										<span className="mr-2">💬</span> Chat de Supervisión
 									</h4>
-									<div className="h-[400px]">
-										<ChatWindowSupervision orderId={elemento.id} />
+									<div className="h-[450px] shadow-inner rounded-lg overflow-hidden border border-gray-200">
+										<ChatWindowSupervision orderId={(elemento as any).id} />
 									</div>
 								</div>
 							)}

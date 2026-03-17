@@ -105,7 +105,7 @@ export default function RecentOrders() {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-semibold text-azul-primario">
-                                                #{order.id}
+                                                #{order.numericId || order.id.slice(0, 8)}
                                             </span>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.color} flex items-center gap-1`}>
                                                 <StatusIcon className="w-3 h-3" />

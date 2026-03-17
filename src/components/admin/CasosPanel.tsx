@@ -80,6 +80,14 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
               }`}>
             Completados
           </button>
+          <button
+            onClick={() => setFiltroEstado(OrderStatus.CANCELLED)}
+            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.CANCELLED
+              ? 'bg-red-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+            Cancelados
+          </button>
         </div>
       </div>
 

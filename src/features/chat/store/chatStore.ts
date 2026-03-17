@@ -49,8 +49,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             });
             set({ subscription });
 
-        } catch (error) {
-            console.error('Error loading messages:', error);
+        } catch (error: any) {
+            const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+            console.error('❌ [ChatStore] Error loading messages:', errorMessage);
             set({ isLoading: false });
         }
     },

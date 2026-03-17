@@ -3,18 +3,12 @@ import { Message } from '../types/chat.types';
 
 export const chatService = {
     async getMessages(orderId: string): Promise<Message[]> {
-        const supabase = createClient();
-        const { data, error } = await supabase
-            .from('Message')
-            .select(`
-                *,
-                sender:User(nombre, picture)
-            `)
-            .eq('orderId', orderId)
-            .order('createdAt', { ascending: true });
-
-        if (error) throw error;
-        return data as unknown as Message[];
+        const response = await fetch(`/api/messages/${orderId}`);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al obtener mensajes');
+        }
+        return response.json();
     },
 
     async sendMessage(orderId: string, content: string, senderId: string): Promise<Message> {

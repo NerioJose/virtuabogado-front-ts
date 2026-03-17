@@ -129,10 +129,15 @@ export const useCheckoutStore = create<CheckoutState>()(
                 let currentUserId = state.existingUserId || useAuthStore.getState().user?.id;
 
                 // 1. AUTENTICACIÓN: Auto-login o auto-registro UNIFICADO
+                const supabase = (await import('@/utils/supabase/client')).createClient();
+                const { data: { session: freshSession } } = await supabase.auth.getSession();
+                
                 if (!currentUserId && state.userData) {
                     try {
-                        const { user } = await checkoutService.registerOrLogin(state.userData);
-                        if (user) {
+                        const { user: rawUser } = await checkoutService.registerOrLogin(state.userData);
+                        if (rawUser) {
+                            const { authService } = await import('@/features/auth/services/auth.service');
+                            const user = authService.mapSupabaseUserToEntity(rawUser);
                             currentUserId = user.id;
                             useAuthStore.getState().setUser(user);
                         }
@@ -144,11 +149,37 @@ export const useCheckoutStore = create<CheckoutState>()(
                         });
                         return;
                     }
+                } else if (currentUserId && !freshSession) {
+                    // El usuario cree estar logueado en el store, pero no hay sesión en Supabase (o expiró)
+                    console.warn('🔄 Sesión no encontrada en Supabase, intentando recuperar...');
+                    const { data: { user: recoveredUser } } = await supabase.auth.getUser();
+                    if (!recoveredUser) {
+                        set({ 
+                            error: 'Tu sesión ha expirado. Por favor, vuelve a iniciar sesión.', 
+                            isLoading: false 
+                        });
+                        // Opcional: Cerrar sesión en el store para forzar re-login
+                        // useAuthStore.getState().logout();
+                        return;
+                    }
                 }
 
                 if (!currentUserId) {
                     set({ error: 'No se pudo identificar al usuario', isLoading: false });
                     return;
+                }
+
+                // 1.5. ACTUALIZAR PERFIL: Si el usuario ya existe pero no tiene nombre (o es 'Usuario')
+                const currentUser = useAuthStore.getState().user;
+                if (currentUser && state.userData?.nombre && (currentUser.nombre === 'Usuario' || !currentUser.nombre)) {
+                    console.log('📝 Actualizando nombre de usuario en perfil:', state.userData.nombre);
+                    const { error: updateError } = await supabase.auth.updateUser({
+                        data: { nombre: state.userData.nombre }
+                    });
+                    
+                    if (!updateError) {
+                        useAuthStore.getState().updateUser({ nombre: state.userData.nombre });
+                    }
                 }
 
                 // 2. Procesar pago
@@ -178,7 +209,8 @@ export const useCheckoutStore = create<CheckoutState>()(
                 });
 
                 // Integración Stores
-                const currentUser = useAuthStore.getState().user;
+                // Recargar usuario del store por si se actualizó en el paso 1.5
+                const userAfterUpdate = useAuthStore.getState().user;
 
                 // Invalidate React Query caches to ensure UI updates immediately
                 // This ensures "100% reactivity" for the current user without page refresh

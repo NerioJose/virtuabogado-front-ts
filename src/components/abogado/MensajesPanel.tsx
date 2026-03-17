@@ -1,93 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
 	FiSearch,
-	FiSend,
-	FiPaperclip,
 	FiUser,
 	FiClock,
 	FiMessageSquare,
+	FiArrowLeft,
 } from 'react-icons/fi';
+import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { ChatWindow } from '@/features/chat/components/ChatWindow';
 
 interface MensajesPanelProps {
 	abogadoId: string;
 }
 
-interface Mensaje {
-	id: string;
-	remitente: string;
-	destinatario: string;
-	contenido: string;
-	fecha: string;
-	leido: boolean;
-	caso?: string;
-}
-
-interface Conversacion {
-	id: string;
-	participante: string;
-	ultimoMensaje: string;
-	fechaUltimoMensaje: string;
-	noLeidos: number;
-	caso?: string;
-}
-
 export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
-	const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
-	const [mensajes, setMensajes] = useState<Mensaje[]>([]);
-	const [conversacionActiva, setConversacionActiva] = useState<string | null>(
-		null
-	);
-	const [nuevoMensaje, setNuevoMensaje] = useState('');
-	const [loading, setLoading] = useState(false);
+	const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
+	const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
 	const [busqueda, setBusqueda] = useState('');
 
-	// TODO: Implement real chat using Supabase Realtime	// Cargar mensajes de una conversación
-	const cargarMensajes = async (conversacionId: string) => {
-		setConversacionActiva(conversacionId);
-		// Clean mock data
-		setMensajes([]);
-	};
-
-	// Enviar un nuevo mensaje
-	const enviarMensaje = () => {
-		if (!nuevoMensaje.trim() || !conversacionActiva) return;
-
-		// Crear nuevo mensaje
-		const nuevoMensajeObj: Mensaje = {
-			id: String(mensajes.length + 1),
-			remitente: 'Carlos Méndez',
-			destinatario:
-				conversaciones.find((c) => c.id === conversacionActiva)?.participante ||
-				'',
-			contenido: nuevoMensaje,
-			fecha: new Date().toISOString(),
-			leido: true,
-		};
-
-		// Añadir mensaje a la lista
-		setMensajes([...mensajes, nuevoMensajeObj]);
-
-		// Actualizar última conversación
-		setConversaciones((prevConversaciones) =>
-			prevConversaciones.map((conv) =>
-				conv.id === conversacionActiva
-					? {
-						...conv,
-						ultimoMensaje: nuevoMensaje,
-						fechaUltimoMensaje: new Date().toISOString(),
-						noLeidos: 0,
-					}
-					: conv
-			)
-		);
-
-		// Limpiar campo de mensaje
-		setNuevoMensaje('');
-	};
+	// Filtrar conversaciones por búsqueda y mapear desde órdenes
+	const conversaciones = useMemo(() => {
+		return orders
+			.filter(order => {
+				const term = busqueda.toLowerCase();
+				return (
+					order.userName?.toLowerCase().includes(term) ||
+					order.items?.[0]?.serviceName?.toLowerCase().includes(term) ||
+					order.id.toLowerCase().includes(term)
+				);
+			})
+			.map(order => ({
+				id: order.id,
+				participante: order.userName || 'Cliente',
+				ultimoMensaje: 'Ver conversación', // Podríamos traer el último mensaje si la API lo incluyera
+				fechaUltimoMensaje: order.updatedAt || order.createdAt,
+				caso: order.items?.[0]?.serviceName || 'Servicio Legal',
+			}));
+	}, [orders, busqueda]);
 
 	// Formatear fecha
-	const formatearFecha = (fecha: string): string => {
-		const fechaObj = new Date(fecha);
+	const formatearFecha = (fecha: string | Date): string => {
+		const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
 		const hoy = new Date();
 		const ayer = new Date(hoy);
 		ayer.setDate(hoy.getDate() - 1);
@@ -103,19 +56,11 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 			return fechaObj.toLocaleDateString('es-ES', {
 				day: '2-digit',
 				month: '2-digit',
-				year: '2-digit',
 			});
 		}
 	};
 
-	// Filtrar conversaciones por búsqueda
-	const conversacionesFiltradas = conversaciones.filter(
-		(conv) =>
-			conv.participante.toLowerCase().includes(busqueda.toLowerCase()) ||
-			(conv.caso && conv.caso.toLowerCase().includes(busqueda.toLowerCase()))
-	);
-
-	if (loading) {
+	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center h-64">
 				<div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
@@ -124,163 +69,96 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-200px)] overflow-hidden">
+		<div className="flex h-[calc(100vh-250px)] overflow-hidden bg-white rounded-xl">
 			{/* Lista de conversaciones */}
-			<div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-				<div className="p-4 border-b border-gray-200">
+			<div className={`w-full md:w-1/3 border-r border-gray-100 flex flex-col ${conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
+				<div className="p-4 border-b border-gray-50">
+					<h2 className="text-lg font-bold text-gray-800 mb-4">Mensajes</h2>
 					<div className="relative">
 						<input
 							type="text"
-							placeholder="Buscar conversación..."
+							placeholder="Buscar cliente o caso..."
 							value={busqueda}
 							onChange={(e) => setBusqueda(e.target.value)}
-							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario"
+							className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-azul-primario text-sm"
 						/>
 						<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
 					</div>
 				</div>
 
-				<div className="divide-y divide-gray-200">
-					{conversacionesFiltradas.length === 0 ? (
-						<div className="p-4 text-center text-gray-500">
+				<div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+					{conversaciones.length === 0 ? (
+						<div className="p-8 text-center text-gray-400 text-sm">
 							No se encontraron conversaciones
 						</div>
 					) : (
-						conversacionesFiltradas.map((conv) => (
+						conversaciones.map((conv) => (
 							<div
 								key={conv.id}
-								onClick={() => cargarMensajes(conv.id)}
-								className={`p-4 hover:bg-gray-50 cursor-pointer ${conversacionActiva === conv.id ? 'bg-azul-claro/20' : ''
+								onClick={() => setConversacionActiva(conv.id)}
+								className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${conversacionActiva === conv.id ? 'bg-azul-claro/10 border-l-4 border-azul-primario' : ''
 									}`}>
-								<div className="flex justify-between items-start">
-									<div className="flex items-center">
-										<div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
-											<FiUser className="text-gray-600" />
-										</div>
-										<div>
-											<h3 className="font-medium text-gray-900">
-												{conv.participante}
-											</h3>
-											{conv.caso && (
-												<p className="text-xs text-gray-500">{conv.caso}</p>
-											)}
-										</div>
-									</div>
-									<div className="text-xs text-gray-500">
-										<FiClock className="inline mr-1" />
+								<div className="flex justify-between items-start mb-1">
+									<h3 className="font-semibold text-gray-900 truncate pr-2">
+										{conv.participante}
+									</h3>
+									<span className="text-[10px] text-gray-400 whitespace-nowrap">
 										{formatearFecha(conv.fechaUltimoMensaje)}
-									</div>
+									</span>
 								</div>
-								<div className="mt-2 flex justify-between">
-									<p className="text-sm text-gray-600 truncate w-4/5">
-										{conv.ultimoMensaje}
-									</p>
-									{conv.noLeidos > 0 && (
-										<span className="bg-azul-primario text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-											{conv.noLeidos}
-										</span>
-									)}
-								</div>
+								<p className="text-xs text-azul-primario font-medium truncate mb-1">
+									{conv.caso}
+								</p>
+								<p className="text-xs text-gray-500 truncate">
+									{conv.ultimoMensaje}
+								</p>
 							</div>
 						))
 					)}
 				</div>
 			</div>
 
-			{/* Área de mensajes */}
-			<div className="w-2/3 flex flex-col">
+			{/* Área de chat */}
+			<div className={`w-full md:w-2/3 flex flex-col bg-gray-50/30 ${!conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
 				{conversacionActiva ? (
 					<>
-						{/* Cabecera de la conversación */}
-						<div className="p-4 border-b border-gray-200 flex items-center">
-							<div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
-								<FiUser className="text-gray-600" />
+						{/* Cabecera móvil */}
+						<div className="p-4 border-b border-gray-100 flex items-center bg-white">
+							<button 
+								onClick={() => setConversacionActiva(null)}
+								className="mr-3 md:hidden p-2 hover:bg-gray-100 rounded-full"
+							>
+								<FiArrowLeft size={20} />
+							</button>
+							<div className="w-10 h-10 bg-azul-primario/10 rounded-full flex items-center justify-center mr-3 text-azul-primario">
+								<FiUser size={20} />
 							</div>
 							<div>
-								<h3 className="font-medium text-gray-900">
-									{
-										conversaciones.find((c) => c.id === conversacionActiva)
-											?.participante
-									}
+								<h3 className="text-sm font-bold text-gray-900">
+									{conversaciones.find(c => c.id === conversacionActiva)?.participante}
 								</h3>
-								{conversaciones.find((c) => c.id === conversacionActiva)
-									?.caso && (
-										<p className="text-xs text-gray-500">
-											{
-												conversaciones.find((c) => c.id === conversacionActiva)
-													?.caso
-											}
-										</p>
-									)}
+								<p className="text-[10px] text-azul-primario font-medium">
+									{conversaciones.find(c => c.id === conversacionActiva)?.caso}
+								</p>
 							</div>
 						</div>
 
-						{/* Mensajes */}
-						<div className="flex-1 overflow-y-auto p-4 space-y-4">
-							{mensajes.map((mensaje) => (
-								<div
-									key={mensaje.id}
-									className={`flex ${mensaje.remitente === 'Carlos Méndez'
-										? 'justify-end'
-										: 'justify-start'
-										}`}>
-									<div
-										className={`max-w-[70%] rounded-lg p-3 ${mensaje.remitente === 'Carlos Méndez'
-											? 'bg-azul-primario text-white'
-											: 'bg-gray-100 text-gray-800'
-											}`}>
-										<p>{mensaje.contenido}</p>
-										<div
-											className={`text-xs mt-1 flex justify-end items-center ${mensaje.remitente === 'Carlos Méndez'
-												? 'text-azul-claro'
-												: 'text-gray-500'
-												}`}>
-											<FiClock className="mr-1" />
-											{formatearFecha(mensaje.fecha)}
-										</div>
-									</div>
-								</div>
-							))}
-						</div>
-
-						{/* Área de entrada de mensaje */}
-						<div className="p-4 border-t border-gray-200">
-							<div className="flex items-center">
-								<button
-									className="p-2 text-gray-500 hover:text-azul-primario"
-									title="Adjuntar archivo"
-									aria-label="Adjuntar archivo">
-									<FiPaperclip />
-								</button>
-								<input
-									type="text"
-									placeholder="Escribe un mensaje..."
-									value={nuevoMensaje}
-									onChange={(e) => setNuevoMensaje(e.target.value)}
-									onKeyPress={(e) => e.key === 'Enter' && enviarMensaje()}
-									className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario mx-2"
-								/>
-								<button
-									onClick={enviarMensaje}
-									className="p-2 bg-azul-primario text-white rounded-full hover:bg-azul-primario/90"
-									title="Enviar mensaje"
-									aria-label="Enviar mensaje">
-									<FiSend />
-								</button>
-							</div>
+						{/* Chat Real */}
+						<div className="flex-1 overflow-hidden">
+							<ChatWindow orderId={conversacionActiva} />
 						</div>
 					</>
 				) : (
-					<div className="flex-1 flex items-center justify-center">
-						<div className="text-center">
-							<div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-								<FiMessageSquare className="text-gray-400 text-xl" />
+					<div className="flex-1 flex items-center justify-center p-8">
+						<div className="text-center max-w-xs">
+							<div className="mx-auto w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-6 text-azul-primario/20">
+								<FiMessageSquare size={40} />
 							</div>
-							<h3 className="text-gray-900 font-medium">
-								Selecciona una conversación
+							<h3 className="text-gray-900 font-bold text-lg mb-2">
+								Tus Conversaciones
 							</h3>
-							<p className="text-gray-500 mt-1">
-								Elige una conversación para ver los mensajes
+							<p className="text-gray-500 text-sm">
+								Selecciona un caso de la lista para ver los mensajes y documentos compartidos con el cliente.
 							</p>
 						</div>
 					</div>

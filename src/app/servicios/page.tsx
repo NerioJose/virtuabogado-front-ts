@@ -211,14 +211,15 @@ export default function ServiciosPage() {
 									</motion.button>
 								</div>
 								<div
-									className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-lg ${index % 2 !== 0 ? 'lg:order-1' : ''
+									className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-lg bg-gray-100 ${index % 2 !== 0 ? 'lg:order-1' : ''
 										}`}>
 									<Image
 										src={servicio.imagen}
 										alt={servicio.titulo}
 										fill
 										className="object-cover"
-										loading="lazy"
+										loading={index === 0 ? 'eager' : 'lazy'}
+										priority={index === 0}
 									/>
 									<div className="absolute inset-0 bg-gradient-to-tr from-azul-primario/20 to-transparent"></div>
 								</div>

@@ -1,9 +1,11 @@
+'use client';
+
 /**
- * Panel de Finanzas - Conectado a ordersStore
- * Calcula métricas financieras desde datos reales
+ * Panel de Finanzas - Conectado a React Query
+ * Calcula métricas financieras desde datos reales de la API
  */
 
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useState } from 'react';
 import {
 	FiDollarSign,
 	FiTrendingUp,
@@ -14,9 +16,8 @@ import {
 	FiEye,
 	FiPieChart,
 } from 'react-icons/fi';
-import { useOrdersStore, OrderStatus } from '@/features/orders';
-import { useState } from 'react';
-import { ElementoSeleccionable } from '@/types'; // Assuming ElementoSeleccionable is defined here or similar
+import { useOrders, OrderStatus } from '@/features/orders';
+import { ElementoSeleccionable } from '@/types';
 
 interface FinanzasPanelProps {
 	terminoBusqueda: string;
@@ -27,8 +28,8 @@ interface FinanzasPanelProps {
 }
 
 function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
-	// ============ ZUSTAND STORE ============
-	const orders = useOrdersStore((state) => state.orders);
+	// ============ REACT QUERY (datos reales de la API) ============
+	const { data: orders = [], isLoading } = useOrders();
 
 	const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes' | 'año'>('mes');
 
@@ -52,28 +53,30 @@ function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
 				break;
 		}
 
-		const ordersInPeriod = orders.filter(
-			order => new Date(order.createdAt) >= startDate
-		);
+		// Filtrar por período
+		const ordersInPeriod = orders.filter(order => {
+			if (!order.createdAt) return false;
+			const orderDate = new Date(order.createdAt);
+			return orderDate >= startDate;
+		});
 
-		// Incluir PENDING, PROCESSING y COMPLETED en ingresos
-		// (las órdenes del checkout empiezan en PENDING)
+		// Incluir PENDING (PENDIENTE), PROCESSING (EN_PROGRESO) y COMPLETED (COMPLETADO) en ingresos
 		const ingresosTotales = ordersInPeriod
 			.filter(o =>
 				o.status === OrderStatus.PENDING ||
 				o.status === OrderStatus.PROCESSING ||
 				o.status === OrderStatus.COMPLETED
 			)
-			.reduce((sum, o) => sum + o.total, 0);
+			.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
-		const pagosAbogados = ingresosTotales * 0.25; // 25% comisión abogados
-		const gastosOperativos = 0; // TODO: Conectar a un store de gastos
+		const pagosAbogados = ingresosTotales * 0.25; // 25% comisión abogados (Simulado)
+		const gastosOperativos = ingresosTotales * 0.10; // 10% gastos operativos (Simulado)
 		const gananciasNetas = ingresosTotales - pagosAbogados - gastosOperativos;
 
 		// Solo órdenes pendientes (sin completar)
 		const ingresosPendientes = ordersInPeriod
 			.filter(o => o.status === OrderStatus.PENDING || o.status === OrderStatus.PROCESSING)
-			.reduce((sum, o) => sum + o.total, 0);
+			.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
 		return {
 			ingresosTotales,
@@ -85,199 +88,227 @@ function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
 		};
 	}, [orders, periodo]);
 
-	// Filtrar órdenes por búsqueda
+	// Filtrar órdenes por búsqueda (sobre el total de órdenes del período para mejor UX)
 	const ordenesFiltradas = useMemo(() => {
-		if (!terminoBusqueda) return orders;
+		// Primero filtramos las que están en el período para la tabla
+		const now = new Date();
+		const startDate = new Date();
+		switch (periodo) {
+			case 'hoy': startDate.setHours(0, 0, 0, 0); break;
+			case 'semana': startDate.setDate(now.getDate() - 7); break;
+			case 'mes': startDate.setMonth(now.getMonth() - 1); break;
+			case 'año': startDate.setFullYear(now.getFullYear() - 1); break;
+		}
 
-		return orders.filter(order =>
-			order.userName.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-			order.userEmail.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-			order.id.toString().includes(terminoBusqueda)
+		const periordOrders = orders.filter(o => new Date(o.createdAt) >= startDate);
+
+		if (!terminoBusqueda) return periordOrders;
+
+		return periordOrders.filter(order =>
+			order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+			order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+			(order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
 		);
-	}, [orders, terminoBusqueda]);
+	}, [orders, terminoBusqueda, periodo]);
 
 	return (
 		<div className="space-y-6">
 			{/* Resumen Financiero */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-				{/* Ingresos Totales */}
-				<div className="bg-white rounded-lg shadow-sm p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm text-gray-600">Ingresos Totales</p>
-							<p className="text-2xl font-bold text-gray-900 mt-1">
-								${resumenFinanciero.ingresosTotales.toLocaleString()}
-							</p>
+				{isLoading ? (
+					<>
+						{[1, 2, 3, 4].map(i => (
+							<div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+								<div className="flex items-center justify-between">
+									<div>
+										<div className="h-4 bg-gray-200 rounded w-28 mb-3"></div>
+										<div className="h-8 bg-gray-200 rounded w-20"></div>
+									</div>
+									<div className="w-10 h-10 rounded-full bg-gray-200"></div>
+								</div>
+							</div>
+						))}
+					</>
+				) : (
+					<>
+						{/* Ingresos Totales */}
+						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ingresos Totales</p>
+									<p className="text-2xl font-bold text-gray-900 mt-1">
+										${resumenFinanciero.ingresosTotales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+									</p>
+								</div>
+								<div className="p-3 bg-green-50 rounded-lg">
+									<FiDollarSign className="text-green-600 text-xl" />
+								</div>
+							</div>
 						</div>
-						<div className="p-3 bg-green-100 rounded-full">
-							<FiDollarSign className="text-green-600 text-xl" />
-						</div>
-					</div>
-				</div>
 
-				{/* Pagos a Abogados */}
-				<div className="bg-white rounded-lg shadow-sm p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm text-gray-600">Pagos a Abogados</p>
-							<p className="text-2xl font-bold text-gray-900 mt-1">
-								${resumenFinanciero.pagosAbogados.toLocaleString()}
-							</p>
+						{/* Pagos a Abogados */}
+						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pagos a Abogados</p>
+									<p className="text-2xl font-bold text-gray-900 mt-1">
+										${resumenFinanciero.pagosAbogados.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+									</p>
+								</div>
+								<div className="p-3 bg-blue-50 rounded-lg">
+									<FiCreditCard className="text-blue-600 text-xl" />
+								</div>
+							</div>
 						</div>
-						<div className="p-3 bg-blue-100 rounded-full">
-							<FiCreditCard className="text-blue-600 text-xl" />
-						</div>
-					</div>
-				</div>
 
-				{/* Gastos Operativos */}
-				<div className="bg-white rounded-lg shadow-sm p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm text-gray-600">Gastos Operativos</p>
-							<p className="text-2xl font-bold text-gray-900 mt-1">
-								${resumenFinanciero.gastosOperativos.toLocaleString()}
-							</p>
+						{/* Gastos Operativos */}
+						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Gastos Operativos</p>
+									<p className="text-2xl font-bold text-gray-900 mt-1">
+										${resumenFinanciero.gastosOperativos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+									</p>
+								</div>
+								<div className="p-3 bg-red-50 rounded-lg">
+									<FiTrendingDown className="text-red-600 text-xl" />
+								</div>
+							</div>
 						</div>
-						<div className="p-3 bg-red-100 rounded-full">
-							<FiTrendingDown className="text-red-600 text-xl" />
-						</div>
-					</div>
-				</div>
 
-				{/* Ganancias Netas */}
-				<div className="bg-white rounded-lg shadow-sm p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm text-gray-600">Ganancias Netas</p>
-							<p className={`text-2xl font-bold mt-1 ${resumenFinanciero.gananciasNetas >= 0 ? 'text-green-600' : 'text-red-600'
-								}`}>
-								${resumenFinanciero.gananciasNetas.toLocaleString()}
-							</p>
+						{/* Ganancias Netas */}
+						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ganancias Netas</p>
+									<p className={`text-2xl font-bold mt-1 ${resumenFinanciero.gananciasNetas >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
+										${resumenFinanciero.gananciasNetas.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+									</p>
+								</div>
+								<div className={`p-3 rounded-lg ${resumenFinanciero.gananciasNetas >= 0 ? 'bg-indigo-50' : 'bg-red-50'}`}>
+									<FiTrendingUp className={resumenFinanciero.gananciasNetas >= 0 ? 'text-indigo-600' : 'text-red-600'} />
+								</div>
+							</div>
 						</div>
-						<div className={`p-3 rounded-full ${resumenFinanciero.gananciasNetas >= 0 ? 'bg-green-100' : 'bg-red-100'
-							}`}>
-							<FiTrendingUp className={
-								resumenFinanciero.gananciasNetas >= 0 ? 'text-green-600' : 'text-red-600'
-							} />
-						</div>
-					</div>
-				</div>
+					</>
+				)}
 			</div>
 
 			{/* Filtros de Período */}
-			<div className="bg-white rounded-lg shadow-sm p-4">
-				<div className="flex flex-wrap items-center gap-4">
-					<div className="flex items-center">
-						<FiFilter className="text-gray-500 mr-2" />
-						<span className="text-gray-700 font-medium">Período:</span>
-					</div>
+			<div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+				<div className="flex flex-wrap items-center justify-between gap-4">
+					<div className="flex items-center space-x-4">
+						<div className="flex items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+							<FiFilter className="text-gray-400 mr-2" />
+							<span className="text-gray-700 font-medium text-sm">Período:</span>
+						</div>
 
-					<div className="flex flex-wrap gap-2">
-						{(['hoy', 'semana', 'mes', 'año'] as const).map((p) => (
-							<button
-								key={p}
-								onClick={() => setPeriodo(p)}
-								className={`px-3 py-1 rounded-full text-sm ${periodo === p
-									? 'bg-azul-primario text-white'
-									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-									}`}
-							>
-								{p === 'hoy' ? 'Hoy' :
-									p === 'semana' ? 'Última semana' :
-										p === 'mes' ? 'Último mes' : 'Último año'}
-							</button>
-						))}
+						<div className="flex p-1 bg-gray-100 rounded-lg">
+							{(['hoy', 'semana', 'mes', 'año'] as const).map((p) => (
+								<button
+									key={p}
+									onClick={() => setPeriodo(p)}
+									className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${periodo === p
+										? 'bg-white text-azul-primario shadow-sm'
+										: 'text-gray-500 hover:text-gray-700'
+										}`}
+								>
+									{p === 'hoy' ? 'Hoy' :
+										p === 'semana' ? 'Semana' :
+											p === 'mes' ? 'Mes' : 'Año'}
+								</button>
+							))}
+						</div>
 					</div>
 
 					<button
-						className="ml-auto flex items-center gap-2 px-4 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90"
+						className="flex items-center gap-2 px-6 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-all font-medium shadow-md hover:shadow-lg active:scale-95"
 					>
 						<FiDownload />
-						Exportar
+						Exportar PDF
 					</button>
 				</div>
 			</div>
 
 			{/* Transacciones / Órdenes */}
-			<div className="bg-white rounded-lg shadow-sm overflow-hidden">
-				<div className="p-4 border-b border-gray-200">
-					<h3 className="text-lg font-medium text-gray-900">
-						Transacciones Recientes ({resumenFinanciero.cantidadTransacciones})
+			<div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+				<div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+					<h3 className="text-lg font-bold text-azul-primario">
+						Transacciones del Período
 					</h3>
+					<span className="px-3 py-1 bg-azul-primario/10 text-azul-primario rounded-full text-xs font-bold uppercase">
+						{resumenFinanciero.cantidadTransacciones} Operaciones
+					</span>
 				</div>
 
 				<div className="overflow-x-auto">
 					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
-							<tr>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-									ID
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-									Cliente
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-									Servicio
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-									Fecha
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-									Monto
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-									Estado
-								</th>
-								<th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-									Acciones
-								</th>
+						<thead>
+							<tr className="bg-gray-50">
+								<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Cliente</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Servicio</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Monto</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+								<th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
 							</tr>
 						</thead>
-						<tbody className="bg-white divide-y divide-gray-200">
-							{ordenesFiltradas.length === 0 ? (
+						<tbody className="bg-white divide-y divide-gray-100">
+							{isLoading ? (
 								<tr>
-									<td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-										{orders.length === 0
-											? 'No hay transacciones registradas'
-											: 'No se encontraron transacciones'}
+									<td colSpan={7} className="px-6 py-12 text-center">
+										<div className="flex flex-col items-center justify-center gap-3 text-gray-400">
+											<div className="w-10 h-10 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
+											<p className="font-medium">Cargando datos financieros...</p>
+										</div>
+									</td>
+								</tr>
+							) : ordenesFiltradas.length === 0 ? (
+								<tr>
+									<td colSpan={7} className="px-6 py-12 text-center">
+										<div className="flex flex-col items-center justify-center text-gray-400">
+											<FiPieChart size={48} className="mb-4 opacity-20" />
+											<p className="text-lg font-medium text-gray-500">No hay transacciones registradas</p>
+											<p className="text-sm mt-1">No se encontraron movimientos para el período seleccionado</p>
+										</div>
 									</td>
 								</tr>
 							) : (
 								ordenesFiltradas.map((order) => (
-									<tr key={order.id} className="hover:bg-gray-50">
+									<tr key={order.id} className="hover:bg-gray-50/80 transition-colors">
 										<td className="px-6 py-4 whitespace-nowrap">
-											<span className="text-sm font-medium text-azul-primario">
-												#{order.id}
+											<span className="text-sm font-bold text-azul-primario">
+												#{order.numericId || order.id.slice(0, 8)}
 											</span>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm font-medium text-gray-900">
-												{order.userName}
-											</div>
-											<div className="text-sm text-gray-500">{order.userEmail}</div>
+											<div className="text-sm font-bold text-gray-900">{order.userName || 'Usuario'}</div>
+											<div className="text-xs text-gray-500">{order.userEmail}</div>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm text-gray-900">
-												{order.items[0]?.serviceName || 'N/A'}
+											<div className="text-sm text-gray-700">
+												{order.items?.[0]?.serviceName || 'Consulta Legal'}
+											</div>
+										</td>
+										<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+											{new Date(order.createdAt).toLocaleDateString('es-ES', {
+												day: '2-digit',
+												month: 'short',
+												year: 'numeric'
+											})}
+										</td>
+										<td className="px-6 py-4 whitespace-nowrap">
+											<div className="text-sm font-bold text-gray-900">
+												${order.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
 											</div>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm text-gray-900">
-												{new Date(order.createdAt).toLocaleDateString('es-ES')}
-											</div>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm font-medium text-gray-900">
-												${order.total.toLocaleString()}
-											</div>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === OrderStatus.COMPLETED
-												? 'bg-green-100 text-green-800'
+											<span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${order.status === OrderStatus.COMPLETED
+												? 'bg-green-100 text-green-700'
 												: order.status === OrderStatus.PROCESSING
-													? 'bg-blue-100 text-blue-800'
-													: 'bg-yellow-100 text-yellow-800'
+													? 'bg-blue-100 text-blue-700'
+													: 'bg-yellow-100 text-yellow-700'
 												}`}>
 												{order.status === OrderStatus.COMPLETED
 													? 'Completado'
@@ -288,10 +319,10 @@ function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap text-right">
 											<button
-												className="text-azul-primario hover:text-azul-primario/80"
+												className="p-2 text-gray-400 hover:text-azul-primario transition-colors"
 												title="Ver detalles"
 											>
-												<FiEye />
+												<FiEye size={18} />
 											</button>
 										</td>
 									</tr>
@@ -302,17 +333,19 @@ function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
 				</div>
 			</div>
 
-			{/* Ingresos Pendientes */}
-			{resumenFinanciero.ingresosPendientes > 0 && (
-				<div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+			{/* Ingresos Pendientes (Notificación) */}
+			{!isLoading && resumenFinanciero.ingresosPendientes > 0 && (
+				<div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 shadow-sm">
 					<div className="flex items-center">
-						<FiPieChart className="text-amber-600 text-xl mr-3" />
+						<div className="p-3 bg-amber-100 rounded-lg mr-4">
+							<FiPieChart className="text-amber-600 text-xl" />
+						</div>
 						<div>
-							<p className="text-sm font-medium text-amber-800">
-								Transacciones pendientes
+							<p className="text-sm font-bold text-amber-900">
+								Atención: Ingresos Pendientes
 							</p>
-							<p className="text-xs text-amber-600 mt-1">
-								Tienes ${resumenFinanciero.ingresosPendientes.toLocaleString()} en ingresos pendientes de completar
+							<p className="text-sm text-amber-700 mt-1">
+								Tienes <span className="font-bold">${resumenFinanciero.ingresosPendientes.toLocaleString()}</span> en transacciones que aún no han sido completadas.
 							</p>
 						</div>
 					</div>

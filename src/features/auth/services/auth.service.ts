@@ -87,7 +87,7 @@ export class AuthService {
     /**
      * Helper para mapear usuario de Supabase a entidad User del dominio
      */
-    private mapSupabaseUserToEntity(supabaseUser: any): User {
+    public mapSupabaseUserToEntity(supabaseUser: any): User {
         return {
             id: supabaseUser.id,
             email: supabaseUser.email || '',

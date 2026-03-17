@@ -14,9 +14,16 @@ import { useOrdersByUser } from '@/features/orders/hooks/useOrders';
 import { useAuthStore } from '@/features/auth';
 import { mapOrderToServicio, getStatusColor, getStatusText, sortServicesByDate, type ServicioCliente } from '@/features/orders';
 
+// Helper for extracting name from raw or mapped user
+const getDisplayName = (user: any) => {
+	if (!user) return 'Usuario';
+	const name = user.nombre || user.user_metadata?.nombre || user.name || user.email;
+	return name !== 'Usuario' ? name : user.email;
+};
+
 export default function MisServiciosPage() {
   const router = useRouter();
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado'>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado' | 'cancelado'>('todos');
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // ============ ZUSTAND STORES ============
@@ -50,13 +57,10 @@ export default function MisServiciosPage() {
   // ============ PROCESAMIENTO DE DATOS ============
   // Filtrar y mapear las órdenes del usuario autenticado
   const servicios = useMemo(() => {
-    if (!user) return [];
-
-    // Filtrar órdenes del usuario actual
-    const userOrders = allOrders.filter((order: any) => order.userId === user.id);
+    if (!user || !allOrders) return [];
 
     // Mapear a formato de servicio para la UI
-    const mappedServices = userOrders.map(mapOrderToServicio);
+    const mappedServices = allOrders.map((order: any) => mapOrderToServicio(order));
 
     // Ordenar por fecha (más reciente primero)
     return sortServicesByDate(mappedServices);
@@ -74,6 +78,7 @@ export default function MisServiciosPage() {
     pendientes: servicios.filter(s => s.estado === 'pendiente').length,
     programados: servicios.filter(s => s.estado === 'programado').length,
     completados: servicios.filter(s => s.estado === 'completado').length,
+    cancelados: servicios.filter(s => s.estado === 'cancelado').length,
   }), [servicios]);
 
   // Si no está autenticado O no se ha hidratado, mostrar loading
@@ -102,7 +107,7 @@ export default function MisServiciosPage() {
             </Link>
             <h1 className="text-3xl font-bold text-azul-primario">Mis Servicios</h1>
             <p className="text-gray-600 mt-1">
-              Bienvenido, {user.nombre || user.email}
+              Bienvenido, {getDisplayName(user)}
             </p>
           </div>
           <Link href="/servicios">
@@ -118,7 +123,7 @@ export default function MisServiciosPage() {
 
         {/* Estadísticas rápidas */}
         {servicios.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm p-4">
               <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-gray-900">{contadores.total}</p>
@@ -134,6 +139,10 @@ export default function MisServiciosPage() {
             <div className="bg-white rounded-lg shadow-sm p-4">
               <p className="text-sm text-gray-600">Completados</p>
               <p className="text-2xl font-bold text-green-600">{contadores.completados}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <p className="text-sm text-gray-600">Cancelados</p>
+              <p className="text-2xl font-bold text-red-600">{contadores.cancelados}</p>
             </div>
           </div>
         )}
@@ -177,6 +186,15 @@ export default function MisServiciosPage() {
                   }`}
               >
                 Completados ({contadores.completados})
+              </button>
+              <button
+                onClick={() => setFiltroEstado('cancelado')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filtroEstado === 'cancelado'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                Cancelados ({contadores.cancelados})
               </button>
             </div>
           </div>
@@ -270,6 +288,15 @@ export default function MisServiciosPage() {
                       <FiFileText className="text-green-600 mr-2" />
                       <p className="text-sm text-green-800">
                         ¡Servicio completado exitosamente! Gracias por confiar en nosotros.
+                      </p>
+                    </div>
+                  )}
+
+                  {servicio.estado === 'cancelado' && (
+                    <div className="flex items-center mb-4 p-3 bg-red-50 rounded-lg">
+                      <FiFileText className="text-red-600 mr-2" />
+                      <p className="text-sm text-red-800">
+                        Este servicio ha sido cancelado. Si tienes preguntas, contacta a soporte.
                       </p>
                     </div>
                   )}

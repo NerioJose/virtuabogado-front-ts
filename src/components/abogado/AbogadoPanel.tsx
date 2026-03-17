@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Abogado } from '@/types/index';
@@ -50,16 +50,13 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	};
 
 	// ============ REACT QUERY - REAL DATA ============
-	// Obtener ID del abogado actual (desde las props o, idealmente, desde el auth store si es el usuario logueado)
-	// Nota: Para este MVP, asumimos que si no viene abogadoId, usamos el del usuario logueado o uno por defecto
-	// const user = useAuthStore(state => state.user);
-	// const currentAbogadoId = abogadoId || user?.id || '1'; 
-	const currentAbogadoId = abogadoId || 'abogado-test-id'; // Fallback por ahora
+	const { user: userAuth } = useAuthStore();
+	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
 
 	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
 
 	// Calcular estadísticas en tiempo real
-	const estadisticas = (() => {
+	const estadisticas = useMemo(() => {
 		const stats = {
 			casosActivos: 0,
 			casosPendientes: 0,
@@ -71,8 +68,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 		const uniqueClients = new Set();
 
-		orders.forEach((order: any) => { // Type check fix
-			// Conteo por estado
+		orders.forEach((order: any) => {
 			if (order.status === OrderStatus.PROCESSING) {
 				stats.casosActivos++;
 			} else if (order.status === OrderStatus.PENDING) {
@@ -82,7 +78,6 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 				stats.ingresosMes += Number(order.total);
 			}
 
-			// Clientes únicos
 			if (order.userId) {
 				uniqueClients.add(order.userId);
 			}
@@ -90,29 +85,25 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 		stats.clientesActivos = uniqueClients.size;
 		return stats;
-	})();
-
-	// User data from Auth Store
-	const user = useAuthStore(state => state.user);
+	}, [orders]);
 
 	useEffect(() => {
-		if (user) {
+		if (userAuth) {
 			setAbogado({
-				id: user.id || currentAbogadoId,
-				nombre: user.nombre || user.email?.split('@')[0] || 'Abogado',
-				email: user.email || '',
-				telefono: user.telefono || '',
-				especialidad: user.especialidad || 'General',
-				numeroColegiado: user.matricula || 'N/A', // Mapped from matricula in User entity
-				experienciaAnios: user.experiencia || 0, // Mapped from experiencia in User entity
-				valoracionMedia: 5.0, // This might need a real rating system later
+				id: userAuth.id,
+				nombre: userAuth.nombre || userAuth.email?.split('@')[0] || 'Abogado',
+				email: userAuth.email || '',
+				telefono: userAuth.telefono || '',
+				especialidad: userAuth.especialidad || 'General',
+				numeroColegiado: userAuth.matricula || 'N/A',
+				experienciaAnios: userAuth.experiencia || 0,
+				valoracionMedia: 5.0,
 			});
 			setLoading(false);
 		} else {
-			// Fallback or wait for auth
 			setLoading(false);
 		}
-	}, [user, currentAbogadoId]);
+	}, [userAuth]);
 
 	if (loading || isLoadingOrders) {
 		return (

@@ -21,7 +21,9 @@ export const ordersService = {
         if (filters?.userId) params.append('userId', filters.userId);
         if (filters?.status) params.append('status', filters.status);
 
-        const response = await fetch(`/api/orders?${params.toString()}`);
+        const response = await fetch(`/api/orders?${params.toString()}`, {
+            cache: 'no-store'
+        });
         if (!response.ok) throw new Error('Error fetching orders');
         return response.json();
     },
@@ -29,11 +31,14 @@ export const ordersService = {
     /**
      * Obtener una orden por ID
      */
-    async getById(orderId: number): Promise<Order | null> {
+    async getById(orderId: string | number): Promise<Order | null> {
         try {
-            // TODO: Implementar con API real
-            console.log('Fetching order:', orderId);
-            return null;
+            const response = await fetch(`/api/orders/${orderId}`);
+            if (!response.ok) {
+                if (response.status === 404) return null;
+                throw new Error('Error fetching order');
+            }
+            return response.json();
         } catch (error) {
             console.error(`Error fetching order ${orderId}:`, error);
             throw error;

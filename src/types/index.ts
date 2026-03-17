@@ -90,17 +90,23 @@ export interface Cliente {
 	casosActivos: number;
 }
 
-// Interfaz para Caso
+// Interfaz para Caso (Equivalente a Order en el sistema de pagos)
 export interface Caso {
 	id: string;
-	titulo: string;
-	cliente: string;
-	abogado: string;
-	estado: 'pendiente' | 'en_progreso' | 'completado' | 'cancelado';
-	fechaCreacion: string;
-	fechaVencimiento?: string;
-	prioridad: 'baja' | 'media' | 'alta';
-	descripcion: string;
+	numericId?: number;
+	userName: string;
+	userEmail: string;
+	status: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADO' | 'CANCELADO' | 'FALLIDO';
+	createdAt: string;
+	updatedAt: string;
+	total: number;
+	items: Array<{
+		serviceId: string;
+		serviceName: string;
+		price: number;
+	}>;
+	lawyerId?: string;
+	paymentId?: string;
 }
 
 // Interfaz para transacciones financieras

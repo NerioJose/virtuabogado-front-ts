@@ -5,55 +5,102 @@ export class ApiError extends Error {
     }
 }
 
+import { createClient } from '@/utils/supabase/client';
+
 export const apiClient = {
     async get<T>(url: string): Promise<T> {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Verificar bypass de desarrollo para logging
+        const isDevBypass = typeof document !== 'undefined' && document.cookie.includes('virtuabogado-dev-bypass=true');
+
+        if (!session && !isDevBypass) {
+            console.warn(`🕵️ apiClient: No hay sesión activa al llamar a ${url}`);
+        } else if (session) {
+            console.log(`🔑 apiClient: Enviando Bearer Token a ${url}`);
+        } else if (isDevBypass) {
+            console.log(`🚧 apiClient: Usando Bypass de Desarrollo para ${url}`);
+        }
+
         const response = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
+                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
             },
+            credentials: 'include',
         });
         return handleResponse<T>(response);
     },
 
     async post<T>(url: string, body: any): Promise<T> {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) console.log(`🔑 apiClient POST: Enviando Bearer Token a ${url}`);
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
             },
             body: JSON.stringify(body),
+            credentials: 'include',
         });
         return handleResponse<T>(response);
     },
 
     async put<T>(url: string, body: any): Promise<T> {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) console.log(`🔑 apiClient PUT: Enviando Bearer Token a ${url}`);
+
         const response = await fetch(url, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
             },
             body: JSON.stringify(body),
+            credentials: 'include',
         });
         return handleResponse<T>(response);
     },
 
     async patch<T>(url: string, body: any): Promise<T> {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) console.log(`🔑 apiClient PATCH: Enviando Bearer Token a ${url}`);
+
         const response = await fetch(url, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
+                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
             },
             body: JSON.stringify(body),
+            credentials: 'include',
         });
         return handleResponse<T>(response);
     },
 
     async delete<T>(url: string): Promise<T> {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) console.log(`🔑 apiClient DELETE: Enviando Bearer Token a ${url}`);
+
         const response = await fetch(url, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
             },
+            credentials: 'include',
         });
         return handleResponse<T>(response);
     },

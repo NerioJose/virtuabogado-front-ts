@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { useOrdersStore } from '@/features/orders/store/ordersStore';
+import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { FiSend, FiPaperclip, FiLock } from 'react-icons/fi';
 
@@ -10,15 +10,15 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow = ({ orderId }: ChatWindowProps) => {
-    const { messages, isLoading, setActiveOrder, sendMessage, sendFile, cleanup } = useChatStore();
-    const { getOrderById } = useOrdersStore();
+    const { messages, isLoading: messagesLoading, setActiveOrder, sendMessage, sendFile, cleanup } = useChatStore();
+    const { data: orders = [] } = useOrders();
     const { user } = useAuthStore();
     const [newMessage, setNewMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const order = getOrderById(orderId);
+    const order = orders.find(o => o.id === orderId);
     const isChatDisabled = order?.status === OrderStatus.COMPLETED || order?.status === OrderStatus.CANCELLED;
 
     useEffect(() => {
@@ -58,7 +58,7 @@ export const ChatWindow = ({ orderId }: ChatWindowProps) => {
         }
     };
 
-    if (isLoading && messages.length === 0) {
+    if (messagesLoading && messages.length === 0) {
         return <div className="p-4 text-center">Cargando chat...</div>;
     }
 

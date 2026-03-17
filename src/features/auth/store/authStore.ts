@@ -69,32 +69,34 @@ export const useAuthStore = create<AuthState>()(
                 state.setUser(user);
             },
 
-            logout: async () => {
-                const { authService } = await import('../services/auth.service');
-                await authService.logout();
-
+            logout: () => {
+                // 1. Limpiar estado instantáneamente para UI reactiva
                 set({
                     user: null,
                     isAuthenticated: false,
                     error: null,
                 });
 
-                // Reset de todos los stores en memoria
-                useCheckoutStore.getState().reset();
-                useOrdersStore.getState().reset();
-                // usage of clients and lawyers stores removed
-                // useClientsStore.getState().reset();
-                // useLawyersStore.getState().reset();
-
-                // Limpiar persistencia de localStorage (Zustand persist)
+                // 2. Limpiar persistencia local
                 if (typeof window !== 'undefined') {
-                    // No borramos 'user' manualmente pq ya no lo seteamos manualmente
                     localStorage.removeItem('virtuabogado_checkout');
-                    localStorage.removeItem('virtuabogado-auth'); // Limpiar persistencia de zustand auth
-
-                    // Disparar evento para componentes legacy
+                    localStorage.removeItem('virtuabogado-auth');
                     window.dispatchEvent(new Event('authChange'));
                 }
+
+                // 3. Limpiar stores
+                useCheckoutStore.getState().reset();
+                useOrdersStore.getState().reset();
+
+                // 4. Limpiar React Query Cache (Previene 401s de polling/refetch)
+                import('@/lib/queryClient').then(({ queryClient }) => {
+                    queryClient.clear();
+                });
+
+                // 5. Llamada asíncrona a Supabase sin bloquear la UI
+                import('../services/auth.service').then(({ authService }) => {
+                    authService.logout().catch(console.error);
+                });
             },
 
             updateUser: (userData: Partial<User>) => {

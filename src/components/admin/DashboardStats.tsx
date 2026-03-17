@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useMemo, useCallback } from 'react';
+import { memo, useMemo } from 'react';
 import {
 	FiUsers,
 	FiUserCheck,
@@ -16,7 +16,6 @@ import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
-// import { useOrdersStore, initializeOrders, OrderStatus } from '@/features/orders';
 
 // Tipos para las estadísticas
 interface Stats {
@@ -45,13 +44,31 @@ interface Actividad {
 	timestamp: Date;
 }
 
-// Componente para el spinner de carga
-const LoadingSpinner = () => (
-	<div className="flex justify-center items-center h-64">
-		<div className="text-center">
-			<div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-			<p className="text-gray-500">Cargando estadísticas...</p>
+
+// Skeleton shimmer para tarjetas en carga
+const SkeletonCard = () => (
+	<div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+		<div className="flex items-center justify-between">
+			<div>
+				<div className="h-4 bg-gray-200 rounded w-32 mb-3"></div>
+				<div className="h-8 bg-gray-200 rounded w-16"></div>
+			</div>
+			<div className="w-12 h-12 rounded-full bg-gray-200"></div>
 		</div>
+		<div className="mt-4 h-4 bg-gray-200 rounded w-40"></div>
+	</div>
+);
+
+// Skeleton para resumen financiero
+const SkeletonFinancial = () => (
+	<div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+		<div className="h-5 bg-gray-200 rounded w-40 mb-6"></div>
+		{[1,2,3,4].map(i => (
+			<div key={i} className="flex justify-between items-center mb-4">
+				<div className="h-4 bg-gray-200 rounded w-32"></div>
+				<div className="h-4 bg-gray-200 rounded w-20"></div>
+			</div>
+		))}
 	</div>
 );
 
@@ -165,15 +182,12 @@ CaseProgressBar.displayName = 'CaseProgressBar';
 
 function DashboardStats() {
 	// ============ STORES GLOBALES & HOOKS ============
-	const { data: clients = [] } = useClients();
-	const { data: lawyers = [] } = useLawyers();
-	const { data: orders = [] } = useOrders();
+	const { data: clients = [], isLoading: clientsLoading } = useClients();
+	const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
+	const { data: orders = [], isLoading: ordersLoading } = useOrders();
 	const { data: financialSettings } = useFinancialSettings();
-	// const orders = useOrdersStore((state) => state.orders);
 
-	const [actividades, setActividades] = useState<Actividad[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const isLoading = clientsLoading || lawyersLoading || ordersLoading;
 
 	// ============ ESTADÍSTICAS CALCULADAS ============
 	const stats = useMemo((): Stats => {
@@ -280,157 +294,75 @@ const pagosAbogados = useMemo(() => {
 }, [stats.ingresosTotales, stats.gananciasNetas, stats.gastosOperativos]);
 
 
-// Función para inicializar stores
-const loadStoresData = useCallback(async () => {
-	try {
-		// React Query maneja el loading de clients automáticamente, pero mantenemos esto para los otros stores por ahora
-		setLoading(true);
-		setError(null);
-
-		// Inicializar stores legacy si están vacíos
-		// if (orders.length === 0) initializeOrders();
-
-		// Las actividades ahora provienen de los stores reales
-		// Por ahora array vacío - TODO: crear store de actividades
-		setActividades([]);
-
-		setLoading(false);
-	} catch (err) {
-		setError('Error al cargar las estadísticas');
-		console.error('Error loading stats:', err);
-		setLoading(false);
-	}
-}, [lawyers.length, orders.length]);
-
-useEffect(() => {
-	loadStoresData();
-}, [loadStoresData]);
-
-// Función para obtener el icono de la actividad
-const getActivityIcon = useCallback((tipo: Actividad['tipo']) => {
-	const iconProps = { className: 'w-4 h-4' };
-	switch (tipo) {
-		case 'caso':
-			return <FiBriefcase {...iconProps} />;
-		case 'abogado':
-			return <FiUserCheck {...iconProps} />;
-		case 'pago':
-			return <FiDollarSign {...iconProps} />;
-		case 'cliente':
-			return <FiUsers {...iconProps} />;
-		default:
-			return <FiCheckCircle {...iconProps} />;
-	}
-}, []);
-
-// Función para obtener los colores de la actividad
-const getActivityColors = useCallback((tipo: Actividad['tipo']) => {
-	switch (tipo) {
-		case 'caso':
-			return { bgColor: 'bg-purple-100', textColor: 'text-purple-600' };
-		case 'abogado':
-			return { bgColor: 'bg-blue-100', textColor: 'text-blue-600' };
-		case 'pago':
-			return { bgColor: 'bg-green-100', textColor: 'text-green-600' };
-		case 'cliente':
-			return { bgColor: 'bg-teal-100', textColor: 'text-teal-600' };
-		default:
-			return { bgColor: 'bg-gray-100', textColor: 'text-gray-600' };
-	}
-}, []);
-
-if (loading) {
-	return <LoadingSpinner />;
-}
-
-if (error) {
-	return (
-		<div className="flex justify-center items-center h-64">
-			<div className="text-center">
-				<FiAlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-				<p className="text-red-600 font-medium mb-2">{error}</p>
-				<button
-					onClick={loadStoresData}
-					className="px-4 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-colors">
-					Reintentar
-				</button>
-			</div>
-		</div>
-	);
-}
 
 return (
 	<div className="space-y-8">
 		<div className="flex justify-between items-center">
 			<h2 className="text-2xl font-bold text-gray-800">Resumen General</h2>
-			<button
-				onClick={loadStoresData}
-				className="text-azul-primario hover:text-azul-primario/80 text-sm font-medium flex items-center space-x-2"
-				title="Actualizar datos">
-				<span>Actualizar</span>
-			</button>
+			{isLoading && <span className="text-sm text-gray-400 animate-pulse">Actualizando datos...</span>}
 		</div>
 
 		{/* Tarjetas de estadísticas principales */}
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-			<StatCard
-				title="Total de Abogados"
-				value={stats.totalAbogados}
-				icon={<FiUserCheck />}
-				bgColor="bg-blue-100"
-				iconColor="text-blue-600"
-				subtitle={{
-					text: `${stats.abogadosPendientes} pendientes de aprobación`,
-					icon: <FiAlertCircle />,
-					color: 'text-amber-500',
-				}}
-			/>
-
-			<StatCard
-				title="Total de Clientes"
-				value={stats.totalClientes}
-				icon={<FiUsers />}
-				bgColor="bg-green-100"
-				iconColor="text-green-600"
-				subtitle={{
-					text: `+${stats.clientesNuevosMes} nuevos este mes`,
-					icon: <FiCheckCircle />,
-					color: 'text-green-500',
-				}}
-			/>
-
-			<StatCard
-				title="Casos Activos"
-				value={stats.casosActivos}
-				icon={<FiBriefcase />}
-				bgColor="bg-purple-100"
-				iconColor="text-purple-600"
-				subtitle={{
-					text: `${stats.casosPendientes} pendientes de asignación`,
-					icon: <FiClock />,
-					color: 'text-amber-500',
-				}}
-			/>
-
-			<StatCard
-				title="Ingresos del Mes"
-				value={stats.ingresosMes}
-				icon={<FiDollarSign />}
-				bgColor="bg-teal-100"
-				iconColor="text-teal-600"
-				subtitle={{
-					text: `${stats.crecimientoIngresos > 0 ? '+' : ''}${stats.crecimientoIngresos
-						}% vs. mes anterior`,
-					icon:
-						stats.crecimientoIngresos > 0 ? (
-							<FiTrendingUp />
-						) : (
-							<FiTrendingDown />
-						),
-					color:
-						stats.crecimientoIngresos > 0 ? 'text-green-500' : 'text-red-500',
-				}}
-			/>
+			{isLoading ? (
+				<>
+					<SkeletonCard />
+					<SkeletonCard />
+					<SkeletonCard />
+					<SkeletonCard />
+				</>
+			) : (
+				<>
+					<StatCard
+						title="Total de Abogados"
+						value={stats.totalAbogados}
+						icon={<FiUserCheck />}
+						bgColor="bg-blue-100"
+						iconColor="text-blue-600"
+						subtitle={{
+							text: `${stats.abogadosPendientes} pendientes de aprobación`,
+							icon: <FiAlertCircle />,
+							color: 'text-amber-500',
+						}}
+					/>
+					<StatCard
+						title="Total de Clientes"
+						value={stats.totalClientes}
+						icon={<FiUsers />}
+						bgColor="bg-green-100"
+						iconColor="text-green-600"
+						subtitle={{
+							text: `+${stats.clientesNuevosMes} nuevos este mes`,
+							icon: <FiCheckCircle />,
+							color: 'text-green-500',
+						}}
+					/>
+					<StatCard
+						title="Casos Activos"
+						value={stats.casosActivos}
+						icon={<FiBriefcase />}
+						bgColor="bg-purple-100"
+						iconColor="text-purple-600"
+						subtitle={{
+							text: `${stats.casosPendientes} pendientes de asignación`,
+							icon: <FiClock />,
+							color: 'text-amber-500',
+						}}
+					/>
+					<StatCard
+						title="Ingresos del Mes"
+						value={stats.ingresosMes}
+						icon={<FiDollarSign />}
+						bgColor="bg-teal-100"
+						iconColor="text-teal-600"
+						subtitle={{
+							text: `${stats.crecimientoIngresos > 0 ? '+' : ''}${stats.crecimientoIngresos.toFixed(1)}% vs. mes anterior`,
+							icon: stats.crecimientoIngresos > 0 ? <FiTrendingUp /> : <FiTrendingDown />,
+							color: stats.crecimientoIngresos > 0 ? 'text-green-500' : 'text-red-500',
+						}}
+					/>
+				</>
+			)}
 		</div>
 
 		{/* Gráficos y estadísticas adicionales */}
@@ -506,46 +438,10 @@ return (
 				<h3 className="text-lg font-semibold text-gray-800">
 					Actividad Reciente
 				</h3>
-				<button className="text-azul-primario hover:text-azul-primario/80 text-sm font-medium">
-					Ver todo
-				</button>
 			</div>
-			<div className="space-y-4">
-				{actividades.length > 0 ? (
-					actividades.map((actividad) => {
-						const colors = getActivityColors(actividad.tipo);
-						return (
-							<div
-								key={actividad.id}
-								className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-								<div
-									className={`p-2 rounded-full flex-shrink-0 ${colors.bgColor}`}>
-									<div className={colors.textColor}>
-										{getActivityIcon(actividad.tipo)}
-									</div>
-								</div>
-								<div className="flex-1 min-w-0">
-									<p className="font-medium text-gray-800 truncate">
-										{actividad.accion}
-									</p>
-									<p className="text-gray-600 text-sm truncate">
-										{actividad.detalles}
-									</p>
-								</div>
-								<div className="flex-shrink-0">
-									<p className="text-gray-400 text-sm">
-										Hace {actividad.tiempo}
-									</p>
-								</div>
-							</div>
-						);
-					})
-				) : (
-					<div className="text-center py-8 text-gray-500">
-						<FiClock className="w-8 h-8 mx-auto mb-2" />
-						<p>No hay actividad reciente</p>
-					</div>
-				)}
+			<div className="text-center py-8 text-gray-500">
+				<FiClock className="w-8 h-8 mx-auto mb-2" />
+				<p>No hay actividad reciente</p>
 			</div>
 		</div>
 	</div>

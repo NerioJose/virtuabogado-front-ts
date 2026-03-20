@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/utils/supabase/server';
 
 export async function PUT(
     request: Request,
     { params }: { params: { id: string } }
 ) {
+    try {
         const supabase = await createClient();
         // Verificar autenticación
         let { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        // 1. Fallback: Header
+        // Fallbacks
         if (!user) {
             const authHeader = request.headers.get('Authorization');
             if (authHeader?.startsWith('Bearer ')) {
@@ -19,64 +21,48 @@ export async function PUT(
             }
         }
 
-        // 2. Fallback: Dev Bypass
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Lawyers [ID] API: Auth bypass via Dev Cookie (PUT)');
-            }
-        }
-
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Verificar rol (Saltar si es bypass)
-        if (user.id !== 'dev-bypass-admin') {
-            const { data: userData } = await supabase
-                .from('User')
-                .select('rol')
-                .eq('id', user.id)
-                .single();
+        // Obtener rol del usuario
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
+        }
 
-            if (userData?.rol !== 'ADMIN') {
-                return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
-            }
+        if (userRole !== 'ADMIN') {
+            return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
         const id = params.id;
         const body = await request.json();
-        const { nombre, email, telefono, especialidad, matricula, experiencia } = body;
+        const { nombre, especialidad, experiencia } = body;
 
         const updatedLawyer = await prisma.user.update({
             where: { id },
             data: {
                 ...(nombre !== undefined && { nombre }),
-                ...(email !== undefined && { email }),
-                ...(telefono !== undefined && { telefono: telefono === '' ? null : telefono }),
                 ...(especialidad !== undefined && { especialidad: especialidad === '' ? null : especialidad }),
-                ...(matricula !== undefined && { matricula: matricula === '' ? null : matricula }),
-                ...(experiencia !== undefined && { experiencia: experiencia === '' ? null : Number(experiencia) }),
+                ...(experiencia !== undefined && { experiencia: experiencia === '' ? null : experiencia }),
             },
-            include: {
-                orders: true
-            }
         });
 
-        // Formatear respuesta para que coincida con la interfaz Lawyer
+        // Formatear para coincidir con el estado del frontend
         const formattedLawyer = {
             id: updatedLawyer.id,
             nombre: updatedLawyer.nombre,
             email: updatedLawyer.email,
-            telefono: updatedLawyer.telefono || undefined,
-            especialidad: updatedLawyer.especialidad || 'civil',
-            status: updatedLawyer.activo ? 'ACTIVO' : 'INACTIVO',
-            matricula: updatedLawyer.matricula || undefined,
+            especialidad: updatedLawyer.especialidad || undefined,
             experiencia: updatedLawyer.experiencia || undefined,
-            casosActivos: updatedLawyer.orders.filter(o => o.status === 'PENDIENTE').length,
-            casosCompletados: updatedLawyer.orders.filter(o => o.status === 'COMPLETADO').length,
-            rating: 5, // Mock por ahora
+            casosAsignados: typeof body.casosAsignados !== 'undefined' ? body.casosAsignados : 0,
+            casosCompletados: 0,
+            rating: typeof body.rating !== 'undefined' ? body.rating : 5,
+            status: updatedLawyer.activo ? 'active' : 'inactive',
             createdAt: updatedLawyer.createdAt,
             updatedAt: updatedLawyer.updatedAt,
         };
@@ -109,25 +95,22 @@ export async function DELETE(
                 if (headerUser) user = headerUser;
             }
         }
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-        }
 
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
         // Solo ADMIN puede borrar
-        let isAdmin = false;
-        if (user.id === 'dev-bypass-admin') {
-            isAdmin = true;
-        } else {
-            const { data: userData } = await supabase.from('User').select('rol').eq('id', user.id).single();
-            isAdmin = userData?.rol === 'ADMIN';
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
         }
 
-        if (!isAdmin) {
+        if (userRole !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 

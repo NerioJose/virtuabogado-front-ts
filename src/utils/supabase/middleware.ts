@@ -45,10 +45,7 @@ export async function updateSession(request: NextRequest) {
     // 1. REDIRECCIÓN SI NO ESTÁ AUTENTICADO Y ACCEDE A RUTA PROTEGIDA
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route.path));
 
-    // Bypass de desarrollo
-    const devBypass = request.cookies.get('virtuabogado-dev-bypass')?.value === 'true';
-
-    if (isProtectedRoute && !user && !devBypass) {
+    if (isProtectedRoute && !user) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         return NextResponse.redirect(url);

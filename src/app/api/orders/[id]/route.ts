@@ -2,6 +2,8 @@ import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -20,10 +22,6 @@ export async function GET(
             const { data: { user: headerUser } } = await supabase.auth.getUser(token);
             if (headerUser) user = headerUser;
         }
-    }
-    if (!user) {
-        const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-        if (devBypass) user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
     }
 
     if (!user) {
@@ -86,10 +84,6 @@ export async function PATCH(
             if (headerUser) user = headerUser;
         }
     }
-    if (!user) {
-        const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-        if (devBypass) user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-    }
 
     if (!user) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -150,10 +144,6 @@ export async function DELETE(
             const { data: { user: headerUser } } = await supabase.auth.getUser(token);
             if (headerUser) user = headerUser;
         }
-    }
-    if (!user) {
-        const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-        if (devBypass) user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
     }
 
     if (!user) {

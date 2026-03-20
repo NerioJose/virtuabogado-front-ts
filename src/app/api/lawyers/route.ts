@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     try {
         const supabase = await createClient();
@@ -22,31 +24,23 @@ export async function GET(request: Request) {
             }
         }
 
-        // 2. Fallback: Dev Bypass Cookie (Solo para desarrollo)
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Lawyers API: Auth bypass via Dev Cookie');
-            }
-        }
-
         if (!user) {
             console.warn('⚠️ API GET /lawyers: User not found in session');
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Verificar rol (Saltar si es bypass)
-        if (user.id !== 'dev-bypass-admin') {
-            const { data: userData } = await supabase
-                .from('User')
-                .select('rol')
-                .eq('id', user.id)
-                .single();
+        // Verificar rol
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
+        }
 
-            if (userData?.rol !== 'ADMIN') {
-                return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
-            }
+        if (userRole !== 'ADMIN') {
+            return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
         const lawyers = await prisma.user.findMany({

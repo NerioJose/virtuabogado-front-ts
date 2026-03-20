@@ -33,6 +33,12 @@ interface AbogadoPanelProps {
 export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const router = useRouter();
 	const [seccionActiva, setSeccionActiva] = useState('casos');
+	const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
+
+	const handleNavClick = (id: string) => {
+		setSeccionActiva(id);
+		setSelectedClienteId(null);
+	};
 	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -128,7 +134,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 					<ul>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('casos')}
+								onClick={() => handleNavClick('casos')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'casos'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -139,7 +145,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('agenda')}
+								onClick={() => handleNavClick('agenda')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'agenda'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -150,7 +156,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('mensajes')}
+								onClick={() => handleNavClick('mensajes')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'mensajes'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -161,7 +167,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('clientes')}
+								onClick={() => handleNavClick('clientes')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'clientes'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -172,7 +178,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('facturacion')}
+								onClick={() => handleNavClick('facturacion')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'facturacion'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -183,7 +189,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('documentos')}
+								onClick={() => handleNavClick('documentos')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'documentos'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -194,7 +200,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => setSeccionActiva('perfil')}
+								onClick={() => handleNavClick('perfil')}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'perfil'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -303,14 +309,18 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 					{abogado ? (
 						<>
 							{seccionActiva === 'casos' && (
-								<CasosAbogadoPanel abogadoId={abogado.id} />
+								<CasosAbogadoPanel abogadoId={abogado.id} initialClienteId={selectedClienteId} />
 							)}
 							{seccionActiva === 'agenda' && <AgendaPanel abogadoId={abogado.id} />}
 							{seccionActiva === 'mensajes' && (
-								<MensajesPanel abogadoId={abogado.id} />
+								<MensajesPanel abogadoId={abogado.id} initialClienteId={selectedClienteId} />
 							)}
 							{seccionActiva === 'clientes' && (
-								<ClientesAbogadoPanel abogadoId={abogado.id} />
+								<ClientesAbogadoPanel 
+                                    abogadoId={abogado.id} 
+                                    onNavigateToCasos={(id) => { setSelectedClienteId(id); setSeccionActiva('casos'); }}
+                                    onNavigateToMensajes={(id) => { setSelectedClienteId(id); setSeccionActiva('mensajes'); }}
+                                />
 							)}
 							{seccionActiva === 'facturacion' && (
 								<FacturacionPanel abogadoId={abogado.id} />

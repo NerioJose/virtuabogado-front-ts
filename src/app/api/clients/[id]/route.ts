@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/utils/supabase/server';
 
 export async function PUT(
     request: Request,
     { params }: { params: { id: string } }
 ) {
+    try {
         const supabase = await createClient();
         // Verificar autenticación
         let { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -18,29 +20,23 @@ export async function PUT(
                 if (headerUser) user = headerUser;
             }
         }
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Clients [ID] API: Auth bypass via Dev Cookie (PUT)');
-            }
-        }
 
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Verificar rol (Saltar si es bypass)
-        if (user.id !== 'dev-bypass-admin') {
-            const { data: userData } = await supabase
-                .from('User')
-                .select('rol')
-                .eq('id', user.id)
-                .single();
+        // Obtener rol del usuario
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
+        }
 
-            if (userData?.rol !== 'ADMIN' && userData?.rol !== 'ABOGADO') {
-                return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
-            }
+        if (userRole !== 'ADMIN' && userRole !== 'ABOGADO') {
+            return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
         const id = params.id;
@@ -69,9 +65,9 @@ export async function PUT(
             status: updatedClient.activo ? 'active' : 'inactive',
             createdAt: updatedClient.createdAt,
             updatedAt: updatedClient.updatedAt,
-            // Mantener valores originales o calcularlos si fuera necesario (aquí no cambian por un update simple)
-            serviciosContratados: 0, // El store mantendrá el valor original al hacer merge
-            totalGastado: 0,         // El store mantendrá el valor original al hacer merge
+            // Mantener valores originales o calcularlos si fuera necesario
+            serviciosContratados: 0,
+            totalGastado: 0,
         };
 
         return NextResponse.json(formattedClient);
@@ -102,25 +98,22 @@ export async function DELETE(
                 if (headerUser) user = headerUser;
             }
         }
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-        }
 
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
         // Solo ADMIN puede borrar
-        let isAdmin = false;
-        if (user.id === 'dev-bypass-admin') {
-            isAdmin = true;
-        } else {
-            const { data: userData } = await supabase.from('User').select('rol').eq('id', user.id).single();
-            isAdmin = userData?.rol === 'ADMIN';
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
         }
 
-        if (!isAdmin) {
+        if (userRole !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 

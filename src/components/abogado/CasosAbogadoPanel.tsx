@@ -1,18 +1,46 @@
 import { useState, useEffect, memo, useMemo } from 'react';
 import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft } from 'react-icons/fi';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
-import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 
 interface CasosAbogadoPanelProps {
   abogadoId: string;
+  initialClienteId?: string | null;
 }
 
-function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
+function CasosAbogadoPanel({ abogadoId, initialClienteId }: CasosAbogadoPanelProps) {
   const { data: misCasos = [], isLoading, error } = useOrdersByLawyer(abogadoId);
   // const { orders, fetchOrders, getOrdersByLawyer, isLoading } = useOrdersStore(); // Deprecated
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
   const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
+  const updateOrder = useUpdateOrder();
+
+  const openConfirmModal = (orderId: string) => {
+    setCasoParaCompletar(orderId);
+    setModalAbierto(true);
+  };
+
+  const handleConfirmarCompletar = async () => {
+    if (!casoParaCompletar) return;
+    try {
+      await updateOrder.mutateAsync({
+        id: casoParaCompletar,
+        data: { 
+          status: OrderStatus.COMPLETED,
+          closedAt: new Date().toISOString()
+        }
+      });
+      setModalAbierto(false);
+      setCasoParaCompletar(null);
+    } catch (error) {
+      console.error('Error al completar el caso:', error);
+      alert('Hubo un error al intentar completar el caso.');
+    }
+  };
 
   // Ya no necesitamos useEffect para fetchOrders porque useQuery lo maneja automáticamente
   // ni useMemo para filtrar por abogado porque el hook ya lo hace en el servidor
@@ -20,9 +48,11 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
   // Filtrar casos según filtro de estado
   const casosFiltrados = useMemo(() => {
     return misCasos.filter(caso => {
-      return filtroEstado === 'todos' || caso.status === filtroEstado;
+      const matchEstado = filtroEstado === 'todos' || caso.status === filtroEstado;
+      const matchCliente = initialClienteId ? caso.userId === initialClienteId : true;
+      return matchEstado && matchCliente;
     });
-  }, [misCasos, filtroEstado]);
+  }, [misCasos, filtroEstado, initialClienteId]);
 
   if (isLoading && misCasos.length === 0) {
     return (
@@ -78,6 +108,22 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
                 <p className="font-medium">{caso?.createdAt ? new Date(caso.createdAt).toLocaleDateString() : '-'}</p>
               </div>
             </div>
+
+            {/* Nuevo botón para completar caso */}
+            {caso?.status !== OrderStatus.COMPLETED && caso?.status !== OrderStatus.CANCELLED && (
+              <div className="pt-4 mt-6 border-t border-gray-100">
+                <button
+                  onClick={() => caso && openConfirmModal(caso.id)}
+                  disabled={updateOrder.isPending}
+                  className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex justify-center items-center shadow-sm disabled:opacity-50"
+                >
+                  {updateOrder.isPending ? 'Procesando...' : 'Marcar como Completado'}
+                </button>
+                <p className="text-xs text-gray-500 text-center mt-3 leading-tight">
+                  Al completar el caso, el chat se cerrará permanentemente para ambas partes.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Columna Derecha: Chat */}
@@ -85,6 +131,17 @@ function CasosAbogadoPanel({ abogadoId }: CasosAbogadoPanelProps) {
             <ChatWindow orderId={casoSeleccionado} />
           </div>
         </div>
+
+        {/* Modal de confirmación */}
+        <ConfirmModal
+          isOpen={modalAbierto}
+          onClose={() => setModalAbierto(false)}
+          onConfirm={handleConfirmarCompletar}
+          title="Completar Caso"
+          message="¿Estás seguro de que deseas marcar este caso como completado? Esta acción es final y cerrará el chat de forma permanente."
+          confirmText="Sí, Completar Caso"
+          isLoading={updateOrder.isPending}
+        />
       </div>
     );
   }

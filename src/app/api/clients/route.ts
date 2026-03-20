@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     try {
         const supabase = await createClient();
@@ -22,33 +24,23 @@ export async function GET(request: Request) {
             }
         }
 
-        // 2. Fallback: Dev Bypass Cookie (Solo para desarrollo)
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                // Simular un usuario admin para que pase la validación de la API
-                // NOTA: Esto no autentica la instancia de Supabase, por lo que RLS aún puede afectar
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Clients API: Auth bypass via Dev Cookie');
-            }
-        }
-
         if (!user) {
             console.warn('⚠️ API GET /clients: User not found in session');
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Obtener rol del usuario (Saltar si es bypass)
-        if (user.id !== 'dev-bypass-admin') {
-            const { data: userData } = await supabase
-                .from('User')
-                .select('rol')
-                .eq('id', user.id)
-                .single();
+        // Obtener rol del usuario
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
+        }
 
-            if (userData?.rol !== 'ADMIN' && userData?.rol !== 'ABOGADO') {
-                return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
-            }
+        if (userRole !== 'ADMIN' && userRole !== 'ABOGADO') {
+            return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
         const clients = await prisma.user.findMany({

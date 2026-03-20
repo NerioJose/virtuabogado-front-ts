@@ -51,8 +51,10 @@ export default function RecentOrders() {
     const ordersCount = orders.length;
     const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
 
-    // Mostrar solo las 5 órdenes más recientes
-    const recentOrders = orders.slice(0, 5);
+    // Mostrar solo las 5 órdenes más recientes (basado en la última actualización/actividad)
+    const recentOrders = [...orders]
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 5);
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -130,8 +132,8 @@ export default function RecentOrders() {
                                         <p className="text-lg font-bold text-vinotinto">
                                             ${order.total.toFixed(2)}
                                         </p>
-                                        <p className="text-xs text-gray-500">
-                                            {new Date(order.createdAt).toLocaleDateString('es-ES', {
+                                        <p className="text-xs text-gray-500" title={`Creado: ${new Date(order.createdAt).toLocaleString('es-ES')}`}>
+                                            {new Date(order.updatedAt).toLocaleDateString('es-ES', {
                                                 day: 'numeric',
                                                 month: 'short',
                                                 hour: '2-digit',

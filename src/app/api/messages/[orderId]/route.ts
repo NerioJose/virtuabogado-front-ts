@@ -13,23 +13,13 @@ export async function GET(
         // Verificar autenticación
         let { data: { user } } = await supabase.auth.getUser();
 
-        // Fallback: Dev Bypass Cookie
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-            }
-        }
-
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
         // Obtener rol del usuario
-        let userRole = 'CLIENTE';
-        if (user.id === 'dev-bypass-admin') {
-            userRole = 'ADMIN';
-        } else {
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }

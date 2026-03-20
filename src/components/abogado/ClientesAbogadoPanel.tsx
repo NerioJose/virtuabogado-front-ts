@@ -7,6 +7,8 @@ import { OrderStatus } from '@/features/orders/types/orders.types';
 
 interface ClientesAbogadoPanelProps {
   abogadoId: string;
+  onNavigateToCasos?: (clienteId: string) => void;
+  onNavigateToMensajes?: (clienteId: string) => void;
 }
 
 interface Cliente {
@@ -21,7 +23,7 @@ interface Cliente {
   imagen?: string;
 }
 
-export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanelProps) {
+export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onNavigateToMensajes }: ClientesAbogadoPanelProps) {
   // Use real data from orders to derive clients
   const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
   const [busqueda, setBusqueda] = useState('');
@@ -201,11 +203,17 @@ export default function ClientesAbogadoPanel({ abogadoId }: ClientesAbogadoPanel
                 </div>
 
                 <div className="flex justify-between">
-                  <button className="flex items-center text-sm text-azul-primario hover:text-azul-primario/80">
+                  <button 
+                    onClick={() => onNavigateToCasos?.(cliente.id)}
+                    className="flex items-center text-sm text-azul-primario hover:text-azul-primario/80"
+                  >
                     <FiFileText className="mr-1" />
                     Ver casos
                   </button>
-                  <button className="flex items-center text-sm text-azul-primario hover:text-azul-primario/80">
+                  <button 
+                    onClick={() => onNavigateToMensajes?.(cliente.id)}
+                    className="flex items-center text-sm text-azul-primario hover:text-azul-primario/80"
+                  >
                     <FiMessageSquare className="mr-1" />
                     Enviar mensaje
                   </button>

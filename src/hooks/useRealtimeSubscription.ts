@@ -20,7 +20,6 @@ export const useRealtimeSubscription = () => {
     // para el cliente anónimo (Mock Login de dev)
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        // Polling más espaciado (1 minuto) para no sobrecargar el navegador
         const pollInterval = setInterval(() => {
             // Solo invalidar si el usuario está activo/pestaña visible y está autenticado
             if (document.visibilityState === 'visible' && user?.id) {
@@ -30,7 +29,7 @@ export const useRealtimeSubscription = () => {
         }, 30_000); 
 
         return () => clearInterval(pollInterval);
-    }, [queryClient]);
+    }, [queryClient, user?.id]);
 
     // ═══════════════════════════════════════════════
     // REALTIME - sincronización instantánea (cuando RLS lo permite)
@@ -85,8 +84,9 @@ export const useRealtimeSubscription = () => {
 
         console.log('🚀 Inicializando suscripción Realtime por tablas...');
         
-        // Suscribirse a tablas específicas
-        const channel = supabase.channel('db-changes');
+        // Nombre de canal único para evitar colisiones en React Strict Mode / Fast Refresh
+        const channelName = `db-changes-${user?.id}-${Date.now()}`;
+        const channel = supabase.channel(channelName);
 
         // Lista de tablas a monitorear
         const tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message'];
@@ -103,8 +103,8 @@ export const useRealtimeSubscription = () => {
             );
         });
 
-        channel.subscribe((status: string) => {
-            console.log(`📡 Estado de suscripción Realtime: ${status}`);
+        channel.subscribe((status: string, err?: any) => {
+            console.log(`📡 Estado de suscripción Realtime [${channelName}]: ${status}`);
             
             switch (status) {
                 case 'SUBSCRIBED':
@@ -114,7 +114,7 @@ export const useRealtimeSubscription = () => {
                     break;
                 case 'CHANNEL_ERROR':
                     setConnectionStatus('ERROR');
-                    console.error('❌ Error en canal Realtime. El polling de 30s sirve como fallback.');
+                    console.error(`❌ Error en canal Realtime [${channelName}]. El polling de 30s sirve como fallback.`, err ? JSON.stringify(err) : 'No error details provided');
                     break;
                 case 'TIMED_OUT':
                     setConnectionStatus('ERROR');

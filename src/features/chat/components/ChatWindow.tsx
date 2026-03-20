@@ -15,7 +15,7 @@ export const ChatWindow = ({ orderId }: ChatWindowProps) => {
     const { user } = useAuthStore();
     const [newMessage, setNewMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const order = orders.find(o => o.id === orderId);
@@ -27,7 +27,9 @@ export const ChatWindow = ({ orderId }: ChatWindowProps) => {
     }, [orderId, setActiveOrder, cleanup]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
     }, [messages]);
 
     const handleSend = async (e: React.FormEvent) => {
@@ -75,7 +77,7 @@ export const ChatWindow = ({ orderId }: ChatWindowProps) => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
                 {messages.length === 0 ? (
                     <p className="text-center text-gray-500 my-10">No hay mensajes aún. ¡Inicia la conversación!</p>
                 ) : (
@@ -98,7 +100,7 @@ export const ChatWindow = ({ orderId }: ChatWindowProps) => {
                         );
                     })
                 )}
-                <div ref={messagesEndRef} />
+
             </div>
 
             {/* Input Area */}

@@ -6,22 +6,52 @@ import {
 	FiMessageSquare,
 	FiArrowLeft,
 } from 'react-icons/fi';
-import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
+import { OrderStatus } from '@/features/orders/types/orders.types';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface MensajesPanelProps {
 	abogadoId: string;
+	initialClienteId?: string | null;
 }
 
-export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
+export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesPanelProps) {
 	const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
 	const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
 	const [busqueda, setBusqueda] = useState('');
+	const [modalAbierto, setModalAbierto] = useState(false);
+	const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
+	const updateOrder = useUpdateOrder();
+
+	const openConfirmModal = (orderId: string) => {
+		setCasoParaCompletar(orderId);
+		setModalAbierto(true);
+	};
+
+	const handleConfirmarCompletar = async () => {
+		if (!casoParaCompletar) return;
+		try {
+			await updateOrder.mutateAsync({
+				id: casoParaCompletar,
+				data: {
+					status: OrderStatus.COMPLETED,
+					closedAt: new Date().toISOString()
+				}
+			});
+			setModalAbierto(false);
+			setCasoParaCompletar(null);
+		} catch (error) {
+			console.error('Error al completar el caso:', error);
+			alert('Hubo un error al intentar completar el caso.');
+		}
+	};
 
 	// Filtrar conversaciones por búsqueda y mapear desde órdenes
 	const conversaciones = useMemo(() => {
 		return orders
 			.filter(order => {
+				if (initialClienteId && order.userId !== initialClienteId) return false;
 				const term = busqueda.toLowerCase();
 				return (
 					order.userName?.toLowerCase().includes(term) ||
@@ -123,9 +153,10 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 				{conversacionActiva ? (
 					<>
 						{/* Cabecera móvil */}
-						<div className="p-4 border-b border-gray-100 flex items-center bg-white">
-							<button 
-								onClick={() => setConversacionActiva(null)}
+						<div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+							<div className="flex items-center">
+								<button 
+									onClick={() => setConversacionActiva(null)}
 								className="mr-3 md:hidden p-2 hover:bg-gray-100 rounded-full"
 							>
 								<FiArrowLeft size={20} />
@@ -141,6 +172,18 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 									{conversaciones.find(c => c.id === conversacionActiva)?.caso}
 								</p>
 							</div>
+							</div>
+
+							{conversacionActiva && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.COMPLETED && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.CANCELLED && (
+								<button
+									onClick={() => openConfirmModal(conversacionActiva)}
+									disabled={updateOrder.isPending}
+									title="Finalizar caso"
+									className="px-3 py-1.5 text-xs font-bold text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 whitespace-nowrap ml-2"
+								>
+									{updateOrder.isPending ? 'Un momento...' : 'Completar Caso'}
+								</button>
+							)}
 						</div>
 
 						{/* Chat Real */}
@@ -164,6 +207,17 @@ export default function MensajesPanel({ abogadoId }: MensajesPanelProps) {
 					</div>
 				)}
 			</div>
+
+			{/* Modal de confirmación */}
+			<ConfirmModal
+				isOpen={modalAbierto}
+				onClose={() => setModalAbierto(false)}
+				onConfirm={handleConfirmarCompletar}
+				title="Completar Caso"
+				message="¿Estás seguro de que deseas marcar este caso como completado? Esta acción es final y cerrará el chat de forma permanente."
+				confirmText="Sí, Completar Caso"
+				isLoading={updateOrder.isPending}
+			/>
 		</div>
 	);
 }

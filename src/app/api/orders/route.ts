@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     try {
         const supabase = await createClient();
@@ -22,25 +24,14 @@ export async function GET(request: Request) {
             }
         }
 
-        // 2. Fallback: Dev Bypass Cookie (Solo para desarrollo)
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Orders API: Auth bypass via Dev Cookie');
-            }
-        }
-
         if (!user) {
             console.warn('⚠️ API GET /orders: User not found in session');
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Obtener rol (Usar Prisma para bypass de RLS en el backend)
-        let userRole = 'CLIENTE';
-        if (user.id === 'dev-bypass-admin') {
-            userRole = 'ADMIN';
-        } else {
+        // Obtener rol (Priorizar metadata de Supabase Auth, fallback a DB)
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
@@ -142,15 +133,6 @@ export async function POST(request: Request) {
             }
         }
 
-        // 2. Fallback: Dev Bypass Cookie (Solo para desarrollo)
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Orders API: Auth bypass via Dev Cookie (POST)');
-            }
-        }
-
         if (!user) {
             console.warn('⚠️ API POST /orders: User not found in session');
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -159,11 +141,9 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { serviceId, userId, total, paymentId, userEmail, userNombre } = body;
 
-        // Seguridad: Determinar el ID del usuario final (Usar Prisma bypass RLS)
-        let userRole = 'CLIENTE';
-        if (user.id === 'dev-bypass-admin') {
-            userRole = 'ADMIN';
-        } else {
+        // Seguridad: Determinar el ID del usuario final
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
@@ -252,15 +232,6 @@ export async function PUT(request: Request) {
             }
         }
 
-        // 2. Fallback: Dev Bypass
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Orders API: Auth bypass via Dev Cookie (PUT)');
-            }
-        }
-
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
@@ -278,10 +249,8 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
         }
 
-        let userRole = 'CLIENTE';
-        if (user.id === 'dev-bypass-admin') {
-            userRole = 'ADMIN';
-        } else {
+        let userRole = user.user_metadata?.rol;
+        if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
@@ -339,23 +308,19 @@ export async function DELETE(request: Request) {
                 if (headerUser) user = headerUser;
             }
         }
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Orders API: Auth bypass via Dev Cookie (DELETE)');
-            }
-        }
 
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Solo ADMIN puede borrar (Use Prisma bypass RLS)
+        // Solo ADMIN puede borrar
         let isAdmin = false;
-        if (user.id === 'dev-bypass-admin') {
+        
+        let userRole = user.user_metadata?.rol;
+        
+        if (userRole === 'ADMIN') {
             isAdmin = true;
-        } else {
+        } else if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }

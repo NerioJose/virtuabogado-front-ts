@@ -89,9 +89,8 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 
 							{/* Enlaces del menú */}
 							<div className="py-2">
-								{/* Mis Servicios - Visible para todos los logueados */}
-								{/* Mis Servicios - Visible solo para clientes o abogados (no admin) */}
-								{user.rol !== UserRole.ADMIN && (
+								{/* Mis Servicios - Visible solo para clientes */}
+								{user.rol === UserRole.CLIENTE && (
 									<Link href="/mis-servicios">
 										<button
 											onClick={() => setIsDropdownOpen(false)}
@@ -370,7 +369,7 @@ const Navbar = () => {
 										{getDisplayName(user)}
 									</span>
 								</div>
-								{user.rol !== UserRole.ADMIN && (
+								{user.rol === UserRole.CLIENTE && (
 									<Link href="/mis-servicios">
 										<button
 											onClick={() => setIsOpen(false)}

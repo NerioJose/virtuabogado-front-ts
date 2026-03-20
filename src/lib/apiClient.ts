@@ -8,28 +8,26 @@ export class ApiError extends Error {
 import { createClient } from '@/utils/supabase/client';
 
 export const apiClient = {
-    async get<T>(url: string): Promise<T> {
+    async get<T>(url: string, options?: RequestInit): Promise<T> {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         const { data: { session } } = await supabase.auth.getSession();
         
-        // Verificar bypass de desarrollo para logging
-        const isDevBypass = typeof document !== 'undefined' && document.cookie.includes('virtuabogado-dev-bypass=true');
-
-        if (!session && !isDevBypass) {
+        if (!session) {
             console.warn(`🕵️ apiClient: No hay sesión activa al llamar a ${url}`);
-        } else if (session) {
+        } else {
             console.log(`🔑 apiClient: Enviando Bearer Token a ${url}`);
-        } else if (isDevBypass) {
-            console.log(`🚧 apiClient: Usando Bypass de Desarrollo para ${url}`);
         }
 
         const response = await fetch(url, {
+            ...options,
             headers: {
                 'Content-Type': 'application/json',
                 ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+                ...(options?.headers || {}),
             },
             credentials: 'include',
+            cache: 'no-store',
         });
         return handleResponse<T>(response);
     },

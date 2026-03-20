@@ -30,14 +30,6 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // 2. Fallback: Dev Bypass Cookie (Solo para desarrollo)
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-        if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-            }
-        }
-
         if (!user) {
             console.warn('⚠️ Financial Settings GET: User not found in session');
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -130,15 +122,6 @@ export async function PATCH(request: NextRequest) {
                     user = headerUser;
                     console.log('✅ Financial Settings PATCH: Auth success via Authorization header');
                 }
-            }
-        }
-
-        // 2. Fallback: Dev Bypass Cookie (Solo para desarrollo)
-        if (!user) {
-            const devBypass = request.headers.get('cookie')?.includes('virtuabogado-dev-bypass=true');
-            if (devBypass) {
-                user = { id: 'dev-bypass-admin', email: 'admin@dev.test' } as any;
-                console.log('🚧 Financial Settings PATCH: Auth bypass via Dev Cookie');
             }
         }
 

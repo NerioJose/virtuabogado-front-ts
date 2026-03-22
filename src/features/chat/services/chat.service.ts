@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import { Message } from '../types/chat.types';
+import { compressImage } from '@/utils/imageCompression';
 
 export const chatService = {
     async getMessages(orderId: string): Promise<Message[]> {
@@ -12,57 +13,81 @@ export const chatService = {
     },
 
     async sendMessage(orderId: string, content: string, senderId: string): Promise<Message> {
-        const supabase = createClient();
-        const { data, error } = await supabase
-            .from('Message')
-            .insert({
-                orderId,
-                content,
-                senderId,
-                read: false
-            })
-            .select(`
-                *,
-                sender:User(nombre, picture)
-            `)
-            .single();
-
-        if (error) throw error;
-        return data as unknown as Message;
+        const response = await fetch(`/api/messages/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, senderId })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al enviar el mensaje');
+        }
+        
+        return response.json();
     },
 
     subscribeToMessages(orderId: string, callback: (payload: any) => void) {
         const supabase = createClient();
-        return supabase
-            .channel(`chat:${orderId}`)
+        const channel = supabase.channel(`chat_${orderId}`);
+        
+        return channel
             .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'Message',
-                    filter: `orderId=eq.${orderId}`
-                },
-                callback
+                'broadcast',
+                { event: 'new_message' },
+                (payload) => {
+                    console.log('📬 Nuevo mensaje recibido via Broadcast:', payload);
+                    // Pasamos el payload empaquetado para mantener la compatibilidad con el formato anterior
+                    callback({ new: payload.payload.new });
+                }
             )
-            .subscribe();
+            .subscribe((status, error) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error('❌ Canal Realtime Error:', error);
+                } else if (status === 'SUBSCRIBED') {
+                    console.log('✅ Realtime Broadcast Subscribed for Chat window');
+                }
+            });
     },
 
     async uploadFile(orderId: string, file: File): Promise<string> {
-        const supabase = createClient();
-        const fileExt = file.name.split('.').pop();
+        // Comprimir si es una imagen antes de enviar al servidor
+        const fileToUpload = file.type.startsWith('image/') 
+            ? await compressImage(file) 
+            : file;
+
+        const fileExt = fileToUpload.name.split('.').pop();
         const fileName = `${orderId}/${Date.now()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-            .from('case-files')
-            .upload(fileName, file);
+        const formData = new FormData();
+        formData.append('file', fileToUpload);
+        formData.append('bucket', 'case-files');
+        formData.append('path', fileName);
 
-        if (uploadError) throw uploadError;
+        const response = await fetch('/api/storage/upload', {
+            method: 'POST',
+            body: formData,
+        });
 
-        const { data } = supabase.storage
-            .from('case-files')
-            .getPublicUrl(fileName);
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Error en el servidor al subir el archivo');
+        }
 
-        return data.publicUrl;
+        const result = await response.json();
+        return result.publicUrl;
+    },
+
+    async deleteMessage(orderId: string, messageId: string): Promise<void> {
+        const response = await fetch(`/api/messages/${orderId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messageId })
+        });
+
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Error al eliminar el mensaje');
+        }
     }
 };

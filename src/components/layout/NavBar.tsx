@@ -6,11 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FiChevronDown, FiFileText, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
-import logo from '/public/logo/logo_sf_1.png';
-import userImage from '/public/user.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersStore } from '@/features/orders';
 import { User, UserRole } from '@/shared/types/entities.types';
+
+// Las imágenes en /public se referencian directamente por su path desde la raíz / en el src del Image component.
 
 // Helper for extracting name from raw or mapped user
 const getDisplayName = (user: any) => {
@@ -45,7 +45,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 			>
 				<div className="relative w-10 h-10">
 					<Image
-						src={user.picture || userImage}
+						src={user.picture || "/user.png"}
 						alt="User"
 						fill
 						className="rounded-full border-2 border-azul-primario object-cover"
@@ -189,7 +189,7 @@ const Navbar = () => {
 
 	return (
 		<motion.nav
-			className="w-full fixed z-50 glass-card h-16 bg-white/80">
+			className="w-full fixed top-0 left-1/2 -translate-x-1/2 z-50 glass-card h-16 bg-white/80 max-w-[2000px]">
 			<div className="container mx-auto px-6 py-2 flex justify-between items-center h-full">
 				<Link href="/">
 					<motion.div
@@ -197,7 +197,7 @@ const Navbar = () => {
 						whileHover={{ scale: 1.05 }}
 						transition={{ type: 'spring', stiffness: 300 }}>
 						<Image
-							src={logo}
+							src="/logo/logo_sf_1.png"
 							alt="Logo"
 							width={150}
 							height={70}
@@ -314,10 +314,11 @@ const Navbar = () => {
 			<AnimatePresence>
 				{isOpen && (
 					<motion.div
-						initial={{ y: -20, opacity: 0 }}
-						animate={{ y: 0, opacity: 1 }}
-						exit={{ y: -20, opacity: 0 }}
-						className="md:hidden mt-4 space-y-4 glass-card p-6 shadow-xl">
+						initial={{ opacity: 0, height: 0 }}
+						animate={{ opacity: 1, height: 'auto' }}
+						exit={{ opacity: 0, height: 0 }}
+						className="md:hidden fixed top-16 left-0 right-0 bg-white shadow-2xl overflow-hidden border-t border-gray-100 z-40">
+						<div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
 						{navItems.map((item) => (
 							<motion.div
 								key={item}
@@ -359,7 +360,7 @@ const Navbar = () => {
 								<div className="flex items-center space-x-3">
 									<div className="relative w-8 h-8">
 										<Image
-											src={user.picture || userImage}
+											src={user.picture || "/user.png"}
 											alt="User"
 											fill
 											className="rounded-full border-2 border-azul-primario object-cover"
@@ -415,6 +416,7 @@ const Navbar = () => {
 								</Link>
 							</div>
 						)}
+					</div>
 					</motion.div>
 				)}
 			</AnimatePresence>

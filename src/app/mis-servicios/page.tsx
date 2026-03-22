@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FiCalendar, FiClock, FiFileText, FiExternalLink, FiDownload, FiMessageSquare, FiDollarSign } from 'react-icons/fi';
-import logo from '../../../public/logo/logo_sf_1.png';
+// Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
 
 // React Query
 import { useOrdersByUser } from '@/features/orders/hooks/useOrders';
@@ -98,7 +98,7 @@ export default function MisServiciosPage() {
           <div className="mb-4 sm:mb-0">
             <Link href="/" className="inline-block">
               <Image
-                src={logo}
+                src="/logo/logo_sf_1.png"
                 alt="VirtuAbogado Logo"
                 width={150}
                 height={50}
@@ -317,17 +317,16 @@ export default function MisServiciosPage() {
                       </motion.button>
                     </Link>
 
-                    {/* Futuro: Chat con abogado */}
-                    {/* <Link href={`/chat/${servicio.id}`}>
+                    <Link href={`/detalle-servicio/${servicio.id}#chat`}>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="inline-flex items-center px-4 py-2 border border-azul-primario text-sm font-medium rounded-md text-azul-primario bg-white hover:bg-azul-claro/10"
+                        className="inline-flex items-center px-4 py-2 border border-azul-primario text-sm font-medium rounded-md text-white bg-azul-primario hover:bg-azul-primario/90 shadow-sm transition-colors"
                       >
                         <FiMessageSquare className="mr-2" />
-                        Chat con abogado
+                        Chat del caso
                       </motion.button>
-                    </Link> */}
+                    </Link>
                   </div>
                 </div>
               </motion.div>

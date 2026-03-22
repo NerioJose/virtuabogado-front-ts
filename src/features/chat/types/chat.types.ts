@@ -9,6 +9,7 @@ export interface Message {
     sender?: {
         nombre: string;
         picture?: string | null;
+        rol?: string;
     }
 }
 

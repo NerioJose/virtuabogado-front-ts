@@ -11,6 +11,8 @@ import {
 	FiSettings,
 	FiSearch,
 	FiPlus,
+	FiMenu,
+	FiX
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
@@ -72,6 +74,7 @@ export default function AdminPage() {
 	const [elementoSeleccionado, setElementoSeleccionado] =
 		useState<ElementoSeleccionable>(null);
 	const [terminoBusqueda, setTerminoBusqueda] = useState('');
+	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 	// Verificar autenticación y rol de administrador
 	useEffect(() => {
@@ -335,18 +338,31 @@ export default function AdminPage() {
 			{/* Sidebar */}
 			<Sidebar
 				seccionActiva={seccionActiva}
-				setSeccionActiva={setSeccionActiva}
+				setSeccionActiva={(s) => {
+					setSeccionActiva(s);
+					setIsSidebarOpen(false);
+				}}
 				handleLogout={handleLogout}
+				isOpen={isSidebarOpen}
+				onClose={() => setIsSidebarOpen(false)}
 			/>
 
 			{/* Contenido principal */}
-			<div className="flex-1 ml-64">
+			<div className="flex-1 lg:ml-64 min-w-0 transition-all duration-300">
 				{/* Barra superior */}
-				<div className="bg-white shadow-sm p-4 flex justify-between items-center">
-					<h1 className="text-2xl font-bold text-azul-primario flex items-center">
-						{getSeccionIcon(seccionActiva)}
-						{getSeccionTitulo(seccionActiva)}
-					</h1>
+				<div className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20">
+					<div className="flex items-center gap-4">
+						<button
+							onClick={() => setIsSidebarOpen(true)}
+							className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+						>
+							<FiMenu size={24} />
+						</button>
+						<h1 className="text-xl md:text-2xl font-bold text-azul-primario flex items-center">
+							{getSeccionIcon(seccionActiva)}
+							<span className="truncate">{getSeccionTitulo(seccionActiva)}</span>
+						</h1>
+					</div>
 
 					<div className="flex items-center space-x-4">
 						{allowsSearch(seccionActiva) && (
@@ -376,7 +392,7 @@ export default function AdminPage() {
 				</div>
 
 				{/* Contenido dinámico según la sección activa */}
-				<div className="p-6">{renderSeccionContent()}</div>
+				<div className="p-4 md:p-6 max-w-[1600px] mx-auto">{renderSeccionContent()}</div>
 			</div>
 
 			{/* Modal dinámico */}

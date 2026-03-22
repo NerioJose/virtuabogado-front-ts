@@ -15,7 +15,7 @@ import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
 import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
 
 // Wrapper simple para propósitos de tipado en el render condicional
-const ChatWindowSupervision = ({ orderId }: { orderId: string }) => <ChatWindow orderId={orderId} />;
+const ChatWindowSupervision = ({ orderId, className }: { orderId: string, className?: string }) => <ChatWindow orderId={orderId} className={className} />;
 
 // Tipo unión para todos los posibles elementos (excluyendo null)
 type ElementoModal = Abogado | Cliente | Caso | Transaccion;
@@ -514,7 +514,7 @@ export default function ModalContainer({
 				animate={{ opacity: 1, scale: 1 }}
 				exit={{ opacity: 0, scale: 0.9 }}
 				transition={{ duration: 0.2 }}
-				className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+				className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[92vh] overflow-hidden">
 				{/* Cabecera del modal */}
 				<div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
 					<div className="flex items-center space-x-3">
@@ -532,7 +532,7 @@ export default function ModalContainer({
 				</div>
 
 				{/* Contenido del modal */}
-				<div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
+				<div className="px-6 py-4 max-h-[75vh] overflow-y-auto">
 					{success ? (
 						<div className="flex items-center justify-center py-8">
 							<div className="text-center">
@@ -662,8 +662,8 @@ export default function ModalContainer({
 									<h4 className="font-bold text-gray-800 mb-3 flex items-center">
 										<span className="mr-2">💬</span> Chat de Supervisión
 									</h4>
-									<div className="h-[450px] shadow-inner rounded-lg overflow-hidden border border-gray-200">
-										<ChatWindowSupervision orderId={(elemento as any).id} />
+									<div className="h-[500px] shadow-inner rounded-lg overflow-hidden border border-gray-200">
+										<ChatWindowSupervision orderId={(elemento as any).id} className="h-full" />
 									</div>
 								</div>
 							)}

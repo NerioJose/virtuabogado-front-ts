@@ -14,6 +14,8 @@ import {
 	FiCheckCircle,
 	FiFileText,
 	FiLogOut,
+	FiMenu,
+	FiX
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
@@ -34,6 +36,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const router = useRouter();
 	const [seccionActiva, setSeccionActiva] = useState('casos');
 	const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
+	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 	const handleNavClick = (id: string) => {
 		setSeccionActiva(id);
@@ -121,20 +124,38 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 	return (
 		<div className="flex min-h-screen bg-gray-100">
-			{/* Sidebar */}
-			<div className="w-64 bg-white shadow-md fixed h-full">
-				<div className="p-6 border-b border-gray-200">
-					<h2 className="text-xl font-bold text-azul-primario">
-						Panel Abogado
-					</h2>
-					<p className="text-sm text-gray-600 mt-1">{abogado?.nombre || 'Cargando...'}</p>
+			{/* Sidebar - Overlay for mobile */}
+			{isSidebarOpen && (
+				<div 
+					className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+					onClick={() => setIsSidebarOpen(false)}
+				/>
+			)}
+
+			<div className={`
+				w-64 bg-white shadow-xl fixed h-full z-50 transition-transform duration-300 ease-in-out
+				${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+			`}>
+				<div className="p-6 border-b border-gray-200 flex justify-between items-center">
+					<div>
+						<h2 className="text-xl font-bold text-azul-primario">
+							Panel Abogado
+						</h2>
+						<p className="text-sm text-gray-600 mt-1">{abogado?.nombre || 'Cargando...'}</p>
+					</div>
+					<button 
+						onClick={() => setIsSidebarOpen(false)}
+						className="lg:hidden p-2 text-gray-400 hover:text-azul-primario transition-colors"
+					>
+						<FiX size={20} />
+					</button>
 				</div>
 
-				<nav className="mt-6">
+				<nav className="mt-6 overflow-y-auto max-h-[calc(100vh-120px)]">
 					<ul>
 						<li>
 							<button
-								onClick={() => handleNavClick('casos')}
+								onClick={() => { handleNavClick('casos'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'casos'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -145,7 +166,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => handleNavClick('agenda')}
+								onClick={() => { handleNavClick('agenda'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'agenda'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -156,7 +177,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => handleNavClick('mensajes')}
+								onClick={() => { handleNavClick('mensajes'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'mensajes'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -167,7 +188,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => handleNavClick('clientes')}
+								onClick={() => { handleNavClick('clientes'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'clientes'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -178,7 +199,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => handleNavClick('facturacion')}
+								onClick={() => { handleNavClick('facturacion'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'facturacion'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -189,7 +210,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => handleNavClick('documentos')}
+								onClick={() => { handleNavClick('documentos'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'documentos'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -200,7 +221,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						<li>
 							<button
-								onClick={() => handleNavClick('perfil')}
+								onClick={() => { handleNavClick('perfil'); setIsSidebarOpen(false); }}
 								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'perfil'
 									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
 									: 'text-gray-600 hover:bg-gray-100'
@@ -222,7 +243,15 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 			</div>
 
 			{/* Contenido principal */}
-			<div className="ml-64 flex-1 p-6">
+			<div className="lg:ml-64 flex-1 p-4 md:p-6 transition-all duration-300">
+				{/* Móvil: botón para abrir Sidebar */}
+				<button 
+					onClick={() => setIsSidebarOpen(true)}
+					className="lg:hidden mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200 flex items-center gap-2 text-azul-primario"
+				>
+					<FiMenu />
+					<span className="text-sm font-semibold">Menú</span>
+				</button>
 				{/* Tarjetas de estadísticas */}
 				{seccionActiva === 'casos' && (
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

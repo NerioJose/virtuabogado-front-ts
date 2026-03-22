@@ -11,6 +11,7 @@ interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   isLoading?: boolean;
+  showCancel?: boolean;
 }
 
 export default function ConfirmModal({
@@ -21,7 +22,8 @@ export default function ConfirmModal({
   message,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
-  isLoading = false
+  isLoading = false,
+  showCancel = true
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -55,14 +57,16 @@ export default function ConfirmModal({
                 <p className="text-sm text-gray-600 leading-relaxed">{message}</p>
             </div>
             <div className="flex items-center justify-end px-6 py-4 space-x-3 bg-gray-50 border-t border-gray-200">
-                <button
-                    type="button"
-                    onClick={onClose}
-                    disabled={isLoading}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario disabled:opacity-50"
-                >
-                    {cancelText}
-                </button>
+                {showCancel && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={isLoading}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario disabled:opacity-50"
+                    >
+                        {cancelText}
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={onConfirm}

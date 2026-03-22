@@ -10,7 +10,8 @@ import { useAuthStore } from '@/features/auth';
 // import { useOrdersStore } from '@/features/orders';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
-import logo from '../../../../public/logo/logo_sf_1.png';
+import { ChatWindow } from '@/features/chat/components/ChatWindow';
+// Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
 
 export default function DetalleServicioPage({ params }: { params: Promise<{ id: string }> }) {
     // Unwrap params Promise
@@ -68,7 +69,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                 <div className="mb-8">
                     <Link href="/" className="inline-block mb-4">
                         <Image
-                            src={logo}
+                            src="/logo/logo_sf_1.png"
                             alt="VirtuAbogado Logo"
                             width={150}
                             height={50}
@@ -226,6 +227,18 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                 </div>
                             )}
                         </div>
+
+                        {/* Chat Integrado */}
+                        <div className="border-t border-gray-200 pt-6" id="chat">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <FiUser className="text-azul-primario" />
+                                Mensajes del Caso
+                            </h3>
+                            <div className="rounded-xl overflow-hidden ring-1 ring-gray-200 shadow-sm">
+                                <ChatWindow orderId={order.id} />
+                            </div>
+                        </div>
+
                     </div>
                 </motion.div>
             </div>

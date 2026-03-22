@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FiCheck, FiClock, FiFileText, FiCalendar, FiArrowRight } from 'react-icons/fi';
-import logo from '../../../public/logo/logo_sf_1.png';
+// Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
 
 // Tipos de datos
 interface DetalleCompra {
@@ -70,7 +70,7 @@ export default function CompraExitosaPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <Image
-              src={logo}
+              src="/logo/logo_sf_1.png"
               alt="VirtuAbogado Logo"
               width={180}
               height={60}

@@ -1,29 +1,51 @@
-import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome } from 'react-icons/fi';
+import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX } from 'react-icons/fi';
 import Image from 'next/image';
-import logo from '../../../public/logo/logo_sf_1.png';
 import { SeccionAdmin } from '@/types/index';
 
 interface SidebarProps {
   seccionActiva: SeccionAdmin;
   setSeccionActiva: (seccion: SeccionAdmin) => void;
   handleLogout: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout }: SidebarProps) {
+export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout, isOpen, onClose }: SidebarProps) {
   return (
-    <div className="w-64 bg-azul-primario text-white h-screen fixed left-0 top-0 overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-center mb-8">
-          <Image 
-					src={logo} 
-					alt="VirtuAbogado Logo" 
-					width={150} 
-					height={50} 
-					priority
-				/>
+    <>
+      {/* Overlay para móvil */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          onClick={onClose}
+        />
+      )}
+
+      <div className={`
+        w-64 bg-azul-primario text-white h-screen fixed left-0 top-0 overflow-y-auto z-50 transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex-1 flex justify-center lg:justify-center">
+              <Image 
+                src="/logo/logo_sf_1.png" 
+                alt="VirtuAbogado Logo" 
+                width={150} 
+                height={50} 
+                priority
+              />
+            </div>
+            <button 
+              onClick={onClose}
+              className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
         </div>
         
-        <nav className="space-y-2">
+        <nav className="space-y-2 px-6">
           <button 
             onClick={() => setSeccionActiva('dashboard' as SeccionAdmin)}
             className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'dashboard' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
@@ -81,7 +103,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout 
           </button>
         </nav>
         
-        <div className="pt-6 mt-6 border-t border-white/20">
+        <div className="pt-6 mt-6 border-t border-white/20 px-6">
           <button 
             onClick={handleLogout}
             className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-red-600 transition-colors"
@@ -91,6 +113,6 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout 
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

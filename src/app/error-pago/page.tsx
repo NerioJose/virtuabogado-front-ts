@@ -12,7 +12,7 @@ import {
 	FiArrowLeft,
 	FiHelpCircle,
 } from 'react-icons/fi';
-import logo from '../../../public/logo/logo_sf_1.png';
+// Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
 import { logAbandonment } from '../../lib/utils/analytics';
 import { saveCartData } from '../../lib/utils/cartRecovery';
 
@@ -101,7 +101,7 @@ export default function ErrorPagoPage() {
 						href="/"
 						className="inline-block">
 						<Image
-							src={logo}
+							src="/logo/logo_sf_1.png"
 							alt="VirtuAbogado Logo"
 							width={180}
 							height={60}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { UserRole } from '@/shared/types/entities.types';
 
 export const dynamic = 'force-dynamic';
@@ -76,6 +77,107 @@ export async function GET(request: Request) {
         console.error('❌ API Error fetching clients:', error);
         return NextResponse.json(
             { error: 'Error al obtener los clientes' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function POST(request: Request) {
+    try {
+        const supabase = await createClient();
+        const { data: { user: adminUser } } = await supabase.auth.getUser();
+
+        if (!adminUser) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        // Verificar rol admin/abogado
+        let userRole = adminUser.user_metadata?.rol;
+        if (!userRole) {
+            const userData = await prisma.user.findUnique({
+                where: { id: adminUser.id },
+                select: { rol: true }
+            });
+            userRole = userData?.rol;
+        }
+
+        if (userRole !== 'ADMIN' && userRole !== 'ABOGADO') {
+            return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const { email, nombre, telefono, direccion, dni } = body;
+
+        if (!email || !nombre) {
+            return NextResponse.json({ error: 'Email y nombre son requeridos' }, { status: 400 });
+        }
+
+        const adminClient = createAdminClient();
+        let userId: string;
+
+        // 1. Intentar crear en Supabase Auth
+        const tempPassword = `VirtuClient2024!_${Math.random().toString(36).slice(-4)}`;
+        
+        const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+            email,
+            email_confirm: true,
+            user_metadata: { rol: 'CLIENTE', nombre },
+            password: tempPassword
+        });
+
+        if (authError) {
+            if (authError.message.includes('already registered')) {
+                // El usuario ya existe en Auth, buscar su ID
+                const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
+                if (listError) return NextResponse.json({ error: 'Error al verificar usuario existente' }, { status: 500 });
+                
+                const existingUser = usersData.users.find(u => u.email === email);
+                if (!existingUser) return NextResponse.json({ error: 'Usuario no encontrado tras conflicto' }, { status: 500 });
+                
+                userId = existingUser.id;
+
+                // Actualizar metadatos del usuario existente para asegurar rol CLIENTE
+                await adminClient.auth.admin.updateUserById(userId, {
+                    user_metadata: { ...existingUser.user_metadata, rol: 'CLIENTE', nombre }
+                });
+            } else {
+                console.error('❌ Supabase Auth error:', authError);
+                return NextResponse.json({ error: authError.message }, { status: 400 });
+            }
+        } else {
+            userId = authData.user.id;
+        }
+
+        // 2. Crear o actualizar en Prisma User table
+        const newClient = await prisma.user.upsert({
+            where: { email },
+            update: {
+                nombre,
+                rol: 'CLIENTE',
+                telefono,
+                direccion,
+                dni,
+                activo: true
+            },
+            create: {
+                id: userId,
+                email,
+                nombre,
+                rol: 'CLIENTE',
+                telefono,
+                direccion,
+                dni,
+                activo: true
+            }
+        });
+
+        console.log('✅ Client created successfully:', newClient.id);
+
+        return NextResponse.json(newClient);
+    } catch (error: any) {
+        console.error('❌ API Error creating client:', error);
+        return NextResponse.json(
+            { error: 'Error al crear el cliente: ' + (error.message || 'Desconocido') },
             { status: 500 }
         );
     }

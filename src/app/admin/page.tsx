@@ -21,8 +21,8 @@ import { useUpdateOrder, useDeleteOrder } from '@/features/orders/hooks/useOrder
 import { OrderStatus } from '@/features/orders/types/orders.types';
 // import { initializeClients, useClientsStore } from '@/features/clients';
 // import { initializeLawyers, useLawyersStore } from '@/features/lawyers';
-import { useDeleteClient, useUpdateClient } from '@/features/clients/hooks/useClients';
-import { useDeleteLawyer, useUpdateLawyer } from '@/features/lawyers/hooks/useLawyers';
+import { useDeleteClient, useUpdateClient, useCreateClient } from '@/features/clients/hooks/useClients';
+import { useDeleteLawyer, useUpdateLawyer, useCreateLawyer } from '@/features/lawyers/hooks/useLawyers';
 
 // Importar componentes principales
 import Sidebar from '@/components/admin/Sidebar';
@@ -118,8 +118,10 @@ export default function AdminPage() {
 	// ============ REACT QUERY MUTATIONS ============
 	const deleteClientMutation = useDeleteClient();
 	const updateClientMutation = useUpdateClient();
+	const createClientMutation = useCreateClient();
 	const deleteLawyerMutation = useDeleteLawyer();
 	const updateLawyerMutation = useUpdateLawyer();
+	const createLawyerMutation = useCreateLawyer();
 	const updateOrderMutation = useUpdateOrder();
 	const deleteOrderMutation = useDeleteOrder();
 
@@ -127,7 +129,7 @@ export default function AdminPage() {
 	const handleSave = async (data: any) => {
 		try {
 			const id = elementoSeleccionado?.id;
-			console.log('🎯 Admin handleSave called:', { seccionActiva, tipoModal, id, data });
+			console.log('🚀 Admin handleSave [START]:', { seccionActiva, tipoModal, id, data });
 
 			switch (seccionActiva) {
 				case 'clientes':
@@ -135,8 +137,9 @@ export default function AdminPage() {
 						await deleteClientMutation.mutateAsync(id);
 					} else if (tipoModal === 'editar' && id) {
 						await updateClientMutation.mutateAsync({ id, data });
+					} else if (tipoModal === 'crear') {
+						await createClientMutation.mutateAsync(data);
 					}
-					// TODO: Implementar crear cliente si es necesario
 					break;
 
 				case 'abogados':
@@ -144,8 +147,9 @@ export default function AdminPage() {
 						await deleteLawyerMutation.mutateAsync(id);
 					} else if (tipoModal === 'editar' && id) {
 						await updateLawyerMutation.mutateAsync({ id, data });
+					} else if (tipoModal === 'crear') {
+						await createLawyerMutation.mutateAsync(data);
 					}
-					// TODO: Implementar crear abogado si es necesario
 					break;
 
 				case 'casos':

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f7;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f7;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 12px 40px rgba(142,36,39,0.15);">
+
+          <!-- Header con Logo (Link de Supabase Storage) -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#6b1a1d 0%,#8e2427 40%,#1961a0 100%);padding:45px 40px 35px;text-align:center;">
+              <img src="https://gfdkjdlshkqultympimw.supabase.co/storage/v1/object/public/publico/logo_sf_1.png?v=3" 
+                   alt="VirtuAbogado Logo" 
+                   title="VirtuAbogado"
+                   width="160" 
+                   style="display:block;margin:0 auto;max-width:160px;height:auto;border:0;outline:none;text-decoration:none;" />
+            </td>
+          </tr>
+
+          <!-- Línea decorativa -->
+          <tr><td style="height:4px;background:linear-gradient(90deg,#6b1a1d, #8e2427, #1961a0, #8e2427, #6b1a1d);"></td></tr>
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding:48px 48px 40px;">
+              <h2 style="margin:0 0 12px;font-size:24px;color:#6b1a1d;font-weight:700;text-align:center;">
+                Inicia sesión de forma segura
+              </h2>
+              <p style="margin:0 0 32px;color:#444;font-size:16px;line-height:1.7;text-align:center;">
+                Has solicitado entrar a tu cuenta. Haz clic en el botón inferior para confirmar tu identidad en <strong>VirtuAbogado</strong>:
+              </p>
+
+              <!-- Botón CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:0 0 32px;">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display:inline-block;background:linear-gradient(135deg,#8e2427 0%,#1961a0 100%);color:#ffffff;text-decoration:none;padding:18px 52px;border-radius:14px;font-size:17px;font-weight:700;box-shadow:0 8px 24px rgba(142,36,39,0.3);">
+                      Confirmar Acceso &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Nota de seguridad -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffafa;border:1px solid #ffebeb;border-radius:12px;">
+                <tr>
+                  <td style="padding:18px 24px;text-align:center;">
+                    <p style="margin:0;color:#666;font-size:13px;line-height:1.6;">
+                      🔒 Este enlace caduca en 60 minutos y solo funciona una vez.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr><td style="padding:0 48px;"><hr style="border:none;border-top:1px solid #f2f2f2;margin:0;" /></td></tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:28px 48px;text-align:center;">
+              <p style="margin:0 0 8px;color:#8e2427;font-size:14px;font-weight:600;">VirtuAbogado</p>
+              <p style="margin:0;color:#bbb;font-size:11px;">&copy; 2025 Todos los derechos reservados.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

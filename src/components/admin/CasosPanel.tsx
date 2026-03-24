@@ -30,7 +30,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
         order.userEmail.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
         order.items.some(item =>
           item.serviceName.toLowerCase().includes(terminoBusqueda.toLowerCase())
-        );
+        ) ||
+        (order.lawyerName && order.lawyerName.toLowerCase().includes(terminoBusqueda.toLowerCase()));
 
       const coincideEstado = filtroEstado === 'todos' || order.status === filtroEstado;
 
@@ -107,6 +108,9 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                   Servicio
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Abogado
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -123,7 +127,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
             <tbody className="bg-white divide-y divide-gray-200">
               {ordenesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                     {orders.length === 0
                       ? 'No hay órdenes registradas'
                       : 'No se encontraron órdenes con los criterios de búsqueda'}
@@ -140,8 +144,19 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                       <div className="text-sm text-gray-500">{order.userEmail}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 font-medium">
                         {order.items.map(item => item.serviceName).join(', ')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full ${order.lawyerId 
+                          ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                          : 'bg-amber-50 text-amber-600 border border-amber-100 italic'
+                        }`}>
+                          {order.lawyerId ? '⚖️ ' : '⏳ '}
+                          {order.lawyerName || 'Sin asignar'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

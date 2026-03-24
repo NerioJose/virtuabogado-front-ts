@@ -120,12 +120,17 @@ export default function RecentOrders() {
                                         <p className="text-xs text-gray-500">
                                             {order.userEmail}
                                         </p>
-                                        <div className="mt-2">
+                                        <div className="mt-2 flex flex-wrap gap-2">
                                             {order.items.map((item, i) => (
-                                                <p key={i} className="text-sm text-gray-600">
+                                                <span key={i} className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md border border-gray-200">
                                                     {item.serviceName}
-                                                </p>
+                                                </span>
                                             ))}
+                                            {order.lawyerName && order.lawyerName !== 'Pendiente' && (
+                                                <span className="text-xs font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md border border-blue-100 flex items-center gap-1">
+                                                    ⚖️ {order.lawyerName}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-right">

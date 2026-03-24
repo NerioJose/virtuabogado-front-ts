@@ -33,6 +33,7 @@ export interface Order {
     numericId?: number;
     userId: string; // UUID
     lawyerId?: string; // Abogado asignado
+    lawyerName?: string; // Nombre del abogado asignado
     userName: string;
     userEmail: string;
     items: OrderItem[];

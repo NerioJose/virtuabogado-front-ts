@@ -73,6 +73,11 @@ export async function GET(request: Request) {
                         email: true,
                         telefono: true,
                     }
+                },
+                lawyer: {
+                    select: {
+                        nombre: true
+                    }
                 }
             },
             orderBy: {
@@ -86,6 +91,8 @@ export async function GET(request: Request) {
             numericId: order.numericId,
             uuid: order.id,
             userId: order.userId,
+            lawyerId: order.lawyerId,
+            lawyerName: order.lawyer?.nombre || 'Pendiente',
             userName: order.user.nombre,
             userEmail: order.user.email,
             items: [{

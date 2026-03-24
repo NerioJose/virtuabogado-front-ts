@@ -13,14 +13,21 @@ function StateSyncHandler() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
-    const { openCheckout, setUserData, isExistingUser, isOpen } = useCheckout();
-    const { isAuthenticated, user } = useAuthStore();
+    const { openCheckout, setUserData, isOpen } = useCheckout();
+    const { isAuthenticated, user, checkAuth } = useAuthStore();
 
     useEffect(() => {
         const authSuccess = searchParams.get('auth_success') === '1';
         
         if (authSuccess) {
-            console.log('🔄 Detectado auth_success=1. Intentando recuperar estado de compra...');
+            // Si aún no estamos autenticados en el store, forzar verificación
+            if (!isAuthenticated) {
+                console.log('🔐 Detectado auth_success pero store no autenticado. Verificando sesión...');
+                checkAuth();
+                return; // Esperar al próximo render cuando isAuthenticated sea true
+            }
+
+            console.log('🔄 Sesión confirmada. Recuperando estado de compra...');
             
             // 1. Recuperar el estado de localStorage
             const pendingDataRaw = localStorage.getItem('checkout_pending');
@@ -32,25 +39,26 @@ function StateSyncHandler() {
 
                     // Verificar que no sea muy antiguo (1 hora)
                     if (now - pendingData.timestamp < oneHour) {
-                        console.log('🛒 Recuperando checkout para:', pendingData.service?.nombre);
+                        console.log('🛒 Re-abriendo checkout en Paso 2 para:', pendingData.service?.nombre);
                         
                         // Si ya está abierto, no hacer nada
                         if (isOpen) return;
 
-                        // Re-abrir el checkout
+                        // Re-abrir el checkout (ahora isAuthenticated es true, así que irá al paso 2)
                         if (pendingData.service) {
                             openCheckout(pendingData.service);
                             
-                            // Pre-rellenar los datos del usuario si están disponibles
-                            if (pendingData.email) {
-                                setUserData({
-                                    email: pendingData.email,
-                                    name: user?.nombre || '',
-                                    nombre: user?.nombre || '',
-                                    phone: user?.telefono || '',
-                                    createAccount: false
-                                });
-                            }
+                            // Pre-rellenar los datos del usuario 
+                            setUserData({
+                                email: user?.email || pendingData.email || '',
+                                name: user?.nombre || '',
+                                nombre: user?.nombre || '',
+                                phone: user?.telefono || '',
+                                createAccount: false
+                            });
+                            
+                            // Limpiar localStorage después de recuperar con éxito
+                            localStorage.removeItem('checkout_pending');
                         }
                     } else {
                         console.warn('⚠️ El pedido pendiente es demasiado antiguo.');
@@ -67,7 +75,7 @@ function StateSyncHandler() {
             const cleanUrl = `${pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
             router.replace(cleanUrl, { scroll: false });
         }
-    }, [searchParams, isAuthenticated, user, openCheckout, setUserData, isOpen, pathname, router]);
+    }, [searchParams, isAuthenticated, user, openCheckout, setUserData, isOpen, pathname, router, checkAuth]);
 
     return null;
 }

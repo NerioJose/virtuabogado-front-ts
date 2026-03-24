@@ -148,22 +148,29 @@ export const UserDataStep: React.FC = () => {
             onSubmit={handleSubmit}
             className="space-y-4"
         >
-            <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100 flex items-start">
-                <span className="mr-2 text-xl">{isExistingUser ? '👋' : '🛡️'}</span>
-                <p>
-                    {isExistingUser 
-                        ? '¡Qué bueno verte de nuevo! Ingresa tu contraseña o usa un código de acceso temporal.' 
-                        : 'Crea tu cuenta segura para proteger tu compra y acceder al chat con tu abogado.'}
-                </p>
+            <div className={`p-4 rounded-xl border flex items-start gap-4 transition-colors duration-300 ${isExistingUser ? 'bg-azul-primario/5 border-azul-primario/20 text-azul-primario' : 'bg-green-50 border-green-100 text-green-800'}`}>
+                <div className="text-2xl mt-0.5">
+                    {isExistingUser ? '🛡️' : '👤'}
+                </div>
+                <div className="flex-1">
+                    <p className="font-semibold text-sm mb-1 leading-tight">
+                        {isExistingUser ? 'Cuenta Registrada' : 'Nueva Cuenta Segura'}
+                    </p>
+                    <p className="text-xs opacity-90 leading-normal">
+                        {isExistingUser 
+                            ? 'Se ha detectado una cuenta asociada a este correo electrónico. Por favor, valide su identidad para continuar con el trámite.' 
+                            : 'Cree su cuenta para realizar el seguimiento legal de su caso y acceder a su espacio personal.'}
+                    </p>
+                </div>
             </div>
 
             {/* Email */}
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email <span className="text-red-500">*</span>
+                <label htmlFor="email" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Correo Electrónico <span className="text-red-500 font-bold">*</span>
                 </label>
-                <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <div className="relative group">
+                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
                     <input
                         type="email"
                         id="email"
@@ -171,101 +178,139 @@ export const UserDataStep: React.FC = () => {
                         value={formData.email}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="tu@email.com"
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-4 focus:ring-azul-primario/10 focus:border-azul-primario transition-all duration-200 outline-none ${errors.email ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-gray-50/30'}`}
+                        placeholder="ejemplo@email.com"
                     />
+                    {emailCheckLoading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <div className="w-4 h-4 border-2 border-azul-primario/20 border-t-azul-primario rounded-full animate-spin"></div>
+                        </div>
+                    )}
                 </div>
-                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                {errors.email && (
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                        <span>⚠️</span> {errors.email}
+                    </motion.p>
+                )}
             </div>
 
             {/* Password / OTP Selector */}
             {!otpSent ? (
-                <div>
-                    <div className="flex justify-between items-end mb-1">
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                            Contraseña <span className="text-red-500">*</span>
+                <div className="space-y-4">
+                    {/* Sección Contraseña Tradicional */}
+                    <div>
+                        <label htmlFor="password" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            {isExistingUser ? 'Contraseña Registrada' : 'Establecer Contraseña'} <span className="text-red-500 font-bold">*</span>
                         </label>
-                        {isExistingUser && (
+                        <div className="relative group">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors text-lg">🔒</span>
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                id="password"
+                                name="password"
+                                value={formData.password || ''}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-4 focus:ring-azul-primario/10 focus:border-azul-primario transition-all duration-200 outline-none ${errors.password ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-gray-50/30'}`}
+                                placeholder={isExistingUser ? "••••••••" : "Cree una clave para su cuenta"}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-azul-primario transition-colors p-1"
+                            >
+                                {showPassword ? "Ocultar" : "Mostrar"}
+                            </button>
+                        </div>
+                        {errors.password && (
+                            <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                                <span>⚠️</span> {errors.password}
+                            </motion.p>
+                        )}
+                    </div>
+
+                    {/* Opción Alternativa Profesional para Usuarios Existentes */}
+                    {isExistingUser && (
+                        <div className="pt-2">
+                            <div className="relative flex items-center justify-center mb-4">
+                                <div className="absolute inset-0 border-t border-gray-100 w-full" />
+                                <span className="relative px-3 bg-white text-[10px] uppercase tracking-[0.2em] font-bold text-gray-300">O BIEN</span>
+                            </div>
+                            
                             <button 
                                 type="button"
                                 onClick={handleRequestOtp}
-                                className="text-xs text-azul-primario hover:underline font-semibold"
+                                disabled={isLoading}
+                                className="w-full py-3 px-4 border-2 border-dashed border-azul-primario/30 rounded-xl text-azul-primario hover:bg-azul-primario/5 hover:border-azul-primario/50 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-50"
                             >
-                                ¿Olvidaste tu contraseña? Usar código
+                                <span className="text-xl group-hover:scale-110 transition-transform duration-200">✉️</span>
+                                <div className="text-left">
+                                    <span className="block text-sm font-bold leading-tight">Acceso mediante enlace seguro</span>
+                                    <span className="block text-[10px] opacity-70 uppercase tracking-wider font-semibold">Le enviaremos un correo de entrada rápida</span>
+                                </div>
                             </button>
-                        )}
-                    </div>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            id="password"
-                            name="password"
-                            value={formData.password || ''}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-                            placeholder={isExistingUser ? "Ingresa tu contraseña actual" : "Crea una contraseña segura"}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                            {showPassword ? "Ocultar" : "Mostrar"}
-                        </button>
-                    </div>
-                    {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
-                    {!isExistingUser && <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres.</p>}
+                        </div>
+                    )}
                 </div>
             ) : (
                 <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="p-5 bg-azul-primario/5 rounded-xl border border-azul-primario/20 text-center"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-azul-primario/5 rounded-2xl border border-azul-primario/20 text-center shadow-sm"
                 >
-                    <div className="text-4xl mb-3">📧</div>
-                    <h3 className="font-bold text-azul-primario text-base mb-1">
-                        ¡Revisa tu correo!
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                        Enviamos un <strong>enlace de acceso</strong> a <strong>{formData.email}</strong>.<br/>
-                        Haz clic en ese enlace y volverás automáticamente al sitio con la sesión iniciada.
-                    </p>
-                    <div className="text-xs text-gray-400 bg-gray-50 rounded-lg p-2">
-                        ⏱️ El enlace expira en 1 hora · Revisa tu carpeta de spam si no aparece
+                    <div className="w-16 h-16 bg-azul-primario/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                        📨
                     </div>
+                    <h3 className="font-bold text-azul-primario text-lg mb-2">
+                        Autenticación enviada
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+                        Se ha generado un enlace de acceso para <strong>{formData.email}</strong>.<br/>
+                        Por favor, <strong>revise su bandeja de entrada</strong> para validar la sesión y continuar con su trámite legal.
+                    </p>
+                    
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-azul-primario/10 rounded-full text-[11px] text-gray-500 font-medium">
+                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                        Válido por 60 minutos
+                    </div>
+
                     <button
                         type="button"
                         onClick={handleRequestOtp}
                         disabled={isLoading}
-                        className="mt-4 text-xs text-azul-primario hover:underline disabled:opacity-50"
+                        className="mt-6 block w-full text-xs text-azul-primario hover:underline font-bold disabled:opacity-50 uppercase tracking-widest"
                     >
-                        {isLoading ? 'Enviando...' : '¿No llegó? Reenviar enlace'}
+                        {isLoading ? 'Solicitando nuevo enlace...' : '¿No ha recibido el correo? Reenviar enlace'}
                     </button>
                 </motion.div>
             )}
 
             {/* Nombre */}
-            <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre completo <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Juan Pérez"
-                    />
-                </div>
-                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-            </div>
+            {!isExistingUser && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <label htmlFor="name" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Nombre Completo <span className="text-red-500 font-bold">*</span>
+                    </label>
+                    <div className="relative group">
+                        <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-4 focus:ring-azul-primario/10 focus:border-azul-primario transition-all duration-200 outline-none ${errors.name ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-gray-50/30'}`}
+                            placeholder="Juan Pérez"
+                        />
+                    </div>
+                    {errors.name && (
+                        <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                            <span>⚠️</span> {errors.name}
+                        </motion.p>
+                    )}
+                </motion.div>
+            )}
 
             {/* Teléfono */}
             <div>

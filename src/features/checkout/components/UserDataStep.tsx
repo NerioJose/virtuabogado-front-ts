@@ -11,12 +11,25 @@ export const UserDataStep: React.FC = () => {
         setUserData, 
         setStep, 
         isLoading, 
+        error,
         isExistingUser, 
         checkUserExists, 
         sendOtp, 
         verifyOtp 
     } = useCheckout();
-    
+
+    // Función para traducir errores técnicos a mensajes amigables
+    const getFriendlyErrorMessage = (err: string | null) => {
+        if (!err) return null;
+        if (err.toLowerCase().includes('rate limit exceeded')) {
+            return 'Límite de seguridad alcanzado. Por favor, espere unos minutos o use su contraseña para entrar ahora mismo.';
+        }
+        if (err.includes('Invalid login credentials')) {
+            return 'Credenciales inválidas. Verifique su contraseña.';
+        }
+        return err;
+    };
+
     const [showPassword, setShowPassword] = useState(false);
     const [isOtpMode, setIsOtpMode] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
@@ -249,6 +262,19 @@ export const UserDataStep: React.FC = () => {
                                     <span className="block text-[10px] opacity-70 uppercase tracking-wider font-semibold">Le enviaremos un correo de entrada rápida</span>
                                 </div>
                             </button>
+
+                            {error && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -10 }} 
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-700"
+                                >
+                                    <span className="mt-0.5">⚠️</span>
+                                    <p className="text-[11px] font-medium leading-tight">
+                                        {getFriendlyErrorMessage(error)}
+                                    </p>
+                                </motion.div>
+                            )}
                         </div>
                     )}
                 </div>

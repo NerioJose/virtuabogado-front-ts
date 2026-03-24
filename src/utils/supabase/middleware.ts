@@ -29,22 +29,31 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    // ACTUALIZAR SESIÓN DE USUARIO
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
     // DEFINICIÓN DE RUTAS PROTEGIDAS Y ROLES
     const protectedRoutes = [
         { path: '/admin', roles: ['ADMIN'] },
         { path: '/abogado', roles: ['ABOGADO'] },
     ];
 
+    const authRoutes = ['/login', '/register', '/auth/callback'];
     const currentPath = request.nextUrl.pathname;
 
-    // 1. REDIRECCIÓN SI NO ESTÁ AUTENTICADO Y ACCEDE A RUTA PROTEGIDA
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route.path));
+    const isAuthRoute = authRoutes.some(route => currentPath.startsWith(route));
 
+    // ✅ OPTIMIZACIÓN CRÍTICA: Si la ruta es pública y el usuario no está intentando entrar/salir, 
+    // no bloqueamos la navegación con getUser(). Esto elimina el delay de navegación.
+    if (!isProtectedRoute && !isAuthRoute) {
+        return supabaseResponse;
+    }
+
+    // SOLO LLAMAR A getUser() SI ES UNA RUTA PROTEGIDA O DE AUTH
+    // Esto refresca la sesión si es necesario, pero solo cuando es estrictamente requerido.
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    // 1. REDIRECCIÓN SI NO ESTÁ AUTENTICADO Y ACCEDE A RUTA PROTEGIDA
     if (isProtectedRoute && !user) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
@@ -53,9 +62,6 @@ export async function updateSession(request: NextRequest) {
 
     // 2. REDIRECCIÓN SI ESTÁ AUTENTICADO PERO ENTRA A LOGIN/REGISTRO
     if (user && (currentPath === '/login' || currentPath === '/register')) {
-        // Intentar obtener rol del usuario desde metadatos o base de datos
-        // Por ahora, redirigimos a una página por defecto o dashboard según metadata si existe
-        // Idealmente, esto debería sincronizarse con tu tabla 'User' via API o metadata
         const userRole = user.user_metadata?.rol || 'CLIENTE';
 
         const url = request.nextUrl.clone();

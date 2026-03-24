@@ -61,14 +61,26 @@ export const ordersService = {
         }
     },
 
-    /**
-     * Actualizar el estado de una orden
-     */
     async updateStatus(data: UpdateOrderStatusRequest): Promise<Order> {
         try {
-            // TODO: Implementar con API real
-            console.log('Updating order status:', data);
-            throw new Error('Not implemented yet');
+            const response = await fetch('/api/orders', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: data.orderId,
+                    status: data.status,
+                    notes: data.notes
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error updating order status');
+            }
+
+            return response.json();
         } catch (error) {
             console.error(`Error updating order ${data.orderId} status:`, error);
             throw error;

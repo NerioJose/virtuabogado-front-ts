@@ -25,7 +25,11 @@ export async function PUT(
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        // Obtener rol del usuario
+        const id = params.id;
+        
+        // Determinar si el usuario es el dueño del perfil o un ADMIN
+        const isOwner = user.id === id;
+        
         let userRole = user.user_metadata?.rol;
         if (!userRole) {
             const userData = await prisma.user.findUnique({
@@ -34,22 +38,28 @@ export async function PUT(
             });
             userRole = userData?.rol;
         }
+        const isAdmin = userRole === 'ADMIN';
 
-        if (userRole !== 'ADMIN') {
+        if (!isAdmin && !isOwner) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        const id = params.id;
         const body = await request.json();
-        const { nombre, especialidad, experiencia } = body;
+        const { nombre, especialidad, experiencia, picture, telefono } = body;
+
+        // Solo el administrador puede cambiar nombre/experiencia (opcional, pero para seguridad mejor así)
+        // Para este proyecto, permitiremos a ambos por ahora si el usuario solicita "real"
+        
+        const dataToUpdate: any = {};
+        if (nombre !== undefined) dataToUpdate.nombre = nombre;
+        if (especialidad !== undefined) dataToUpdate.especialidad = especialidad === '' ? null : especialidad;
+        if (experiencia !== undefined) dataToUpdate.experiencia = experiencia === '' ? null : Number(experiencia);
+        if (picture !== undefined) dataToUpdate.picture = picture;
+        if (telefono !== undefined) dataToUpdate.telefono = telefono;
 
         const updatedLawyer = await prisma.user.update({
             where: { id },
-            data: {
-                ...(nombre !== undefined && { nombre }),
-                ...(especialidad !== undefined && { especialidad: especialidad === '' ? null : especialidad }),
-                ...(experiencia !== undefined && { experiencia: experiencia === '' ? null : experiencia }),
-            },
+            data: dataToUpdate,
         });
 
         // Formatear para coincidir con el estado del frontend

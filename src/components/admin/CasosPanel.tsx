@@ -92,9 +92,96 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
         </div>
       </div>
 
-      {/* Tabla de órdenes/casos */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Contenedor de lista (Móvil) / Tabla (Desktop) */}
+      <div className="bg-white md:bg-transparent rounded-lg shadow-sm md:shadow-none overflow-hidden">
+        {/* Vista de Tarjetas (Solo Móvil) */}
+        <div className="grid grid-cols-1 gap-4 md:hidden p-4 bg-gray-50">
+          {ordenesFiltradas.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
+              No se encontraron órdenes
+            </div>
+          ) : (
+            ordenesFiltradas.map((order) => (
+              <div key={order.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-azul-primario">#{order.numericId}</span>
+                    <span className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString('es-ES')}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                    order.status === OrderStatus.PENDING ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                    order.status === OrderStatus.PROCESSING ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                    order.status === OrderStatus.COMPLETED ? 'bg-green-50 text-green-600 border-green-100' :
+                    'bg-gray-50 text-gray-600 border-gray-100'
+                  }`}>
+                    {order.status === OrderStatus.PENDING ? 'PENDIENTE' :
+                     order.status === OrderStatus.PROCESSING ? 'EN PROCESO' :
+                     order.status === OrderStatus.COMPLETED ? 'COMPLETADO' : 
+                     order.status}
+                  </span>
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Cliente</p>
+                    <p className="text-sm font-medium text-gray-900">{order.userName}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Servicio</p>
+                    <p className="text-sm text-gray-700">{order.items.map(item => item.serviceName).join(', ')}</p>
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Abogado</p>
+                      <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full mt-0.5 ${order.lawyerId 
+                        ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                        : 'bg-amber-50 text-amber-600 border border-amber-100 italic'
+                      }`}>
+                        {order.lawyerId ? '⚖️ ' : '⏳ '}
+                        {order.lawyerName || 'Sin asignar'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-vinotinto">${order.total.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-50 flex justify-around gap-2">
+                  <button
+                    onClick={() => abrirModal('asignar', order as unknown as ElementoSeleccionable)}
+                    className="p-2 text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                    title="Asignar">
+                    <FiUserPlus size={18} />
+                  </button>
+                  <button
+                    onClick={() => abrirModal('ver', order as unknown as ElementoSeleccionable)}
+                    className="p-2 text-azul-primario bg-azul-primario/5 rounded-lg hover:bg-azul-primario/10 transition-colors"
+                    title="Ver">
+                    <FiEye size={18} />
+                  </button>
+                  <button
+                    onClick={() => abrirModal('editar', order as unknown as ElementoSeleccionable)}
+                    className="p-2 text-amber-500 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors"
+                    title="Editar">
+                    <FiEdit size={18} />
+                  </button>
+                  <button
+                    onClick={() => abrirModal('eliminar', order as unknown as ElementoSeleccionable)}
+                    className="p-2 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                    title="Eliminar">
+                    <FiTrash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Tabla (Solo Desktop) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

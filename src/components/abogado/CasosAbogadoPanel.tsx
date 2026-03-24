@@ -8,16 +8,21 @@ import { OrderStatus } from '@/features/orders/types/orders.types';
 interface CasosAbogadoPanelProps {
   abogadoId: string;
   initialClienteId?: string | null;
+  initialCasoId?: string | null;
 }
 
-function CasosAbogadoPanel({ abogadoId, initialClienteId }: CasosAbogadoPanelProps) {
+function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: CasosAbogadoPanelProps) {
   const { data: misCasos = [], isLoading, error } = useOrdersByLawyer(abogadoId);
-  // const { orders, fetchOrders, getOrdersByLawyer, isLoading } = useOrdersStore(); // Deprecated
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
   const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
   const updateOrder = useUpdateOrder();
+
+  // Sincronizar caso seleccionado inicial
+  useEffect(() => {
+    setCasoSeleccionado(initialCasoId || null);
+  }, [initialCasoId]);
 
   const openConfirmModal = (orderId: string) => {
     setCasoParaCompletar(orderId);

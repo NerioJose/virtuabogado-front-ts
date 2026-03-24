@@ -59,7 +59,7 @@ enum OrderStatus {
 
 model Order {
   id        String      @id @default(uuid())
-  numericId Int         @default(autoincrement())
+  numericId Int         @unique @default(autoincrement())
   userId    String
   lawyerId  String?     // Abogado asignado
   serviceId Int

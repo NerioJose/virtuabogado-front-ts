@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
 	FiEdit,
 	FiSave,
@@ -10,9 +10,13 @@ import {
 	FiStar,
 	FiCheck,
 	FiClock,
+	FiX,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
+import { createClient } from '@/utils/supabase/client';
+import { lawyersService } from '@/features/lawyers/services/lawyers.service';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 interface PerfilAbogadoPanelProps {
 	abogado: {
@@ -20,6 +24,7 @@ interface PerfilAbogadoPanelProps {
 		nombre: string;
 		email: string;
 		telefono: string;
+		picture?: string;
 		especialidad: string;
 		numeroColegiado: string;
 		experienciaAnios: number;
@@ -30,6 +35,8 @@ interface PerfilAbogadoPanelProps {
 export default function PerfilAbogadoPanel({
 	abogado,
 }: PerfilAbogadoPanelProps) {
+	const supabase = createClient();
+	const { updateUser } = useAuthStore();
 	const [editando, setEditando] = useState(false);
 	const [datosEditados, setDatosEditados] = useState({
 		nombre: abogado.nombre,
@@ -39,6 +46,8 @@ export default function PerfilAbogadoPanel({
 	});
 	const [guardando, setGuardando] = useState(false);
 	const [exito, setExito] = useState(false);
+
+	const [notificacion, setNotificacion] = useState<{tipo: 'success' | 'info' | 'error', mensaje: string} | null>(null);
 
 	// Manejador de cambios en los campos del formulario
 	const handleChange = (
@@ -51,24 +60,80 @@ export default function PerfilAbogadoPanel({
 		});
 	};
 
+	const handleFotoClick = () => {
+		document.getElementById('foto-input')?.click();
+	};
+
+	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		try {
+			setNotificacion({ tipo: 'info', mensaje: 'Subiendo foto de perfil...' });
+
+			const fileExt = file.name.split('.').pop();
+			const fileName = `${abogado.id}/${Date.now()}.${fileExt}`;
+			const filePath = `${fileName}`;
+
+			// 1. Subir a Supabase Storage
+			const { error: uploadError } = await supabase.storage
+				.from('avatars')
+				.upload(filePath, file, { upsert: true });
+
+			if (uploadError) throw uploadError;
+
+			// 2. Obtener URL pública
+			const { data: { publicUrl } } = supabase.storage
+				.from('avatars')
+				.getPublicUrl(filePath);
+
+			// 3. Actualizar en Base de Datos
+			await lawyersService.update(abogado.id, { picture: publicUrl });
+
+			// 4. Actualizar estado global/local
+			updateUser({ picture: publicUrl });
+			
+			setNotificacion({ tipo: 'success', mensaje: 'Foto de perfil actualizada correctamente' });
+		} catch (error: any) {
+			console.error('Error al subir foto:', error);
+			setNotificacion({ tipo: 'error', mensaje: `Error: ${error.message || 'No se pudo subir la foto'}` });
+		}
+	};
+
+	useEffect(() => {
+		if (notificacion) {
+			const timer = setTimeout(() => setNotificacion(null), 3000);
+			return () => clearTimeout(timer);
+		}
+	}, [notificacion]);
+
 	// Función para guardar los cambios
 	const guardarCambios = async () => {
 		setGuardando(true);
 
 		try {
-			// Aquí iría la llamada a la API para actualizar los datos del abogado
-			// Por ahora, simulamos una respuesta exitosa después de 1 segundo
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await lawyersService.update(abogado.id, {
+				nombre: datosEditados.nombre,
+				telefono: datosEditados.telefono,
+				especialidad: datosEditados.especialidad as any,
+			});
+
+			// Actualizar estado global del auth para que se vea en todo el panel
+			updateUser({ 
+				nombre: datosEditados.nombre,
+				telefono: datosEditados.telefono,
+				especialidad: datosEditados.especialidad as any
+			});
 
 			setExito(true);
 			setEditando(false);
 
-			// Ocultar el mensaje de éxito después de 3 segundos
 			setTimeout(() => {
 				setExito(false);
 			}, 3000);
 		} catch (error) {
 			console.error('Error al guardar cambios:', error);
+			setNotificacion({ tipo: 'error', mensaje: 'Error al actualizar el perfil' });
 		} finally {
 			setGuardando(false);
 		}
@@ -76,6 +141,21 @@ export default function PerfilAbogadoPanel({
 
 	return (
 		<div className="space-y-6">
+			{/* Notificación */}
+			{notificacion && (
+				<div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-right-4 bg-azul-primario text-white`}>
+					<FiCheck />
+					<span>{notificacion.mensaje}</span>
+				</div>
+			)}
+
+			<input 
+				type="file" 
+				id="foto-input" 
+				className="hidden" 
+				accept="image/*"
+				onChange={handleFileChange}
+			/>
 			<div className="flex justify-between items-center">
 				<h2 className="text-xl font-bold text-gray-800">Mi Perfil</h2>
 
@@ -118,16 +198,19 @@ export default function PerfilAbogadoPanel({
 					<div className="flex flex-col md:flex-row gap-8">
 						{/* Foto de perfil */}
 						<div className="flex flex-col items-center">
-							<div className="relative w-40 h-40 rounded-full overflow-hidden mb-4">
+							<div className="relative w-40 h-40 rounded-full overflow-hidden mb-4 bg-gray-100 flex items-center justify-center">
 								<Image
-									src={userImage}
+									src={abogado.picture || userImage}
 									alt={abogado.nombre}
 									fill
 									className="object-cover"
+									unoptimized={!!abogado.picture}
 								/>
 							</div>
 
-							<button className="text-sm text-azul-primario hover:underline">
+							<button 
+								onClick={handleFotoClick}
+								className="text-sm text-azul-primario hover:underline">
 								Cambiar foto
 							</button>
 

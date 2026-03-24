@@ -27,7 +27,7 @@ interface FinanzasPanelProps {
 	) => void;
 }
 
-function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
+function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 	// ============ REACT QUERY (datos reales de la API) ============
 	const { data: orders = [], isLoading } = useOrders();
 
@@ -222,6 +222,7 @@ function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
 					</div>
 
 					<button
+						onClick={() => window.print()}
 						className="flex items-center gap-2 px-6 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-all font-medium shadow-md hover:shadow-lg active:scale-95"
 					>
 						<FiDownload />
@@ -318,12 +319,22 @@ function FinanzasPanel({ terminoBusqueda }: FinanzasPanelProps) {
 											</span>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap text-right">
-											<button
-												className="p-2 text-gray-400 hover:text-azul-primario transition-colors"
-												title="Ver detalles"
-											>
-												<FiEye size={18} />
-											</button>
+											<div className="flex justify-end gap-2">
+												<button
+													onClick={() => abrirModal('ver', order as unknown as ElementoSeleccionable)}
+													className="p-2 text-gray-400 hover:text-azul-primario transition-colors"
+													title="Ver detalles"
+												>
+													<FiEye size={18} />
+												</button>
+												<button
+													onClick={() => abrirModal('editar', order as unknown as ElementoSeleccionable)}
+													className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+													title="Editar estado"
+												>
+													<FiDollarSign size={18} />
+												</button>
+											</div>
 										</td>
 									</tr>
 								))

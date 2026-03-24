@@ -153,6 +153,7 @@ export default function AdminPage() {
 					break;
 
 				case 'casos':
+				case 'finanzas': // Both use updateOrderMutation
 					if (tipoModal === 'eliminar' && id) {
 						await deleteOrderMutation.mutateAsync(id);
 					} else if (tipoModal === 'editar' && id) {
@@ -368,7 +369,7 @@ export default function AdminPage() {
 						</h1>
 					</div>
 
-					<div className="flex items-center space-x-4">
+					<div className="flex items-center gap-2 md:space-x-4">
 						{allowsSearch(seccionActiva) && (
 							<div className="relative">
 								<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -377,7 +378,7 @@ export default function AdminPage() {
 									placeholder="Buscar..."
 									value={terminoBusqueda}
 									onChange={(e) => setTerminoBusqueda(e.target.value)}
-									className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario"
+									className="pl-9 pr-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario text-sm w-32 md:w-64 transition-all"
 									aria-label="Buscar elementos"
 								/>
 							</div>
@@ -386,10 +387,11 @@ export default function AdminPage() {
 						{allowsCreate(seccionActiva) && (
 							<button
 								onClick={() => abrirModal('crear')}
-								className="flex items-center space-x-2 bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors focus:outline-none focus:ring-2 focus:ring-azul-primario focus:ring-offset-2"
+								className="flex items-center justify-center gap-1 bg-azul-primario text-white p-2 md:px-4 md:py-2 rounded-lg hover:bg-azul-primario/90 transition-colors focus:outline-none focus:ring-2 focus:ring-azul-primario focus:ring-offset-2"
+								title={`Crear nuevo ${getNuevoButtonText(seccionActiva)}`}
 								aria-label={`Crear nuevo ${getNuevoButtonText(seccionActiva)}`}>
-								<FiPlus size={16} />
-								<span>Nuevo {getNuevoButtonText(seccionActiva)}</span>
+								<FiPlus size={20} className="md:size-4" />
+								<span className="hidden md:inline">Nuevo {getNuevoButtonText(seccionActiva)}</span>
 							</button>
 						)}
 					</div>

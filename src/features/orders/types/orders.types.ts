@@ -30,7 +30,7 @@ export interface OrderItem {
 
 export interface Order {
     id: string;
-    numericId?: number;
+    numericId: number;
     userId: string; // UUID
     lawyerId?: string; // Abogado asignado
     lawyerName?: string; // Nombre del abogado asignado
@@ -43,11 +43,22 @@ export interface Order {
     status: OrderStatus;
     paymentMethod: PaymentMethod;
     transactionId?: string;
-    createdAt: Date;
-    updatedAt: Date;
-    completedAt?: Date;
-    assignedAt?: Date;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    completedAt?: string | Date;
+    assignedAt?: string | Date;
     notes?: string;
+    // Campos anidados de Prisma
+    user?: {
+        id: string;
+        nombre: string;
+        email: string;
+    };
+    service?: {
+        id: number;
+        titulo: string;
+        precio: number;
+    };
 }
 
 export interface CreateOrderRequest {

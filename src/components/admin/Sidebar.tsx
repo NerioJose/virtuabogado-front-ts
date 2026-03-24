@@ -1,6 +1,9 @@
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX } from 'react-icons/fi';
 import Image from 'next/image';
 import { SeccionAdmin } from '@/types/index';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { UserRole } from '@/shared/types/entities.types';
+import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 
 interface SidebarProps {
   seccionActiva: SeccionAdmin;
@@ -11,6 +14,12 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout, isOpen, onClose }: SidebarProps) {
+  const { user } = useAuthStore();
+  
+  const formattedName = user?.rol === UserRole.CLIENTE 
+    ? capitalizeName(user.nombre) 
+    : formatLawyerName(user?.nombre);
+
   return (
     <>
       {/* Overlay para móvil */}
@@ -44,6 +53,31 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             </button>
           </div>
         </div>
+
+        {/* Perfil de Usuario */}
+        {user && (
+          <div className="px-6 mb-8 mt-[-1rem]">
+            <div className="flex items-center p-3 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="h-10 w-10 rounded-full bg-vinotinto flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                {user.nombre.charAt(0).toUpperCase()}
+              </div>
+              <div className="ml-3 overflow-hidden">
+                <p className="text-sm font-bold text-white truncate" title={formattedName}>
+                  {formattedName}
+                </p>
+                <div className="flex items-center mt-0.5">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase border ${
+                    user.rol === UserRole.ADMIN ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
+                    user.rol === UserRole.ABOGADO ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
+                    'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                  }`}>
+                    {user.rol}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         <nav className="space-y-2 px-6">
           <button 

@@ -78,6 +78,8 @@ export interface CheckoutState extends CheckoutData {
 // Respuesta del servidor al crear orden
 export interface OrderResponse {
     orderId: string;
+    numericId?: number;
+    uuid?: string;
     status: 'success' | 'pending' | 'failed';
     message: string;
     paymentUrl?: string;

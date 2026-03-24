@@ -145,22 +145,41 @@ const obtenerCamposPorSeccion = (seccion: string) => {
 			];
 		case 'finanzas':
 			return [
-				{ key: 'concepto', label: 'Concepto', type: 'text', required: true },
-				{ key: 'monto', label: 'Monto', type: 'number', required: true },
 				{
-					key: 'tipo',
-					label: 'Tipo',
-					type: 'select',
-					required: true,
-					options: ['ingreso', 'gasto', 'honorario', 'reembolso'],
-				},
-				{ key: 'fecha', label: 'Fecha', type: 'date', required: true },
-				{
-					key: 'metodoPago',
-					label: 'Método de pago',
-					type: 'select',
+					key: 'numericId',
+					label: 'ID de Transacción',
+					type: 'number',
 					required: false,
-					options: ['efectivo', 'transferencia', 'tarjeta', 'cheque'],
+					readonly: true,
+				},
+				{
+					key: 'userName',
+					label: 'Cliente',
+					type: 'text',
+					required: false,
+					readonly: true,
+				},
+				{
+					key: 'total',
+					label: 'Monto Total',
+					type: 'number',
+					required: false,
+					readonly: true,
+				},
+				{
+					key: 'status',
+					label: 'Estado de Orden',
+					type: 'select',
+					options: ['PENDIENTE', 'EN_PROGRESO', 'COMPLETADO', 'CANCELADO'],
+					required: true,
+					readonly: true,
+				},
+				{
+					key: 'createdAt',
+					label: 'Fecha',
+					type: 'date',
+					required: false,
+					readonly: true,
 				},
 			];
 		default:
@@ -643,7 +662,7 @@ export default function ModalContainer({
 							</form>
 
 							{/* CHAT DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
-							{tipo === 'ver' && seccion === 'casos' && (elemento as any)?.id && (
+							{tipo === 'ver' && (seccion === 'casos' || seccion === 'finanzas') && (elemento as any)?.id && (
 								<div className="mt-6 border-t pt-6">
 									<div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
 										<h4 className="font-bold text-azul-primario mb-3 flex items-center">

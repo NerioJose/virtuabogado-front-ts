@@ -9,7 +9,7 @@ import { queryClient } from '@/lib/queryClient';
 import { CLIENT_KEYS } from '@/features/clients/hooks/useClients';
 import { LAWYER_KEYS } from '@/features/lawyers/hooks/useLawyers';
 // import { useClientsStore } from '@/features/clients';
-import { Order, OrderStatus, PaymentMethod as OrderPaymentMethod } from '@/features/orders/types/orders.types';
+import { Order, OrderStatus, PaymentMethod as OrderPaymentMethod, ORDER_KEYS } from '@/features/orders';
 import { ClientStatus } from '@/features/clients/types/clients.types';
 
 const getInitialState = () => ({
@@ -251,21 +251,11 @@ export const useCheckoutStore = create<CheckoutState>()(
                     isLoading: false,
                 });
 
-                // Integración Stores
-                // Recargar usuario del store por si se actualizó en el paso 1.5
-                const userAfterUpdate = useAuthStore.getState().user;
-
-                // Invalidate React Query caches to ensure UI updates immediately
-                // This ensures "100% reactivity" for the current user without page refresh
-                await queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all });
-                await queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all });
-                // We don't have ORDER_KEYS constant yet, but we can invalidate by key string
-                // await queryClient.invalidateQueries({ queryKey: ['orders'] }); 
-                // Orders are mostly legacy store for now, but good practice to invalidate if migrated
-
+                // 4. PREPARAR OBJETO PARA CACHÉ (Optimistic Update)
                 const orderForStore: Order = {
-                    id: order.orderId,
-                    userId: paymentResult.userId,
+                    id: order.orderId, // UUID
+                    numericId: Number(order.numericId) || 0,
+                    userId: currentUserId,
                     userName: state.userData.nombre,
                     userEmail: state.userData.email,
                     items: [{
@@ -284,6 +274,39 @@ export const useCheckoutStore = create<CheckoutState>()(
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 };
+
+                // Optimistic UI update in React Query
+                const userId = currentUserId;
+                const orderKey = ORDER_KEYS.list({ userId });
+                
+                // 1. Update the list cache for this specific user
+                queryClient.setQueryData(orderKey, (old: any) => {
+                    const currentList = Array.isArray(old) ? old : [];
+                    // Avoid duplicates
+                    if (currentList.some((o: any) => o.id === orderForStore.id)) {
+                        return currentList;
+                    }
+                    return [orderForStore, ...currentList];
+                });
+
+                // 2. Update the general lists (used by admin/others if active)
+                queryClient.setQueryData(ORDER_KEYS.list({}), (old: any) => {
+                    const currentList = Array.isArray(old) ? old : [];
+                    if (currentList.some((o: any) => o.id === orderForStore.id)) {
+                        return currentList;
+                    }
+                    return [orderForStore, ...currentList];
+                });
+
+                // 3. Set the detail cache for the destination page
+                queryClient.setQueryData(ORDER_KEYS.detail(orderForStore.id), orderForStore);
+
+                // 4. Also trigger invalidation as a background fallback (de-prioritized)
+                queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'none' });
+                queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all, refetchType: 'none' });
+                queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all, refetchType: 'none' });
+
+                // Legacy store fallback
                 useOrdersStore.getState().addOrder(orderForStore);
 
                 await checkoutService.sendConfirmationEmail(order.orderId);

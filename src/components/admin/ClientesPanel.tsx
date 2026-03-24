@@ -7,6 +7,8 @@ import { ClientStatus } from '@/features/clients/types/clients.types';
 import { useOrdersStore } from '@/features/orders';
 import { ElementoSeleccionable } from '@/types/index';
 
+import { capitalizeName } from '@/utils/formatters';
+
 interface ClientesPanelProps {
   terminoBusqueda: string;
   abrirModal: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: ElementoSeleccionable) => void;
@@ -154,7 +156,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{cliente.nombre}</div>
+                            <div className="text-sm font-medium text-gray-900">{capitalizeName(cliente.nombre)}</div>
                           </div>
                         </div>
                       </td>

@@ -5,6 +5,7 @@ export interface Abogado {
 	email: string;
 	role?: 'abogado';
 	telefono: string;
+	picture?: string;
 	especialidad: string;
 	numeroColegiado: string;
 	experienciaAnios: number;

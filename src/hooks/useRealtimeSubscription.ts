@@ -17,26 +17,69 @@ export const useRealtimeSubscription = () => {
     // ═══════════════════════════════════════════════
     // POLLING FALLBACK - garantiza datos frescos
     // incluso cuando RLS bloquea eventos Realtime
-    // para el cliente anónimo (Mock Login de dev)
     // ═══════════════════════════════════════════════
     useEffect(() => {
         const pollInterval = setInterval(() => {
-            // Solo invalidar si el usuario está activo/pestaña visible y está autenticado
             if (document.visibilityState === 'visible' && user?.id) {
                 console.log('🔄 [Polling] Refrescando datos en segundo plano...');
-                queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
+                // Force refetch all active order queries
+                queryClient.refetchQueries({ 
+                    queryKey: ORDER_KEYS.all,
+                    type: 'active' 
+                });
             }
-        }, 30_000); 
+        }, 30_000);
 
         return () => clearInterval(pollInterval);
     }, [queryClient, user?.id]);
 
     // ═══════════════════════════════════════════════
-    // REALTIME - sincronización instantánea (cuando RLS lo permite)
+    // BROADCAST LISTENER - sincronización instantánea entre usuarios
+    // Las mutaciones via Prisma (PATCH/POST API) no disparan WAL events.
+    // La API envía broadcasts manuales (global + personal) tras cada mutación.
+    // Este listener escucha ambos canales y fuerza refetch inmediato en TODOS
+    // los usuarios conectados (abogado, cliente, admin).
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        // No conectar a Realtime si el usuario no ha iniciado sesión
-        // Esto evita 401 Unauthorized cuando se refrescan queries sin token
+        if (!user?.id) return;
+
+        const supabase = createClient();
+
+        const handleOrderUpdate = (payload: any) => {
+            console.log('📡 [Broadcast] order-updated recibido:', payload?.payload);
+            // Force immediate refetch of ALL active order queries
+            queryClient.refetchQueries({
+                queryKey: ORDER_KEYS.all,
+                type: 'active',
+            });
+        };
+
+        // Canal global - todos los administradores y usuarios lo reciben
+        const globalChannel = supabase.channel('order-updates');
+        globalChannel
+            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .subscribe((status) => {
+                console.log('📡 [Broadcast Global] Estado:', status);
+            });
+
+        // Canal personal - notificaciones dirigidas (abogado asignado, cliente propietario)
+        const personalChannel = supabase.channel(`global_${user.id}`);
+        personalChannel
+            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .subscribe((status) => {
+                console.log(`📡 [Broadcast Personal global_${user.id}] Estado:`, status);
+            });
+
+        return () => {
+            supabase.removeChannel(globalChannel);
+            supabase.removeChannel(personalChannel);
+        };
+    }, [queryClient, user?.id]);
+
+    // ═══════════════════════════════════════════════
+    // REALTIME - sincronización instantánea
+    // ═══════════════════════════════════════════════
+    useEffect(() => {
         if (!user?.id) {
             setConnectionStatus('DISCONNECTED');
             return;
@@ -44,92 +87,119 @@ export const useRealtimeSubscription = () => {
 
         const supabase = createClient();
         console.log(`🚀 [Realtime] Inicializando para usuario: ${user.email} (ID: ${user.id})`);
-        
+
         // Función para manejar los cambios
         const handleChanges = (payload: any) => {
-            console.log('🔄 Cambio en DB detectado:', payload);
+            console.log('🔄 Cambio en DB detectado:', payload.table, payload.eventType);
             const { table } = payload;
 
             switch (table) {
                 case 'User':
                     console.log('👤 Actualizando usuarios...');
-                    queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all });
-                    queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all });
+                    queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all, refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all, refetchType: 'all' });
                     break;
                 case 'Order':
-                    console.log('📦 Actualizando órdenes...');
+                    console.log('📦 Actualizando órdenes... [Realtime force-refetch]');
+                    // Force immediate refetch of ALL active order queries (including filtered by lawyer)
+                    queryClient.refetchQueries({ 
+                        queryKey: ORDER_KEYS.all,
+                        type: 'active'
+                    });
+                    // Also invalidate inactive ones so they'll be fresh on next use
                     queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
                     if (payload.new && 'id' in payload.new) {
-                        queryClient.invalidateQueries({ queryKey: ORDER_KEYS.detail(payload.new.id) });
+                        queryClient.refetchQueries({ 
+                            queryKey: ORDER_KEYS.detail(payload.new.id),
+                            type: 'active'
+                        });
                     }
                     break;
                 case 'Service':
                     console.log('🛠️ Actualizando servicios...');
-                    queryClient.invalidateQueries({ queryKey: ['services'] });
+                    queryClient.invalidateQueries({ queryKey: ['services'], refetchType: 'all' });
                     break;
                 case 'FinancialSettings':
                     console.log('💰 Actualizando configuración financiera...');
-                    queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all });
-                    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+                    queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
                     break;
                 case 'Message':
                     console.log('💬 Nuevo mensaje detectado');
                     if (payload.new && 'orderId' in payload.new) {
-                        queryClient.invalidateQueries({ queryKey: ['messages', payload.new.orderId] });
+                        queryClient.refetchQueries({ 
+                            queryKey: ['messages', payload.new.orderId],
+                            type: 'active'
+                        });
                     }
                     queryClient.invalidateQueries({ queryKey: ['messages'] });
                     break;
             }
         };
 
-        console.log('🚀 Inicializando suscripción Realtime por tablas...');
-        
-        // Nombre de canal único para evitar colisiones en React Strict Mode / Fast Refresh
-        const channelName = `db-changes-${user?.id}-${Date.now()}`;
-        const channel = supabase.channel(channelName);
+        // ─── Verificar sesión antes de suscribirse (IIFE async) ──────────────
+        // Si la sesión ya expiró, saltamos la suscripción postgres_changes
+        // para evitar que el CHANNEL_ERROR dispare un intento de re-autenticación.
+        // El broadcast (order-updates + global_{id}) ya cubre la reactividad principal.
+        let channelRef: ReturnType<typeof supabase.channel> | null = null;
 
-        // Lista de tablas a monitorear
-        const tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message'];
-
-        tables.forEach(table => {
-            channel.on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: table
-                },
-                handleChanges
-            );
-        });
-
-        channel.subscribe((status: string, err?: any) => {
-            console.log(`📡 Estado de suscripción Realtime [${channelName}]: ${status}`);
-            
-            switch (status) {
-                case 'SUBSCRIBED':
-                    setConnectionStatus('CONNECTED');
-                    // Al conectar, forzar refresh inmediato de datos
-                    queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
-                    break;
-                case 'CHANNEL_ERROR':
-                    setConnectionStatus('ERROR');
-                    console.error(`❌ Error en canal Realtime [${channelName}]. El polling de 30s sirve como fallback.`, err ? JSON.stringify(err) : 'No error details provided');
-                    break;
-                case 'TIMED_OUT':
-                    setConnectionStatus('ERROR');
-                    break;
-                case 'CLOSED':
-                    setConnectionStatus('DISCONNECTED');
-                    break;
-                default:
-                    setConnectionStatus('CONNECTING');
+        (async () => {
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (!sessionData.session) {
+                console.warn('⚠️ [Realtime] Sesión expirada, saltando suscripción postgres_changes. El broadcast sigue activo.');
+                setConnectionStatus('DISCONNECTED');
+                return;
             }
-        });
+
+            console.log('🚀 Inicializando suscripción Realtime por tablas...');
+
+            const channelName = `db-changes-${user?.id}-${Date.now()}`;
+            const channel = supabase.channel(channelName);
+            channelRef = channel;
+
+            let tables = ['Order', 'Message', 'Service'];
+            if (user?.rol === 'ADMIN') {
+                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message'];
+            } else if (user?.rol === 'ABOGADO') {
+                tables = ['User', 'Order', 'Service', 'Message'];
+            }
+
+            tables.forEach(table => {
+                channel.on('postgres_changes', { event: '*', schema: 'public', table }, handleChanges);
+            });
+
+            channel.subscribe((status: string, err?: any) => {
+                switch (status) {
+                    case 'SUBSCRIBED':
+                        setConnectionStatus('CONNECTED');
+                        console.log(`✅ [Realtime] Suscripción activa [${channelName}]`);
+                        queryClient.refetchQueries({ queryKey: ORDER_KEYS.all, type: 'active' });
+                        break;
+                    case 'CHANNEL_ERROR':
+                        // Silenciar: el CHANNEL_ERROR ocurre cuando RLS bloquea la suscripción WAL.
+                        // El broadcast (order-updates + global_{id}) ya cubre la reactividad.
+                        setConnectionStatus('ERROR');
+                        if (err && Object.keys(err).length > 0) {
+                            console.warn(`⚠️ [Realtime] Canal con error RLS. Broadcast activo como fallback.`, JSON.stringify(err));
+                        } else {
+                            console.info(`ℹ️ [Realtime] postgres_changes bloqueado por RLS (esperado). Broadcast activo.`);
+                        }
+                        break;
+                    case 'TIMED_OUT':
+                        setConnectionStatus('ERROR');
+                        break;
+                    case 'CLOSED':
+                        setConnectionStatus('DISCONNECTED');
+                        break;
+                    default:
+                        setConnectionStatus('CONNECTING');
+                }
+            });
+        })();
 
         return () => {
             console.log(`🛑 [Realtime] Limpiando suscripción para: ${user?.email || 'Anónimo'}`);
-            supabase.removeChannel(channel);
+            if (channelRef) supabase.removeChannel(channelRef);
         };
     }, [queryClient, user?.id]);
 

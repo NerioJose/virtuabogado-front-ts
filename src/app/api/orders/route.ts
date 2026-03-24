@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
+import { broadcastOrderUpdate } from '@/lib/broadcast';
+
+import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,8 +95,8 @@ export async function GET(request: Request) {
             uuid: order.id,
             userId: order.userId,
             lawyerId: order.lawyerId,
-            lawyerName: order.lawyer?.nombre || 'Pendiente',
-            userName: order.user.nombre,
+            lawyerName: order.lawyer?.nombre ? formatLawyerName(order.lawyer.nombre) : 'Pendiente',
+            userName: capitalizeName(order.user.nombre),
             userEmail: order.user.email,
             items: [{
                 id: order.service.id,
@@ -146,6 +149,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
+        console.log('📦 [Orders API POST] Body received:', body);
         const { serviceId, userId, total, paymentId, userEmail, userNombre } = body;
 
         // Seguridad: Determinar el ID del usuario final
@@ -206,6 +210,15 @@ export async function POST(request: Request) {
         });
 
         console.log('✅ API: Order created successfully:', newOrder.id);
+
+        // 📡 Broadcast a todos los dashboards para reactividad instantánea
+        broadcastOrderUpdate({
+            orderId: newOrder.id,
+            userId: newOrder.userId,
+            lawyerId: newOrder.lawyerId,
+            status: newOrder.status,
+            eventType: 'created',
+        });
 
         return NextResponse.json({
             id: newOrder.numericId,
@@ -291,6 +304,15 @@ export async function PUT(request: Request) {
         const updatedOrder = await prisma.order.update({
             where: { id },
             data: dataToUpdate,
+        });
+
+        // 📡 Broadcast a todos los dashboards para reactividad instantánea
+        broadcastOrderUpdate({
+            orderId: updatedOrder.id,
+            userId: updatedOrder.userId,
+            lawyerId: updatedOrder.lawyerId,
+            status: updatedOrder.status,
+            eventType: 'updated',
         });
 
         return NextResponse.json(updatedOrder);

@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { FiShoppingBag, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
+import { capitalizeName } from '@/utils/formatters';
 
 const statusConfig = {
     [OrderStatus.PENDING]: {
@@ -115,7 +116,7 @@ export default function RecentOrders() {
                                             </span>
                                         </div>
                                         <p className="text-sm text-gray-700 mb-1">
-                                            <strong>{order.userName}</strong>
+                                            <strong>{capitalizeName(order.userName)}</strong>
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             {order.userEmail}

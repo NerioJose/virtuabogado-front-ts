@@ -4,9 +4,10 @@ import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 
 interface AgendaPanelProps {
   abogadoId: string;
+  onVerDetalles?: (casoId: string) => void;
 }
 
-export default function AgendaPanel({ abogadoId }: AgendaPanelProps) {
+export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelProps) {
   const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
 
@@ -126,7 +127,10 @@ export default function AgendaPanel({ abogadoId }: AgendaPanelProps) {
                        }`}>
                         {caso.status}
                        </span>
-                       <button className="text-xs font-bold text-azul-primario hover:underline">
+                       <button 
+                         onClick={() => onVerDetalles?.(caso.id)}
+                         className="text-xs font-bold text-azul-primario hover:underline"
+                       >
                          Ver Detalles
                        </button>
                     </div>

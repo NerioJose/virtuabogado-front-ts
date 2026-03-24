@@ -7,6 +7,7 @@ import { Lawyer, LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { ElementoSeleccionable } from '@/types/index';
+import { formatLawyerName } from '@/utils/formatters';
 
 interface AbogadosPanelProps {
   terminoBusqueda: string;
@@ -46,9 +47,11 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
     });
   }, [lawyers, terminoBusqueda, especialidadFilter, statusFilter]);
 
-  // Obtener casos activos de un abogado
+  // Casos actualmente en proceso asignados al abogado
   const getActiveCases = (lawyerId: string) => {
-    return orders.filter(o => o.lawyerId === lawyerId && o.status === OrderStatus.PROCESSING).length;
+    return orders.filter(
+      o => o.lawyerId === lawyerId && o.status === OrderStatus.PROCESSING
+    ).length;
   };
 
   // TODO: Implementar cambio de estado con mutación
@@ -130,9 +133,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                 </tr>
               ) : (
                 filteredLawyers.map((lawyer) => {
-                  const casosActivos = getActiveCases(lawyer.id);
-                  const capacidadMaxima = 5;
-                  const porcentajeCarga = Math.min((casosActivos / capacidadMaxima) * 100, 100);
+                  const casosEnProceso = getActiveCases(lawyer.id);
 
                   return (
                     <tr key={lawyer.id} className="hover:bg-gray-50 transition-colors">
@@ -147,7 +148,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{lawyer.nombre}</div>
+                            <div className="text-sm font-medium text-gray-900">{formatLawyerName(lawyer.nombre)}</div>
                             <div className="text-xs text-gray-500">{lawyer.email}</div>
                           </div>
                         </div>
@@ -166,17 +167,19 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="w-full max-w-xs">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-gray-500">{casosActivos}/{capacidadMaxima} casos</span>
-                          </div>
-                          <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                            <div
-                              style={{ width: `${porcentajeCarga}%` }}
-                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${porcentajeCarga > 80 ? 'bg-red-500' : porcentajeCarga > 50 ? 'bg-amber-500' : 'bg-green-500'
-                                }`}
-                            ></div>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                            casosEnProceso === 0
+                              ? 'bg-gray-100 text-gray-500'
+                              : casosEnProceso >= 8
+                              ? 'bg-red-100 text-red-700'
+                              : casosEnProceso >= 4
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            <FiBriefcase className="w-3 h-3" />
+                            {casosEnProceso} {casosEnProceso === 1 ? 'caso' : 'casos'} en proceso
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

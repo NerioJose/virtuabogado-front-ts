@@ -36,33 +36,36 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const router = useRouter();
 	const [seccionActiva, setSeccionActiva] = useState('casos');
 	const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
+	const [selectedCasoId, setSelectedCasoId] = useState<string | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 	const handleNavClick = (id: string) => {
 		setSeccionActiva(id);
 		setSelectedClienteId(null);
+		setSelectedCasoId(null);
+	};
+
+	const handleVerDetallesCaso = (casoId: string) => {
+		setSelectedCasoId(casoId);
+		setSeccionActiva('casos');
 	};
 	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
 
+	const { user: userAuth, logout: storeLogout } = useAuthStore();
+	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
+
+	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
+
 	// Manejador de cierre de sesión
 	const handleLogout = async () => {
 		try {
-			// Eliminar los datos del usuario del localStorage
-			localStorage.removeItem('user');
-
-			// Redirigir al usuario a la página de login
+			storeLogout();
 			router.push('/login');
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
 		}
 	};
-
-	// ============ REACT QUERY - REAL DATA ============
-	const { user: userAuth } = useAuthStore();
-	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
-
-	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
 
 	// Calcular estadísticas en tiempo real
 	const estadisticas = useMemo(() => {
@@ -103,6 +106,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 				nombre: userAuth.nombre || userAuth.email?.split('@')[0] || 'Abogado',
 				email: userAuth.email || '',
 				telefono: userAuth.telefono || '',
+				picture: userAuth.picture || undefined,
 				especialidad: userAuth.especialidad || 'General',
 				numeroColegiado: userAuth.matricula || 'N/A',
 				experienciaAnios: userAuth.experiencia || 0,
@@ -338,9 +342,18 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 					{abogado ? (
 						<>
 							{seccionActiva === 'casos' && (
-								<CasosAbogadoPanel abogadoId={abogado.id} initialClienteId={selectedClienteId} />
+								<CasosAbogadoPanel 
+									abogadoId={abogado.id} 
+									initialClienteId={selectedClienteId} 
+									initialCasoId={selectedCasoId}
+								/>
 							)}
-							{seccionActiva === 'agenda' && <AgendaPanel abogadoId={abogado.id} />}
+							{seccionActiva === 'agenda' && (
+								<AgendaPanel 
+									abogadoId={abogado.id} 
+									onVerDetalles={handleVerDetallesCaso}
+								/>
+							)}
 							{seccionActiva === 'mensajes' && (
 								<MensajesPanel abogadoId={abogado.id} initialClienteId={selectedClienteId} />
 							)}

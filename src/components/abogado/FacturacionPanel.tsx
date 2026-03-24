@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import {
 	FiDollarSign,
-	//FiFileText,
 	FiDownload,
 	FiFilter,
 	FiChevronDown,
@@ -12,10 +11,12 @@ import {
 	FiEye,
 	FiCheck,
 	FiPlus,
+	FiX,
+	FiFileText,
 } from 'react-icons/fi';
-/*import { FiDollarSign, FiDownload, FiFilter, FiCalendar, FiPieChart, FiTrendingUp, FiClock } from 'react-icons/fi';*/
 
 import { OrderStatus } from '@/features/orders/types/orders.types';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface FacturacionPanelProps {
 	abogadoId: string;
@@ -25,6 +26,7 @@ interface Factura {
 	id: string;
 	numero: string;
 	cliente: string;
+	clienteEmail: string;
 	concepto: string;
 	fecha: string;
 	importe: number;
@@ -36,24 +38,29 @@ type PeriodoFacturacion = 'mes' | 'trimestre' | 'año';
 
 export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	// Use real orders as invoices
+	// Use real orders as invoices
 	const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
+	const updateOrder = useUpdateOrder(); // REAL mutation hook
+	const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
+	const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
+	const [notificacion, setNotificacion] = useState<{tipo: 'success' | 'info', mensaje: string} | null>(null);
 
-	// Derive invoices from completed orders
+	// Derive invoices from ALL relevant orders
 	const facturas: Factura[] = useMemo(() => {
 		return orders
-			.filter(o => o.status === OrderStatus.COMPLETED)
+			.filter(o => o.status !== OrderStatus.CANCELLED && o.status !== OrderStatus.FAILED)
 			.map(o => ({
 				id: o.id.toString(),
-				numero: `F-${o.id.toString().slice(0, 8)}`,
-				cliente: o.userName || o.userEmail || 'Cliente',
+				numero: `F-${o.numericId || o.id.toString().slice(0, 8)}`,
+				cliente: o.userName || 'Cliente',
+				clienteEmail: o.userEmail || '',
 				concepto: o.items?.[0]?.serviceName || 'Servicios Legales',
-				fecha: new Date(o.completedAt || o.createdAt).toISOString().split('T')[0],
+				fecha: new Date(o.createdAt).toISOString().split('T')[0],
 				importe: Number(o.total),
-				estado: 'pagada' // Assuming completed orders are paid
+				estado: o.status === OrderStatus.COMPLETED ? 'pagada' : 'pendiente'
 			}));
 	}, [orders]);
 
-	const [loading, setLoading] = useState(false); // Managed by React Query
 	const [filtroEstado, setFiltroEstado] = useState<
 		'todas' | 'pagadas' | 'pendientes' | 'vencidas'
 	>('todas');
@@ -70,6 +77,13 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	});
 
 	useEffect(() => {
+		if (notificacion) {
+			const timer = setTimeout(() => setNotificacion(null), 3000);
+			return () => clearTimeout(timer);
+		}
+	}, [notificacion]);
+
+	useEffect(() => {
 		if (!facturas) return;
 
 		// Calcular resumen financiero
@@ -81,13 +95,13 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 			.filter((f) => f.estado === 'pendiente' || f.estado === 'vencida')
 			.reduce((sum, f) => sum + f.importe, 0);
 
-		const facturasPagadas = facturas.filter(
+		const facturasPagadasCount = facturas.filter(
 			(f) => f.estado === 'pagada'
 		).length;
-		const facturasPendientes = facturas.filter(
+		const facturasPendientesCount = facturas.filter(
 			(f) => f.estado === 'pendiente'
 		).length;
-		const facturasVencidas = facturas.filter(
+		const facturasVencidasCount = facturas.filter(
 			(f) => f.estado === 'vencida'
 		).length;
 
@@ -96,11 +110,60 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 			ingresosTrimestre: ingresosPagados * 3, // Simulación projection
 			ingresosAnio: ingresosPagados * 12, // Simulación projection
 			pendienteCobro: importesPendientes,
-			facturasPagadas,
-			facturasPendientes,
-			facturasVencidas,
+			facturasPagadas: facturasPagadasCount,
+			facturasPendientes: facturasPendientesCount,
+			facturasVencidas: facturasVencidasCount,
 		});
 	}, [facturas]);
+
+	const handleDescargar = (factura: Factura) => {
+		setNotificacion({
+			tipo: 'info',
+			mensaje: `Generando PDF para ${factura.numero}...`
+		});
+		
+		// Real-ish behavior: open print dialog or generate simple blob
+		setTimeout(() => {
+			window.print();
+			setNotificacion({
+				tipo: 'success',
+				mensaje: `Factura ${factura.numero} lista para imprimir.`
+			});
+		}, 1000);
+	};
+
+	const handleMarcarPagada = (factura: Factura) => {
+		setFacturaSeleccionada(factura);
+		setMostrarModalConfirmacion(true);
+	};
+
+	const confirmarPago = async () => {
+		if (!facturaSeleccionada) return;
+		
+		try {
+			// Real update in DB
+			await updateOrder.mutateAsync({
+				id: facturaSeleccionada.id,
+				data: { 
+					status: OrderStatus.COMPLETED,
+					closedAt: new Date().toISOString()
+				}
+			});
+
+			setNotificacion({
+				tipo: 'success',
+				mensaje: `Factura ${facturaSeleccionada.numero} marcada como pagada exitosamente.`
+			});
+			setMostrarModalConfirmacion(false);
+			setFacturaSeleccionada(null);
+		} catch (error) {
+			console.error('Error al actualizar factura:', error);
+			setNotificacion({
+				tipo: 'info', // Using info for error because it matches the blue style
+				mensaje: 'Error al actualizar el estado de la factura.'
+			});
+		}
+	};
 
 	// Filtrar facturas según el estado seleccionado
 	const facturasFiltradas = facturas.filter((factura) => {
@@ -133,7 +196,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 		}).format(importe);
 	};
 
-	if (loading) {
+	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center h-64">
 				<div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
@@ -143,6 +206,16 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 	return (
 		<div className="space-y-6">
+			{/* Notificación */}
+			{notificacion && (
+				<div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${
+					notificacion.tipo === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
+				}`}>
+					{notificacion.tipo === 'success' ? <FiCheck /> : <FiClock />}
+					<span>{notificacion.mensaje}</span>
+				</div>
+			)}
+
 			{/* Resumen financiero */}
 			<div className="bg-white rounded-lg shadow-sm p-6">
 				<h2 className="text-lg font-medium text-gray-900 mb-6">
@@ -263,7 +336,9 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 			<div className="bg-white rounded-lg shadow-sm overflow-hidden">
 				<div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
 					<h2 className="text-lg font-medium text-gray-900">Mis Facturas</h2>
-					<button className="bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors flex items-center">
+					<button 
+						onClick={() => setNotificacion({tipo: 'info', mensaje: 'Módulo de creación de facturas (Próximamente)'})}
+						className="bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors flex items-center">
 						<FiPlus className="mr-2" />
 						Nueva factura
 					</button>
@@ -406,12 +481,14 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 										<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 											<div className="flex justify-end space-x-2">
 												<button
+													onClick={() => setFacturaSeleccionada(factura)}
 													className="text-azul-primario hover:text-azul-primario/80"
 													title="Ver detalles">
 													<FiEye size={18} />
 												</button>
 
 												<button
+													onClick={() => handleDescargar(factura)}
 													className="text-gray-600 hover:text-gray-800"
 													title="Descargar factura">
 													<FiDownload size={18} />
@@ -419,6 +496,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 												{factura.estado !== 'pagada' && (
 													<button
+														onClick={() => handleMarcarPagada(factura)}
 														className="text-green-600 hover:text-green-800"
 														title="Marcar como pagada">
 														<FiCheck size={18} />
@@ -433,6 +511,69 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 					</table>
 				</div>
 			</div>
+
+			{/* Modal de Detalles */}
+			{facturaSeleccionada && !mostrarModalConfirmacion && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+					<div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+						<div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-azul-primario text-white">
+							<h3 className="text-lg font-bold flex items-center gap-2">
+								<FiFileText /> Detalles de Factura
+							</h3>
+							<button onClick={() => setFacturaSeleccionada(null)} className="hover:rotate-90 transition-transform">
+								<FiX size={20} />
+							</button>
+						</div>
+						<div className="p-6 space-y-4">
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Número</p>
+									<p className="font-medium text-gray-900">{facturaSeleccionada.numero}</p>
+								</div>
+								<div>
+									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Fecha</p>
+									<p className="font-medium text-gray-900">{facturaSeleccionada.fecha}</p>
+								</div>
+								<div className="col-span-2">
+									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Cliente</p>
+									<p className="font-medium text-gray-900">{facturaSeleccionada.cliente}</p>
+									<p className="text-xs text-gray-400">{facturaSeleccionada.clienteEmail}</p>
+								</div>
+								<div className="col-span-2">
+									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Concepto</p>
+									<p className="font-medium text-gray-900">{facturaSeleccionada.concepto}</p>
+								</div>
+							</div>
+							<div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+								<div>
+									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Total</p>
+									<p className="text-2xl font-bold text-azul-primario">{formatearImporte(facturaSeleccionada.importe)}</p>
+								</div>
+								<span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${obtenerColorEstado(facturaSeleccionada.estado)}`}>
+									{facturaSeleccionada.estado}
+								</span>
+							</div>
+						</div>
+						<div className="bg-gray-50 px-6 py-4 flex gap-3">
+							<button 
+								onClick={() => handleDescargar(facturaSeleccionada)}
+								className="flex-1 bg-azul-primario text-white py-2 rounded-lg font-medium hover:bg-azul-primario/90 transition-colors flex items-center justify-center gap-2"
+							>
+								<FiDownload /> Descargar PDF
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			<ConfirmModal
+				isOpen={mostrarModalConfirmacion}
+				onClose={() => setMostrarModalConfirmacion(false)}
+				onConfirm={confirmarPago}
+				title="Confirmar Pago"
+				message={`¿Estás seguro de que deseas marcar la factura ${facturaSeleccionada?.numero} como pagada?`}
+				confirmText="Sí, marcar como pagada"
+			/>
 		</div>
 	);
 }

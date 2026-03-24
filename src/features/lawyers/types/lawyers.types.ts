@@ -22,6 +22,7 @@ export interface Lawyer {
     nombre: string;
     email: string;
     telefono?: string;
+    picture?: string;
     especialidad: LawyerSpecialty;
     status: LawyerStatus;
     matricula?: string;
@@ -47,6 +48,7 @@ export interface UpdateLawyerRequest {
     nombre?: string;
     email?: string;
     telefono?: string;
+    picture?: string;
     especialidad?: LawyerSpecialty;
     status?: LawyerStatus;
     matricula?: string;

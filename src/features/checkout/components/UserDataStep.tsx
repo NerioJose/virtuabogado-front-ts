@@ -2,14 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiMail, FiUser, FiPhone } from 'react-icons/fi';
+import { FiMail, FiUser, FiPhone, FiLock, FiCheckCircle } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
-import { AutoLoginIndicator } from './AutoLoginIndicator';
 import type { UserCheckoutData } from '../types/checkout.types';
 
 export const UserDataStep: React.FC = () => {
-    const { setUserData, setStep, isLoading } = useCheckout(); // Remove checkExistingUser dependency
+    const { 
+        setUserData, 
+        setStep, 
+        isLoading, 
+        isExistingUser, 
+        checkUserExists, 
+        sendOtp, 
+        verifyOtp 
+    } = useCheckout();
+    
     const [showPassword, setShowPassword] = useState(false);
+    const [isOtpMode, setIsOtpMode] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [emailCheckLoading, setEmailCheckLoading] = useState(false);
 
     const [formData, setFormData] = useState<UserCheckoutData>({
         email: '',
@@ -58,10 +70,43 @@ export const UserDataStep: React.FC = () => {
         }
     };
 
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         const error = validateField(name as keyof UserCheckoutData, value);
-        if (error) setErrors(prev => ({ ...prev, [name]: error }));
+        if (error) {
+            setErrors(prev => ({ ...prev, [name]: error }));
+            return;
+        }
+
+        // Si es el email, verificar si existe el usuario
+        if (name === 'email' && value) {
+            setEmailCheckLoading(true);
+            try {
+                await checkUserExists(value);
+            } finally {
+                setEmailCheckLoading(false);
+            }
+        }
+    };
+
+    const handleRequestOtp = async () => {
+        if (!formData.email) return;
+        try {
+            await sendOtp(formData.email);
+            setOtpSent(true);
+            setIsOtpMode(true);
+        } catch (err) {
+            console.error('Error sending OTP:', err);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otpCode || otpCode.length < 6) return;
+        try {
+            await verifyOtp(formData.email, otpCode);
+        } catch (err) {
+            console.error('Error verifying OTP:', err);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -104,8 +149,12 @@ export const UserDataStep: React.FC = () => {
             className="space-y-4"
         >
             <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100 flex items-start">
-                <span className="mr-2 text-xl">🛡️</span>
-                <p>Crea tu cuenta segura (o inicia sesión) para proteger tu compra y acceder al chat con tu abogado.</p>
+                <span className="mr-2 text-xl">{isExistingUser ? '👋' : '🛡️'}</span>
+                <p>
+                    {isExistingUser 
+                        ? '¡Qué bueno verte de nuevo! Ingresa tu contraseña o usa un código de acceso temporal.' 
+                        : 'Crea tu cuenta segura para proteger tu compra y acceder al chat con tu abogado.'}
+                </p>
             </div>
 
             {/* Email */}
@@ -129,34 +178,73 @@ export const UserDataStep: React.FC = () => {
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
             </div>
 
-            {/* Password */}
-            <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Contraseña <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        id="password"
-                        name="password"
-                        value={formData.password || ''}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Crea una contraseña segura"
-                    />
+            {/* Password / OTP Selector */}
+            {!otpSent ? (
+                <div>
+                    <div className="flex justify-between items-end mb-1">
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                            Contraseña <span className="text-red-500">*</span>
+                        </label>
+                        {isExistingUser && (
+                            <button 
+                                type="button"
+                                onClick={handleRequestOtp}
+                                className="text-xs text-azul-primario hover:underline font-semibold"
+                            >
+                                ¿Olvidaste tu contraseña? Usar código
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            id="password"
+                            name="password"
+                            value={formData.password || ''}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder={isExistingUser ? "Ingresa tu contraseña actual" : "Crea una contraseña segura"}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            {showPassword ? "Ocultar" : "Mostrar"}
+                        </button>
+                    </div>
+                    {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+                    {!isExistingUser && <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres.</p>}
+                </div>
+            ) : (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="p-5 bg-azul-primario/5 rounded-xl border border-azul-primario/20 text-center"
+                >
+                    <div className="text-4xl mb-3">📧</div>
+                    <h3 className="font-bold text-azul-primario text-base mb-1">
+                        ¡Revisa tu correo!
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Enviamos un <strong>enlace de acceso</strong> a <strong>{formData.email}</strong>.<br/>
+                        Haz clic en ese enlace y volverás automáticamente al sitio con la sesión iniciada.
+                    </p>
+                    <div className="text-xs text-gray-400 bg-gray-50 rounded-lg p-2">
+                        ⏱️ El enlace expira en 1 hora · Revisa tu carpeta de spam si no aparece
+                    </div>
                     <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={handleRequestOtp}
+                        disabled={isLoading}
+                        className="mt-4 text-xs text-azul-primario hover:underline disabled:opacity-50"
                     >
-                        {showPassword ? "Ocultar" : "Mostrar"}
+                        {isLoading ? 'Enviando...' : '¿No llegó? Reenviar enlace'}
                     </button>
-                </div>
-                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
-                <p className="mt-1 text-xs text-gray-500">Mínimo 6 caracteres. Si ya tienes cuenta, usa tu contraseña actual.</p>
-            </div>
+                </motion.div>
+            )}
 
             {/* Nombre */}
             <div>

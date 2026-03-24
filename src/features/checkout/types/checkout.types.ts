@@ -67,7 +67,9 @@ export interface CheckoutState extends CheckoutData {
     setUserData: (data: UserCheckoutData) => void;
     setPaymentData: (data: PaymentData) => void;
     setPaymentMethod: (method: PaymentMethod) => void;
-    checkExistingUser: (email: string) => Promise<boolean>;
+    checkUserExists: (email: string) => Promise<boolean>;
+    sendOtp: (email: string) => Promise<void>;
+    verifyOtp: (email: string, token: string) => Promise<void>;
     submitOrder: () => Promise<void>;
     markAsCompleted: () => void;
     reset: () => void;

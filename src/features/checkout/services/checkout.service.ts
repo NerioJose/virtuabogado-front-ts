@@ -18,26 +18,28 @@ class CheckoutService {
     private supabase = createClient();
 
     /**
-     * Intenta registrar al usuario usando el API server-side primero.
-     * Si falla, usa cliente directo con delay para evitar rate limits.
+     * Intenta registrar al usuario o loguearlo. 
+     * Ahora más flexible para soportar pre-detección de usuario.
      */
     async registerOrLogin(userData: UserCheckoutData): Promise<{ user: any, isNewUser: boolean }> {
         const email = userData.email.trim();
         const { password, nombre, phone } = userData;
 
+        // Si no hay contraseña (flujo OTP completado previamente en el componente)
+        // intentamos obtener el usuario actual de auth
         if (!password) {
-            throw new Error("Se requiere contraseña para crear la cuenta o iniciar sesión.");
+            const { data: { user } } = await this.supabase.auth.getUser();
+            if (user) {
+                return { user, isNewUser: false };
+            }
+            throw new Error("Se requiere contraseña o autenticación previa para continuar.");
         }
 
-        // ESTRATEGIA 1: Intentar API server-side (sin rate limits)
-        console.log('🔐 Intentando registro via API server-side:', email);
-
+        // ESTRATEGIA 1: Intentar API server-side
         try {
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email,
                     password,
@@ -48,78 +50,88 @@ class CheckoutService {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log(`✅ ${data.isNewUser ? 'Registro' : 'Login'} exitoso (server-side):`, data.user.id);
-
-                // Crear sesión en el cliente
-                const { error: signInError } = await this.supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-
-                if (signInError) {
-                    console.warn('⚠️ Error al crear sesión cliente:', signInError.message);
-                }
-
-                return {
-                    user: data.user,
-                    isNewUser: data.isNewUser
-                };
-            } else {
-                const errorData = await response.json();
-                console.warn('⚠️ API server-side falló:', errorData.error);
-                // Continuar con fallback
+                
+                // Crear sesión en el cliente localmente
+                await this.supabase.auth.signInWithPassword({ email, password });
+                
+                return { user: data.user, isNewUser: data.isNewUser };
             }
         } catch (apiError) {
-            console.warn('⚠️ API server-side no disponible, usando fallback:', apiError);
+            console.warn('⚠️ API error, fallback to client:', apiError);
         }
 
-        // ESTRATEGIA 2: Fallback a cliente directo (con delay para evitar rate limits)
-        console.log('🔄 Usando autenticación cliente directa...');
+        // ESTRATEGIA 2: Cliente directo
+        const { data: signInData } = await this.supabase.auth.signInWithPassword({ email, password });
+        if (signInData.user) return { user: signInData.user, isNewUser: false };
 
-        // Delay de 1 segundo para evitar rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Intentar login primero
-        const { data: signInData, error: signInError } = await this.supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (signInData.user && !signInError) {
-            console.log('✅ Login exitoso (cliente):', signInData.user.id);
-            return { user: signInData.user, isNewUser: false };
-        }
-
-        // Si login falla, intentar registro
         const { data: signUpData, error: signUpError } = await this.supabase.auth.signUp({
             email,
             password,
+            options: { data: { nombre: nombre || 'Usuario', telefono: phone || '', rol: 'CLIENTE' } }
+        });
+
+        if (signUpData.user && !signUpError) return { user: signUpData.user, isNewUser: true };
+
+        if (signUpError?.message.includes('already registered')) {
+            throw new Error("Usuario ya existe pero la contraseña es incorrecta. Usa la opción de 'Código de acceso'.");
+        }
+
+        throw new Error(signUpError?.message || "Error en la autenticación.");
+    }
+
+    /**
+     * Envía un magic link al correo.
+     * Guarda el estado del checkout en sessionStorage para restaurarlo después del redirect.
+     */
+    async sendOtp(email: string, checkoutState?: Record<string, unknown>): Promise<void> {
+        // Guardar el estado del checkout antes de redirigir (usamos localStorage para soporte multi-pestaña)
+        if (checkoutState && typeof window !== 'undefined') {
+            localStorage.setItem('checkout_pending', JSON.stringify({
+                ...checkoutState,
+                timestamp: Date.now()
+            }));
+        }
+
+        // El redirect apunta al callback para que Supabase establezca la sesión
+        const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`;
+
+        const { error } = await this.supabase.auth.signInWithOtp({
+            email,
             options: {
-                data: {
-                    nombre: nombre || 'Usuario',
-                    telefono: phone || '',
-                    rol: 'CLIENTE'
-                }
+                shouldCreateUser: false, // Solo para usuarios existentes
+                emailRedirectTo: callbackUrl
             }
         });
 
-        if (signUpData.user && !signUpError) {
-            console.log('✨ Usuario registrado (cliente):', signUpData.user.id);
-            return { user: signUpData.user, isNewUser: true };
-        }
+        if (error) throw error;
+    }
 
-        // Manejo de errores
-        if (signUpError) {
-            if (signUpError.message.includes('already registered')) {
-                throw new Error("Usuario ya existe pero la contraseña es incorrecta.");
-            }
-            if (signUpError.message.toLowerCase().includes('rate limit')) {
-                throw new Error("Demasiados registros. Por favor espera 1 minuto e intenta de nuevo, o usa una cuenta existente.");
-            }
-            throw new Error(signUpError.message || "Error al crear la cuenta.");
-        }
+    /**
+     * Verifica el código OTP
+     */
+    async verifyOtp(email: string, token: string): Promise<any> {
+        const { data, error } = await this.supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'magiclink' // Maneja tanto los links como los códigos de 6 dígitos
+        });
 
-        throw new Error("Error inesperado en autenticación.");
+        if (error) throw error;
+        return data.user;
+    }
+
+    /**
+     * Verifica si un email ya existe en el sistema
+     */
+    async checkUserExists(email: string): Promise<boolean> {
+        try {
+            const response = await fetch(`/api/auth/check-user?email=${encodeURIComponent(email)}`);
+            if (!response.ok) return false;
+            const data = await response.json();
+            return data.exists;
+        } catch {
+            return false;
+        }
     }
 
     /**

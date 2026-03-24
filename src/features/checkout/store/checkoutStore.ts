@@ -110,9 +110,52 @@ export const useCheckoutStore = create<CheckoutState>()(
             set({ paymentMethod });
         },
 
-        checkExistingUser: async (email: string) => {
-            // Deprecated in favor of implicit registration
-            return false;
+        checkUserExists: async (email: string) => {
+            const exists = await checkoutService.checkUserExists(email);
+            set({ isExistingUser: exists });
+            return exists;
+        },
+
+        sendOtp: async (email: string) => {
+            set({ isLoading: true, error: null });
+            const state = get();
+            try {
+                await checkoutService.sendOtp(email, {
+                    service: state.service,
+                    email,
+                });
+                set({ isLoading: false });
+            } catch (error) {
+                set({ 
+                    error: error instanceof Error ? error.message : 'Error al enviar el enlace',
+                    isLoading: false 
+                });
+                throw error;
+            }
+        },
+
+        verifyOtp: async (email: string, token: string) => {
+            set({ isLoading: true, error: null });
+            try {
+                const user = await checkoutService.verifyOtp(email, token);
+                if (user) {
+                    const { authService } = await import('@/features/auth/services/auth.service');
+                    const mappedUser = authService.mapSupabaseUserToEntity(user);
+                    useAuthStore.getState().setUser(mappedUser);
+                    set({ 
+                        existingUserId: user.id,
+                        isExistingUser: true,
+                        isLoading: false,
+                        step: 2 // Avanzar automáticamente tras verificar
+                    });
+                }
+            } catch (error) {
+                set({ 
+                    error: error instanceof Error ? error.message : 'Código inválido o expirado',
+                    isLoading: false 
+                });
+                throw error;
+            }
         },
 
         submitOrder: async () => {

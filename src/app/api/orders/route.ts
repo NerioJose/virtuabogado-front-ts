@@ -214,10 +214,30 @@ export async function POST(request: Request) {
 
         console.log('📦 API: Creating order for user:', finalUserId);
 
+        // 👨‍⚖️ AUTO-ASSIGNMENT: If only one lawyer is active, assign automatically
+        const activeLawyers = await prisma.user.findMany({
+            where: {
+                rol: 'ABOGADO',
+                activo: true
+            },
+            select: { id: true }
+        });
+
+        let autoAssignedLawyerId: string | null = null;
+        let assignedAt: Date | null = null;
+
+        if (activeLawyers.length === 1) {
+            autoAssignedLawyerId = activeLawyers[0].id;
+            assignedAt = new Date();
+            console.log('⚖️ API: Auto-assigning order to single lawyer:', autoAssignedLawyerId);
+        }
+
         // Crear la orden en base de datos con el desglose financiero
         const newOrder = await prisma.order.create({
             data: {
                 userId: finalUserId,
+                lawyerId: autoAssignedLawyerId, // Autocompletado si solo hay uno
+                assignedAt,
                 serviceId: service.id,
                 total: currentPrice,
                 status: 'PENDIENTE',
@@ -232,7 +252,10 @@ export async function POST(request: Request) {
             },
             include: {
                 service: true,
-                user: true
+                user: true,
+                lawyer: { // Incluimos para el broadcast
+                    select: { nombre: true }
+                }
             }
         });
 

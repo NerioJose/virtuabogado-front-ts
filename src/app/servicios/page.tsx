@@ -1,329 +1,246 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CheckoutModal, useCheckout, CartRecovery } from '@/features/checkout';
+import { useServices } from '@/features/services/hooks/useServices';
+import { Service } from '@/features/services/types/services.types';
+import { useServicesStore } from '@/features/services/store/servicesStore';
+
+// Mapeo de iconos para mantener el estilo visual con datos dinámicos
+const ICON_MAP: Record<string, React.ReactNode> = {
+	'Consultas Legales': (
+		<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+		</svg>
+	),
+	'Revisión de Documentos': (
+		<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+		</svg>
+	),
+	'Representación Legal': (
+		<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+		</svg>
+	),
+	'Asesoría Empresarial': (
+		<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+		</svg>
+	),
+	'Derecho Familiar': (
+		<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+		</svg>
+	),
+	'Derecho Inmobiliario': (
+		<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+		</svg>
+	),
+};
+
+const DEFAULT_ICON = (
+	<svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+		<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+	</svg>
+);
+
+import { slugify } from '@/utils/formatters';
 
 export default function ServiciosPage() {
 	const { openCheckout } = useCheckout();
+	const { isLoading } = useServices(); // Mantenemos el hook para que se encargue del fetch e invalidación
+	const activeServices = useServicesStore(state => state.activeServices);
 
-	// Datos de los servicios
-	const servicios = [
-		{
-			id: 1,
-			nombre: 'Consultas Legales',
-			titulo: 'Consultas Legales',
-			precio: 99.99,
-			descripcion:
-				'Resuelve tus dudas legales con abogados especializados en diferentes áreas del derecho. Nuestros profesionales te brindarán asesoramiento claro y preciso para ayudarte a tomar las mejores decisiones.',
-			icono: (
-				<svg
-					className="w-10 h-10"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor">
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-					/>
-				</svg>
-			),
-			imagen: '/images/consulta-legal.jpg',
-		},
-		{
-			id: 2,
-			nombre: 'Revisión de Documentos',
-			titulo: 'Revisión de Documentos',
-			precio: 149.99,
-			descripcion:
-				'Análisis yrevisión de contratos, acuerdos y documentos legales por profesionales. Asegúrate de que tus documentos cumplan con todos los requisitos legales y protejan tus intereses.',
-			icono: (
-				<svg
-					className="w-10 h-10"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor">
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-					/>
-				</svg>
-			),
-			imagen: '/images/revision-documentos.jpg',
-		},
-		{
-			id: 3,
-			nombre: 'Representación Legal',
-			titulo: 'Representación Legal',
-			precio: 299.99,
-			descripcion:
-				'Representación profesional en procesos judiciales y extrajudiciales. Nuestros abogados te acompañarán en cada etapa del proceso, defendiendo tus derechos e intereses con dedicación y profesionalismo.',
-			icono: (
-				<svg
-					className="w-10 h-10"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor">
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-					/>
-				</svg>
-			),
-			imagen: '/images/representacion-legal.jpg',
-		},
-		{
-			id: 4,
-			nombre: 'Asesoría Empresarial',
-			titulo: 'Asesoría Empresarial',
-			precio: 199.99,
-			descripcion:
-				'Servicios legales especializados para empresas y emprendedores. Desde la constitución de sociedades hasta la resolución de conflictos comerciales, te brindamos el apoyo legal que tu negocio necesita.',
-			icono: (
-				<svg
-					className="w-10 h-10"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor">
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-					/>
-				</svg>
-			),
-			imagen: '/images/asesoria-empresarial.jpg',
-		},
-		{
-			id: 5,
-			nombre: 'Derecho Familiar',
-			titulo: 'Derecho Familiar',
-			precio: 179.99,
-			descripcion:
-				'Asesoramiento en asuntos de familia como divorcios, custodia, pensiones alimenticias y más. Abordamos estos temas sensibles con empatía y profesionalismo, buscando siempre las mejores soluciones para todas las partes involucradas.',
-			icono: (
-				<svg
-					className="w-10 h-10"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor">
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-					/>
-				</svg>
-			),
-			imagen: '/images/derecho-familiar.jpg',
-		},
-		{
-			id: 6,
-			nombre: 'Derecho Inmobiliario',
-			titulo: 'Derecho Inmobiliario',
-			precio: 249.99,
-			descripcion:
-				'Servicios legales relacionados con propiedades, compraventas, arrendamientos y conflictos inmobiliarios. Te ayudamos a proteger tus inversiones y a resolver cualquier problema legal relacionado con bienes raíces.',
-			icono: (
-				<svg
-					className="w-10 h-10"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor">
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						strokeWidth={2}
-						d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-					/>
-				</svg>
-			),
-			imagen: '/images/derecho-inmobiliario.jpg',
-		},
-	];
+	// Helper para previsualizar imagen con la misma logica del admin pero mejorada
+	const getServiceImage = (service: Service) => {
+		if (service.imagenUrl) return service.imagenUrl;
+        
+        const slug = slugify(service.titulo);
+        
+        // Mapeos manuales para casos conocidos de plural/singular o nombres distintos
+        const manualMap: Record<string, string> = {
+            'consultas-legales': 'consulta-legal',
+            'revision-de-documentos': 'revision-documentos',
+            'asesoria-legal': 'consulta-legal',
+            'representacion-legal': 'representacion-legal'
+        };
+
+        const finalSlug = manualMap[slug] || slug;
+		return `/images/${finalSlug}.jpg`;
+	};
+
+	const servicios = (activeServices || [])
+        .map(s => {
+            // Mapping de imágenes manual para nombres que no coinciden con el slug estándar
+            let imagenPath = getServiceImage(s);
+
+            return {
+                id: s.id,
+                nombre: s.titulo,
+                titulo: s.titulo,
+                precio: Number(s.precio),
+                descripcion: s.descripcion,
+                icono: ICON_MAP[s.titulo] || DEFAULT_ICON,
+                imagen: imagenPath,
+            };
+        });
 
 	return (
 		<main className="min-h-screen">
+			<CheckoutModal />
+			<CartRecovery />
+
 			{/* Hero Section */}
-			<section className="relative py-20 md:py-28 overflow-hidden bg-gradient-to-br from-azul-claro/30 to-white">
-				<div className="container mx-auto px-6 relative z-10">
-					<motion.div
+			<section className="relative py-20 bg-azul-primario text-white overflow-hidden">
+				<div className="absolute inset-0 z-0 opacity-20">
+					<Image
+						src="/images/consulta-legal.jpg"
+						alt="Servicios Legales"
+						fill
+						className="object-cover"
+						priority
+					/>
+				</div>
+				<div className="absolute inset-0 bg-gradient-to-b from-azul-primario/80 to-azul-primario z-10"></div>
+
+				<div className="container mx-auto px-6 relative z-20 text-center">
+					<motion.h1
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.8 }}
-						className="text-center max-w-3xl mx-auto">
-						<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-azul-primario leading-tight mb-6">
-							Nuestros <span className="text-vinotinto">Servicios</span> Legales
-						</h1>
-						<p className="text-lg md:text-xl text-gray-700">
-							Ofrecemos una amplia gama de servicios legales especializados para
-							satisfacer tus necesidades personales y empresariales.
-						</p>
-					</motion.div>
+						className="text-4xl md:text-6xl font-bold mb-6">
+						Nuestros Servicios <span className="text-vinyl-blue font-black">Legales</span>
+					</motion.h1>
+					<motion.p
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ delay: 0.1 }}
+						className="text-xl text-azul-claro max-w-3xl mx-auto">
+						Ofrecemos soluciones legales integrales adaptadas a tus necesidades.
+						Calidad, confianza y profesionalismo en cada trámite.
+					</motion.p>
 				</div>
 			</section>
 
 			{/* Servicios Detallados */}
 			<section className="py-16 bg-white">
 				<div className="container mx-auto px-6">
-					<div className="grid grid-cols-1 gap-16">
-						{servicios.map((servicio, index) => (
-							<motion.div
-								key={servicio.id}
-								initial={{ opacity: 0, y: 30 }}
-								animate={index === 0 ? { opacity: 1, y: 0 } : undefined}
-								whileInView={index === 0 ? undefined : { opacity: 1, y: 0 }}
-								transition={{ duration: 0.2 }}
-								viewport={index === 0 ? undefined : { once: true, amount: 0.2 }}
-								className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-center ${index % 2 !== 0 ? 'lg:flex-row-reverse' : ''
-									}`}>
-								<div
-									className={`space-y-6 ${index % 2 !== 0 ? 'lg:order-2' : ''
-										}`}>
-									<div className="w-16 h-16 bg-azul-claro rounded-lg flex items-center justify-center text-azul-primario">
-										{servicio.icono}
+					{isLoading ? (
+						<div className="grid grid-cols-1 gap-16">
+							{[1, 2, 3].map(i => (
+								<div key={i} className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center animate-pulse">
+									<div className="space-y-6 text-center lg:text-left">
+										<div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto lg:mx-0"></div>
+										<div className="h-10 bg-gray-100 rounded w-3/4 mx-auto lg:mx-0"></div>
+										<div className="h-24 bg-gray-100 rounded"></div>
+										<div className="h-12 bg-gray-100 rounded w-1/3 mx-auto lg:mx-0"></div>
 									</div>
-									<h2 className="text-3xl font-bold text-azul-primario">
-										{servicio.titulo}
-									</h2>
-									<p className="text-gray-600 leading-relaxed">
-										{servicio.descripcion}
-									</p>
-									<motion.button
-										onClick={() => {
-											// Sanitizar objeto para evitar guardar ReactNodes en el store
-											const { icono, ...serviceData } = servicio;
-											console.log('🔘 Click en servicio:', serviceData.nombre);
-											openCheckout(serviceData);
-										}}
-										whileHover={{ scale: 1.05 }}
-										whileTap={{ scale: 0.95 }}
-										className="btn-primary mt-4">
-										Solicitar este servicio
-									</motion.button>
+									<div className="h-[300px] lg:h-[400px] bg-gray-100 rounded-xl"></div>
 								</div>
-								<div
-									className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-lg bg-gray-100 ${index % 2 !== 0 ? 'lg:order-1' : ''
-										}`}>
-									<Image
-										src={servicio.imagen}
-										alt={servicio.titulo}
-										fill
-										className="object-cover"
-										loading={index === 0 ? 'eager' : 'lazy'}
-										priority={index === 0}
-									/>
-									<div className="absolute inset-0 bg-gradient-to-tr from-azul-primario/20 to-transparent"></div>
-								</div>
-							</motion.div>
-						))}
-					</div>
+							))}
+						</div>
+					) : (
+						<div className="grid grid-cols-1 gap-16">
+							{servicios.map((servicio, index) => (
+								<motion.div
+									key={servicio.id}
+									initial={{ 
+                                        opacity: 0, 
+                                        x: index % 2 === 0 ? -60 : 60,
+                                        y: 20
+                                    }}
+									whileInView={{ 
+                                        opacity: 1, 
+                                        x: 0,
+                                        y: 0 
+                                    }}
+									transition={{ 
+                                        duration: 0.8, 
+                                        delay: 0.1,
+                                        ease: [0.21, 0.47, 0.32, 0.98] // Smooth cubic-bezier
+                                    }}
+									viewport={{ once: true, margin: "-100px" }}
+									className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+									<div
+										className={`space-y-6 text-center lg:text-left ${index % 2 !== 0 ? 'lg:order-2' : ''
+											}`}>
+										<div className="inline-flex items-center justify-center w-14 h-14 bg-azul-primario/10 text-azul-primario rounded-2xl mb-2 transition-transform hover:scale-110">
+											<div className="w-8 h-8 flex items-center justify-center">
+                                                {servicio.icono}
+                                            </div>
+										</div>
+										<h2 className="text-3xl font-bold text-azul-primario leading-tight">
+											{servicio.titulo}
+										</h2>
+                                        <div className="flex items-center gap-2 justify-center lg:justify-start">
+                                            <div className="bg-azul-primario text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md border border-white/10 flex items-center gap-2">
+                                                <span className="opacity-80">Desde</span>
+                                                <span className="text-base">${Number(servicio.precio).toLocaleString('es-ES', { minimumFractionDigits: 2 })} USD</span>
+                                            </div>
+                                        </div>
+										<p className="text-gray-600 leading-relaxed text-lg">
+											{servicio.descripcion}
+										</p>
+										<motion.button
+											onClick={() => {
+												// Sanitizar objeto para evitar guardar ReactNodes en el store
+												const { icono, ...serviceData } = servicio;
+												openCheckout(serviceData);
+											}}
+											whileHover={{ scale: 1.05 }}
+											whileTap={{ scale: 0.95 }}
+											className="btn-primary mt-4 font-bold shadow-lg">
+											Solicitar este servicio
+										</motion.button>
+									</div>
+									<div
+										className={`relative h-[300px] lg:h-[400px] w-full rounded-xl overflow-hidden shadow-2xl group ${index % 2 !== 0 ? 'lg:order-1' : ''
+											}`}>
+										<Image
+											src={servicio.imagen}
+											alt={servicio.titulo}
+											fill
+											className="object-cover transition-transform duration-700 group-hover:scale-110"
+											loading={index === 0 ? 'eager' : 'lazy'}
+											priority={index === 0}
+										/>
+										<div className="absolute inset-0 bg-gradient-to-tr from-azul-primario/40 to-transparent mix-blend-multiply"></div>
+									</div>
+								</motion.div>
+							))}
+						</div>
+					)}
 				</div>
 			</section>
 
 			{/* CTA Section */}
-			<section className="py-16 bg-azul-claro/30">
+			<section className="py-20 bg-azul-primario text-white">
 				<div className="container mx-auto px-6">
 					<motion.div
 						initial={{ opacity: 0, scale: 0.95 }}
 						whileInView={{ opacity: 1, scale: 1 }}
 						transition={{ duration: 0.5 }}
 						viewport={{ once: true }}
-						className="glass-card p-10 text-center max-w-4xl mx-auto">
-						<h2 className="text-3xl font-bold text-azul-primario mb-6">
-							¿Necesitas asesoría legal personalizada?
-						</h2>
-						<p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-							Nuestro equipo de abogados especializados está listo para ayudarte
-							con tu caso específico. Contáctanos hoy mismo para una consulta
-							inicial.
+						className="bg-white/10 backdrop-blur-md rounded-3xl p-10 md:p-16 border border-white/20 text-center">
+						<h2 className="text-3xl md:text-5xl font-bold mb-6">¿No encuentras lo que buscas?</h2>
+						<p className="text-xl text-azul-claro mb-10 max-w-2xl mx-auto font-light">
+							Contáctanos directamente y uno de nuestros asesores legales te ayudará con tu caso personalizado.
 						</p>
 						<div className="flex flex-col sm:flex-row gap-4 justify-center">
-							<Link href="/contacto">
-								<motion.button
-									whileHover={{ scale: 1.05 }}
-									whileTap={{ scale: 0.95 }}
-									className="btn-primary">
-									Contactar ahora
-								</motion.button>
+							<Link href="/contacto" className="btn-secondary px-10 py-4 font-bold">
+								Contactar Asesor
 							</Link>
-							{/*<Link href="/register">
-								<motion.button
-									whileHover={{ scale: 1.05 }}
-									whileTap={{ scale: 0.95 }}
-									className="px-6 py-3 bg-white text-azul-primario border border-azul-primario rounded-xl hover:bg-azul-claro transition-all duration-300">
-									Registrarse
-								</motion.button>
-							</Link>*/}
+							<Link href="/faq" className="bg-white/10 hover:bg-white/20 text-white px-10 py-4 rounded-full transition-all flex items-center justify-center font-bold">
+								Ver Preguntas Frecuentes
+							</Link>
 						</div>
 					</motion.div>
 				</div>
 			</section>
-
-			{/* FAQ Section */}
-			<section className="py-16 bg-white">
-				<div className="container mx-auto px-6">
-					<div className="text-center mb-12">
-						<h2 className="text-3xl font-bold text-azul-primario mb-4">
-							Preguntas Frecuentes
-						</h2>
-						<p className="text-gray-600 max-w-2xl mx-auto">
-							Respuestas a las dudas más comunes sobre nuestros servicios
-							legales.
-						</p>
-					</div>
-
-					<div className="max-w-3xl mx-auto space-y-6">
-						{[
-							{
-								pregunta: '¿Cómo funciona la consulta legal online?',
-								respuesta:
-									'Nuestras consultas legales online se realizan a través de nuestra plataforma segura. Una vez registrado, podrás programar una cita con el abogado especializado en tu área de interés. La consulta se realiza por videollamada, donde podrás exponer tu caso y recibir asesoramiento profesional.',
-							},
-							{
-								pregunta: '¿Cuánto tiempo tarda la revisión de documentos?',
-								respuesta:
-									'El tiempo de revisión depende de la complejidad y extensión del documento. Generalmente, los documentos simples se revisan en 24-48 horas, mientras que documentos más complejos pueden tomar hasta 5 días hábiles. Siempre te informaremos del tiempo estimado al recibir tu solicitud.',
-							},
-							{
-								pregunta:
-									'¿Los abogados pueden representarme en cualquier parte del país?',
-								respuesta:
-									'Contamos con una red de abogados en diferentes regiones del país. Dependiendo de tu ubicación y el tipo de caso, te asignaremos un profesional que pueda representarte adecuadamente. En casos que requieran presencia física, nos aseguramos de contar con representación local.',
-							},
-							{
-								pregunta:
-									'¿Cómo se garantiza la confidencialidad de mi información?',
-								respuesta:
-									'La confidencialidad es una prioridad para nosotros. Utilizamos sistemas de encriptación avanzados para proteger tus datos y documentos. Además, todos nuestros abogados están obligados por el secreto profesional a mantener la confidencialidad de la información compartida durante las consultas.',
-							},
-						].map((item, index) => (
-							<motion.div
-								key={index}
-								initial={{ opacity: 0, y: 10 }}
-								whileInView={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.4, delay: index * 0.1 }}
-								viewport={{ once: true }}
-								className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-								<h3 className="text-xl font-bold text-azul-primario mb-3">
-									{item.pregunta}
-								</h3>
-								<p className="text-gray-600">{item.respuesta}</p>
-							</motion.div>
-						))}
-					</div>
-				</div>
-			</section>
-
-			{/* Checkout Modal y CartRecovery movidos al layout global */}
 		</main>
 	);
 }

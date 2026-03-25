@@ -28,7 +28,7 @@ export const useRealtimeSubscription = () => {
                     type: 'active' 
                 });
             }
-        }, 30_000);
+        }, 60_000); // Reducido de 30s a 60s para optimizar consultas
 
         return () => clearInterval(pollInterval);
     }, [queryClient, user?.id]);

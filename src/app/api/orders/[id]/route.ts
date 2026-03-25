@@ -173,12 +173,52 @@ export async function DELETE(
     }
 
     try {
-        await prisma.order.delete({
-            where: { id }
+        // Determinar si buscamos por UUID o por numericId
+        const isNumeric = /^\d+$/.test(id);
+        const orderWhere: any = isNumeric ? { numericId: parseInt(id) } : { id };
+
+        // Si es numericId, necesitamos el id (UUID) para borrar las relaciones
+        let uuid = id;
+        if (isNumeric) {
+            const order = await prisma.order.findUnique({
+                where: orderWhere,
+                select: { id: true }
+            });
+            if (!order) {
+                return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+            }
+            uuid = order.id;
+        }
+
+        // Eliminar en cascada manualmente para evitar errores de Foreign Key
+        await prisma.$transaction([
+            prisma.message.deleteMany({ where: { orderId: uuid } }),
+            prisma.document.deleteMany({ where: { orderId: uuid } }),
+            prisma.review.deleteMany({ where: { orderId: uuid } }),
+            prisma.order.delete({ where: { id: uuid } })
+        ]);
+        
+        console.log(`✅ [Orders API] Order ${uuid} and related entities deleted`);
+        return NextResponse.json({ 
+            success: true,
+            message: 'Caso y todo su historial de mensajes/documentos han sido eliminados correctamente.' 
         });
-        return NextResponse.json({ message: 'Order deleted successfully' });
     } catch (error: any) {
-        console.error('❌ [Order DELETE API] Error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error(`❌ [Order DELETE API] Error deleting order ${id}:`, error);
+        
+        // Mensaje contextual para el administrador según el tipo de error
+        let errorMessage = 'No se pudo eliminar el caso.';
+        if (error.code === 'P2003') {
+            errorMessage = 'Este caso tiene dependencias activas en otras tablas que impiden su eliminación directa. Por favor, asegúrate de que no haya pagos pendientes vinculados.';
+        } else if (error.message?.includes('foreign key constraint')) {
+            errorMessage = 'Error de integridad: El caso tiene registros vinculados que no pudieron ser eliminados en cascada.';
+        } else {
+            errorMessage = `Error interno: ${error.message || 'Consulte los logs del servidor'}`;
+        }
+
+        return NextResponse.json({ 
+            error: errorMessage,
+            details: error.code || 'UNKNOWN_ERROR'
+        }, { status: 500 });
     }
 }

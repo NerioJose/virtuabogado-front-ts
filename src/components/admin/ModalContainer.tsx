@@ -86,10 +86,10 @@ const obtenerCamposPorSeccion = (seccion: string) => {
 					required: true,
 				},
 				{
-					key: 'colegiatura',
+					key: 'matricula',
 					label: 'Número de colegiatura',
 					type: 'text',
-					required: true,
+					required: false,
 				},
 			];
 		case 'clientes':

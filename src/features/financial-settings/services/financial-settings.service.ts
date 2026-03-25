@@ -12,7 +12,8 @@ class FinancialSettingsService {
      * Obtener la configuración financiera actual
      */
     async get(): Promise<FinancialSettings> {
-        const response = await apiClient.get<FinancialSettings>(this.BASE_URL);
+        // Añadir cache buster para evitar cache agresiva de Next.js/Browser
+        const response = await apiClient.get<FinancialSettings>(`${this.BASE_URL}?t=${Date.now()}`);
         return response;
     }
 

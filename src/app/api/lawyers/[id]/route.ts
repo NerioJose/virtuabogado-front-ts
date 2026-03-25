@@ -45,10 +45,7 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { nombre, especialidad, experiencia, picture, telefono } = body;
-
-        // Solo el administrador puede cambiar nombre/experiencia (opcional, pero para seguridad mejor así)
-        // Para este proyecto, permitiremos a ambos por ahora si el usuario solicita "real"
+        const { nombre, especialidad, experiencia, picture, telefono, matricula } = body;
         
         const dataToUpdate: any = {};
         if (nombre !== undefined) dataToUpdate.nombre = nombre;
@@ -56,6 +53,7 @@ export async function PUT(
         if (experiencia !== undefined) dataToUpdate.experiencia = experiencia === '' ? null : Number(experiencia);
         if (picture !== undefined) dataToUpdate.picture = picture;
         if (telefono !== undefined) dataToUpdate.telefono = telefono;
+        if (matricula !== undefined) dataToUpdate.matricula = matricula;
 
         const updatedLawyer = await prisma.user.update({
             where: { id },

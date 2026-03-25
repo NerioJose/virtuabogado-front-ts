@@ -92,7 +92,7 @@ export class AuthService {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
             nombre: supabaseUser.user_metadata?.nombre || '',
-            rol: (supabaseUser.user_metadata?.rol as UserRole) || 'CLIENTE',
+            rol: ((supabaseUser.user_metadata?.rol as string)?.toUpperCase() as UserRole) || 'CLIENTE',
             telefono: supabaseUser.user_metadata?.telefono || undefined,
             especialidad: supabaseUser.user_metadata?.especialidad || undefined,
             matricula: supabaseUser.user_metadata?.numeroColegiado || supabaseUser.user_metadata?.matricula || undefined,

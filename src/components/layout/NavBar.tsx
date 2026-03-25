@@ -232,17 +232,20 @@ const Navbar = () => {
 					</motion.div>
 
 					{user?.rol === UserRole.ADMIN && (
-						<motion.div className="relative group">
+						<motion.div 
+							className="relative group px-1" 
+							whileHover={{ scale: 1.05 }}
+						>
 							<Link
 								href="/admin"
-								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors duration-200">
+								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-all duration-300">
 								Dashboard
 							</Link>
 							<motion.span
-								className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto"
-								initial={{ width: 0 }}
-								animate={{ width: '100%' }}
-								transition={{ duration: 0.5 }}
+								className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto origin-left"
+								initial={{ scaleX: 0 }}
+								whileHover={{ scaleX: 1 }}
+								transition={{ duration: 0.3 }}
 							/>
 						</motion.div>
 					)}

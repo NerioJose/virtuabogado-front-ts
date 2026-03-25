@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { DynamicCheckoutWrapper } from '@/features/checkout/DynamicCheckoutWrapper';
 import Providers from '@/components/providers/Providers';
 import GlobalChatListener from '@/components/chat/GlobalChatListener';
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -41,6 +42,14 @@ export default function RootLayout({
 					</div>
 					<DynamicCheckoutWrapper />
 					<Footer />
+					<Toaster
+						position="bottom-right"
+						richColors
+						closeButton
+						toastOptions={{
+							style: { fontFamily: 'var(--font-geist-sans)' },
+						}}
+					/>
 				</Providers>
 			</body>
 		</html>

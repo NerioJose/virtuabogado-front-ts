@@ -46,6 +46,7 @@ export const apiClient = {
             },
             body: JSON.stringify(body),
             credentials: 'include',
+            cache: 'no-store',
         });
         return handleResponse<T>(response);
     },
@@ -64,6 +65,7 @@ export const apiClient = {
             },
             body: JSON.stringify(body),
             credentials: 'include',
+            cache: 'no-store',
         });
         return handleResponse<T>(response);
     },
@@ -82,6 +84,7 @@ export const apiClient = {
             },
             body: JSON.stringify(body),
             credentials: 'include',
+            cache: 'no-store',
         });
         return handleResponse<T>(response);
     },

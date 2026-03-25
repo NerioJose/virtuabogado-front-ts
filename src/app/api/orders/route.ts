@@ -150,7 +150,50 @@ export async function POST(request: Request) {
 
         const body = await request.json();
         console.log('📦 [Orders API POST] Body received:', body);
-        const { serviceId, userId, total, paymentId, userEmail, userNombre } = body;
+        const { serviceId, userId, paymentId } = body;
+
+        // 🛡️ SECURITY: Fetch current service price and availability from DB
+        // DO NOT trust the 'total' from the client-side!
+        const service = await prisma.service.findUnique({
+            where: { id: Number(serviceId) }
+        });
+
+        if (!service || !service.activo) {
+            return NextResponse.json({ error: 'Servicio no encontrado o no disponible' }, { status: 404 });
+        }
+
+        const currentPrice = Number(service.precio);
+
+        // 🏛️ FINANCIAL SETTINGS: Fetch current split percentages
+        const FIXED_SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
+        let settings = await prisma.financialSettings.findUnique({
+            where: { id: FIXED_SETTINGS_ID }
+        });
+
+        // Use defaults if settings don't exist yet
+        if (!settings) {
+            settings = {
+                id: FIXED_SETTINGS_ID,
+                lawyer_commission_percentage: 70 as any,
+                operational_costs_percentage: 10 as any,
+                tax_percentage: 15 as any,
+                platform_fee_percentage: 5 as any,
+                updated_at: new Date(),
+                updated_by: 'system'
+            } as any;
+        }
+
+        // 🧮 CALCULATIONS: Perform the breakdown
+        const commissionPct = Number(settings!.lawyer_commission_percentage) / 100;
+        const operationalPct = Number(settings!.operational_costs_percentage) / 100;
+        const taxPct = Number(settings!.tax_percentage) / 100;
+        const platformFeePct = Number(settings!.platform_fee_percentage) / 100;
+
+        const commissionAmount = currentPrice * commissionPct;
+        const operationalCostAmount = currentPrice * operationalPct;
+        const taxAmount = currentPrice * taxPct;
+        const platformFeeAmount = currentPrice * platformFeePct;
+        const netProfitAmount = currentPrice - commissionAmount - operationalCostAmount - taxAmount - platformFeeAmount;
 
         // Seguridad: Determinar el ID del usuario final
         let userRole = user.user_metadata?.rol;
@@ -164,44 +207,28 @@ export async function POST(request: Request) {
         
         const isAdmin = userRole === 'ADMIN';
         
-        // Un usuario no-admin solo puede crear órdenes para sí mismo o para un email que ya posee
         let finalUserId = user.id; 
-        
         if (isAdmin && userId) {
-            finalUserId = userId; // Admin puede especificar un userId diferente
-        } else if (userId && userId !== user.id) {
-             return NextResponse.json({ error: 'No tienes permiso para crear órdenes para otro usuario' }, { status: 403 });
+            finalUserId = userId;
         }
 
         console.log('📦 API: Creating order for user:', finalUserId);
 
-        if (!serviceId || !total) {
-            return NextResponse.json(
-                { error: 'Faltan datos de la orden' },
-                { status: 400 }
-            );
-        }
-
-        // Validar tipos
-        const numericServiceId = Number(serviceId);
-        const numericTotal = Number(total);
-
-        if (isNaN(numericServiceId) || isNaN(numericTotal)) {
-            console.error('❌ API: Invalid numeric values:', { serviceId, total });
-            return NextResponse.json(
-                { error: 'Valores numéricos inválidos' },
-                { status: 400 }
-            );
-        }
-
-        // Crear la orden en base de datos
+        // Crear la orden en base de datos con el desglose financiero
         const newOrder = await prisma.order.create({
             data: {
                 userId: finalUserId,
-                serviceId: numericServiceId,
-                total: numericTotal,
+                serviceId: service.id,
+                total: currentPrice,
                 status: 'PENDIENTE',
                 paymentId: paymentId || `PAY-MOCK-${Date.now()}`,
+                
+                // Desglose financiero (Histórico)
+                commissionAmount,
+                operationalCostAmount,
+                platformFeeAmount,
+                taxAmount,
+                netProfitAmount,
             },
             include: {
                 service: true,

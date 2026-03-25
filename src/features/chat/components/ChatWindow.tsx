@@ -122,12 +122,55 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         }
     };
 
+    // Lista de extensiones que deben tratarse como archivos/media
+    const MEDIA_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'mp3', 'wav', 'mp4', 'mov'];
+
+    // Helper para convertir URLs en texto plano a links clicables
+    const linkifyText = (text: string, isMe: boolean) => {
+        // Regex que detecta http://, https://, www. y dominios comunes con extensiones TLD populares
+        const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.(?:com|net|org|edu|gov|io|co|es|cl|mx|ar|pe|co\.ve)(?:\/[^\s]*)?)/gi;
+        const parts = text.split(urlRegex);
+        
+        return parts.map((part, i) => {
+            if (part && part.match(urlRegex)) {
+                // Prevenir capturar puntuación al final de una frase (ej: "mira google.com.")
+                let cleanUrl = part;
+                let suffix = '';
+                const lastChar = cleanUrl.slice(-1);
+                if (['.', ',', ')', '!', '?', ';'].includes(lastChar)) {
+                    suffix = lastChar;
+                    cleanUrl = cleanUrl.slice(0, -1);
+                }
+
+                const href = cleanUrl.startsWith('http') 
+                    ? cleanUrl 
+                    : `https://${cleanUrl.startsWith('www.') ? cleanUrl : cleanUrl}`;
+
+                return (
+                    <span key={i}>
+                        <a 
+                            href={href} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className={`${isMe ? 'text-white underline hover:text-blue-100' : 'text-azul-primario underline hover:text-azul-primario/80'} transition-opacity break-all font-medium`}
+                        >
+                            {cleanUrl}
+                        </a>
+                        {suffix}
+                    </span>
+                );
+            }
+            return part;
+        });
+    };
+
     // Helper para detectar si un mensaje es un archivo/imagen
     const renderMessageContent = (msg: any) => {
         let content = msg.content;
         let isMedia = false;
         let url = '';
         let fileName = 'Archivo';
+        const isMe = msg.senderId === user?.id;
 
         // 1. Detectar si es un link de Markdown de los mensajes viejos: [name](url)
         const mdLinkRegex = /\[(.*?)\]\((https?:\/\/.*?)\)/;
@@ -137,14 +180,26 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
             isMedia = true;
             fileName = match[1];
             url = match[2];
-        } else if (content.startsWith('http')) {
-            // 2. O si es una URL limpia de los mensajes nuevos
-            isMedia = true;
-            url = content;
-            fileName = url.split('/').pop()?.split('?')[0] || 'Archivo';
+        } else if (content.startsWith('http') || content.startsWith('www.') || content.match(/^[a-zA-Z0-9.-]+\.(?:com|net|org|edu|gov|io|co|es|cl|mx|ar|pe|co\.ve)/i)) {
+            // 2. Solo tratar como media si tiene una extensión conocida o es un archivo subido
+            const tempUrl = content.split('?')[0].toLowerCase();
+            const hasMediaExtension = MEDIA_EXTENSIONS.some(ext => tempUrl.endsWith(`.${ext}`));
+            
+            if (hasMediaExtension) {
+                isMedia = true;
+                url = content;
+                fileName = url.split('/').pop()?.split('?')[0] || 'Archivo';
+            }
         }
 
-        if (!isMedia) return <p className="text-sm whitespace-pre-wrap">{content}</p>;
+        // Si NO es media (archivo/imagen), renderizar como texto linkificado
+        if (!isMedia) {
+            return (
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {linkifyText(content, isMe)}
+                </div>
+            );
+        }
 
         const extension = url.split('.').pop()?.split('?')[0].toLowerCase();
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension || '');
@@ -183,14 +238,14 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         }
 
         return (
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
                 <div className={`flex items-center gap-3 p-3 rounded-xl border ${
-                    msg.senderId === user?.id 
+                    isMe 
                     ? 'bg-white/10 border-white/20 text-white' 
                     : 'bg-white border-gray-200 text-gray-800'
                 } shadow-sm`}>
                     <div className={`p-2 rounded-lg ${
-                        msg.senderId === user?.id ? 'bg-white/20' : 'bg-azul-primario/10 text-azul-primario'
+                        isMe ? 'bg-white/20' : 'bg-azul-primario/10 text-azul-primario'
                     }`}>
                         <FiFileText size={24} />
                     </div>
@@ -203,7 +258,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={`p-2 rounded-lg transition-colors ${
-                            msg.senderId === user?.id ? 'hover:bg-white/20' : 'hover:bg-gray-100'
+                            isMe ? 'hover:bg-white/20' : 'hover:bg-gray-100'
                         }`}
                         title="Descargar archivo"
                     >

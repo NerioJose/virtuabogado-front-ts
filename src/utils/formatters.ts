@@ -45,3 +45,22 @@ export const formatLawyerName = (name: string | null | undefined): string => {
   
   return `Dr. ${capitalizeName(trimmedName)}`;
 };
+
+/**
+ * Convierte una cadena en un slug amigable para URLs y nombres de archivo.
+ * @param text Texto a convertir
+ * @returns Slug (ej. "Asesoría Empresarial" -> "asesoria-empresarial")
+ */
+export const slugify = (text: string | null | undefined): string => {
+  if (!text) return '';
+  
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .normalize('NFD') // Separar acentos de las letras
+    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+    .replace(/\s+/g, '-') // Reemplazar espacios por guiones
+    .replace(/[^\w-]+/g, '') // Eliminar caracteres no permitidos
+    .replace(/--+/g, '-'); // Eliminar guiones repetidos
+};

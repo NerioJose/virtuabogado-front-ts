@@ -16,6 +16,7 @@ import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
+import { formatCurrency } from '@/utils/formatters';
 
 // Tipos para las estadísticas
 interface Stats {
@@ -95,7 +96,7 @@ const StatCard = memo(
 					<p className="text-3xl font-bold text-gray-800 mt-1">
 						{typeof value === 'number' &&
 							title.toLowerCase().includes('ingreso')
-							? `$${value.toLocaleString()}`
+							? formatCurrency(value)
 							: value}
 					</p>
 				</div>
@@ -407,25 +408,25 @@ return (
 					<div className="flex justify-between items-center">
 						<p className="text-gray-600">Ingresos Totales</p>
 						<p className="font-semibold">
-							${stats.ingresosTotales.toLocaleString()}
+							{formatCurrency(stats.ingresosTotales)}
 						</p>
 					</div>
 					<div className="flex justify-between items-center">
 						<p className="text-gray-600">Pagos a Abogados</p>
 						<p className="font-semibold">
-							${Math.max(0, stats.pagosAbogados).toLocaleString()}
+							{formatCurrency(Math.max(0, stats.pagosAbogados))}
 						</p>
 					</div>
 					<div className="flex justify-between items-center">
 						<p className="text-gray-600">Gastos Operativos</p>
 						<p className="font-semibold">
-							${stats.gastosOperativos.toLocaleString()}
+							{formatCurrency(stats.gastosOperativos)}
 						</p>
 					</div>
 					<div className="pt-2 border-t border-gray-200 flex justify-between items-center">
 						<p className="font-semibold text-gray-800">Ganancias Netas</p>
 						<p className="font-bold text-green-600">
-							${stats.gananciasNetas.toLocaleString()}
+							{formatCurrency(stats.gananciasNetas)}
 						</p>
 					</div>
 				</div>

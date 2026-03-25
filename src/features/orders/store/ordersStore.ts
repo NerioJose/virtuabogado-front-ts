@@ -41,6 +41,26 @@ export const useOrdersStore = create<OrdersState>()(
                 set({ orders, isLoading: false, error: null });
             },
 
+            upsertOrder: (order: Order) => {
+                set((state) => {
+                    const exists = state.orders.some((o) => o.id === order.id);
+                    if (exists) {
+                        return {
+                            orders: state.orders.map((o) => (o.id === order.id ? { ...o, ...order } : o)),
+                        };
+                    }
+                    return {
+                        orders: [...state.orders, order],
+                    };
+                });
+            },
+
+            updateOrder: (orderId: string, updates: Partial<Order>) => {
+                set((state) => ({
+                    orders: state.orders.map((o) => (o.id === orderId ? { ...o, ...updates } : o)),
+                }));
+            },
+
             fetchOrders: async (filters?: OrdersFilters) => {
                 set({ isLoading: true, error: null });
                 try {

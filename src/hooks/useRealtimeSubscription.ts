@@ -50,14 +50,33 @@ export const useRealtimeSubscription = () => {
         const supabase = createClient();
 
         const handleUpdate = (payload: any) => {
-            const eventType = payload?.event;
-            console.log(`📡 [Broadcast] ${eventType} recibido:`, payload?.payload);
+            // Unificar extracción del evento y el contenido
+            // A veces viene en payload.event, otras directamente.
+            const eventName = payload?.event || (payload?.payload as any)?.event;
+            const eventPayload = payload?.payload || payload;
             
-            // Re-fetch según el tipo de evento
-            if (eventType === 'order-updated') {
-                queryClient.refetchQueries({ queryKey: ORDER_KEYS.all, type: 'active' });
-            } else if (eventType === 'service-updated') {
-                queryClient.refetchQueries({ queryKey: ['services'], type: 'active' });
+            console.log(`📡 [Broadcast] ${eventName} recibido:`, eventPayload);
+            
+            // Re-fetch y actualización de Stores para reactividad máxima
+            if (eventName === 'order-updated') {
+                // Sincronizar con el store de órdenes si hay ID
+                if (eventPayload?.orderId) {
+                    const { useOrdersStore } = require('@/features/orders/store/ordersStore');
+                    useOrdersStore.getState().updateOrder(eventPayload.orderId, {
+                        status: eventPayload.status,
+                        lawyerId: eventPayload.lawyerId,
+                    });
+                }
+                
+                // Invalida TODO lo relacionado a órdenes para un refresh total
+                queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            } else if (eventName === 'service-updated') {
+                if (eventPayload?.serviceId) {
+                    const { useServicesStore } = require('@/features/services/store/servicesStore');
+                    useServicesStore.getState().updateServiceState(eventPayload.serviceId, eventPayload);
+                }
+                queryClient.invalidateQueries({ queryKey: ['services'], refetchType: 'all' });
             }
         };
 

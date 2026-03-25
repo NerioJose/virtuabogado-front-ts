@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fi';
 import { useOrders, OrderStatus } from '@/features/orders';
 import { ElementoSeleccionable } from '@/types';
+import { formatCurrency } from '@/utils/formatters';
 
 interface FinanzasPanelProps {
 	terminoBusqueda: string;
@@ -137,7 +138,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								<div>
 									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ingresos Totales</p>
 									<p className="text-2xl font-bold text-gray-900 mt-1">
-										${resumenFinanciero.ingresosTotales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+										{formatCurrency(resumenFinanciero.ingresosTotales)}
 									</p>
 								</div>
 								<div className="p-3 bg-green-50 rounded-lg">
@@ -152,7 +153,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								<div>
 									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pagos a Abogados</p>
 									<p className="text-2xl font-bold text-gray-900 mt-1">
-										${resumenFinanciero.pagosAbogados.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+										{formatCurrency(resumenFinanciero.pagosAbogados)}
 									</p>
 								</div>
 								<div className="p-3 bg-blue-50 rounded-lg">
@@ -167,7 +168,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								<div>
 									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Gastos Operativos</p>
 									<p className="text-2xl font-bold text-gray-900 mt-1">
-										${resumenFinanciero.gastosOperativos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+										{formatCurrency(resumenFinanciero.gastosOperativos)}
 									</p>
 								</div>
 								<div className="p-3 bg-red-50 rounded-lg">
@@ -182,7 +183,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								<div>
 									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ganancias Netas</p>
 									<p className={`text-2xl font-bold mt-1 ${resumenFinanciero.gananciasNetas >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
-										${resumenFinanciero.gananciasNetas.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+										{formatCurrency(resumenFinanciero.gananciasNetas)}
 									</p>
 								</div>
 								<div className={`p-3 rounded-lg ${resumenFinanciero.gananciasNetas >= 0 ? 'bg-indigo-50' : 'bg-red-50'}`}>
@@ -301,7 +302,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
 											<div className="text-sm font-bold text-gray-900">
-												${order.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+												{formatCurrency(order.total)}
 											</div>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
@@ -356,7 +357,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								Atención: Ingresos Pendientes
 							</p>
 							<p className="text-sm text-amber-700 mt-1">
-								Tienes <span className="font-bold">${resumenFinanciero.ingresosPendientes.toLocaleString()}</span> en transacciones que aún no han sido completadas.
+								Tienes <span className="font-bold">{formatCurrency(resumenFinanciero.ingresosPendientes)}</span> en transacciones que aún no han sido completadas.
 							</p>
 						</div>
 					</div>

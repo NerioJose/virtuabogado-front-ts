@@ -40,6 +40,14 @@ export const CheckoutModal: React.FC = () => {
         }
     }, [step, clearStorage]);
 
+    // 🛡️ GUARDA DE SEGURIDAD: Si está abierto en Paso 1 pero ya está autenticado, saltar al Paso 2
+    useEffect(() => {
+        if (isOpen && step === 1 && isAuthenticated) {
+            console.log('🛡️ CheckoutModal Guard: User is authenticated, skipping to Step 2');
+            useCheckoutStore.getState().setStep(2);
+        }
+    }, [isOpen, step, isAuthenticated]);
+
     // Prevenir scroll del body cuando el modal está abierto
     useEffect(() => {
         if (isOpen) {

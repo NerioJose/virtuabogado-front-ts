@@ -36,43 +36,58 @@ export const useCheckoutStore = create<CheckoutState>()(
         openCheckout: (service: Servicio) => {
             const currentState = get();
 
-            if (currentState.step === 3) {
+            // Si el checkout previo se completó (Paso 3), resetear antes de abrir uno nuevo
+            if (currentState.step === 3 || currentState.completedAt) {
+                console.log('🔄 Resetting checkout state for a new purchase...');
                 set(getInitialState());
+                // Pequeño delay para asegurar que el estado se limpie antes de re-abrir
                 setTimeout(() => {
                     get().openCheckout(service);
-                }, 50);
+                }, 10);
                 return;
             }
 
-            const authUser = useAuthStore.getState().user;
-            const isUserAuthenticated = useAuthStore.getState().isAuthenticated;
+            // Obtener estado de autenticación actual
+            const authStore = useAuthStore.getState();
+            const authUser = authStore.user;
+            const isUserAuthenticated = authStore.isAuthenticated;
 
+            console.log('🛒 OpenCheckout:', { 
+                service: service.titulo, 
+                isUserAuthenticated, 
+                hasUser: !!authUser 
+            });
+
+            // Si el usuario está autenticado, saltar directamente al paso 2 (Pago)
             if (isUserAuthenticated && authUser) {
+                console.log('⏭️ Skipping to Step 2 for authenticated user:', authUser.email);
+                
                 const prefilledUserData = {
                     email: authUser.email,
-                    name: authUser.nombre,
-                    nombre: authUser.nombre,
+                    name: authUser.nombre || '',
+                    nombre: authUser.nombre || '',
                     phone: authUser.telefono || '',
                     createAccount: false,
                 };
 
                 set({
                     ...getInitialState(),
-                    completedAt: null,
                     isOpen: true,
                     service,
-                    total: service.precio || 0,
-                    step: 2,
+                    total: Number(service.precio) || 0,
+                    step: 2, // PAGO
                     userData: prefilledUserData,
                     isExistingUser: true,
+                    completedAt: null,
                 });
             } else {
+                console.log('👤 Starting at Step 1 for guest/unauthenticated user');
                 set({
                     ...getInitialState(),
                     isOpen: true,
                     service,
-                    total: service.precio || 0,
-                    step: 1,
+                    total: Number(service.precio) || 0,
+                    step: 1, // IDENTIDAD
                     userData: null,
                     isExistingUser: false,
                     existingUserId: null,

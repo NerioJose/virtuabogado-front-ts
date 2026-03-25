@@ -64,16 +64,22 @@ export const useCheckoutStorage = () => {
                 const store = useCheckoutStore.getState();
                 const isAuth = useAuthStore.getState().isAuthenticated;
 
+                console.log('🔄 useCheckoutStorage: Re-opening checkout from storage', { 
+                    step: data.step, 
+                    isAuth 
+                });
+
                 store.openCheckout(data.service);
 
                 if (data.userData) {
                     store.setUserData(data.userData);
                 }
 
-                // Solo restaurar el paso si el usuario está autenticado.
-                // Si es invitado, siempre forzar paso 1 por seguridad.
-                if (data.step && isAuth) {
-                    store.setStep(data.step);
+                // Si está autenticado, NUNCA forzar paso 1 si ya teníamos un paso superior
+                // Si no está autenticado, siempre forzar paso 1 (Seguridad)
+                if (isAuth) {
+                    const targetStep = data.step ? Math.max(data.step, 2) : 2;
+                    store.setStep(targetStep as any);
                 } else {
                     store.setStep(1);
                 }

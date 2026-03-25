@@ -22,13 +22,17 @@ export const useRealtimeSubscription = () => {
         const pollInterval = setInterval(() => {
             if (document.visibilityState === 'visible' && user?.id) {
                 console.log('🔄 [Polling] Refrescando datos en segundo plano...');
-                // Force refetch all active order queries
+                // Force refetch all active order and service queries
                 queryClient.refetchQueries({ 
                     queryKey: ORDER_KEYS.all,
                     type: 'active' 
                 });
+                queryClient.refetchQueries({
+                    queryKey: ['services'],
+                    type: 'active'
+                });
             }
-        }, 60_000); // Reducido de 30s a 60s para optimizar consultas
+        }, 30_000); // Reducido a 30s para mayor respuesta
 
         return () => clearInterval(pollInterval);
     }, [queryClient, user?.id]);
@@ -45,19 +49,23 @@ export const useRealtimeSubscription = () => {
 
         const supabase = createClient();
 
-        const handleOrderUpdate = (payload: any) => {
-            console.log('📡 [Broadcast] order-updated recibido:', payload?.payload);
-            // Force immediate refetch of ALL active order queries
-            queryClient.refetchQueries({
-                queryKey: ORDER_KEYS.all,
-                type: 'active',
-            });
+        const handleUpdate = (payload: any) => {
+            const eventType = payload?.event;
+            console.log(`📡 [Broadcast] ${eventType} recibido:`, payload?.payload);
+            
+            // Re-fetch según el tipo de evento
+            if (eventType === 'order-updated') {
+                queryClient.refetchQueries({ queryKey: ORDER_KEYS.all, type: 'active' });
+            } else if (eventType === 'service-updated') {
+                queryClient.refetchQueries({ queryKey: ['services'], type: 'active' });
+            }
         };
 
         // Canal global - todos los administradores y usuarios lo reciben
-        const globalChannel = supabase.channel('order-updates');
+        const globalChannel = supabase.channel('app-updates');
         globalChannel
-            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .on('broadcast', { event: 'order-updated' }, handleUpdate)
+            .on('broadcast', { event: 'service-updated' }, handleUpdate)
             .subscribe((status) => {
                 console.log('📡 [Broadcast Global] Estado:', status);
             });
@@ -65,7 +73,7 @@ export const useRealtimeSubscription = () => {
         // Canal personal - notificaciones dirigidas (abogado asignado, cliente propietario)
         const personalChannel = supabase.channel(`global_${user.id}`);
         personalChannel
-            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .subscribe((status) => {
                 console.log(`📡 [Broadcast Personal global_${user.id}] Estado:`, status);
             });

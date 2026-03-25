@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { broadcastServiceUpdate } from '@/lib/broadcast';
 
 export async function GET(
     req: Request,
@@ -42,6 +43,12 @@ export async function PATCH(
             }
         });
 
+        // 📡 Broadcast a todos los usuarios
+        broadcastServiceUpdate({
+            serviceId: service.id,
+            eventType: 'updated',
+        });
+
         return NextResponse.json(service);
     } catch (error) {
         console.error('Error updating service:', error);
@@ -59,6 +66,12 @@ export async function DELETE(
         const service = await prisma.service.update({
             where: { id: parseInt(id) },
             data: { activo: false }
+        });
+
+        // 📡 Broadcast a todos los usuarios
+        broadcastServiceUpdate({
+            serviceId: service.id,
+            eventType: 'deleted',
         });
 
         return NextResponse.json({ message: 'Service deactivated successfully', service });

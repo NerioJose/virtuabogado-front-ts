@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { broadcastServiceUpdate } from '@/lib/broadcast';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: Request) {
     try {
@@ -32,6 +36,12 @@ export async function POST(req: Request) {
                 imagenUrl,
                 activo: activo ?? true
             }
+        });
+
+        // 📡 Broadcast a todos los usuarios
+        broadcastServiceUpdate({
+            serviceId: service.id,
+            eventType: 'created',
         });
 
         return NextResponse.json(service);

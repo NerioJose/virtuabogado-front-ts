@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CheckoutModal, useCheckout, CartRecovery } from '@/features/checkout';
 import { useServices } from '@/features/services/hooks/useServices';
+import { useServicesRealtime } from '@/features/services/hooks/useServicesRealtime';
 import { Service } from '@/features/services/types/services.types';
 import { useServicesStore } from '@/features/services/store/servicesStore';
 
@@ -53,7 +54,8 @@ import { slugify } from '@/utils/formatters';
 
 export default function ServiciosPage() {
 	const { openCheckout } = useCheckout();
-	const { isLoading } = useServices(); // Mantenemos el hook para que se encargue del fetch e invalidación
+	const { isLoading } = useServices();
+	useServicesRealtime(); // Tiempo real para todos los usuarios (sin auth requerida)
 	const activeServices = useServicesStore(state => state.activeServices);
 
 	// Helper para previsualizar imagen con la misma logica del admin pero mejorada

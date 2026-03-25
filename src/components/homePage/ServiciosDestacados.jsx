@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useServices } from '@/features/services/hooks/useServices';
+import { useServicesRealtime } from '@/features/services/hooks/useServicesRealtime';
+import { useServicesStore } from '@/features/services/store/servicesStore';
+import { slugify } from '@/utils/formatters';
 
 const ICON_MAP = {
 	'Consultas Legales': (
@@ -42,17 +45,31 @@ const DEFAULT_ICON = (
 );
 
 export default function ServiciosDestacados() {
-    const { data: servicesData, isLoading } = useServices();
+    const { isLoading } = useServices();
+    useServicesRealtime(); // Suscripción en tiempo real (todos los usuarios, sin auth)
+    const activeServices = useServicesStore(state => state.activeServices);
     
-    // Tomar solo los primeros 3 servicios activos para la home
-    const services = (servicesData || [])
-        .filter(s => s.activo)
-        .slice(0, 3)
-        .map(s => ({
-            title: s.titulo,
-            description: s.descripcion,
-            icon: ICON_MAP[s.titulo] || DEFAULT_ICON,
-        }));
+    // Obtener servicios activos desde el store de Zustand para actualización instantánea
+    const services = (activeServices || [])
+        .map(s => {
+            const slug = slugify(s.titulo);
+            // Mapeos manuales para consistencia con la página de servicios
+            const manualMap = {
+                'consultas-legales': 'consulta-legal',
+                'revision-de-documentos': 'revision-documentos',
+                'asesoria-legal': 'consulta-legal',
+                'representacion-legal': 'representacion-legal'
+            };
+            const finalSlug = manualMap[slug] || slug;
+
+            return {
+                id: s.id,
+                title: s.titulo,
+                description: s.descripcion,
+                icon: ICON_MAP[s.titulo] || DEFAULT_ICON,
+                imagen: `/images/${finalSlug}.jpg`
+            };
+        });
 
 	return (
 		<>
@@ -75,10 +92,10 @@ export default function ServiciosDestacados() {
 						</p>
 					</div>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+					<div className="flex flex-wrap justify-center gap-10">
 						{isLoading ? (
                             [1, 2, 3].map(i => (
-                                <div key={i} className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 animate-pulse">
+                                <div key={i} className="w-full md:w-[calc(50%-1.25rem)] lg:w-[calc(33.333%-1.875rem)] bg-white p-8 rounded-3xl shadow-xl border border-gray-100 animate-pulse">
                                     <div className="w-16 h-16 bg-gray-100 rounded-2xl mb-6"></div>
                                     <div className="h-6 bg-gray-100 rounded w-3/4 mb-4"></div>
                                     <div className="h-20 bg-gray-100 rounded mb-6"></div>
@@ -88,12 +105,12 @@ export default function ServiciosDestacados() {
                         ) : (
                             services.map((service, index) => (
                                 <motion.div
-                                    key={index}
+                                    key={service.id}
                                     initial={{ opacity: 0, y: 30 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.6, delay: index * 0.1 }}
                                     viewport={{ once: true }}
-                                    className="group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:-translate-y-2 relative overflow-hidden"
+                                    className="w-full md:w-[calc(50%-1.25rem)] lg:w-[calc(33.333%-1.875rem)] group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:-translate-y-2 relative overflow-hidden"
                                 >
                                     <div className="absolute top-0 left-0 w-2 h-full bg-azul-primario scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-500"></div>
                                     

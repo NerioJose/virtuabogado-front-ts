@@ -10,30 +10,53 @@ export const servicesKeys = {
 
 import { useServicesStore } from '../store/servicesStore';
 
+import { useEffect } from 'react';
+
 export const useServices = () => {
     const setServices = useServicesStore(state => state.setServices);
-    return useQuery({
+    const query = useQuery({
         queryKey: servicesKeys.active,
-        queryFn: async () => {
-            const data = await servicesService.getActive();
-            // Solo actualizamos el store si hay datos
-            if (data) setServices(data);
-            return data;
-        },
+        queryFn: () => servicesService.getActive(),
+        staleTime: 30000, // 30 segundos
+        refetchOnWindowFocus: true,
     });
+
+    // Sincronizar con el store de Zustand cuando cambien los datos
+    useEffect(() => {
+        if (query.data) {
+            setServices(query.data);
+        }
+    }, [query.data, setServices]);
+
+    return query;
 };
 
 export const useAdminServices = () => {
     const setServices = useServicesStore(state => state.setServices);
-    return useQuery({
+    const query = useQuery({
         queryKey: servicesKeys.all,
-        queryFn: async () => {
-            const data = await servicesService.getAll();
-            if (data) setServices(data);
-            return data;
-        },
+        queryFn: () => servicesService.getAll(),
+        staleTime: 5000,
+        refetchOnWindowFocus: true,
     });
+
+    useEffect(() => {
+        if (query.data) {
+            setServices(query.data);
+        }
+    }, [query.data, setServices]);
+
+    return query;
 };
+
+// Emite un mensaje a todas las pestañas abiertas para que refresquen los servicios
+function notifyServiceChange() {
+    if (typeof window !== 'undefined' && window.BroadcastChannel) {
+        const ch = new BroadcastChannel('services-update');
+        ch.postMessage('changed');
+        ch.close();
+    }
+}
 
 export const useCreateService = () => {
     const queryClient = useQueryClient();
@@ -42,9 +65,13 @@ export const useCreateService = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: servicesKeys.all });
             queryClient.invalidateQueries({ queryKey: servicesKeys.active });
+            notifyServiceChange(); // Notifica a otras pestañas
         },
     });
 };
+
+// Debounce timer compartido para evitar múltiples refetches al hacer toggles rápidos
+let invalidateTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUpdateService = () => {
     const queryClient = useQueryClient();
@@ -52,14 +79,27 @@ export const useUpdateService = () => {
     
     return useMutation({
         mutationFn: ({ id, ...data }: UpdateServiceRequest) => servicesService.update(id, data),
+        onMutate: async (variables) => {
+            // Optimistic update: actualiza el store INMEDIATAMENTE sin esperar al servidor
+            updateServiceState(variables.id, variables);
+        },
         onSuccess: (updatedService) => {
-            // Actualizar store global inmediatamente
+            // Sincronizar con la respuesta real del servidor
             if (updatedService) {
                 updateServiceState(updatedService.id, updatedService);
             }
+            // Debounce: solo invalida queries 500ms después del último toggle
+            if (invalidateTimer) clearTimeout(invalidateTimer);
+            invalidateTimer = setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: servicesKeys.all });
+                queryClient.invalidateQueries({ queryKey: servicesKeys.active });
+                notifyServiceChange(); // Notifica a otras pestañas
+            }, 500);
+        },
+        onError: (_err, variables) => {
+            // Revertir en caso de error: refrescar todo desde el servidor
             queryClient.invalidateQueries({ queryKey: servicesKeys.all });
             queryClient.invalidateQueries({ queryKey: servicesKeys.active });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.detail(updatedService.id) });
         },
     });
 };
@@ -75,6 +115,7 @@ export const useDeactivateService = () => {
             updateServiceState(id, { activo: false });
             queryClient.invalidateQueries({ queryKey: servicesKeys.all });
             queryClient.invalidateQueries({ queryKey: servicesKeys.active });
+            notifyServiceChange(); // Notifica a otras pestañas
         },
     });
 };

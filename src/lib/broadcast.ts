@@ -108,3 +108,28 @@ export async function broadcastOrderUpdate(params: {
         console.warn('⚠️ [Broadcast] Error enviando broadcasts (non-critical):', err)
     );
 }
+/**
+ * Notifica a todos los clientes sobre un cambio en el catálogo de servicios.
+ */
+export async function broadcastServiceUpdate(params: {
+    serviceId: number;
+    eventType?: 'created' | 'updated' | 'deleted';
+}): Promise<void> {
+    const { serviceId, eventType = 'updated' } = params;
+    
+    const payload = {
+        serviceId,
+        eventType,
+        timestamp: new Date().toISOString(),
+    };
+
+    // Canal global de actualizaciones - escuchado por el el hook useRealtimeSubscription
+    // en la versión unificada 'app-updates'
+    const broadcasts: Promise<boolean>[] = [];
+    broadcasts.push(sendBroadcast('app-updates', 'service-updated', payload));
+
+    // Fire-and-forget
+    Promise.all(broadcasts).catch((err) =>
+        console.warn('⚠️ [Broadcast] Error enviando broadcast de servicios:', err)
+    );
+}

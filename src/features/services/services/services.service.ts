@@ -8,14 +8,14 @@ class ServicesService {
      * Obtener todos los servicios activos (para clientes)
      */
     async getActive(): Promise<Service[]> {
-        return await apiClient.get<Service[]>(this.BASE_URL);
+        return await apiClient.get<Service[]>(`${this.BASE_URL}?t=${Date.now()}`);
     }
 
     /**
      * Obtener todos los servicios (para administradores)
      */
     async getAll(): Promise<Service[]> {
-        return await apiClient.get<Service[]>(`${this.BASE_URL}?all=true`);
+        return await apiClient.get<Service[]>(`${this.BASE_URL}?all=true&t=${Date.now()}`);
     }
 
     /**

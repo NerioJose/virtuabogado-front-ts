@@ -90,8 +90,8 @@ export async function broadcastOrderUpdate(params: {
 
     const broadcasts: Promise<boolean>[] = [];
 
-    // Canal global de órdenes - todos los admins y subscriptores lo reciben
-    broadcasts.push(sendBroadcast('order-updates', 'order-updated', payload));
+    // Canal global de actualizaciones - escuchado por useRealtimeSubscription
+    broadcasts.push(sendBroadcast('app-updates', 'order-updated', payload));
 
     // Canal personal del cliente (si existe)
     if (userId) {

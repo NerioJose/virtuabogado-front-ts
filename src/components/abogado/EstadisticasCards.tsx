@@ -8,6 +8,7 @@ import {
   FiCheckCircle,
 } from 'react-icons/fi';
 import { Estadisticas } from '@/types';
+import { formatCurrency } from '@/utils/formatters';
 
 interface EstadisticasCardsProps {
   estadisticas: Estadisticas;
@@ -77,7 +78,7 @@ export default function EstadisticasCards({ estadisticas }: EstadisticasCardsPro
           <div>
             <p className="text-gray-500 text-sm">Ingresos del Mes</p>
             <h3 className="text-3xl font-bold text-azul-primario mt-2">
-              {estadisticas.ingresosMes}€
+              {formatCurrency(estadisticas.ingresosMes)}
             </h3>
           </div>
           <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">

@@ -27,6 +27,7 @@ import ClientesAbogadoPanel from './ClientesAbogadoPanel';
 import FacturacionPanel from './FacturacionPanel';
 import DocumentosPanel from './DocumentosPanel';
 import PerfilAbogadoPanel from './PerfilAbogadoPanel';
+import { formatCurrency } from '@/utils/formatters';
 
 interface AbogadoPanelProps {
 	abogadoId?: string;
@@ -322,7 +323,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 								<div>
 									<p className="text-gray-500 text-sm">Ingresos del Mes</p>
 									<h3 className="text-3xl font-bold text-azul-primario mt-2">
-										{estadisticas.ingresosMes}€
+										{formatCurrency(estadisticas.ingresosMes)}
 									</h3>
 								</div>
 								<div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">

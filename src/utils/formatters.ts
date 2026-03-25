@@ -47,6 +47,30 @@ export const formatLawyerName = (name: string | null | undefined): string => {
 };
 
 /**
+ * Formatea un número como moneda (USD por defecto)
+ * @param amount Cantidad a formatear
+ * @param currency Código de moneda (ej. "USD", "EUR")
+ * @returns Cadena formateada (ej. 1250.5 -> "$1,250.50")
+ */
+export const formatCurrency = (
+  amount: number | string | null | undefined,
+  currency: string = 'USD'
+): string => {
+  if (amount === null || amount === undefined) return '$0.00';
+  
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  if (isNaN(numericAmount)) return '$0.00';
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericAmount);
+};
+
+/**
  * Convierte una cadena en un slug amigable para URLs y nombres de archivo.
  * @param text Texto a convertir
  * @returns Slug (ej. "Asesoría Empresarial" -> "asesoria-empresarial")

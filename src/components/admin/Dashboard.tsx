@@ -10,6 +10,7 @@ import {
   FiCalendar,
   FiClock
 } from 'react-icons/fi';
+import { formatCurrency } from '@/utils/formatters';
 
 // Tipos de datos
 interface EstadisticasGenerales {
@@ -214,7 +215,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm">Ingresos Mes Actual</p>
-              <h3 className="text-3xl font-bold text-azul-primario mt-2">{estadisticas.ingresos_mes_actual.toLocaleString('es-ES')} €</h3>
+              <h3 className="text-3xl font-bold text-azul-primario mt-2">{formatCurrency(estadisticas.ingresos_mes_actual)}</h3>
             </div>
             <div className="w-12 h-12 bg-azul-claro/20 rounded-lg flex items-center justify-center text-azul-primario">
               <FiDollarSign size={24} />

@@ -38,10 +38,10 @@ async function sendBroadcast(supabaseAdmin: any, channelName: string, payload: a
 
 export async function GET(
     request: Request,
-    { params }: { params: { orderId: string } }
+    { params }: { params: Promise<{ orderId: string }> }
 ) {
     try {
-        const orderId = params.orderId;
+        const { orderId } = await params;
         const supabase = await createClient();
         
         // Verificar autenticación
@@ -100,10 +100,10 @@ export async function GET(
 
 export async function POST(
     request: Request,
-    { params }: { params: { orderId: string } }
+    { params }: { params: Promise<{ orderId: string }> }
 ) {
     try {
-        const orderId = params.orderId;
+        const { orderId } = await params;
         const supabase = await createClient();
         
         // Verificar autenticación
@@ -196,10 +196,10 @@ export async function POST(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { orderId: string } }
+    { params }: { params: Promise<{ orderId: string }> }
 ) {
     try {
-        const orderId = params.orderId;
+        const { orderId } = await params;
         const { messageId } = await request.json();
         
         if (!messageId) {

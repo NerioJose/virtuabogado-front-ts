@@ -9,8 +9,8 @@ export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const supabase = await createClient();
     const { id } = await params;
+    const supabase = await createClient();
     console.log(`🔍 [Orders API] Fetching order: ${id}`);
 
     try {

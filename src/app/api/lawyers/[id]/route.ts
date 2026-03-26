@@ -4,9 +4,10 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         // Verificar autenticación
         let { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -24,8 +25,6 @@ export async function PUT(
         if (!user) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
-
-        const id = params.id;
         
         // Determinar si el usuario es el dueño del perfil o un ADMIN
         const isOwner = user.id === id;
@@ -87,9 +86,10 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         // Verificar autenticación
         let { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -121,8 +121,6 @@ export async function DELETE(
         if (userRole !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
-
-        const id = params.id;
 
         // Borrado lógico
         await prisma.user.update({

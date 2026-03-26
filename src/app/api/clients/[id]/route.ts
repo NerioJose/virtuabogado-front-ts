@@ -4,9 +4,10 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         // Verificar autenticación
         let { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -39,7 +40,6 @@ export async function PUT(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        const id = params.id;
         const body = await request.json();
         const { nombre, email, telefono, direccion, dni } = body;
 
@@ -82,9 +82,10 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
         // Verificar autenticación
         let { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -116,8 +117,6 @@ export async function DELETE(
         if (userRole !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
-
-        const id = params.id;
 
         // Borrado lógico
         await prisma.user.update({

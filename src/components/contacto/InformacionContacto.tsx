@@ -52,7 +52,7 @@ const InformacionContacto = React.memo(() => {
       primary: 'Estado Carabobo',
       secondary: 'Venezuela'
     }
-  ], []);
+  ], [settings]);
 
   const socialLinks: SocialLink[] = useMemo(() => [
     {

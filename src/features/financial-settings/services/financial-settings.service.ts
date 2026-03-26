@@ -46,18 +46,29 @@ class FinancialSettingsService {
             if (settings.operationalCostsPercentage < 0 || settings.operationalCostsPercentage > 100) {
                 errors.push('Los gastos operativos deben estar entre 0% y 100%');
             }
-            if (settings.operationalCostsPercentage > 30) {
-                warnings.push('Gastos operativos altos. Revisar eficiencia operativa.');
+        }
+
+        if (settings.taxPercentage !== undefined) {
+            if (settings.taxPercentage < 0 || settings.taxPercentage > 100) {
+                errors.push('Los impuestos deben estar entre 0% y 100%');
             }
         }
 
-        // Validar que la suma sea razonable (dejar margen para ganancia)
+        if (settings.platformFeePercentage !== undefined) {
+            if (settings.platformFeePercentage < 0 || settings.platformFeePercentage > 100) {
+                errors.push('La comisión de plataforma debe estar entre 0% y 100%');
+            }
+        }
+
+        // Validar que la suma no exceda el 100%
         const lawyerCommission = settings.lawyerCommissionPercentage ?? 70;
         const operationalCosts = settings.operationalCostsPercentage ?? 10;
-        const totalCosts = lawyerCommission + operationalCosts;
+        const tax = settings.taxPercentage ?? 15;
+        const platform = settings.platformFeePercentage ?? 5;
+        const totalCosts = lawyerCommission + operationalCosts + tax + platform;
 
-        if (totalCosts > 95) {
-            errors.push(`La suma de comisión (${lawyerCommission}%) + gastos (${operationalCosts}%) = ${totalCosts}% deja muy poco margen de ganancia`);
+        if (totalCosts > 100) {
+            errors.push(`La suma total de porcentajes (${totalCosts}%) no puede exceder el 100%`);
         }
 
         if (totalCosts > 85 && totalCosts <= 95) {
@@ -77,17 +88,22 @@ class FinancialSettingsService {
     calculatePreview(
         totalRevenue: number,
         lawyerCommissionPercentage: number,
-        operationalCostsPercentage: number
+        operationalCostsPercentage: number,
+        taxPercentage: number,
+        platformFeePercentage: number
     ) {
         const lawyerPayments = (totalRevenue * lawyerCommissionPercentage) / 100;
         const operationalCosts = (totalRevenue * operationalCostsPercentage) / 100;
-        const netProfit = totalRevenue - lawyerPayments - operationalCosts;
+        const taxSurcharge = (totalRevenue * taxPercentage) / 100;
+        const platformFee = (totalRevenue * platformFeePercentage) / 100;
+        
+        const netProfit = totalRevenue - lawyerPayments - operationalCosts - taxSurcharge - platformFee;
         const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
         return {
             totalRevenue,
             lawyerPayments,
-            operationalCosts,
+            operationalCosts: operationalCosts + taxSurcharge + platformFee,
             netProfit,
             profitMargin,
         };

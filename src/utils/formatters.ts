@@ -1,6 +1,4 @@
-/**
- * Utilidades para formatear texto y datos en la plataforma
- */
+import { formatUSD } from '@/lib/finance';
 
 /**
  * Capitaliza cada palabra de un nombre (nombres y apellidos)
@@ -49,25 +47,14 @@ export const formatLawyerName = (name: string | null | undefined): string => {
 /**
  * Formatea un número como moneda (USD por defecto)
  * @param amount Cantidad a formatear
- * @param currency Código de moneda (ej. "USD", "EUR")
+ * @param _currency Código de moneda (Ignorado, se usa USD)
  * @returns Cadena formateada (ej. 1250.5 -> "$1,250.50")
  */
 export const formatCurrency = (
   amount: number | string | null | undefined,
-  currency: string = 'USD'
+  _currency: string = 'USD'
 ): string => {
-  if (amount === null || amount === undefined) return '$0.00';
-  
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
-  if (isNaN(numericAmount)) return '$0.00';
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericAmount);
+  return formatUSD(amount);
 };
 
 /**

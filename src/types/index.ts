@@ -37,7 +37,8 @@ export type SeccionAbogado =
 	| 'clientes'
 	| 'facturacion'
 	| 'documentos'
-	| 'perfil';
+	| 'perfil'
+	| 'historial';
 
 // Tipos para configuración de seguridad
 export interface ConfiguracionSeguridad {
@@ -132,7 +133,8 @@ export type SeccionAdmin =
 	| 'abogados'
 	| 'finanzas'
 	| 'estadisticas'
-	| 'configuracion';
+	| 'configuracion'
+	| 'historial';
 
 // Tipo unión para elementos seleccionables en el admin
 export type ElementoSeleccionable = Abogado | Cliente | Caso | Transaccion | null;

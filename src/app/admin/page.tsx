@@ -12,7 +12,8 @@ import {
 	FiSearch,
 	FiPlus,
 	FiMenu,
-	FiX
+	FiX,
+	FiClock
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
@@ -41,6 +42,7 @@ const ConfiguracionPanel = lazy(
 	() => import('@/components/admin/ConfiguracionPanel')
 );
 const ModalContainer = lazy(() => import('@/components/admin/ModalContainer'));
+import { OrdersHistoryTable } from '@/features/orders/components/OrdersHistoryTable';
 
 // Importar tipos
 import { ElementoSeleccionable, SeccionAdmin } from '@/types/index';
@@ -214,6 +216,8 @@ export default function AdminPage() {
 				return <FiPieChart {...iconProps} />;
 			case 'configuracion':
 				return <FiSettings {...iconProps} />;
+			case 'historial':
+				return <FiClock {...iconProps} />;
 			default:
 				return null;
 		}
@@ -229,6 +233,7 @@ export default function AdminPage() {
 			finanzas: 'Gestión Financiera',
 			estadisticas: 'Estadísticas y Reportes',
 			configuracion: 'Configuración',
+			historial: 'Historial de Casos',
 		};
 
 		return titulos[seccion] || 'Panel de Administración';
@@ -247,7 +252,7 @@ export default function AdminPage() {
 
 	// Verificar si la sección permite búsqueda
 	const allowsSearch = (seccion: SeccionAdmin): boolean => {
-		return !['dashboard', 'configuracion', 'estadisticas'].includes(seccion);
+		return !['dashboard', 'configuracion', 'estadisticas', 'historial'].includes(seccion);
 	};
 
 	// Verificar si la sección permite crear nuevos elementos
@@ -322,6 +327,14 @@ export default function AdminPage() {
 					<Suspense fallback={fallback}>
 						<ConfiguracionPanel />
 					</Suspense>
+				);
+			case 'historial':
+				return (
+					<div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+						<div className="p-6">
+							<OrdersHistoryTable user={{ id: user!.id, rol: user!.rol as any }} />
+						</div>
+					</div>
 				);
 			default:
 				return (

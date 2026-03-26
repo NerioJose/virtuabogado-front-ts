@@ -121,7 +121,7 @@ export default function CompraExitosaPage() {
                 <div className="flex justify-between pt-2 border-t border-gray-200">
                   <span className="text-gray-800 font-medium">Total pagado:</span>
                   <span className="font-bold text-azul-primario">
-                    {detalleCompra.precio.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                    {detalleCompra.precio.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                   </span>
                 </div>
               </div>

@@ -16,6 +16,10 @@ import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
+import { formatUSD, serializeFinance } from '@/lib/finance';
+import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { useQuery } from '@tanstack/react-query';
 import { formatCurrency } from '@/utils/formatters';
 
 // Tipos para las estadísticas
@@ -95,8 +99,8 @@ const StatCard = memo(
 					<p className="text-gray-500 text-sm font-medium">{title}</p>
 					<p className="text-3xl font-bold text-gray-800 mt-1">
 						{typeof value === 'number' &&
-							title.toLowerCase().includes('ingreso')
-							? formatCurrency(value)
+							(title.toLowerCase().includes('ingreso') || title.toLowerCase().includes('ganancia'))
+							? formatUSD(value)
 							: value}
 					</p>
 				</div>
@@ -183,116 +187,55 @@ CaseProgressBar.displayName = 'CaseProgressBar';
 
 function DashboardStats() {
 	// ============ STORES GLOBALES & HOOKS ============
+	const user = useAuthStore(state => state.user);
 	const { data: clients = [], isLoading: clientsLoading } = useClients();
 	const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
 	const { data: orders = [], isLoading: ordersLoading } = useOrders();
-	const { data: financialSettings } = useFinancialSettings();
+	
+	// GET UNIFIED FINANCIAL SUMMARY (Single Source of Truth)
+	const { data: summary, isLoading: financialLoading } = useQuery({
+		queryKey: ['finances-summary-dashboard', user?.id],
+		queryFn: () => getFinancialSummary({ dateRange: 'all' }, { id: user!.id, rol: user!.rol as any }),
+		enabled: !!user
+	});
 
-	const isLoading = clientsLoading || lawyersLoading || ordersLoading;
+	const isLoading = clientsLoading || lawyersLoading || ordersLoading || financialLoading;
 
-	// ============ ESTADÍSTICAS CALCULADAS ============
+	// ============ ESTADÍSTICAS CALCULADAS (Single Source of Truth) ============
 	const stats = useMemo((): Stats => {
-		// Abogados
+		// Basic Counts (Client-side from fetched lists)
 		const totalAbogados = lawyers.length;
 		const abogadosPendientes = lawyers.filter(l => l.status === LawyerStatus.PENDING).length;
-
-		// Clientes
 		const totalClientes = clients.length;
+		
 		const now = new Date();
 		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-		const clientesNuevosMes = clients.filter(c =>
-			new Date(c.createdAt) >= thisMonth
-		).length;
+		const clientesNuevosMes = clients.filter(c => new Date(c.createdAt) >= thisMonth).length;
 
-		// Órdenes/Casos (usando orders como aproximación)
 		const ordenesPending = orders.filter(o => o.status === OrderStatus.PENDING).length;
 		const ordenesProcessing = orders.filter(o => o.status === OrderStatus.PROCESSING).length;
 		const ordenesCompleted = orders.filter(o => o.status === OrderStatus.COMPLETED).length;
 
-		// Ingresos - incluir PENDING, PROCESSING y COMPLETED
-		// (las órdenes del checkout empiezan en PENDING)
-		const ingresosTotales = orders
-			.filter(o =>
-				o.status === OrderStatus.PENDING ||
-				o.status === OrderStatus.PROCESSING ||
-				o.status === OrderStatus.COMPLETED
-			)
-			.reduce((sum, o) => sum + o.total, 0);
+		// PRECISIÓN FINANCIERA: Strictly from Server Actions (getFinancialSummary)
+		return {
+			totalAbogados,
+			abogadosPendientes,
+			totalClientes,
+			casosActivos: ordenesProcessing,
+			casosPendientes: ordenesPending,
+			casosCompletados: ordenesCompleted,
+			ingresosMes: summary?.totalIncome || 0,
+			ingresosTotales: summary?.totalIncome || 0,
+			gananciasNetas: summary?.realProfit || 0,
+			clientesNuevosMes,
+			crecimientoIngresos: 0,
+			gastosOperativos: summary?.operationalCostsAndTaxes || 0,
+			pagosAbogados: summary?.pendingLawyerPayments || 0,
+		};
+	}, [clients, lawyers, orders, summary]);
 
-		const ordersThisMonth = orders.filter(o =>
-			new Date(o.createdAt) >= thisMonth
-		);
-		const ingresosMes = ordersThisMonth
-			.filter(o =>
-				o.status === OrderStatus.PENDING ||
-				o.status === OrderStatus.PROCESSING ||
-				o.status === OrderStatus.COMPLETED
-			)
-			.reduce((sum, o) => sum + o.total, 0);
-
-		// Ingresos financieros con configuración dinámica
-		const lawyerCommission = financialSettings?.lawyerCommissionPercentage || 70;
-		const opCostsPercent = financialSettings?.operationalCostsPercentage || 10;
-
-		// Pagos a abogados (dinámico basado en configuración)
-		const pagosAbogados = (ingresosTotales * lawyerCommission) / 100;
-
-		// Gastos operativos (dinámico basado en configuración)
-		const gastosOperativos = (ingresosTotales * opCostsPercent) / 100;
-
-		// Ganancias netas = Ingresos - Pagos Abogados - Gastos Operativos
-		const gananciasNetas = ingresosTotales - pagosAbogados - gastosOperativos;
-
-		// Crecimiento real: comparar mes actual vs mes anterior
-		const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-		const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-		const ordersLastMonth = orders.filter(
-			(o) => new Date(o.createdAt) >= lastMonth && new Date(o.createdAt) <= lastMonthEnd
-		);
-		const ingresosLastMonth = ordersLastMonth
-			.filter(
-				(o) =>
-					o.status === OrderStatus.PENDING ||
-					o.status === OrderStatus.PROCESSING ||
-					o.status === OrderStatus.COMPLETED
-			)
-			.reduce((sum, o) => sum + o.total, 0);
-
-	const crecimientoIngresos =
-		ingresosLastMonth > 0
-			? ((ingresosMes - ingresosLastMonth) / ingresosLastMonth) * 100
-			: ingresosMes > 0
-				? 100
-				: 0;
-
-	return {
-		totalAbogados,
-		abogadosPendientes,
-		totalClientes,
-		casosActivos: ordenesProcessing,
-		casosPendientes: ordenesPending,
-		casosCompletados: ordenesCompleted,
-		ingresosMes,
-		ingresosTotales,
-		gananciasNetas,
-		clientesNuevosMes,
-		crecimientoIngresos,
-		gastosOperativos,
-		pagosAbogados, // Añadimos pagosAbogados al return
-	};
-}, [clients, lawyers, orders, financialSettings]);
-
-// Calcular el total de casos para evitar división por cero
-const totalCasos = useMemo(() => {
-	return stats.casosActivos + stats.casosPendientes + stats.casosCompletados;
-}, [stats.casosActivos, stats.casosPendientes, stats.casosCompletados]);
-
-// Calcular pagos a abogados
-const pagosAbogados = useMemo(() => {
-	return (
-		stats.ingresosTotales - stats.gananciasNetas - stats.gastosOperativos
-	);
-}, [stats.ingresosTotales, stats.gananciasNetas, stats.gastosOperativos]);
+	// Total cases for progress bar
+	const totalCasos = stats.casosActivos + stats.casosPendientes + stats.casosCompletados;
 
 
 
@@ -405,28 +348,28 @@ return (
 					Resumen Financiero
 				</h3>
 				<div className="space-y-4">
-					<div className="flex justify-between items-center">
+					<div className="flex justify-between items-center text-sm">
 						<p className="text-gray-600">Ingresos Totales</p>
 						<p className="font-semibold">
-							{formatCurrency(stats.ingresosTotales)}
+							{formatUSD(stats.ingresosTotales)}
 						</p>
 					</div>
-					<div className="flex justify-between items-center">
+					<div className="flex justify-between items-center text-sm">
 						<p className="text-gray-600">Pagos a Abogados</p>
-						<p className="font-semibold">
-							{formatCurrency(Math.max(0, stats.pagosAbogados))}
+						<p className="font-semibold text-blue-600">
+							{formatUSD(stats.pagosAbogados)}
 						</p>
 					</div>
-					<div className="flex justify-between items-center">
-						<p className="text-gray-600">Gastos Operativos</p>
-						<p className="font-semibold">
-							{formatCurrency(stats.gastosOperativos)}
+					<div className="flex justify-between items-center text-sm">
+						<p className="text-gray-600">Gastos y Tax</p>
+						<p className="font-semibold text-orange-600">
+							{formatUSD(stats.gastosOperativos)}
 						</p>
 					</div>
 					<div className="pt-2 border-t border-gray-200 flex justify-between items-center">
-						<p className="font-semibold text-gray-800">Ganancias Netas</p>
-						<p className="font-bold text-green-600">
-							{formatCurrency(stats.gananciasNetas)}
+						<p className="font-bold text-gray-800 uppercase tracking-tighter text-xs">Ganancia Real</p>
+						<p className="font-bold text-green-600 text-xl">
+							{formatUSD(stats.gananciasNetas)}
 						</p>
 					</div>
 				</div>

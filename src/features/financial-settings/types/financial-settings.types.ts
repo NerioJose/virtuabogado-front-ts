@@ -8,8 +8,7 @@ export interface FinancialSettings {
     operationalCostsPercentage: number;
     taxPercentage: number;
     platformFeePercentage: number;
-    createdAt: Date;
-    updatedAt: Date;
+    updatedAt: string;
     updatedBy?: string;
 }
 

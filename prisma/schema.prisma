@@ -89,6 +89,11 @@ model Order {
   messages  Message[]
   documents Document[]
   review    Review?
+
+  @@index([lawyerId, status])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([serviceId])
 }
 
 model FinancialSettings {

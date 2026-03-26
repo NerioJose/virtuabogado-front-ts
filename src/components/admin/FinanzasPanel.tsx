@@ -1,11 +1,6 @@
 'use client';
 
-/**
- * Panel de Finanzas - Conectado a React Query
- * Calcula métricas financieras desde datos reales de la API
- */
-
-import { useMemo, memo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import {
 	FiDollarSign,
 	FiTrendingUp,
@@ -16,9 +11,12 @@ import {
 	FiEye,
 	FiPieChart,
 } from 'react-icons/fi';
-import { useOrders, OrderStatus } from '@/features/orders';
+import { useOrders } from '@/features/orders';
 import { ElementoSeleccionable } from '@/types';
-import { formatCurrency } from '@/utils/formatters';
+import { formatUSD } from '@/lib/finance';
+import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { useQuery } from '@tanstack/react-query';
 
 interface FinanzasPanelProps {
 	terminoBusqueda: string;
@@ -29,100 +27,43 @@ interface FinanzasPanelProps {
 }
 
 function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
-	// ============ REACT QUERY (datos reales de la API) ============
-	const { data: orders = [], isLoading } = useOrders();
+	const user = useAuthStore(state => state.user);
+	const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes' | 'año' | 'all'>('mes');
 
-	const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes' | 'año'>('mes');
+	// ============ REACT QUERY (Datos Financieros Reales con Precision) ============
+	const { data: summary, isLoading: isLoadingSummary } = useQuery({
+		queryKey: ['finances', periodo, user?.id],
+		queryFn: () => getFinancialSummary({ dateRange: periodo as any }, { id: user!.id, rol: user!.rol as any }),
+		enabled: !!user
+	});
 
-	// Calcular resumen financiero desde órdenes reales
-	const resumenFinanciero = useMemo(() => {
-		const now = new Date();
-		const startDate = new Date();
+	// Para la tabla seguimos usando las órdenes generales
+	const { data: orders = [], isLoading: isLoadingOrders } = useOrders();
 
-		switch (periodo) {
-			case 'hoy':
-				startDate.setHours(0, 0, 0, 0);
-				break;
-			case 'semana':
-				startDate.setDate(now.getDate() - 7);
-				break;
-			case 'mes':
-				startDate.setMonth(now.getMonth() - 1);
-				break;
-			case 'año':
-				startDate.setFullYear(now.getFullYear() - 1);
-				break;
-		}
-
-		// Filtrar por período
-		const ordersInPeriod = orders.filter(order => {
-			if (!order.createdAt) return false;
-			const orderDate = new Date(order.createdAt);
-			return orderDate >= startDate;
-		});
-
-		// Incluir PENDING (PENDIENTE), PROCESSING (EN_PROGRESO) y COMPLETED (COMPLETADO) en ingresos
-		const ingresosTotales = ordersInPeriod
-			.filter(o =>
-				o.status === OrderStatus.PENDING ||
-				o.status === OrderStatus.PROCESSING ||
-				o.status === OrderStatus.COMPLETED
-			)
-			.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-
-		const pagosAbogados = ingresosTotales * 0.25; // 25% comisión abogados (Simulado)
-		const gastosOperativos = ingresosTotales * 0.10; // 10% gastos operativos (Simulado)
-		const gananciasNetas = ingresosTotales - pagosAbogados - gastosOperativos;
-
-		// Solo órdenes pendientes (sin completar)
-		const ingresosPendientes = ordersInPeriod
-			.filter(o => o.status === OrderStatus.PENDING || o.status === OrderStatus.PROCESSING)
-			.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-
-		return {
-			ingresosTotales,
-			pagosAbogados,
-			gastosOperativos,
-			gananciasNetas,
-			ingresosPendientes,
-			cantidadTransacciones: ordersInPeriod.length,
-		};
-	}, [orders, periodo]);
-
-	// Filtrar órdenes por búsqueda (sobre el total de órdenes del período para mejor UX)
+	// Filtrar órdenes por búsqueda
 	const ordenesFiltradas = useMemo(() => {
-		// Primero filtramos las que están en el período para la tabla
-		const now = new Date();
-		const startDate = new Date();
-		switch (periodo) {
-			case 'hoy': startDate.setHours(0, 0, 0, 0); break;
-			case 'semana': startDate.setDate(now.getDate() - 7); break;
-			case 'mes': startDate.setMonth(now.getMonth() - 1); break;
-			case 'año': startDate.setFullYear(now.getFullYear() - 1); break;
-		}
+		if (!terminoBusqueda) return orders;
 
-		const periordOrders = orders.filter(o => new Date(o.createdAt) >= startDate);
-
-		if (!terminoBusqueda) return periordOrders;
-
-		return periordOrders.filter(order =>
+		return orders.filter(order =>
 			order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
 			order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
 			(order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
 		);
-	}, [orders, terminoBusqueda, periodo]);
+	}, [orders, terminoBusqueda]);
+
+	const isLoading = isLoadingSummary || isLoadingOrders;
 
 	return (
 		<div className="space-y-6">
-			{/* Resumen Financiero */}
+			{/* Resumen Financiero con KPIs Reales */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 				{isLoading ? (
 					<>
 						{[1, 2, 3, 4].map(i => (
 							<div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
 								<div className="flex items-center justify-between">
-									<div>
-										<div className="h-4 bg-gray-200 rounded w-28 mb-3"></div>
+									<div className="space-y-2">
+										<div className="h-4 bg-gray-200 rounded w-28"></div>
 										<div className="h-8 bg-gray-200 rounded w-20"></div>
 									</div>
 									<div className="w-10 h-10 rounded-full bg-gray-200"></div>
@@ -138,7 +79,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								<div>
 									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ingresos Totales</p>
 									<p className="text-2xl font-bold text-gray-900 mt-1">
-										{formatCurrency(resumenFinanciero.ingresosTotales)}
+										{formatUSD(summary?.totalIncome)}
 									</p>
 								</div>
 								<div className="p-3 bg-green-50 rounded-lg">
@@ -147,13 +88,13 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 							</div>
 						</div>
 
-						{/* Pagos a Abogados */}
+						{/* Pagos a Abogados (Liability) */}
 						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pagos a Abogados</p>
 									<p className="text-2xl font-bold text-gray-900 mt-1">
-										{formatCurrency(resumenFinanciero.pagosAbogados)}
+										{formatUSD(summary?.pendingLawyerPayments)}
 									</p>
 								</div>
 								<div className="p-3 bg-blue-50 rounded-lg">
@@ -162,13 +103,13 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 							</div>
 						</div>
 
-						{/* Gastos Operativos */}
+						{/* Gastos Operativos + Impuestos */}
 						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Gastos Operativos</p>
+									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Gastos y Tax</p>
 									<p className="text-2xl font-bold text-gray-900 mt-1">
-										{formatCurrency(resumenFinanciero.gastosOperativos)}
+										{formatUSD(summary?.operationalCostsAndTaxes)}
 									</p>
 								</div>
 								<div className="p-3 bg-red-50 rounded-lg">
@@ -177,17 +118,17 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 							</div>
 						</div>
 
-						{/* Ganancias Netas */}
+						{/* Ganancias Netas Reales (Post-Split) */}
 						<div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ganancias Netas</p>
-									<p className={`text-2xl font-bold mt-1 ${resumenFinanciero.gananciasNetas >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
-										{formatCurrency(resumenFinanciero.gananciasNetas)}
+									<p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ganancia Real</p>
+									<p className={`text-2xl font-bold mt-1 ${(summary?.realProfit || 0) >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
+										{formatUSD(summary?.realProfit)}
 									</p>
 								</div>
-								<div className={`p-3 rounded-lg ${resumenFinanciero.gananciasNetas >= 0 ? 'bg-indigo-50' : 'bg-red-50'}`}>
-									<FiTrendingUp className={resumenFinanciero.gananciasNetas >= 0 ? 'text-indigo-600' : 'text-red-600'} />
+								<div className={`p-3 rounded-lg ${(summary?.realProfit || 0) >= 0 ? 'bg-indigo-50' : 'bg-red-50'}`}>
+									<FiTrendingUp className={(summary?.realProfit || 0) >= 0 ? 'text-indigo-600' : 'text-red-600'} />
 								</div>
 							</div>
 						</div>
@@ -204,19 +145,17 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 							<span className="text-gray-700 font-medium text-sm">Período:</span>
 						</div>
 
-						<div className="flex p-1 bg-gray-100 rounded-lg">
+						<div className="flex p-1 bg-gray-100 rounded-lg border border-gray-200">
 							{(['hoy', 'semana', 'mes', 'año'] as const).map((p) => (
 								<button
 									key={p}
 									onClick={() => setPeriodo(p)}
-									className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${periodo === p
+									className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${periodo === p
 										? 'bg-white text-azul-primario shadow-sm'
 										: 'text-gray-500 hover:text-gray-700'
 										}`}
 								>
-									{p === 'hoy' ? 'Hoy' :
-										p === 'semana' ? 'Semana' :
-											p === 'mes' ? 'Mes' : 'Año'}
+									{p.charAt(0).toUpperCase() + p.slice(1)}
 								</button>
 							))}
 						</div>
@@ -224,7 +163,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 
 					<button
 						onClick={() => window.print()}
-						className="flex items-center gap-2 px-6 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-all font-medium shadow-md hover:shadow-lg active:scale-95"
+						className="flex items-center gap-2 px-6 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-all font-bold shadow-md hover:shadow-lg active:scale-95"
 					>
 						<FiDownload />
 						Exportar PDF
@@ -239,7 +178,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 						Transacciones del Período
 					</h3>
 					<span className="px-3 py-1 bg-azul-primario/10 text-azul-primario rounded-full text-xs font-bold uppercase">
-						{resumenFinanciero.cantidadTransacciones} Operaciones
+						{summary?.transactionCount || 0} Operaciones
 					</span>
 				</div>
 
@@ -302,19 +241,19 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
 											<div className="text-sm font-bold text-gray-900">
-												{formatCurrency(order.total)}
+												{formatUSD(order.total)}
 											</div>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
-											<span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${order.status === OrderStatus.COMPLETED
+											<span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${order.status === 'COMPLETADO'
 												? 'bg-green-100 text-green-700'
-												: order.status === OrderStatus.PROCESSING
+												: order.status === 'EN_PROGRESO'
 													? 'bg-blue-100 text-blue-700'
 													: 'bg-yellow-100 text-yellow-700'
 												}`}>
-												{order.status === OrderStatus.COMPLETED
+												{order.status === 'COMPLETADO'
 													? 'Completado'
-													: order.status === OrderStatus.PROCESSING
+													: order.status === 'EN_PROGRESO'
 														? 'En proceso'
 														: 'Pendiente'}
 											</span>
@@ -344,25 +283,6 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 					</table>
 				</div>
 			</div>
-
-			{/* Ingresos Pendientes (Notificación) */}
-			{!isLoading && resumenFinanciero.ingresosPendientes > 0 && (
-				<div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 shadow-sm">
-					<div className="flex items-center">
-						<div className="p-3 bg-amber-100 rounded-lg mr-4">
-							<FiPieChart className="text-amber-600 text-xl" />
-						</div>
-						<div>
-							<p className="text-sm font-bold text-amber-900">
-								Atención: Ingresos Pendientes
-							</p>
-							<p className="text-sm text-amber-700 mt-1">
-								Tienes <span className="font-bold">{formatCurrency(resumenFinanciero.ingresosPendientes)}</span> en transacciones que aún no han sido completadas.
-							</p>
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }

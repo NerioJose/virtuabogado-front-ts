@@ -24,15 +24,19 @@ function FinancialSettingsSection() {
 	const { data: orders = [] } = useOrders();
 	const updateSettings = useUpdateFinancialSettings();
 
-	const [lawyerCommission, setLawyerCommission] = useState<number>(70);
-	const [operationalCosts, setOperationalCosts] = useState<number>(10);
+	const [lawyerCommission, setLawyerCommission] = useState<number>(0);
+	const [operationalCosts, setOperationalCosts] = useState<number>(0);
+	const [taxPercentage, setTaxPercentage] = useState<number>(0);
+	const [platformFee, setPlatformFee] = useState<number>(0);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveMessage, setSaveMessage] = useState('');
 
 	useEffect(() => {
 		if (financialSettings) {
-			setLawyerCommission(financialSettings.lawyerCommissionPercentage);
-			setOperationalCosts(financialSettings.operationalCostsPercentage);
+			setLawyerCommission(financialSettings.lawyerCommissionPercentage || 0);
+			setOperationalCosts(financialSettings.operationalCostsPercentage || 0);
+			setTaxPercentage(financialSettings.taxPercentage || 0);
+			setPlatformFee(financialSettings.platformFeePercentage || 0);
 		}
 	}, [financialSettings]);
 
@@ -40,17 +44,21 @@ function FinancialSettingsSection() {
 		return financialSettingsService.validateSettings({
 			lawyerCommissionPercentage: lawyerCommission,
 			operationalCostsPercentage: operationalCosts,
+			taxPercentage: taxPercentage,
+			platformFeePercentage: platformFee
 		});
-	}, [lawyerCommission, operationalCosts]);
+	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee]);
 
 	const previewData = useMemo(() => {
 		const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
 		return financialSettingsService.calculatePreview(
 			totalRevenue,
 			lawyerCommission,
-			operationalCosts
+			operationalCosts,
+			taxPercentage,
+			platformFee
 		);
-	}, [orders, lawyerCommission, operationalCosts]);
+	}, [orders, lawyerCommission, operationalCosts, taxPercentage, platformFee]);
 
 	const handleSave = async () => {
 		if (!validation.isValid) return;
@@ -61,6 +69,8 @@ function FinancialSettingsSection() {
 			await updateSettings.mutateAsync({
 				lawyerCommissionPercentage: lawyerCommission,
 				operationalCostsPercentage: operationalCosts,
+				taxPercentage: taxPercentage,
+				platformFeePercentage: platformFee
 			});
 			setSaveMessage('Configuración financiera guardada correctamente');
 			setTimeout(() => setSaveMessage(''), 3000);
@@ -126,9 +136,34 @@ function FinancialSettingsSection() {
 									value={operationalCosts}
 									onChange={(e) => setOperationalCosts(parseFloat(e.target.value) || 0)}
 									className="block w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-azul-primario outline-none"
-                                    placeholder="10.0"
+                                    placeholder="0.0"
 								/>
-								<p className="mt-1 text-xs text-gray-400">Fondos destinados a mantenimiento, servidores y soporte.</p>
+								<p className="mt-1 text-xs text-gray-400">Fondos destinados a mantenimiento y servidores.</p>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-bold text-gray-700 mb-1">Impuestos (%)</label>
+									<input
+										type="number"
+										min="0" max="100" step="0.1"
+										value={taxPercentage}
+										onChange={(e) => setTaxPercentage(parseFloat(e.target.value) || 0)}
+										className="block w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-azul-primario outline-none"
+										placeholder="0.0"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-bold text-gray-700 mb-1">Plataforma (%)</label>
+									<input
+										type="number"
+										min="0" max="100" step="0.1"
+										value={platformFee}
+										onChange={(e) => setPlatformFee(parseFloat(e.target.value) || 0)}
+										className="block w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-azul-primario outline-none"
+										placeholder="0.0"
+									/>
+								</div>
 							</div>
 						</div>
 

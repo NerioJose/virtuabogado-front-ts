@@ -17,6 +17,10 @@ import {
 
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { formatUSD } from '@/lib/finance';
+import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { useQuery } from '@tanstack/react-query';
 
 interface FacturacionPanelProps {
 	abogadoId: string;
@@ -39,11 +43,21 @@ type PeriodoFacturacion = 'mes' | 'trimestre' | 'año';
 export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	// Use real orders as invoices
 	// Use real orders as invoices
-	const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
-	const updateOrder = useUpdateOrder(); // REAL mutation hook
+	const user = useAuthStore(state => state.user);
+	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(abogadoId);
+	const updateOrder = useUpdateOrder(); 
 	const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
 	const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
 	const [notificacion, setNotificacion] = useState<{tipo: 'success' | 'info', mensaje: string} | null>(null);
+
+	const [periodo, setPeriodo] = useState<PeriodoFacturacion>('mes');
+
+	// ============ REACT QUERY (Resumen Financiero Real) ============
+	const { data: summary, isLoading: isLoadingSummary } = useQuery({
+		queryKey: ['finances', periodo, abogadoId],
+		queryFn: () => getFinancialSummary({ lawyerId: abogadoId, dateRange: periodo as any }, { id: user!.id, rol: user!.rol as any }),
+		enabled: !!user
+	});
 
 	// Derive invoices from ALL relevant orders
 	const facturas: Factura[] = useMemo(() => {
@@ -64,57 +78,8 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	const [filtroEstado, setFiltroEstado] = useState<
 		'todas' | 'pagadas' | 'pendientes' | 'vencidas'
 	>('todas');
-	const [periodo, setPeriodo] = useState<PeriodoFacturacion>('mes');
 
-	const [resumenFinanciero, setResumenFinanciero] = useState({
-		ingresosMes: 0,
-		ingresosTrimestre: 0,
-		ingresosAnio: 0,
-		pendienteCobro: 0,
-		facturasPagadas: 0,
-		facturasPendientes: 0,
-		facturasVencidas: 0,
-	});
-
-	useEffect(() => {
-		if (notificacion) {
-			const timer = setTimeout(() => setNotificacion(null), 3000);
-			return () => clearTimeout(timer);
-		}
-	}, [notificacion]);
-
-	useEffect(() => {
-		if (!facturas) return;
-
-		// Calcular resumen financiero
-		const ingresosPagados = facturas
-			.filter((f) => f.estado === 'pagada')
-			.reduce((sum, f) => sum + f.importe, 0);
-
-		const importesPendientes = facturas
-			.filter((f) => f.estado === 'pendiente' || f.estado === 'vencida')
-			.reduce((sum, f) => sum + f.importe, 0);
-
-		const facturasPagadasCount = facturas.filter(
-			(f) => f.estado === 'pagada'
-		).length;
-		const facturasPendientesCount = facturas.filter(
-			(f) => f.estado === 'pendiente'
-		).length;
-		const facturasVencidasCount = facturas.filter(
-			(f) => f.estado === 'vencida'
-		).length;
-
-		setResumenFinanciero({
-			ingresosMes: ingresosPagados,
-			ingresosTrimestre: ingresosPagados * 3, // Simulación projection
-			ingresosAnio: ingresosPagados * 12, // Simulación projection
-			pendienteCobro: importesPendientes,
-			facturasPagadas: facturasPagadasCount,
-			facturasPendientes: facturasPendientesCount,
-			facturasVencidas: facturasVencidasCount,
-		});
-	}, [facturas]);
+	const isLoading = isLoadingOrders || isLoadingSummary;
 
 	const handleDescargar = (factura: Factura) => {
 		setNotificacion({
@@ -190,10 +155,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 	// Función para formatear importes
 	const formatearImporte = (importe: number) => {
-		return new Intl.NumberFormat('es-ES', {
-			style: 'currency',
-			currency: 'EUR',
-		}).format(importe);
+		return formatUSD(importe);
 	};
 
 	if (isLoading) {
@@ -264,13 +226,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 											: 'anuales'}
 								</p>
 								<p className="text-xl font-bold text-gray-900">
-									{formatearImporte(
-										periodo === 'mes'
-											? resumenFinanciero.ingresosMes
-											: periodo === 'trimestre'
-												? resumenFinanciero.ingresosTrimestre
-												: resumenFinanciero.ingresosAnio
-									)}
+									{formatearImporte(summary?.totalIncome || 0)}
 								</p>
 							</div>
 						</div>
@@ -287,7 +243,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 							<div>
 								<p className="text-sm text-gray-500">Pendiente de cobro</p>
 								<p className="text-xl font-bold text-gray-900">
-									{formatearImporte(resumenFinanciero.pendienteCobro)}
+									{formatearImporte(summary?.lawyerPendingBalance || 0)}
 								</p>
 							</div>
 						</div>
@@ -304,7 +260,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 							<div>
 								<p className="text-sm text-gray-500">Facturas pagadas</p>
 								<p className="text-xl font-bold text-gray-900">
-									{resumenFinanciero.facturasPagadas}
+									{summary?.transactionCount || 0}
 								</p>
 							</div>
 						</div>
@@ -323,8 +279,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 									Facturas pendientes/vencidas
 								</p>
 								<p className="text-xl font-bold text-gray-900">
-									{resumenFinanciero.facturasPendientes +
-										resumenFinanciero.facturasVencidas}
+									{facturas.filter(f => f.estado !== 'pagada').length}
 								</p>
 							</div>
 						</div>

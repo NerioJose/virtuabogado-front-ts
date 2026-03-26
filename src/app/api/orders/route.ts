@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
+import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 
@@ -88,32 +89,52 @@ export async function GET(request: Request) {
             }
         });
 
-        // Mapear al formato que espera el frontend si es necesario
-        const formattedOrders = orders.map(order => ({
-            id: order.id,
-            numericId: order.numericId,
-            uuid: order.id,
-            userId: order.userId,
-            lawyerId: order.lawyerId,
-            lawyerName: order.lawyer?.nombre ? formatLawyerName(order.lawyer.nombre) : 'Pendiente',
-            userName: capitalizeName(order.user.nombre),
-            userEmail: order.user.email,
-            items: [{
-                id: order.service.id,
-                serviceId: order.service.id,
-                serviceName: order.service.titulo,
-                price: Number(order.service.precio),
-                quantity: 1,
-            }],
-            subtotal: Number(order.total),
-            tax: 0,
-            total: Number(order.total),
-            status: order.status,
-            paymentMethod: 'CREDIT_CARD', // Default for now
-            transactionId: order.paymentId,
-            createdAt: order.createdAt,
-            updatedAt: order.updatedAt,
-        }));
+        // 🏛️ FINANCIAL SETTINGS: Fetch for splits
+        const settings = await prisma.financialSettings.findUnique({
+            where: { id: FINANCIAL_SETTINGS_ID }
+        }) || {
+            lawyer_commission_percentage: 0,
+            operational_costs_percentage: 0,
+            tax_percentage: 0,
+            platform_fee_percentage: 0
+        };
+
+        // Mapear al formato que espera el frontend con desglose financiero dinámico
+        const formattedOrders = orders.map(order => {
+            // Calcular desgloses en tiempo real para máxima precisión
+            const total = Number(order.total);
+            const lawyerPct = Number(settings.lawyer_commission_percentage) / 100;
+            const comisionLawyer = total * lawyerPct;
+
+            return {
+                id: order.id,
+                numericId: order.numericId,
+                uuid: order.id,
+                userId: order.userId,
+                lawyerId: order.lawyerId,
+                lawyerName: order.lawyer?.nombre ? formatLawyerName(order.lawyer.nombre) : 'Pendiente',
+                userName: capitalizeName(order.user.nombre),
+                userEmail: order.user.email,
+                items: [{
+                    id: order.service.id,
+                    serviceId: order.service.id,
+                    serviceName: order.service.titulo,
+                    price: Number(order.service.precio),
+                    quantity: 1,
+                }],
+                subtotal: total,
+                tax: 0,
+                total: total,
+                status: order.status,
+                paymentMethod: 'CREDIT_CARD',
+                transactionId: order.paymentId,
+                createdAt: order.createdAt,
+                updatedAt: order.updatedAt,
+                // Inyectar datos financieros calculados
+                commissionAmount: comisionLawyer,
+                netProfitAmount: total - comisionLawyer, // Lo que resta para la plataforma
+            };
+        });
 
         return NextResponse.json(formattedOrders);
     } catch (error) {
@@ -164,20 +185,19 @@ export async function POST(request: Request) {
 
         const currentPrice = Number(service.precio);
 
-        // 🏛️ FINANCIAL SETTINGS: Fetch current split percentages
-        const FIXED_SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
+        // 🏛️ FINANCIAL SETTINGS: Fetch current split percentages (Strict ID Synchronization)
         let settings = await prisma.financialSettings.findUnique({
-            where: { id: FIXED_SETTINGS_ID }
+            where: { id: FINANCIAL_SETTINGS_ID }
         });
 
-        // Use defaults if settings don't exist yet
+        // Use defaults if settings don't exist yet (Absolute Zero Fallback)
         if (!settings) {
             settings = {
-                id: FIXED_SETTINGS_ID,
-                lawyer_commission_percentage: 70 as any,
-                operational_costs_percentage: 10 as any,
-                tax_percentage: 15 as any,
-                platform_fee_percentage: 5 as any,
+                id: FINANCIAL_SETTINGS_ID,
+                lawyer_commission_percentage: 0 as any,
+                operational_costs_percentage: 0 as any,
+                tax_percentage: 0 as any,
+                platform_fee_percentage: 0 as any,
                 updated_at: new Date(),
                 updated_by: 'system'
             } as any;

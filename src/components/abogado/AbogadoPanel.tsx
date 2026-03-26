@@ -28,6 +28,9 @@ import FacturacionPanel from './FacturacionPanel';
 import DocumentosPanel from './DocumentosPanel';
 import PerfilAbogadoPanel from './PerfilAbogadoPanel';
 import { formatCurrency } from '@/utils/formatters';
+import { OrdersHistoryTable } from '@/features/orders/components/OrdersHistoryTable';
+import { useQuery } from '@tanstack/react-query';
+import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 
 interface AbogadoPanelProps {
 	abogadoId?: string;
@@ -58,6 +61,13 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
 
+	// Fetch unified financial summary for KPIs
+	const { data: summary, isLoading: isLoadingSummary } = useQuery({
+		queryKey: ['financial-summary', currentAbogadoId],
+		queryFn: () => getFinancialSummary({ lawyerId: currentAbogadoId }, { id: userAuth?.id || '', rol: 'ABOGADO' }),
+		enabled: !!userAuth?.id
+	});
+
 	// Manejador de cierre de sesión
 	const handleLogout = async () => {
 		try {
@@ -70,35 +80,20 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 	// Calcular estadísticas en tiempo real
 	const estadisticas = useMemo(() => {
-		const stats = {
-			casosActivos: 0,
-			casosPendientes: 0,
-			casosCompletados: 0,
-			clientesActivos: 0,
-			proximaCita: new Date().toISOString(), // Mock por ahora
-			ingresosMes: 0,
-		};
-
 		const uniqueClients = new Set();
-
 		orders.forEach((order: any) => {
-			if (order.status === OrderStatus.PROCESSING) {
-				stats.casosActivos++;
-			} else if (order.status === OrderStatus.PENDING) {
-				stats.casosPendientes++;
-			} else if (order.status === OrderStatus.COMPLETED) {
-				stats.casosCompletados++;
-				stats.ingresosMes += Number(order.total);
-			}
-
-			if (order.userId) {
-				uniqueClients.add(order.userId);
-			}
+			if (order.userId) uniqueClients.add(order.userId);
 		});
 
-		stats.clientesActivos = uniqueClients.size;
-		return stats;
-	}, [orders]);
+		return {
+			casosActivos: orders.filter((o: any) => o.status === OrderStatus.PROCESSING).length,
+			casosPendientes: orders.filter((o: any) => o.status === OrderStatus.PENDING).length,
+			casosCompletados: orders.filter((o: any) => o.status === OrderStatus.COMPLETED).length,
+			clientesActivos: uniqueClients.size,
+			proximaCita: new Date().toISOString(), // Mock por ahora
+			ingresosMes: summary?.lawyerPendingBalance || 0, // Server-verified balance
+		};
+	}, [orders, summary]);
 
 	useEffect(() => {
 		if (userAuth) {
@@ -233,6 +228,17 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 									}`}>
 								<FiUser className="mr-3" />
 								<span>Mi Perfil</span>
+							</button>
+						</li>
+						<li>
+							<button
+								onClick={() => { handleNavClick('historial'); setIsSidebarOpen(false); }}
+								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'historial'
+									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
+									: 'text-gray-600 hover:bg-gray-100'
+									}`}>
+								<FiClock className="mr-3" />
+								<span>Historial</span>
 							</button>
 						</li>
 						<li className="mt-6 border-t border-gray-200 pt-4">
@@ -373,6 +379,15 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							)}
 							{seccionActiva === 'perfil' && (
 								<PerfilAbogadoPanel abogado={abogado} />
+							)}
+							{seccionActiva === 'historial' && (
+								<div className="py-2">
+									<h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+										<FiClock className="text-azul-primario" />
+										Historial de Casos Asignados
+									</h2>
+									<OrdersHistoryTable user={{ id: currentAbogadoId, rol: 'ABOGADO' }} />
+								</div>
 							)}
 						</>
 					) : (

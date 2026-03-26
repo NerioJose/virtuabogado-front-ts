@@ -82,7 +82,7 @@ export default function AbandonedCartReminder() {
 									{typeof abandonedService.precio === 'number'
 										? abandonedService.precio.toLocaleString('es-ES', {
 											style: 'currency',
-											currency: 'EUR',
+											currency: 'USD',
 										})
 										: abandonedService.precio}
 								</p>

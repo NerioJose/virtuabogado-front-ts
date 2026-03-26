@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-
-const FIXED_SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
+import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 
 // Crear cliente con service role para operaciones administrativas (bypass RLS)
 function createServiceClient() {
@@ -35,15 +34,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Financial settings already exist', id: existing.id });
         }
 
-        // Create default settings
+        // Create default settings (Blindaje: Iniciar en 0 para evitar errores matemáticos iniciales)
         const { data, error } = await supabase
             .from('FinancialSettings')
             .insert({
-                id: FIXED_SETTINGS_ID,
-                lawyer_commission_percentage: 70,
-                operational_costs_percentage: 10,
-                tax_percentage: 15,
-                platform_fee_percentage: 5,
+                id: FINANCIAL_SETTINGS_ID,
+                lawyer_commission_percentage: 0,
+                operational_costs_percentage: 0,
+                tax_percentage: 0,
+                platform_fee_percentage: 0,
             })
             .select()
             .single();
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('✅ Financial settings seeded successfully');
-        return NextResponse.json({ message: 'Financial settings created', data }, { status: 201 });
+        return NextResponse.json({ message: 'Financial settings created with 0% defaults', data }, { status: 201 });
     } catch (error) {
         console.error('Unexpected error seeding financial settings:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

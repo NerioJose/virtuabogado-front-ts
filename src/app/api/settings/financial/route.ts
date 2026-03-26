@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
                     operationalCostsPercentage: Number(rawResult[0].operational_costs_percentage),
                     taxPercentage: Number(rawResult[0].tax_percentage),
                     platformFeePercentage: Number(rawResult[0].platform_fee_percentage),
+                    whatsappPhone: rawResult[0].whatsapp_phone || null,
                 });
             }
         }
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
                 operational_costs_percentage: (0 as any),
                 tax_percentage: (0 as any),
                 platform_fee_percentage: (0 as any),
+                whatsappPhone: null,
                 updated_at: new Date(),
                 updated_by: 'system'
             } as any;
@@ -69,6 +71,7 @@ export async function GET(request: NextRequest) {
             operationalCostsPercentage: Number(settings!.operational_costs_percentage),
             taxPercentage: Number(settings!.tax_percentage),
             platformFeePercentage: Number(settings!.platform_fee_percentage),
+            whatsappPhone: (settings as any).whatsappPhone || null,
             updatedAt: settings!.updated_at,
             updatedBy: settings!.updated_by,
         };
@@ -108,6 +111,7 @@ export async function PATCH(request: NextRequest) {
         if (body.operationalCostsPercentage !== undefined) updates.operational_costs_percentage = parseFloat(body.operationalCostsPercentage);
         if (body.taxPercentage !== undefined) updates.tax_percentage = parseFloat(body.taxPercentage);
         if (body.platformFeePercentage !== undefined) updates.platform_fee_percentage = parseFloat(body.platformFeePercentage);
+        if (body.whatsappPhone !== undefined) updates.whatsappPhone = body.whatsappPhone;
 
         const getSettingsModel = () => {
              const p = prisma as any;
@@ -125,6 +129,7 @@ export async function PATCH(request: NextRequest) {
                 operational_costs_percentage: updates.operational_costs_percentage ?? 0,
                 tax_percentage: updates.tax_percentage ?? 0,
                 platform_fee_percentage: updates.platform_fee_percentage ?? 0,
+                whatsappPhone: updates.whatsappPhone ?? null,
                 updated_by: user.id,
                 updated_at: new Date()
             },
@@ -133,13 +138,14 @@ export async function PATCH(request: NextRequest) {
                 updated_at: new Date()
             },
         }) : prisma.$executeRaw`
-            INSERT INTO "FinancialSettings" (id, lawyer_commission_percentage, operational_costs_percentage, tax_percentage, platform_fee_percentage, updated_by, updated_at)
-            VALUES (${FINANCIAL_SETTINGS_ID}, ${updates.lawyer_commission_percentage ?? 0}, ${updates.operational_costs_percentage ?? 0}, ${updates.tax_percentage ?? 0}, ${updates.platform_fee_percentage ?? 0}, ${user.id}, ${new Date()})
+            INSERT INTO "FinancialSettings" (id, lawyer_commission_percentage, operational_costs_percentage, tax_percentage, platform_fee_percentage, whatsapp_phone, updated_by, updated_at)
+            VALUES (${FINANCIAL_SETTINGS_ID}, ${updates.lawyer_commission_percentage ?? 0}, ${updates.operational_costs_percentage ?? 0}, ${updates.tax_percentage ?? 0}, ${updates.platform_fee_percentage ?? 0}, ${updates.whatsappPhone ?? null}, ${user.id}, ${new Date()})
             ON CONFLICT (id) DO UPDATE SET
                 lawyer_commission_percentage = EXCLUDED.lawyer_commission_percentage,
                 operational_costs_percentage = EXCLUDED.operational_costs_percentage,
                 tax_percentage = EXCLUDED.tax_percentage,
                 platform_fee_percentage = EXCLUDED.platform_fee_percentage,
+                whatsapp_phone = EXCLUDED.whatsapp_phone,
                 updated_by = EXCLUDED.updated_by,
                 updated_at = NOW()
         `);

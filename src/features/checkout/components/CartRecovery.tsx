@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiShoppingCart, FiX, FiRefreshCw } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { formatUSD } from '@/lib/finance';
 
 /**
  * Componente que muestra un banner de recuperación de carrito abandonado
@@ -64,6 +65,8 @@ export const CartRecovery = () => {
         setShowRecovery(false);
     };
 
+    const priceFormatted = service?.precio ? formatUSD(service.precio) : '';
+
     return (
         <AnimatePresence>
             {showRecovery && (
@@ -87,7 +90,7 @@ export const CartRecovery = () => {
                                 </h4>
                                 <p className="text-sm text-gray-600 mb-3">
                                     <strong>{service?.nombre}</strong>
-                                    {service?.precio && ` - $${service.precio.toFixed(2)} `}
+                                    {priceFormatted && ` - ${priceFormatted}`}
                                 </p>
 
                                 {/* Botones */}

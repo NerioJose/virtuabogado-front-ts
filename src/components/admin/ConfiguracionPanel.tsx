@@ -11,7 +11,8 @@ import {
 	FiAlertCircle,
     FiUser,
     FiShield,
-    FiCreditCard
+    FiCreditCard,
+    FiMessageCircle
 } from 'react-icons/fi';
 import { useFinancialSettings, useUpdateFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { financialSettingsService } from '@/features/financial-settings/services/financial-settings.service';
@@ -28,6 +29,7 @@ function FinancialSettingsSection() {
 	const [operationalCosts, setOperationalCosts] = useState<number>(0);
 	const [taxPercentage, setTaxPercentage] = useState<number>(0);
 	const [platformFee, setPlatformFee] = useState<number>(0);
+	const [whatsappPhone, setWhatsappPhone] = useState<string>('');
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveMessage, setSaveMessage] = useState('');
 
@@ -37,6 +39,7 @@ function FinancialSettingsSection() {
 			setOperationalCosts(financialSettings.operationalCostsPercentage || 0);
 			setTaxPercentage(financialSettings.taxPercentage || 0);
 			setPlatformFee(financialSettings.platformFeePercentage || 0);
+			setWhatsappPhone(financialSettings.whatsappPhone || '');
 		}
 	}, [financialSettings]);
 
@@ -45,9 +48,10 @@ function FinancialSettingsSection() {
 			lawyerCommissionPercentage: lawyerCommission,
 			operationalCostsPercentage: operationalCosts,
 			taxPercentage: taxPercentage,
-			platformFeePercentage: platformFee
+			platformFeePercentage: platformFee,
+			whatsappPhone: whatsappPhone
 		});
-	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee]);
+	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee, whatsappPhone]);
 
 	const previewData = useMemo(() => {
 		const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
@@ -56,9 +60,10 @@ function FinancialSettingsSection() {
 			lawyerCommission,
 			operationalCosts,
 			taxPercentage,
-			platformFee
+			platformFee,
+			whatsappPhone
 		);
-	}, [orders, lawyerCommission, operationalCosts, taxPercentage, platformFee]);
+	}, [orders, lawyerCommission, operationalCosts, taxPercentage, platformFee, whatsappPhone]);
 
 	const handleSave = async () => {
 		if (!validation.isValid) return;
@@ -70,7 +75,8 @@ function FinancialSettingsSection() {
 				lawyerCommissionPercentage: lawyerCommission,
 				operationalCostsPercentage: operationalCosts,
 				taxPercentage: taxPercentage,
-				platformFeePercentage: platformFee
+				platformFeePercentage: platformFee,
+				whatsappPhone: whatsappPhone
 			});
 			setSaveMessage('Configuración financiera guardada correctamente');
 			setTimeout(() => setSaveMessage(''), 3000);
@@ -164,6 +170,24 @@ function FinancialSettingsSection() {
 										placeholder="0.0"
 									/>
 								</div>
+							</div>
+
+							<div className="pt-4 border-t border-gray-100">
+								<div className="flex items-center gap-2 text-green-600 font-bold mb-3">
+									<FiMessageCircle /> <h4>Contacto Directo</h4>
+								</div>
+								<label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp de Contacto</label>
+								<div className="relative">
+									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">+</span>
+									<input
+										type="text"
+										value={whatsappPhone}
+										onChange={(e) => setWhatsappPhone(e.target.value.replace(/\D/g, ''))}
+										className="block w-full pl-7 p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+										placeholder="51999888777"
+									/>
+								</div>
+								<p className="mt-1 text-[10px] text-gray-400">Sin espacios ni símbolos. Ejemplo: 584121234567</p>
 							</div>
 						</div>
 

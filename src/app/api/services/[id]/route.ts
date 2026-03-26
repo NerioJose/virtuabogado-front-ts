@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { broadcastServiceUpdate } from '@/lib/broadcast';
+import { serializeFinance } from '@/lib/finance';
 
 export async function GET(
     req: Request,
@@ -74,7 +75,7 @@ export async function DELETE(
             eventType: 'deleted',
         });
 
-        return NextResponse.json({ message: 'Service deactivated successfully', service });
+        return NextResponse.json(serializeFinance({ message: 'Service deactivated successfully', service }));
     } catch (error) {
         console.error('Error deleting service:', error);
         return NextResponse.json({ error: 'Error deleting service' }, { status: 500 });

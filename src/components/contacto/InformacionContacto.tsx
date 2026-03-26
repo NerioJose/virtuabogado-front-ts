@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 
 interface ContactInfo {
   icon: React.ReactNode;
@@ -17,6 +18,8 @@ interface SocialLink {
 }
 
 const InformacionContacto = React.memo(() => {
+  const { data: settings } = useFinancialSettings();
+  
   const contactInfo: ContactInfo[] = useMemo(() => [
     {
       icon: (
@@ -24,8 +27,8 @@ const InformacionContacto = React.memo(() => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
         </svg>
       ),
-      title: 'Teléfono',
-      primary: '+34 XXX XXX XXX',
+      title: 'WhatsApp / Teléfono',
+      primary: settings?.whatsappPhone ? `+${settings.whatsappPhone}` : 'Contactar vía web',
       secondary: 'Lunes a Viernes, 9:00 - 18:00'
     },
     {

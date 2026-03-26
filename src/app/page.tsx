@@ -2,6 +2,7 @@
 
 import HeroSection from '@/components/homePage/HeroSection';
 import ServiciosDestacados from '@/components/homePage/ServiciosDestacados';
+import VirtuStudents from '@/components/homePage/VirtuStudents';
 import SectionTestimonios from '@/components/homePage/SeccionTestimonios';
 import CallToAction from '@/components/homePage/CallToAction';
 
@@ -13,6 +14,9 @@ export default function HomePage() {
 
 			{/* Servicios Destacados */}
 			<ServiciosDestacados />
+
+			{/* Sección VirtuStudents (NUEVO) */}
+			<VirtuStudents />
 
 			{/* Sección de Testimonios */}
 			<SectionTestimonios />

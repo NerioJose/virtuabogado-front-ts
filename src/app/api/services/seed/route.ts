@@ -14,7 +14,7 @@ export async function GET() {
                 titulo: 'Consultas Legales',
                 descripcion: 'Resuelve tus dudas legales con abogados especializados en diferentes áreas del derecho. Nuestros profesionales te brindarán asesoramiento claro y preciso para ayudarte a tomar las mejores decisiones.',
                 precio: 99.99,
-                imagenUrl: '/images/consulta-legal.jpg',
+                imagenUrl: '/images/consulta-legal.png',
                 activo: true
             },
             {
@@ -22,7 +22,7 @@ export async function GET() {
                 titulo: 'Revisión de Documentos',
                 descripcion: 'Análisis y revisión de contratos, acuerdos y documentos legales por profesionales. Asegúrate de que tus documentos cumplan con todos los requisitos legales y protejan tus intereses.',
                 precio: 149.99,
-                imagenUrl: '/images/revision-documentos.jpg',
+                imagenUrl: '/images/revision-documentos.png',
                 activo: true
             },
             {
@@ -30,7 +30,7 @@ export async function GET() {
                 titulo: 'Representación Legal',
                 descripcion: 'Representación profesional en procesos judiciales y extrajudiciales. Nuestros abogados te acompañarán en cada etapa del proceso, defendiendo tus derechos e intereses con dedicación y profesionalismo.',
                 precio: 299.99,
-                imagenUrl: '/images/representacion-legal.jpg',
+                imagenUrl: '/images/representacion-legal.png',
                 activo: true
             },
             {
@@ -38,7 +38,7 @@ export async function GET() {
                 titulo: 'Asesoría Empresarial',
                 descripcion: 'Servicios legales especializados para empresas y emprendedores. Desde la constitución de sociedades hasta la resolución de conflictos comerciales, te brindamos el apoyo legal que tu negocio necesita.',
                 precio: 199.99,
-                imagenUrl: '/images/asesoria-empresarial.jpg',
+                imagenUrl: '/images/asesoria-empresarial.png',
                 activo: true
             },
             {
@@ -46,7 +46,7 @@ export async function GET() {
                 titulo: 'Derecho Familiar',
                 descripcion: 'Asesoramiento en asuntos de familia como divorcios, custodia, pensiones alimenticias y más. Abordamos estos temas sensibles con empatía y profesionalismo, buscando siempre las mejores soluciones para todas las partes involucradas.',
                 precio: 179.99,
-                imagenUrl: '/images/derecho-familiar.jpg',
+                imagenUrl: '/images/derecho-familiar.png',
                 activo: true
             },
             {
@@ -54,7 +54,15 @@ export async function GET() {
                 titulo: 'Derecho Inmobiliario',
                 descripcion: 'Servicios legales relacionados con propiedades, compraventas, arrendamientos y conflictos inmobiliarios. Te ayudamos a proteger tus inversiones y a resolver cualquier problema legal relacionado con bienes raíces.',
                 precio: 249.99,
-                imagenUrl: '/images/derecho-inmobiliario.jpg',
+                imagenUrl: '/images/derecho-inmobiliario.png',
+                activo: true
+            },
+            {
+                id: 7,
+                titulo: 'Asesoría Estudiantes de Derecho',
+                descripcion: 'Mentoría estratégica y tutorías personalizadas para estudiantes de derecho. Desde análisis de casos complejos hasta preparación para exámenes de grado, te guiamos en tu camino a la excelencia jurídica.',
+                precio: 49.99,
+                imagenUrl: '/images/virtustudents.jpg',
                 activo: true
             }
         ];

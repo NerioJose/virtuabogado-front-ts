@@ -11,7 +11,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Mercantil',
 			descripcion:
 				'Con más de 15 años de experiencia en asesoría legal para empresas nacionales e internacionales.',
-			imagen: '/images/abogado-2.jpg',
+			imagen: '/images/abogado-2.png',
 		},
 		{
 			id: 2,
@@ -20,7 +20,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Familiar',
 			descripcion:
 				'Especialista en casos de familia, con un enfoque humano y orientado a soluciones pacíficas.',
-			imagen: '/images/abogado-4.jpg',
+			imagen: '/images/abogado-4.png',
 		},
 		{
 			id: 3,
@@ -29,7 +29,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Inmobiliario',
 			descripcion:
 				'Experto en transacciones inmobiliarias y resolución de conflictos relacionados con propiedades.',
-			imagen: '/images/abogado-1.jpg',
+			imagen: '/images/abogado-1.png',
 		},
 		{
 			id: 4,
@@ -38,7 +38,7 @@ export default function NuestroEquipoSection() {
 			especialidad: 'Derecho Laboral',
 			descripcion:
 				'Dedicada a la defensa de los derechos laborales con amplia experiencia en negociaciones colectivas.',
-			imagen: '/images/abogado-3.jpg',
+			imagen: '/images/abogado-3.png',
 		},
 	];
 	return (

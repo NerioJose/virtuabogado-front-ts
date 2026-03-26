@@ -94,12 +94,16 @@ class CheckoutService {
 
         // El redirect apunta al callback para que Supabase establezca la sesión
         const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`;
+        
+        // Determinar si estamos en localhost para simplificar el envío si hay problemas de redirección
+        const isLocalhost = window.location.hostname === 'localhost';
 
         const { error } = await this.supabase.auth.signInWithOtp({
             email,
             options: {
                 shouldCreateUser: false, // Solo para usuarios existentes
-                emailRedirectTo: callbackUrl
+                // Solo enviar redirect si no estamos en localhost o si está en la lista blanca
+                emailRedirectTo: !isLocalhost ? callbackUrl : undefined
             }
         });
 

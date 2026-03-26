@@ -38,7 +38,7 @@ export const useServicesStore = create<ServicesState>()(
         }),
         {
             name: 'virtu-services-storage',
-            version: 2, // Force clear stale localStorage
+            version: 3, // Incrementado para forzar limpieza de caché (Lanzamiento virtustudents)
         }
     )
 );

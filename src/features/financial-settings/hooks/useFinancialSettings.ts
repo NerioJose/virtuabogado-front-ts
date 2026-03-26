@@ -3,7 +3,7 @@ import { financialSettingsService } from '../services/financial-settings.service
 import { UpdateFinancialSettingsRequest } from '../types/financial-settings.types';
 
 export const FINANCIAL_SETTINGS_KEYS = {
-    all: ['financial-settings'] as const,
+    all: ['FinancialSettings'] as const,
     detail: () => [...FINANCIAL_SETTINGS_KEYS.all, 'detail'] as const,
 };
 

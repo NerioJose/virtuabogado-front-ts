@@ -288,13 +288,36 @@ export const UserDataStep: React.FC = () => {
                         📨
                     </div>
                     <h3 className="font-bold text-azul-primario text-lg mb-2">
-                        Autenticación enviada
+                        Verifique su correo
                     </h3>
                     <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-                        Se ha generado un enlace de acceso para <strong>{formData.email}</strong>.<br/>
-                        Por favor, <strong>revise su bandeja de entrada</strong> para validar la sesión y continuar con su trámite legal.
+                        Se ha generado un enlace y un código de acceso para <strong>{formData.email}</strong>.<br/>
+                        Revise su bandeja de entrada (incluyendo spam).
                     </p>
                     
+                    {/* Campo para ingresar código de 6 dígitos manual */}
+                    <div className="mb-6 space-y-3">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">O ingrese el código de 6 dígitos</label>
+                        <div className="flex justify-center">
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                placeholder="000000"
+                                className="w-32 text-center text-2xl font-black tracking-[0.3em] py-2 border-b-2 border-azul-primario bg-transparent outline-none focus:border-vinotinto transition-colors"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleVerifyOtp}
+                            disabled={isLoading || otpCode.length < 6}
+                            className="text-xs font-bold text-vinotinto hover:underline disabled:opacity-30"
+                        >
+                            {isLoading ? 'Verificando...' : 'Validar Código'}
+                        </button>
+                    </div>
+
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-azul-primario/10 rounded-full text-[11px] text-gray-500 font-medium">
                         <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
                         Válido por 60 minutos
@@ -306,8 +329,14 @@ export const UserDataStep: React.FC = () => {
                         disabled={isLoading}
                         className="mt-6 block w-full text-xs text-azul-primario hover:underline font-bold disabled:opacity-50 uppercase tracking-widest"
                     >
-                        {isLoading ? 'Solicitando nuevo enlace...' : '¿No ha recibido el correo? Reenviar enlace'}
+                        {isLoading ? 'Solicitando nuevo enlace...' : '¿No ha recibido el correo? Reenviar'}
                     </button>
+                    
+                    {error && (
+                        <p className="mt-4 text-xs text-red-600 font-medium p-2 bg-red-50 rounded-lg">
+                            ⚠️ {getFriendlyErrorMessage(error)}
+                        </p>
+                    )}
                 </motion.div>
             )}
 

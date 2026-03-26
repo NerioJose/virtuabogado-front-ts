@@ -60,6 +60,11 @@ class FinancialSettingsService {
             }
         }
 
+        // WhatsApp Phone prefix validation (optional)
+        if (settings.whatsappPhone && !/^\d+$/.test(settings.whatsappPhone)) {
+             errors.push('El número de WhatsApp solo debe contener dígitos (código de país + número)');
+        }
+
         // Validar que la suma no exceda el 100%
         const lawyerCommission = settings.lawyerCommissionPercentage ?? 70;
         const operationalCosts = settings.operationalCostsPercentage ?? 10;
@@ -90,7 +95,8 @@ class FinancialSettingsService {
         lawyerCommissionPercentage: number,
         operationalCostsPercentage: number,
         taxPercentage: number,
-        platformFeePercentage: number
+        platformFeePercentage: number,
+        whatsappPhone?: string
     ) {
         const lawyerPayments = (totalRevenue * lawyerCommissionPercentage) / 100;
         const operationalCosts = (totalRevenue * operationalCostsPercentage) / 100;

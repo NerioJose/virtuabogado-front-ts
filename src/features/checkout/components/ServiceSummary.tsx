@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import type { Servicio } from '@/shared/types/entities.types';
 import { FiClock, FiDollarSign } from 'react-icons/fi';
+import { formatUSD } from '@/lib/finance';
 
 interface ServiceSummaryProps {
     service: Servicio;
@@ -40,7 +41,7 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
                         )}
                         <div className="flex items-center gap-1 text-azul-primario font-semibold">
                             <FiDollarSign className="w-4 h-4" />
-                            <span>${service.precio?.toFixed(2)}</span>
+                            <span>{formatUSD(service.precio)}</span>
                         </div>
                     </div>
                 </div>

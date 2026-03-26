@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 
 interface FormData {
   nombre: string;
@@ -112,6 +113,8 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
     return newErrors;
   }, [formData, validateField]);
 
+  const { data: settings } = useFinancialSettings();
+
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -124,11 +127,22 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
     setIsSubmitting(true);
 
     try {
-      // Aquí iría la lógica para enviar los datos al backend
-      console.log('Datos del formulario:', formData);
+      // Lógica de Redirección a WhatsApp
+      const phone = settings?.whatsappPhone || '584120000000'; // Fallback sutil si no hay config
+      
+      const message = `*Nueva consulta desde VirtuAbogado*
+      
+*Nombre:* ${formData.nombre}
+*Email:* ${formData.email}
+*Asunto:* ${formData.asunto}
+*Mensaje:* ${formData.mensaje}`;
 
-      // Simulación de envío exitoso
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      
+      // Simulación de delay para UX
       setTimeout(() => {
+        window.open(waUrl, '_blank');
+        
         setIsSubmitting(false);
         setSubmitSuccess(true);
         setFormData({
@@ -142,17 +156,16 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
         onSubmitSuccess?.();
 
-        // Resetear el mensaje de éxito después de 5 segundos
         setTimeout(() => {
           setSubmitSuccess(false);
         }, 5000);
-      }, 1500);
+      }, 1000);
 
     } catch (error) {
-      console.error('Error al enviar el formulario:', error);
+      console.error('Error al procesar el contacto:', error);
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, onSubmitSuccess]);
+  }, [formData, validateForm, onSubmitSuccess, settings?.whatsappPhone]);
 
   const asuntoOptions = useMemo(() => [
     { value: '', label: 'Selecciona un asunto' },

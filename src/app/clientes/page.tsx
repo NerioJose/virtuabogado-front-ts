@@ -13,7 +13,7 @@ export default function ClientesPage() {
 			empresa: 'Emprendimientos Digitales S.A.',
 			testimonio:
 				'VirtuAbogado transformó la manera en que manejamos nuestros asuntos legales. Su asesoría en derecho mercantil fue fundamental para el crecimiento de nuestra startup.',
-			imagen: '/images/avatar-1.jpg',
+			imagen: '/images/avatar-2.png',
 		},
 		{
 			id: 2,
@@ -21,7 +21,7 @@ export default function ClientesPage() {
 			empresa: 'Inmobiliaria Horizonte',
 			testimonio:
 				'Gracias al equipo de VirtuAbogado pudimos resolver complejos problemas de contratos inmobiliarios de manera eficiente y profesional.',
-			imagen: '/images/avatar-2.jpg',
+			imagen: '/images/avatar-1.png',
 		},
 		{
 			id: 3,
@@ -29,7 +29,7 @@ export default function ClientesPage() {
 			empresa: 'Consultora Innovación',
 			testimonio:
 				'La asesoría en propiedad intelectual que recibimos fue excepcional. Protegieron nuestras innovaciones con un servicio personalizado y de alta calidad.',
-			imagen: '/images/avatar-3.jpg',
+			imagen: '/images/avatar-4.png',
 		},
 		{
 			id: 4,
@@ -37,7 +37,7 @@ export default function ClientesPage() {
 			empresa: 'Restaurantes Unidos',
 			testimonio:
 				'Como pequeño empresario, encontrar asesoría legal accesible y de calidad era un desafío hasta que conocí VirtuAbogado. Su plataforma es justo lo que necesitábamos.',
-			imagen: '/images/avatar-4.jpg',
+			imagen: '/images/avatar-3.png',
 		},
 	];
 
@@ -49,7 +49,7 @@ export default function ClientesPage() {
 			descripcion:
 				'Ayudamos a una empresa tecnológica a resolver un complejo conflicto con un proveedor internacional, evitando un costoso litigio y preservando la relación comercial.',
 			resultado: 'Acuerdo extrajudicial favorable',
-			imagen: '/images/caso-exito-1.jpg',
+			imagen: '/images/caso-exito-1.png',
 		},
 		{
 			id: 2,
@@ -57,7 +57,7 @@ export default function ClientesPage() {
 			descripcion:
 				'Asesoramos a un grupo de desarrolladores en el registro y protección de su software innovador, asegurando sus derechos ante posibles infracciones.',
 			resultado: 'Registro exitoso de patente',
-			imagen: '/images/caso-exito-2.png',
+			imagen: '/images/caso-exito-2.jpg',
 		},
 		{
 			id: 3,
@@ -65,7 +65,7 @@ export default function ClientesPage() {
 			descripcion:
 				'Guiamos a una empresa familiar en su proceso de reestructuración, optimizando su estructura legal y fiscal para facilitar su crecimiento.',
 			resultado: 'Reducción de carga fiscal en un 30%',
-			imagen: '/images/caso-exito-3.png',
+			imagen: '/images/caso-exito-3.jpg',
 		},
 	];
 
@@ -213,10 +213,11 @@ export default function ClientesPage() {
 								className="flex items-center justify-center p-6">
 								<div className="relative h-32 w-full flex items-center justify-center bg-white rounded-lg shadow-sm border border-gray-100 p-4">
 									<Image
-										src={`/images/logo-empresa-${num}.png`}
+										src={`/images/logo-empresa-${num}${num === 1 ? '.jpg' : '.png'}`}
 										alt={`Logo empresa ${num}`}
 										fill
-										className="object-contain opacity-80 hover:opacity-100 transition-opacity p-2"
+										unoptimized
+										className="object-contain hover:scale-105 transition-transform p-2"
 										loading="lazy"
 									/>
 								</div>

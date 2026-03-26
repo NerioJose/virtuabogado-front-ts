@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { broadcastServiceUpdate } from '@/lib/broadcast';
+import { serializeFinance } from '@/lib/finance';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
             where: showAll ? {} : { activo: true },
             orderBy: { id: 'asc' }
         });
-        return NextResponse.json(services);
+        return NextResponse.json(serializeFinance(services));
     } catch (error) {
         console.error('Error fetching services:', error);
         return NextResponse.json({ error: 'Error fetching services' }, { status: 500 });
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
             eventType: 'created',
         });
 
-        return NextResponse.json(service);
+        return NextResponse.json(serializeFinance(service));
     } catch (error) {
         console.error('Error creating service:', error);
         return NextResponse.json({ error: 'Error creating service' }, { status: 500 });

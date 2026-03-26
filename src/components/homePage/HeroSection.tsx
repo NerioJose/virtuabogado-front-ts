@@ -49,7 +49,7 @@ export default function HeroSection() {
 							className="relative">
 							<div className="relative h-[400px] w-full">
 								<Image
-									src="/images/consulta-legal.jpg"
+									src="/images/consulta-legal.png"
 									alt="Asesoría legal profesional"
 									fill
 									className="object-cover rounded-xl shadow-lg"

@@ -198,8 +198,8 @@ export default function ServiciosPanel() {
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
-                                                if (target.src.includes('consulta-legal.jpg')) return; // Evitar loop infinito
-                                                target.src = '/images/consulta-legal.jpg';
+                                                if (target.src.includes('consulta-legal.png')) return; // Evitar loop infinito
+                                                target.src = '/images/consulta-legal.png';
                                             }}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>

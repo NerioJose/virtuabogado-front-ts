@@ -107,7 +107,7 @@ export default function ServiciosPage() {
 			<section className="relative py-20 bg-azul-primario text-white overflow-hidden">
 				<div className="absolute inset-0 z-0 opacity-20">
 					<Image
-						src="/images/consulta-legal.jpg"
+						src="/images/consulta-legal.png"
 						alt="Servicios Legales"
 						fill
 						className="object-cover"

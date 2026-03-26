@@ -31,14 +31,16 @@ export function useAbogadoData(abogadoId?: string): UseAbogadoDataReturn {
 		try {
 			setLoading(true);
 			
-			// 1. Cargar Perfil (Mapping de Supabase User a Tipo Abogado)
+			// 1. Cargar Perfil (Safe access to metadata for TS compatibility)
+			const metadata = (user as any).user_metadata || {};
+
 			setAbogado({
 				id: user.id,
-				nombre: user.user_metadata?.nombre || 'Abogado',
+				nombre: metadata.nombre || 'Abogado',
 				email: user.email || '',
-				telefono: user.user_metadata?.telefono || '-',
-				especialidad: user.user_metadata?.especialidad || 'Consultor Legal',
-				numeroColegiado: user.user_metadata?.numeroColegiado || 'N/A',
+				telefono: metadata.telefono || '-',
+				especialidad: metadata.especialidad || 'Consultor Legal',
+				numeroColegiado: metadata.numeroColegiado || 'N/A',
 				experienciaAnios: 0,
 				valoracionMedia: 5.0,
 			});

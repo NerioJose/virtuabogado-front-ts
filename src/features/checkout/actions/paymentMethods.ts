@@ -34,7 +34,6 @@ export async function createPaymentMethodAction(data: {
     name: string;
     titulo: string;
     activo: boolean;
-    config?: any;
 }) {
     try {
         // Validación básica
@@ -46,8 +45,7 @@ export async function createPaymentMethodAction(data: {
             data: {
                 name: data.name,
                 titulo: data.titulo,
-                activo: data.activo,
-                config: data.config || {}
+                activo: data.activo
             }
         });
         return { success: true, method };
@@ -62,15 +60,13 @@ export async function createPaymentMethodAction(data: {
 export async function updatePaymentMethodAction(id: string, data: {
     titulo?: string;
     activo?: boolean;
-    config?: any;
 }) {
     try {
         const method = await prisma.paymentMethod.update({
             where: { id },
             data: {
                 ...(data.titulo && { titulo: data.titulo }),
-                ...(data.activo !== undefined && { activo: data.activo }),
-                ...(data.config && { config: data.config })
+                ...(data.activo !== undefined && { activo: data.activo })
             }
         });
         return { success: true, method };

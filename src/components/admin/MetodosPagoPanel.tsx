@@ -35,9 +35,7 @@ export default function MetodosPagoPanel() {
     const [formData, setFormData] = useState({
         name: '',
         titulo: '',
-        activo: false,
-        apiKey: '',
-        apiSecret: ''
+        activo: false
     });
 
     const handleToggle = async (id: string, currentStatus: boolean) => {
@@ -74,52 +72,42 @@ export default function MetodosPagoPanel() {
 
     const openCreateModal = () => {
         setEditingMethod(null);
-        setFormData({ name: '', titulo: '', activo: true, apiKey: '', apiSecret: '' });
+        setFormData({ name: '', titulo: '', activo: true });
         setIsModalOpen(true);
     };
 
     const openEditModal = (method: any) => {
         setEditingMethod(method);
-        const config = method.config || {};
         setFormData({
             name: method.name,
             titulo: method.titulo,
-            activo: method.activo,
-            apiKey: config.apiKey || '',
-            apiSecret: config.apiSecret || ''
+            activo: method.activo
         });
         setIsModalOpen(true);
     };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        const loadingToast = toast.loading('Guardando configuración segura...');
+        const loadingToast = toast.loading('Guardando configuración...');
 
         try {
-            const configPayload = {
-                apiKey: formData.apiKey,
-                apiSecret: formData.apiSecret
-            };
-
             let result;
             if (editingMethod) {
                 result = await updatePaymentMethodAction(editingMethod.id, {
                     titulo: formData.titulo,
-                    activo: formData.activo,
-                    config: configPayload
+                    activo: formData.activo
                 });
             } else {
                 result = await createPaymentMethodAction({
                     name: formData.name,
                     titulo: formData.titulo,
-                    activo: formData.activo,
-                    config: configPayload
+                    activo: formData.activo
                 });
             }
 
             if (result.success) {
                 await queryClient.invalidateQueries({ queryKey: ['PaymentMethods'] });
-                toast.success('Configuración de pasarela guardada guardada', { id: loadingToast });
+                toast.success('Configuración guardada', { id: loadingToast });
                 setIsModalOpen(false);
             } else {
                 toast.error(result.message || 'Error al guardar', { id: loadingToast });
@@ -148,7 +136,7 @@ export default function MetodosPagoPanel() {
                         Métodos de Pago
                     </h2>
                     <p className="text-azul-claro/80 mt-2 max-w-2xl">
-                        Gestiona las configuraciones de pasarelas activas. Ajusta credenciales de acceso y determina la disponibilidad operativa en el flujo de cobranza principal.
+                        Ajusta el nombre comercial y determina qué métodos de pago están disponibles operativamente para el cliente.
                     </p>
                 </div>
                 <div className="relative z-10 mt-6 md:mt-0 w-full md:w-auto text-right">
@@ -233,14 +221,14 @@ export default function MetodosPagoPanel() {
 
                         <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-500">
-                                <FiKey size={14} className={method.config?.apiKey ? 'text-green-500' : 'text-gray-300'} />
-                                <span>{method.config?.apiKey ? 'Credenciales Configuradas' : 'Sin Credenciales'}</span>
+                                <FiShield size={14} className="text-green-500" />
+                                <span>Configuración Centralizada (.env)</span>
                             </div>
                             <button 
                                 onClick={() => openEditModal(method)}
                                 className="text-azul-primario font-bold hover:underline"
                             >
-                                Gestionar Acceso
+                                Modificar Detalles
                             </button>
                         </div>
                     </motion.div>
@@ -321,37 +309,6 @@ export default function MetodosPagoPanel() {
                                         </button>
                                     </div>
 
-                                    <div className="col-span-2 pt-4 border-t border-gray-100">
-                                        <h4 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
-                                            <FiKey className="text-azul-primario" /> Credenciales de Acceso
-                                        </h4>
-                                    </div>
-                                    
-                                    {/* API Keys */}
-                                    <div className="col-span-2">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Clave de Acceso Pública</label>
-                                        <input 
-                                            type="password" 
-                                            className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-azul-primario focus:border-azul-primario transition font-mono text-sm"
-                                            placeholder="pk_test_..."
-                                            value={formData.apiKey}
-                                            onChange={(e) => setFormData({...formData, apiKey: e.target.value})}
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Secreto de Conexión Privado</label>
-                                        <input 
-                                            type="password" 
-                                            className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-red-300 focus:border-red-400 transition font-mono text-sm"
-                                            placeholder="sk_test_..."
-                                            value={formData.apiSecret}
-                                            onChange={(e) => setFormData({...formData, apiSecret: e.target.value})}
-                                        />
-                                        <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                                            <FiShield /> Esta información se almacena cifrada en el sistema Zero-Trust.
-                                        </p>
-                                    </div>
-
                                 </div>
 
                                 <div className="pt-6 flex justify-end gap-3 border-t border-gray-100">
@@ -380,9 +337,9 @@ export default function MetodosPagoPanel() {
                 <div className="flex items-start gap-3">
                     <FiShield className="text-amber-600 mt-1 flex-shrink-0" />
                     <div>
-                        <h4 className="text-amber-800 font-bold">Protocolo de Alta Seguridad Activado</h4>
+                        <h4 className="text-amber-800 font-bold">Ciberseguridad Mantenida</h4>
                         <p className="text-amber-700 text-sm mt-1">
-                            El acceso y manipulación de parámetros operativos está restringido. Modificar claves de acceso críticas afectará de forma inmediata las transacciones electrónicas de la firma. Los valores son asimilados por el núcleo de seguridad dinámicamente.
+                            Por protección de arquitectura Zero-Exposure, las credenciales no son accesibles desde ningún panel. Las configuraciones subyacentes operan automáticamente en el servidor central.
                         </p>
                     </div>
                 </div>

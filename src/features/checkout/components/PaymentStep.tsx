@@ -80,7 +80,7 @@ export const PaymentStep: React.FC = () => {
                     Selecciona tu método de pago
                 </p>
                 
-                {methods?.map((method) => (
+                {methods?.map((method: any) => (
                     <button
                         key={method.id}
                         onClick={() => handlePayment(method.id)}

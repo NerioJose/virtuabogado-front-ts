@@ -1,6 +1,7 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaClient } from '@/lib/prisma';
+const prisma = prismaClient as any;
 import { createClient } from '@/utils/supabase/server';
 import { ZenobankService } from '../services/zenobank.service';
 import { serializeFinance } from '@/lib/finance';

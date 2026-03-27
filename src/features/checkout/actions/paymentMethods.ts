@@ -1,6 +1,7 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaClient } from '@/lib/prisma';
+const prisma = prismaClient as any;
 
 export async function getPaymentMethodsAction() {
     try {

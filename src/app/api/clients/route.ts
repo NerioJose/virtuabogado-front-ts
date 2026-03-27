@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { UserRole } from '@/shared/types/entities.types';
+import { serializeFinance } from '@/lib/finance';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request: Request) {
     try {
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
         }
 
         // Obtener rol del usuario
-        let userRole = user.user_metadata?.rol;
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -40,39 +42,44 @@ export async function GET(request: Request) {
             userRole = userData?.rol;
         }
 
-        if (userRole !== 'ADMIN' && userRole !== 'ABOGADO') {
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
+        }
+
+        const role: string = userRole;
+        console.log(`🔍 [API Clients] Access granted. Role: ${role} for User: ${user.id}`);
+
+        if (role !== 'ADMIN' && role !== 'ABOGADO') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        const clients = await prisma.user.findMany({
-            where: {
-                rol: UserRole.CLIENTE,
-                activo: true
-            },
-            include: {
-                orders: true
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
+        // 🏛️ RESCUE LOGIC: Fetch all users and filter in-memory to handle legacy casing (Enum validation safety)
+        const allUsers = await prisma.user.findMany({
+            where: { activo: true },
+            include: { orders: true },
+            orderBy: { createdAt: 'desc' }
         });
+
+        const clients = allUsers.filter((u: any) => 
+            u.rol?.toUpperCase() === 'CLIENTE'
+        );
 
         // Mapear al formato que espera el frontend
         const formattedClients = clients.map((client: any) => ({
             id: client.id,
-            nombre: client.nombre,
-            email: client.email,
+            nombre: client.nombre || 'Cliente Sin Nombre',
+            email: client.email || 'N/A',
             telefono: client.telefono || undefined,
             direccion: client.direccion || undefined,
             dni: client.dni || undefined,
             status: 'active', // Default
             createdAt: client.createdAt,
             updatedAt: client.updatedAt,
-            serviciosContratados: client.orders.length,
-            totalGastado: client.orders.reduce((sum: number, order: any) => sum + Number(order.total), 0),
+            serviciosContratados: (client.orders || []).length,
+            totalGastado: (client.orders || []).reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
         }));
 
-        return NextResponse.json(formattedClients);
+        return NextResponse.json(serializeFinance(formattedClients));
     } catch (error) {
         console.error('❌ API Error fetching clients:', error);
         return NextResponse.json(

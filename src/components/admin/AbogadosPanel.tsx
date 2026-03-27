@@ -50,7 +50,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
   // Casos actualmente en proceso asignados al abogado
   const getActiveCases = (lawyerId: string) => {
     return orders.filter(
-      o => o.lawyerId === lawyerId && o.status === OrderStatus.PROCESSING
+      o => o.lawyerId === lawyerId && o.status === OrderStatus.EN_PROGRESO
     ).length;
   };
 

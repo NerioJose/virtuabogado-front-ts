@@ -1,8 +1,9 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { OrderStatus, UserRole } from '@prisma/client';
-import { serializeFinance, calculateOrderFinances } from '@/lib/finance';
+import { OrderStatus, UserRole } from '@/shared/types/entities.types';
+import { serializeFinance } from '@/lib/finance';
+import { calculateOrderFinances } from '@/services/finance.service';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 
 export interface GetOrdersFilters {
@@ -57,10 +58,9 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
         dateFilter = { gte: start, lte: end };
     }
 
-    // 3. Search Logic
-    const where = {
+    // 3. Search Logic & Status Filtering
+    const where: any = {
         ...roleWhere,
-        status: status || undefined,
         createdAt: dateFilter,
         OR: search ? [
             { id: { contains: search, mode: 'insensitive' } },
@@ -68,6 +68,15 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
             { user: { nombre: { contains: search, mode: 'insensitive' } } }
         ] : undefined
     };
+
+    // Si se pide un estado específico, se usa. Si no, excluimos el "ruido" de pagos no realizados para el Admin/Abogado.
+    if (status) {
+        where.status = status;
+    } else {
+        where.status = {
+            notIn: [OrderStatus.PAGO_PENDIENTE, OrderStatus.PAGO_RECHAZADO]
+        };
+    }
 
     try {
         // 4. Fetch Results & Settings
@@ -95,8 +104,8 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
         ]);
 
         // 5. Enrich with Financial Splits (Calculated on the fly for stability)
-        const enrichedData = orders.map(order => {
-            const financials = calculateOrderFinances(order.total, settings as any);
+        const enrichedData = await Promise.all(orders.map(async (order: any) => {
+            const financials = await calculateOrderFinances(order.total || 0, settings as any);
             return {
                 ...order,
                 financials: {
@@ -105,7 +114,7 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
                     netoPlataforma: financials.netoPlataforma
                 }
             };
-        });
+        }));
 
         // 6. Professional Serialization for Next.js 15
         return serializeFinance({
@@ -115,7 +124,15 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
             currentPage: page
         });
     } catch (error) {
-        console.error('❌ Error en getOrdersHistory:', error);
-        throw new Error('No se pudo recuperar el historial financiero.');
+        console.error('❌ [DATABASE_REPAIR] Error en getOrdersHistory:', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            context: {
+                userId: user.id,
+                filters,
+                where
+            }
+        });
+        throw new Error('No se pudo recuperar el historial financiero: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     }
 }

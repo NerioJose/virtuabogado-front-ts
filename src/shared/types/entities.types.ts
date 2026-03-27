@@ -1,22 +1,34 @@
 /**
  * Entidades principales del dominio
+ * Centralización de tipos Frontend-Safe para evitar fugas de Prisma.
  */
 
 export enum UserRole {
     ADMIN = 'ADMIN',
     ABOGADO = 'ABOGADO',
-    CLIENTE = 'CLIENTE',
+    CLIENTE = 'CLIENTE'
+}
+
+export enum OrderStatus {
+    PAGO_PENDIENTE = 'PAGO_PENDIENTE',
+    PAGO_RECHAZADO = 'PAGO_RECHAZADO',
+    PENDIENTE = 'PENDIENTE',
+    EN_PROGRESO = 'EN_PROGRESO',
+    REVISION = 'REVISION',
+    COMPLETADO = 'COMPLETADO',
+    CANCELADO = 'CANCELADO',
+    FALLIDO = 'FALLIDO'
 }
 
 export interface Servicio {
     id: number;
-    nombre?: string; // For checkout
+    nombre?: string; // For checkout compat
     titulo?: string; // For services page
     descripcion: string;
     precio?: number;
     duracion?: string;
     imagen?: string;
-    icono?: React.ReactNode;
+    icono?: any;
 }
 
 export interface User {

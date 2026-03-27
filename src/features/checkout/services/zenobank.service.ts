@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Webhook } from 'svix';
 
 interface ZenobankSessionRequest {
     orderId: string;
@@ -16,42 +17,83 @@ interface ZenobankSessionRequest {
 }
 
 export class ZenobankService {
-    private static apiKey = process.env.ZENOBANK_API_KEY || 'zb_test_key_abc123';
-    private static webhookSecret = process.env.ZENOBANK_WEBHOOK_SECRET || 'zb_wh_sec_xyz456';
-    private static apiUrl = 'https://api.zenobank.io/v1';
+    private static apiKey = process.env.ZENOBANK_API_KEY || '';
+    private static webhookSecret = process.env.ZENOBANK_WEBHOOK_SECRET || '';
+    private static apiUrl = 'https://api.zenobank.io/api/v1/checkouts';
 
     /**
-     * Crea una sesión de checkout en Zenobank
-     * @param request Datos de la orden
+     * Crea una sesión de checkout en Zenobank v1 (Restauración Total)
      */
     static async createCheckoutSession(request: ZenobankSessionRequest) {
-        // En un entorno real, esto sería un fetch a la API de Zenobank usando this.apiKey
-        // Para esta implementación, simulamos el comportamiento esperado según el prompt
-        
-        console.log('💳 [Zenobank] Creando sesión para orden:', request.orderId);
+        if (!this.apiKey) {
+            console.error('❌ [Zenobank] Missing ZENOBANK_API_KEY');
+            throw new Error('Configuración de pago incompleta en el servidor.');
+        }
 
-        // Simulamos la respuesta de la API
-        const sessionId = `zb_session_${crypto.randomBytes(8).toString('hex')}`;
-        const checkoutUrl = `https://checkout.zenobank.io/pay/${sessionId}`;
+        console.log('💳 [Zenobank] Petición de Checkout:', request.orderId);
 
-        return {
-            id: sessionId,
-            url: checkoutUrl
-        };
+        try {
+            // Body exacto según requerimiento de producción
+            const body = {
+                orderId: String(request.orderId),
+                priceAmount: String(request.amount), // REQUISITO: String
+                priceCurrency: 'USD',
+                description: request.description,
+                customerEmail: request.customer.email,
+                customerName: request.customer.name,
+                successRedirectUrl: request.redirectUrls.success,
+                cancelRedirectUrl: request.redirectUrls.error
+            };
+
+            const response = await fetch(this.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': this.apiKey
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = errorText;
+                }
+                
+                console.error('🛑 [Zenobank] Error de API:', {
+                    status: response.status,
+                    data: errorData
+                });
+
+                throw new Error(`Zenobank API Error: ${response.status} - ${typeof errorData === 'object' ? JSON.stringify(errorData) : errorData}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('❌ [Zenobank] Error en createCheckoutSession:', error);
+            throw error;
+        }
     }
 
     /**
-     * Valida la firma HMAC de un webhook de Zenobank
-     * @param payload Cuerpo de la petición
-     * @param signature Firma enviada en headers
+     * Valida la firma HMAC usando la librería oficial SVIX
+     * REQUERIMIENTO: svix-id, svix-timestamp, svix-signature
      */
-    static verifyWebhookSignature(payload: string, signature: string): boolean {
+    static verifyWebhookSignature(payload: string, headers: {[key: string]: string}): boolean {
+        if (!this.webhookSecret) {
+            console.warn('⚠️ [Zenobank] No Webhook Secret configured. Verification skipped (Potencial riesgo).');
+            return false;
+        }
+
         try {
-            const hmac = crypto.createHmac('sha256', this.webhookSecret);
-            const digest = hmac.update(payload).digest('hex');
-            return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
-        } catch (error) {
-            console.error('❌ [Zenobank] Error validando firma:', error);
+            const wh = new Webhook(this.webhookSecret);
+            wh.verify(payload, headers);
+            return true;
+        } catch (err) {
+            console.error('❌ [Zenobank] Svix verification failed:', err);
             return false;
         }
     }

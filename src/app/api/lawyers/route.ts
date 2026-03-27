@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { UserRole } from '@/shared/types/entities.types';
+import { serializeFinance } from '@/lib/finance';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
         }
 
         // Verificar rol
-        let userRole = user.user_metadata?.rol;
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -40,41 +41,47 @@ export async function GET(request: Request) {
             userRole = userData?.rol;
         }
 
-        if (userRole !== 'ADMIN') {
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
+        }
+
+        const role: string = userRole;
+        console.log(`🔍 [API Lawyers] Access granted. Role: ${role} for User: ${user.id}`);
+
+        if (role !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        const lawyers = await prisma.user.findMany({
-            where: {
-                rol: 'ABOGADO' as any,
-                activo: true
-            },
-            include: {
-                orders: true
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
+        console.log('🏛️ [API Lawyers] Fetching all users for administrative categorization...');
+        const allUsers = await prisma.user.findMany({
+            where: { activo: true },
+            include: { orders: true },
+            orderBy: { createdAt: 'desc' }
         });
+
+        const clients = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'CLIENTE');
+        const lawyers = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'ABOGADO');
+
+        console.log(`📊 [API Lawyers] Consolidated Results -> Clients: ${clients.length}, Lawyers: ${lawyers.length}`);
 
         // Mapear al formato que espera el frontend
         const formattedLawyers = lawyers.map((lawyer: any) => ({
             id: lawyer.id,
-            nombre: lawyer.nombre,
-            email: lawyer.email,
+            nombre: lawyer.nombre || 'Abogado Sin Nombre',
+            email: lawyer.email || 'N/A',
             telefono: lawyer.telefono || undefined,
-            especialidad: lawyer.especialidad || 'civil',
-            status: 'ACTIVO', // Default for active users
+            especialidad: (lawyer.especialidad || 'General').toLowerCase(),
+            status: lawyer.activo ? 'ACTIVO' : 'INACTIVO', 
             matricula: lawyer.matricula || undefined,
             experiencia: lawyer.experiencia || undefined,
-            casosActivos: lawyer.orders.filter((o: any) => o.status === 'PENDIENTE').length,
-            casosCompletados: lawyer.orders.filter((o: any) => o.status === 'COMPLETADO').length,
-            rating: 5, // Mock por ahora
+            casosActivos: (lawyer.orders || []).filter((o: any) => o.status === 'PROCESSING' || o.status === 'PENDIENTE').length,
+            casosCompletados: (lawyer.orders || []).filter((o: any) => o.status === 'COMPLETED' || o.status === 'COMPLETADO').length,
+            rating: 5,
             createdAt: lawyer.createdAt,
             updatedAt: lawyer.updatedAt,
         }));
 
-        return NextResponse.json(formattedLawyers);
+        return NextResponse.json(serializeFinance(formattedLawyers));
     } catch (error) {
         console.error('❌ API Error fetching lawyers:', error);
         return NextResponse.json(
@@ -94,7 +101,7 @@ export async function POST(request: Request) {
         }
 
         // Verificar rol admin
-        let userRole = adminUser.user_metadata?.rol;
+        let userRole: string | undefined = (adminUser.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: adminUser.id },

@@ -96,7 +96,7 @@ export const useOrdersStore = create<OrdersState>()(
                                     status,
                                     notes,
                                     updatedAt: new Date(),
-                                    completedAt: status === OrderStatus.COMPLETED ? new Date() : order.completedAt,
+                                    completedAt: status === OrderStatus.COMPLETADO ? new Date() : order.completedAt,
                                 }
                                 : order
                         ),

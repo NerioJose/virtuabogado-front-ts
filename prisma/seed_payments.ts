@@ -1,42 +1,47 @@
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import * as dotenv from 'dotenv';
 
-const prisma = new PrismaClient();
+dotenv.config();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const methods = [
     {
-      name: 'zenobank',
-      titulo: 'Tarjeta de Crédito (Zenobank)',
-      activo: true,
-      config: {
-        publicKey: process.env.ZENOBANK_PUBLIC_KEY || 'zb_pub_test_123',
-        webhookSecret: process.env.ZENOBANK_WEBHOOK_SECRET || 'zb_wh_test_456'
-      }
+      identifier: 'mock',
+      name: 'Tarjeta de Crédito / Débito',
+      isActive: true,
+      icon: 'FiCreditCard'
     },
     {
-      name: 'mock',
-      titulo: 'Simulación de Pago (Test)',
-      activo: true,
-      config: {}
+      identifier: 'zenobank',
+      name: 'Criptomonedas',
+      isActive: true,
+      icon: 'SiBitcoin'
     }
   ];
 
+  console.log('🌱 Seeding payment methods...');
+
   for (const method of methods) {
     await prisma.paymentMethod.upsert({
-      where: { name: method.name },
+      where: { identifier: method.identifier },
       update: {
-        titulo: method.titulo,
-        activo: method.activo,
-        config: method.config as any
+        name: method.name,
+        isActive: method.isActive,
+        icon: method.icon
       },
       create: {
-        id: method.name === 'zenobank' 
-          ? '00000000-0000-0000-0000-000000000001' 
-          : '00000000-0000-0000-0000-000000000002',
+        identifier: method.identifier,
         name: method.name,
-        titulo: method.titulo,
-        activo: method.activo,
-        config: method.config as any
+        isActive: method.isActive,
+        icon: method.icon
       }
     });
   }

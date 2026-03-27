@@ -58,32 +58,32 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
             Todos
           </button>
           <button
-            onClick={() => setFiltroEstado(OrderStatus.PENDING)}
-            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PENDING
+            onClick={() => setFiltroEstado(OrderStatus.PENDIENTE)}
+            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PENDIENTE
               ? 'bg-yellow-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             Pendientes
           </button>
           <button
-            onClick={() => setFiltroEstado(OrderStatus.PROCESSING)}
-            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PROCESSING
+            onClick={() => setFiltroEstado(OrderStatus.EN_PROGRESO)}
+            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.EN_PROGRESO
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             En proceso
           </button>
           <button
-            onClick={() => setFiltroEstado(OrderStatus.COMPLETED)}
-            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.COMPLETED
+            onClick={() => setFiltroEstado(OrderStatus.COMPLETADO)}
+            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.COMPLETADO
               ? 'bg-green-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
             Completados
           </button>
           <button
-            onClick={() => setFiltroEstado(OrderStatus.CANCELLED)}
-            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.CANCELLED
+            onClick={() => setFiltroEstado(OrderStatus.CANCELADO)}
+            className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.CANCELADO
               ? 'bg-red-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
@@ -109,14 +109,14 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                     <span className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString('es-ES')}</span>
                   </div>
                   <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
-                    order.status === OrderStatus.PENDING ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
-                    order.status === OrderStatus.PROCESSING ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                    order.status === OrderStatus.COMPLETED ? 'bg-green-50 text-green-600 border-green-100' :
+                    order.status === OrderStatus.PENDIENTE ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                    order.status === OrderStatus.EN_PROGRESO ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                    order.status === OrderStatus.COMPLETADO ? 'bg-green-50 text-green-600 border-green-100' :
                     'bg-gray-50 text-gray-600 border-gray-100'
                   }`}>
-                    {order.status === OrderStatus.PENDING ? 'PENDIENTE' :
-                     order.status === OrderStatus.PROCESSING ? 'EN PROCESO' :
-                     order.status === OrderStatus.COMPLETED ? 'COMPLETADO' : 
+                    {order.status === OrderStatus.PENDIENTE ? 'PENDIENTE' :
+                     order.status === OrderStatus.EN_PROGRESO ? 'EN PROCESO' :
+                     order.status === OrderStatus.COMPLETADO ? 'COMPLETADO' : 
                      order.status}
                   </span>
                 </div>
@@ -257,16 +257,16 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
-                          order.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
-                            order.status === OrderStatus.CANCELLED ? 'bg-red-100 text-red-800' :
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === OrderStatus.PENDIENTE ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === OrderStatus.EN_PROGRESO ? 'bg-blue-100 text-blue-800' :
+                          order.status === OrderStatus.COMPLETADO ? 'bg-green-100 text-green-800' :
+                            order.status === OrderStatus.CANCELADO ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                         }`}>
-                        {order.status === OrderStatus.PENDING ? 'Pendiente' :
-                          order.status === OrderStatus.PROCESSING ? 'En proceso' :
-                            order.status === OrderStatus.COMPLETED ? 'Completado' :
-                              order.status === OrderStatus.CANCELLED ? 'Cancelado' :
+                        {order.status === OrderStatus.PENDIENTE ? 'Pendiente' :
+                          order.status === OrderStatus.EN_PROGRESO ? 'En proceso' :
+                            order.status === OrderStatus.COMPLETADO ? 'Completado' :
+                              order.status === OrderStatus.CANCELADO ? 'Cancelado' :
                                 'Fallido'}
                       </span>
                     </td>

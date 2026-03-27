@@ -35,7 +35,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
       await updateOrder.mutateAsync({
         id: casoParaCompletar,
         data: { 
-          status: OrderStatus.COMPLETED,
+          status: OrderStatus.COMPLETADO,
           closedAt: new Date().toISOString()
         }
       });
@@ -100,9 +100,9 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               </div>
               <div>
                 <p className="text-gray-500">Estado</p>
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caso?.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
-                  caso?.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
-                    caso?.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caso?.status === OrderStatus.PENDIENTE ? 'bg-yellow-100 text-yellow-800' :
+                  caso?.status === OrderStatus.EN_PROGRESO ? 'bg-blue-100 text-blue-800' :
+                    caso?.status === OrderStatus.COMPLETADO ? 'bg-green-100 text-green-800' :
                       'bg-red-100 text-red-800'
                   }`}>
                   {caso?.status}
@@ -115,7 +115,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
             </div>
 
             {/* Nuevo botón para completar caso */}
-            {caso?.status !== OrderStatus.COMPLETED && caso?.status !== OrderStatus.CANCELLED && (
+            {caso?.status !== OrderStatus.COMPLETADO && caso?.status !== OrderStatus.CANCELADO && (
               <div className="pt-4 mt-6 border-t border-gray-100">
                 <button
                   onClick={() => caso && openConfirmModal(caso.id)}
@@ -171,8 +171,8 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               Todos
             </button>
             <button
-              onClick={() => setFiltroEstado(OrderStatus.PENDING)}
-              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PENDING
+              onClick={() => setFiltroEstado(OrderStatus.PENDIENTE)}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PENDIENTE
                 ? 'bg-yellow-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
@@ -180,8 +180,8 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               Pendientes
             </button>
             <button
-              onClick={() => setFiltroEstado(OrderStatus.PROCESSING)}
-              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.PROCESSING
+              onClick={() => setFiltroEstado(OrderStatus.EN_PROGRESO)}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.EN_PROGRESO
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
@@ -189,8 +189,8 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               En proceso
             </button>
             <button
-              onClick={() => setFiltroEstado(OrderStatus.COMPLETED)}
-              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.COMPLETED
+              onClick={() => setFiltroEstado(OrderStatus.COMPLETADO)}
+              className={`px-3 py-1 rounded-full text-sm ${filtroEstado === OrderStatus.COMPLETADO
                 ? 'bg-green-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
@@ -249,9 +249,9 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caso.status === OrderStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
-                      caso.status === OrderStatus.PROCESSING ? 'bg-blue-100 text-blue-800' :
-                        caso.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-800' :
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caso.status === OrderStatus.PENDIENTE ? 'bg-yellow-100 text-yellow-800' :
+                      caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-100 text-blue-800' :
+                        caso.status === OrderStatus.COMPLETADO ? 'bg-green-100 text-green-800' :
                           'bg-red-100 text-red-800'
                       }`}>
                       {caso.status}

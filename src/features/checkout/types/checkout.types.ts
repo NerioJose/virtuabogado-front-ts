@@ -59,6 +59,8 @@ export interface CheckoutState extends CheckoutData {
     existingUserId: string | null;
     tempPassword: string | null;
     completedAt: string | null;  // Timestamp cuando se completó exitosamente
+    isProcessingPayment: boolean; // Indica si el usuario hizo clic en pagar
+    isWaitingForWebhook: boolean; // Indica si estamos esperando la confirmación de la pasarela
 
     // Actions
     openCheckout: (service: Servicio) => void;
@@ -67,9 +69,13 @@ export interface CheckoutState extends CheckoutData {
     setUserData: (data: UserCheckoutData) => void;
     setPaymentData: (data: PaymentData) => void;
     setPaymentMethod: (method: PaymentMethod) => void;
+    setIsProcessingPayment: (val: boolean) => void;
+    setIsWaitingForWebhook: (val: boolean) => void;
+    setOrderId: (orderId: string) => void;
     checkUserExists: (email: string) => Promise<boolean>;
     sendOtp: (email: string) => Promise<void>;
     verifyOtp: (email: string, token: string) => Promise<void>;
+    authenticateUser: (data: UserCheckoutData) => Promise<boolean>;
     submitOrder: () => Promise<void>;
     markAsCompleted: () => void;
     reset: () => void;

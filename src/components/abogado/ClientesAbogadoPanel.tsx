@@ -44,8 +44,8 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
       const fechaCreacion = new Date(order.createdAt);
 
       if (existingClient) {
-        existingClient.casosActivos += (order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) ? 1 : 0;
-        existingClient.casosCompletados += order.status === OrderStatus.COMPLETED ? 1 : 0;
+        existingClient.casosActivos += (order.status === OrderStatus.EN_PROGRESO || order.status === OrderStatus.PENDIENTE) ? 1 : 0;
+        existingClient.casosCompletados += order.status === OrderStatus.COMPLETADO ? 1 : 0;
         // Update last activity if newer
         if (fechaActualizacion > new Date(existingClient.ultimaActividad)) {
           existingClient.ultimaActividad = fechaActualizacion.toISOString();
@@ -57,8 +57,8 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
           email: order.userEmail,
           telefono: 'No registrado', // userPhone no existe en Order, placeholder por ahora
           fechaAsignacion: fechaCreacion.toISOString(),
-          casosActivos: (order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) ? 1 : 0,
-          casosCompletados: order.status === OrderStatus.COMPLETED ? 1 : 0,
+          casosActivos: (order.status === OrderStatus.EN_PROGRESO || order.status === OrderStatus.PENDIENTE) ? 1 : 0,
+          casosCompletados: order.status === OrderStatus.COMPLETADO ? 1 : 0,
           ultimaActividad: (order.updatedAt ? fechaActualizacion : fechaCreacion).toISOString()
         });
       }

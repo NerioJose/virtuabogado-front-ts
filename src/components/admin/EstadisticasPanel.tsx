@@ -164,13 +164,13 @@ function EstadisticasPanel() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Órdenes completadas</span>
                 <span className="text-lg font-medium text-green-600">
-                  {orders.filter(o => o.status === OrderStatus.COMPLETED).length}
+                  {orders.filter(o => o.status === OrderStatus.COMPLETADO).length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Órdenes pendientes</span>
                 <span className="text-lg font-medium text-yellow-600">
-                  {orders.filter(o => o.status === OrderStatus.PENDING).length}
+                  {orders.filter(o => o.status === OrderStatus.PENDIENTE).length}
                 </span>
               </div>
             </div>

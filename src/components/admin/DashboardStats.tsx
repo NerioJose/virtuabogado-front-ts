@@ -212,9 +212,9 @@ function DashboardStats() {
 		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 		const clientesNuevosMes = clients.filter(c => new Date(c.createdAt) >= thisMonth).length;
 
-		const ordenesPending = orders.filter(o => o.status === OrderStatus.PENDING).length;
-		const ordenesProcessing = orders.filter(o => o.status === OrderStatus.PROCESSING).length;
-		const ordenesCompleted = orders.filter(o => o.status === OrderStatus.COMPLETED).length;
+		const ordenesPending = orders.filter(o => o.status === OrderStatus.PENDIENTE).length;
+		const ordenesProcessing = orders.filter(o => o.status === OrderStatus.EN_PROGRESO).length;
+		const ordenesCompleted = orders.filter(o => o.status === OrderStatus.COMPLETADO).length;
 
 		// PRECISIÓN FINANCIERA: Strictly from Server Actions (getFinancialSummary)
 		return {

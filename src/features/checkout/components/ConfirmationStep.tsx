@@ -5,10 +5,12 @@ import { useCheckout } from '../hooks/useCheckout';
 import Link from 'next/link';
 
 export const ConfirmationStep: React.FC = () => {
-    const { orderId, service, userData, closeCheckout, tempPassword } = useCheckout();
+    const { orderId, service, userData, closeCheckout, tempPassword, paymentMethod } = useCheckout();
+    
+    // Determinamos si es un pago que requiere confirmación externa (Zenobank/Cripto)
+    const isPendingConfirmation = paymentMethod === 'zenobank' || paymentMethod === 'crypto';
 
     const handleClose = () => {
-        // closeCheckout ahora maneja el reset automáticamente si step === 3
         closeCheckout();
     };
 
@@ -18,27 +20,38 @@ export const ConfirmationStep: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-6"
         >
-            {/* Ícono de éxito */}
+            {/* Ícono dinámico */}
             <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring' }}
-                className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                    isPendingConfirmation ? 'bg-amber-100' : 'bg-green-100'
+                }`}
             >
-                <FiCheckCircle className="w-12 h-12 text-green-600" />
+                {isPendingConfirmation ? (
+                    <div className="relative">
+                        <div className="absolute inset-0 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                        <FiCheckCircle className="w-12 h-12 text-amber-600 opacity-50" />
+                    </div>
+                ) : (
+                    <FiCheckCircle className="w-12 h-12 text-green-600" />
+                )}
             </motion.div>
 
-            {/* Mensaje de éxito */}
+            {/* Mensaje dinámico */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    ¡Pago Exitoso!
+                    {isPendingConfirmation ? 'Pago en Proceso' : '¡Pago Exitoso!'}
                 </h3>
-                <p className="text-gray-600 mb-6">
-                    Tu servicio ha sido contratado correctamente
+                <p className="text-sm text-gray-600 mb-6 max-w-xs mx-auto text-balance">
+                    {isPendingConfirmation 
+                        ? 'Estamos esperando la confirmación de la red. Tu servicio se activará automáticamente en unos minutos.'
+                        : 'Tu servicio ha sido contratado correctamente y ya está activo en tu panel.'}
                 </p>
             </motion.div>
 
@@ -47,20 +60,24 @@ export const ConfirmationStep: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-gray-50 rounded-lg p-6 mb-6 text-left"
+                className="bg-gray-50 rounded-lg p-6 mb-6 text-left border border-gray-100"
             >
                 <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Número de orden:</span>
-                        <span className="font-semibold text-gray-900">{orderId}</span>
+                        <span className="text-gray-500">Número de orden:</span>
+                        <span className="font-mono font-bold text-gray-900">{orderId}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Servicio:</span>
-                        <span className="font-semibold text-gray-900">{service?.nombre}</span>
+                        <span className="text-gray-500">Servicio:</span>
+                        <span className="font-semibold text-gray-900">{service?.titulo || service?.nombre}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Total pagado:</span>
-                        <span className="font-semibold text-azul-primario">${service?.precio?.toFixed(2)}</span>
+                    <div className="flex justify-between text-sm pt-2 border-t border-gray-100">
+                        <span className="text-gray-500">Estado:</span>
+                        <span className={`font-black text-[10px] uppercase px-2 py-0.5 rounded ${
+                            isPendingConfirmation ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                            {isPendingConfirmation ? 'Esperando Validación' : 'Confirmado'}
+                        </span>
                     </div>
                 </div>
             </motion.div>

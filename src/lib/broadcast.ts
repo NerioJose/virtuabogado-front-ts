@@ -74,11 +74,17 @@ export async function broadcastOrderUpdate(params: {
     orderId: string;
     lawyerId?: string | null;
     userId?: string | null;
-    status?: string;
+    status?: string | null;
     eventType?: 'created' | 'updated' | 'deleted';
 }): Promise<void> {
     const { orderId, lawyerId, userId, status, eventType = 'updated' } = params;
     
+    // 🛡️ FIREWALL: No notificar sobre órdenes que aún no han sido pagadas o han sido rechazadas
+    // Esto evita el "ruido" y las órdenes fantasma en los Dashboards de Admin/Abogado.
+    if (status === 'PAGO_PENDIENTE' || status === 'PAGO_RECHAZADO') {
+        console.log(`🔇 [Broadcast] Silencing notification for order ${orderId} in state ${status}`);
+        return;
+    }
     const payload = {
         orderId,
         lawyerId,

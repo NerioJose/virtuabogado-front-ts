@@ -7,13 +7,17 @@ export const mapOrderStatusToVisual = (
     status: OrderStatus
 ): 'pendiente' | 'programado' | 'completado' | 'cancelado' => {
     switch (status) {
-        case OrderStatus.PENDING:
+        case OrderStatus.PAGO_PENDIENTE:
+        case OrderStatus.PENDIENTE:
             return 'pendiente';
-        case OrderStatus.PROCESSING:
+        case OrderStatus.REVISION:
+        case OrderStatus.EN_PROGRESO:
             return 'programado';
-        case OrderStatus.COMPLETED:
+        case OrderStatus.COMPLETADO:
             return 'completado';
-        case OrderStatus.CANCELLED:
+        case OrderStatus.PAGO_RECHAZADO:
+        case OrderStatus.FALLIDO:
+        case OrderStatus.CANCELADO:
             return 'cancelado';
         default:
             return 'pendiente';

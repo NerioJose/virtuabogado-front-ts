@@ -24,6 +24,8 @@ export const useCheckout = () => {
         isExistingUser: store.isExistingUser,
         tempPassword: store.tempPassword,
         completedAt: store.completedAt,
+        isProcessingPayment: store.isProcessingPayment,
+        isWaitingForWebhook: store.isWaitingForWebhook,
 
         // Acciones
         openCheckout: store.openCheckout,
@@ -32,9 +34,13 @@ export const useCheckout = () => {
         setUserData: store.setUserData,
         setPaymentData: store.setPaymentData,
         setPaymentMethod: store.setPaymentMethod,
+        setIsProcessingPayment: store.setIsProcessingPayment,
+        setIsWaitingForWebhook: store.setIsWaitingForWebhook,
+        setOrderId: store.setOrderId,
         checkUserExists: store.checkUserExists,
         sendOtp: store.sendOtp,
         verifyOtp: store.verifyOtp,
+        authenticateUser: store.authenticateUser,
         submitOrder: store.submitOrder,
         markAsCompleted: store.markAsCompleted,
         reset: store.reset,

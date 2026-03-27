@@ -37,7 +37,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
     const prevMessagesLengthRef = useRef(0);
 
     const order = orders.find(o => o.id === orderId);
-    const isChatDisabled = order?.status === OrderStatus.COMPLETED || order?.status === OrderStatus.CANCELLED;
+    const isChatDisabled = order?.status === OrderStatus.COMPLETADO || order?.status === OrderStatus.CANCELADO;
 
     useEffect(() => {
         // Init sound preference from cookies

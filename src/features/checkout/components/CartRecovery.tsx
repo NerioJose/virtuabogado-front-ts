@@ -12,11 +12,26 @@ import { formatUSD } from '@/lib/finance';
  * Solo aparece si hay un checkout incompleto (sin completedAt) de menos de 30 minutos
  */
 export const CartRecovery = () => {
-    const { service, userData, isOpen, openCheckout, reset, step, completedAt } = useCheckout();
+    const { 
+        service, 
+        isOpen, 
+        openCheckout, 
+        reset, 
+        step, 
+        completedAt, 
+        isProcessingPayment,
+        isWaitingForWebhook 
+    } = useCheckout();
     const { isAuthenticated } = useAuthStore();
     const [showRecovery, setShowRecovery] = useState(false);
 
     useEffect(() => {
+        // --- REGLA UX: SUPRESIÓN TOTAL SI ESTÁ PAGANDO ---
+        if (isProcessingPayment || isWaitingForWebhook) {
+            setShowRecovery(false);
+            return;
+        }
+
         // No mostrar si el usuario no está autenticado
         if (!isAuthenticated) {
             setShowRecovery(false);
@@ -37,21 +52,28 @@ export const CartRecovery = () => {
 
         // ✅ CLAVE: No mostrar si la compra ya se completó exitosamente
         if (completedAt) {
-            console.log('🚫 Compra ya completada, no mostrar recovery. CompletedAt:', completedAt);
             setShowRecovery(false);
             return;
         }
 
-        // Solo mostrar si el usuario estaba en un paso avanzado (no solo abrió el modal)
+        // Solo mostrar si el usuario estaba en un paso avanzado
         if (step < 2) {
             setShowRecovery(false);
             return;
         }
 
-        // Mostrar banner de recuperación
-        console.log('🛒 Carrito abandonado detectado. Service:', service.nombre);
-        setShowRecovery(true);
-    }, [service, isOpen, step, completedAt, isAuthenticated]);
+        // --- LÓGICA DE INACTIVIDAD (15 MIN) ---
+        // Por ahora lo hacemos simple: no saltar de inmediato al navegar
+        // Si quieres algo más avanzado, podrías guardar un timestamp en localStorage
+        const timer = setTimeout(() => {
+            if (!isOpen && service && !completedAt && !isProcessingPayment) {
+                console.log('🛒 [UX] Carrito abandonado detectado tras periodo de gracia.');
+                setShowRecovery(true);
+            }
+        }, 2000); // 2 segundos de gracia para evitar parpadeos al navegar
+
+        return () => clearTimeout(timer);
+    }, [service, isOpen, step, completedAt, isAuthenticated, isProcessingPayment, isWaitingForWebhook]);
 
     const handleContinue = () => {
         if (service) {

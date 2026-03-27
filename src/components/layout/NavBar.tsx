@@ -29,11 +29,11 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const orders = useOrdersStore((state) => state.orders);
 
-	// Contar servicios activos del usuario (PENDIENTE)
+	// Contar servicios activos del usuario (PAGADOS)
 	const userActiveServices = orders.filter(
 		order =>
 			order.userId === user.id &&
-			order.status === 'PENDIENTE'
+			(order.status === 'COMPLETADO' || order.status === 'EN_PROGRESO')
 	).length;
 
 	return (

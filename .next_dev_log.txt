@@ -10,3 +10,7 @@
 
  ✓ Starting...
  ✓ Ready in 14.8s
+   Reload env: .env
+ ELIFECYCLE  Command failed.
+[?25h
+Terminated

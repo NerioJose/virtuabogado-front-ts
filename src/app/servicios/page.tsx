@@ -74,12 +74,20 @@ export default function ServiciosPage() {
         const manualMap: Record<string, string> = {
             'consultas-legales': 'consulta-legal',
             'revision-de-documentos': 'revision-documentos',
+            'redaccion-de-documentos': 'revision-documentos',
             'asesoria-legal': 'consulta-legal',
-            'representacion-legal': 'representacion-legal'
+            'representacion-legal': 'representacion-legal',
+            'asesoria-estudiantes-de-derecho': 'virtustudents.jpg'
         };
 
         const finalSlug = manualMap[slug] || slug;
-		return `/images/${finalSlug}.png`;
+		
+        // Si el slug ya tiene extensión (como .jpg), no añadir .png
+        if (finalSlug.includes('.')) {
+            return `/images/${finalSlug}`;
+        }
+        
+        return `/images/${finalSlug}.png`;
 	};
 
 	const servicios = (activeServices || [])

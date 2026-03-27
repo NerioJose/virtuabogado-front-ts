@@ -17,7 +17,7 @@ export async function GET(
             return NextResponse.json({ error: 'Service not found' }, { status: 404 });
         }
 
-        return NextResponse.json(service);
+        return NextResponse.json(serializeFinance(service));
     } catch (error) {
         console.error('Error fetching service:', error);
         return NextResponse.json({ error: 'Error fetching service' }, { status: 500 });
@@ -50,7 +50,7 @@ export async function PATCH(
             eventType: 'updated',
         });
 
-        return NextResponse.json(service);
+        return NextResponse.json(serializeFinance(service));
     } catch (error) {
         console.error('Error updating service:', error);
         return NextResponse.json({ error: 'Error updating service' }, { status: 500 });

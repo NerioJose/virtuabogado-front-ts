@@ -86,9 +86,9 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		});
 
 		return {
-			casosActivos: orders.filter((o: any) => o.status === OrderStatus.PROCESSING).length,
-			casosPendientes: orders.filter((o: any) => o.status === OrderStatus.PENDING).length,
-			casosCompletados: orders.filter((o: any) => o.status === OrderStatus.COMPLETED).length,
+			casosActivos: orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length,
+			casosPendientes: orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length,
+			casosCompletados: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length,
 			clientesActivos: uniqueClients.size,
 			proximaCita: new Date().toISOString(), // Mock por ahora
 			ingresosMes: summary?.lawyerPendingBalance || 0, // Server-verified balance

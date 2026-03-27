@@ -8,6 +8,7 @@ import type { UserCheckoutData } from '../types/checkout.types';
 
 export const UserDataStep: React.FC = () => {
     const { 
+        userData: storeUserData,
         setUserData, 
         setStep, 
         isLoading, 
@@ -15,8 +16,20 @@ export const UserDataStep: React.FC = () => {
         isExistingUser, 
         checkUserExists, 
         sendOtp, 
-        verifyOtp 
+        verifyOtp,
+        authenticateUser
     } = useCheckout();
+
+    useEffect(() => {
+        if (storeUserData) {
+            setFormData(prev => ({
+                ...prev,
+                ...storeUserData,
+                name: storeUserData.name || storeUserData.nombre || prev.name,
+                nombre: storeUserData.nombre || storeUserData.name || prev.nombre,
+            }));
+        }
+    }, [storeUserData]);
 
     // Función para traducir errores técnicos a mensajes amigables
     const getFriendlyErrorMessage = (err: string | null) => {
@@ -122,35 +135,49 @@ export const UserDataStep: React.FC = () => {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const newErrors: Partial<Record<keyof UserCheckoutData, string>> = {};
+        
+        // Validar campos condicionalmente
+        const fieldsToValidate: (keyof UserCheckoutData)[] = ['email'];
+        
+        // Solo validar nombre si es un usuario nuevo
+        if (!isExistingUser) {
+            fieldsToValidate.push('name');
+        }
+        
+        // Solo validar password si no se está usando el modo OTP
+        if (!otpSent) {
+            fieldsToValidate.push('password');
+        }
 
-        // Validar campos
-        ['email', 'name', 'password'].forEach((field) => {
-            const error = validateField(field as keyof UserCheckoutData, formData[field as keyof UserCheckoutData] as string);
-            if (error) newErrors[field as keyof UserCheckoutData] = error;
+        fieldsToValidate.forEach((field) => {
+            const error = validateField(field, formData[field] as string);
+            if (error) newErrors[field] = error;
         });
 
         if (Object.keys(newErrors).length > 0) {
+            console.warn('⚠️ Errores de validación en Checkout:', newErrors);
             setErrors(newErrors);
             return;
         }
 
-        // Guardar datos y avanzar
-        // La autenticación real ocurrirá en useCheckout -> submitUserData (o similar) 
-        // pero por ahora pasamos los datos al store
-        setUserData(formData);
-
-        // NOTA: Para UX fluida, podríamos autenticar AQUÍ mismo antes de pasar al paso 2.
-        // Pero el diseño actual de useCheckout parece manejarlo en el store.
-        // Vamos a asumir que el chequeo de "registerOrLogin" se hace al intentar pagar o al transicionar.
-        // MEJORA: Vamos a disparar la autenticación real en el siguiente paso o modificar el store.
-
-        // En este refactor, simplemente guardamos y avanzamos. 
-        // La lógica en checkoutStore.submitOrder usará esto.
-        setStep(2);
+        // --- AUTO-LOGIN / REGISTER INMEDIATO ---
+        // Intentamos autenticar antes de pasar al paso 2
+        try {
+            const success = await authenticateUser(formData);
+            if (!success) {
+                // El error ya debería estar en el store y mostrarse via useCheckout().error
+                return;
+            }
+            
+            // Si tiene éxito, authenticateUser ya cambia el step a 2
+            console.log('✅ Checkout: Usuario autenticado. Pasando al pago.');
+        } catch (err) {
+            console.error('❌ Error en el proceso de Paso 1:', err);
+        }
     };
 
     return (

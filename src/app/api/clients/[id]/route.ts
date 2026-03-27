@@ -27,7 +27,7 @@ export async function PUT(
         }
 
         // Obtener rol del usuario
-        let userRole = user.user_metadata?.rol;
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -36,7 +36,13 @@ export async function PUT(
             userRole = userData?.rol;
         }
 
-        if (userRole !== 'ADMIN' && userRole !== 'ABOGADO') {
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
+        }
+
+        const role: string = userRole;
+
+        if (role !== 'ADMIN' && role !== 'ABOGADO') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
@@ -105,7 +111,7 @@ export async function DELETE(
         }
 
         // Solo ADMIN puede borrar
-        let userRole = user.user_metadata?.rol;
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -114,7 +120,13 @@ export async function DELETE(
             userRole = userData?.rol;
         }
 
-        if (userRole !== 'ADMIN') {
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
+        }
+
+        const role: string = userRole;
+
+        if (role !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 

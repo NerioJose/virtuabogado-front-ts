@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
+import { serializeFinance } from '@/lib/finance';
 
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 
@@ -34,36 +35,50 @@ export async function GET(request: Request) {
         }
 
         // Obtener rol (Priorizar metadata de Supabase Auth, fallback a DB)
-        let userRole = user.user_metadata?.rol;
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
+        
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol || 'CLIENTE';
+            userRole = userData?.rol;
         }
+
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
+        }
+        
+        // Final role normalization ensuring it's a string for comparisons
+        const role: string = userRole;
+        console.log(`🔍 [API Orders] Role identified: ${role} for user: ${user.id}`);
 
         const { searchParams } = new URL(request.url);
         const lawyerId = searchParams.get('lawyerId');
         const userId = searchParams.get('userId');
+        const requestedStatus = searchParams.get('status');
 
-        const where: any = {
-            activo: true
-        };
+        const where: any = {};
 
         // Seguridad: Restringir filtros según rol si no es ADMIN
-        if (userRole !== 'ADMIN') {
-            if (userRole === 'ABOGADO') {
-                // Abogados solo ven lo asignado a ellos
+        if (role !== 'ADMIN') {
+            if (role === 'ABOGADO') {
                 where.lawyerId = user.id;
             } else {
-                // Clientes solo ven lo suyo
                 where.userId = user.id;
             }
         } else {
-            // Admin puede filtrar libremente
             if (lawyerId) where.lawyerId = lawyerId;
             if (userId) where.userId = userId;
+        }
+
+        // 🛡️ REGLA: Filtro por defecto (Ocultar ruido de pagos pendientes para Admin/Abogado)
+        if (!requestedStatus) {
+            where.status = {
+                notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
+            };
+        } else {
+            where.status = requestedStatus; // Filtro exacto por Prisma
         }
 
         const orders = await prisma.order.findMany({
@@ -82,8 +97,9 @@ export async function GET(request: Request) {
                     select: {
                         nombre: true
                     }
-                }
-            },
+                },
+                paymentMethod: true
+            } as any,
             orderBy: {
                 createdAt: 'desc'
             }
@@ -100,7 +116,7 @@ export async function GET(request: Request) {
         };
 
         // Mapear al formato que espera el frontend con desglose financiero dinámico
-        const formattedOrders = orders.map(order => {
+        const formattedOrders = (orders as any[]).map(order => {
             // Calcular desgloses en tiempo real para máxima precisión
             const total = Number(order.total);
             const lawyerPct = Number(settings.lawyer_commission_percentage) / 100;
@@ -113,20 +129,20 @@ export async function GET(request: Request) {
                 userId: order.userId,
                 lawyerId: order.lawyerId,
                 lawyerName: order.lawyer?.nombre ? formatLawyerName(order.lawyer.nombre) : 'Pendiente',
-                userName: capitalizeName(order.user.nombre),
-                userEmail: order.user.email,
+                userName: order.user?.nombre ? capitalizeName(order.user.nombre) : 'Usuario Técnico',
+                userEmail: order.user?.email || 'N/A',
                 items: [{
-                    id: order.service.id,
-                    serviceId: order.service.id,
-                    serviceName: order.service.titulo,
-                    price: Number(order.service.precio),
+                    id: order.service?.id || 0,
+                    serviceId: order.service?.id || 0,
+                    serviceName: order.service?.titulo || 'Servicio Eliminado',
+                    price: Number(order.service?.precio || 0),
                     quantity: 1,
                 }],
                 subtotal: total,
                 tax: 0,
                 total: total,
                 status: order.status,
-                paymentMethod: 'CREDIT_CARD',
+                paymentMethod: (order.paymentMethod?.name || 'Tarjeta de Crédito') as any,
                 transactionId: order.paymentId,
                 createdAt: order.createdAt,
                 updatedAt: order.updatedAt,
@@ -136,7 +152,9 @@ export async function GET(request: Request) {
             };
         });
 
-        return NextResponse.json(formattedOrders);
+        console.log(`📊 [API Orders] Backend returning ${formattedOrders.length} orders to client.`);
+
+        return NextResponse.json(serializeFinance(formattedOrders));
     } catch (error) {
         console.error('❌ API Error fetching orders:', error);
         return NextResponse.json(
@@ -216,16 +234,20 @@ export async function POST(request: Request) {
         const netProfitAmount = currentPrice - commissionAmount - operationalCostAmount - taxAmount - platformFeeAmount;
 
         // Seguridad: Determinar el ID del usuario final
-        let userRole = user.user_metadata?.rol;
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol || 'CLIENTE';
+            userRole = userData?.rol;
+        }
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
         }
         
-        const isAdmin = userRole === 'ADMIN';
+        const role: string = userRole;
+        const isAdmin = role === 'ADMIN';
         
         let finalUserId = user.id; 
         if (isAdmin && userId) {
@@ -260,7 +282,7 @@ export async function POST(request: Request) {
                 assignedAt,
                 serviceId: service.id,
                 total: currentPrice,
-                status: 'PENDIENTE',
+                status: 'PAGO_PENDIENTE',
                 paymentId: paymentId || `PAY-MOCK-${Date.now()}`,
                 
                 // Desglose financiero (Histórico)
@@ -281,14 +303,8 @@ export async function POST(request: Request) {
 
         console.log('✅ API: Order created successfully:', newOrder.id);
 
-        // 📡 Broadcast a todos los dashboards para reactividad instantánea
-        broadcastOrderUpdate({
-            orderId: newOrder.id,
-            userId: newOrder.userId,
-            lawyerId: newOrder.lawyerId,
-            status: newOrder.status,
-            eventType: 'created',
-        });
+        // Silenciamos el broadcast en la creación inicial (Firewalled en broadcast.ts)
+        // Solo se activará cuando pase el flujo de pago real.
 
         return NextResponse.json({
             id: newOrder.numericId,
@@ -338,17 +354,21 @@ export async function PUT(request: Request) {
         if (!existingOrder) {
             return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
         }
-
-        let userRole = user.user_metadata?.rol;
+        // Obtener rol
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol || 'CLIENTE';
+            userRole = userData?.rol;
+        }
+        if (!userRole) {
+            return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
         }
 
-        const isAdmin = userRole === 'ADMIN';
+        const role: string = userRole;
+        const isAdmin = role === 'ADMIN';
         const isLawyer = userRole === 'ABOGADO';
         const isOwner = existingOrder.userId === user.id;
         const isAssignedLawyer = existingOrder.lawyerId === user.id;
@@ -413,19 +433,16 @@ export async function DELETE(request: Request) {
         }
 
         // Solo ADMIN puede borrar
-        let isAdmin = false;
-        
-        let userRole = user.user_metadata?.rol;
-        
-        if (userRole === 'ADMIN') {
-            isAdmin = true;
-        } else if (!userRole) {
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
+        if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
                 select: { rol: true }
             });
-            isAdmin = userData?.rol === 'ADMIN';
+            userRole = userData?.rol;
         }
+        
+        const isAdmin = userRole === 'ADMIN';
 
         if (!isAdmin) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });

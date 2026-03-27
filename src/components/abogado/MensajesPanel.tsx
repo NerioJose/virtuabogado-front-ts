@@ -35,7 +35,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 			await updateOrder.mutateAsync({
 				id: casoParaCompletar,
 				data: {
-					status: OrderStatus.COMPLETED,
+					status: OrderStatus.COMPLETADO,
 					closedAt: new Date().toISOString()
 				}
 			});
@@ -174,7 +174,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 							</div>
 							</div>
 
-							{conversacionActiva && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.COMPLETED && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.CANCELLED && (
+							{conversacionActiva && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.COMPLETADO && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.CANCELADO && (
 								<button
 									onClick={() => openConfirmModal(conversacionActiva)}
 									disabled={updateOrder.isPending}

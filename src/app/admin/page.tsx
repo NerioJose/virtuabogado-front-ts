@@ -173,7 +173,7 @@ export default function AdminPage() {
 							id,
 							data: {
 								lawyerId: data.lawyerId,
-								status: OrderStatus.PROCESSING,
+								status: OrderStatus.EN_PROGRESO,
 								assignedAt: new Date().toISOString()
 							}
 						});

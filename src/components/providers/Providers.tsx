@@ -2,8 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { initializeAuth } from '@/features/auth/store/authStore';
+import { useEffect, useState } from 'react';
 
 // Componente "dummy" para usar el hook de suscripción dentro del contexto de QueryClient
 const RealtimeSubscription = () => {
@@ -18,6 +19,11 @@ const RealtimeSubscription = () => {
 };
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+    useEffect(() => {
+        // Sincronizar estado de autenticación con la sesión de Supabase al montar la app
+        initializeAuth();
+    }, []);
+
     const [queryClient] = useState(
         () =>
             new QueryClient({

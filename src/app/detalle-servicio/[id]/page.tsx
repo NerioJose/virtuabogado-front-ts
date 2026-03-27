@@ -53,14 +53,41 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
     }
 
     const statusConfig = {
-        [OrderStatus.PENDING]: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendiente de asignación' },
-        [OrderStatus.PROCESSING]: { color: 'bg-blue-100 text-blue-800', text: 'En proceso' },
-        [OrderStatus.COMPLETED]: { color: 'bg-green-100 text-green-800', text: 'Completado' },
-        [OrderStatus.CANCELLED]: { color: 'bg-red-100 text-red-800', text: 'Cancelado' },
-        [OrderStatus.FAILED]: { color: 'bg-red-100 text-red-800', text: 'Fallido' },
+        [OrderStatus.PENDIENTE]: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendiente de asignación' },
+        [OrderStatus.REVISION]: { color: 'bg-purple-100 text-purple-800', text: 'En revisión' },
+        [OrderStatus.EN_PROGRESO]: { color: 'bg-blue-100 text-blue-800', text: 'En proceso' },
+        [OrderStatus.COMPLETADO]: { color: 'bg-green-100 text-green-800', text: 'Completado' },
+        [OrderStatus.CANCELADO]: { color: 'bg-red-100 text-red-800', text: 'Cancelado' },
+        [OrderStatus.FALLIDO]: { color: 'bg-red-100 text-red-800', text: 'Fallido' },
     };
 
-    const status = statusConfig[order.status] || statusConfig[OrderStatus.PENDING];
+    const status = statusConfig[order.status] || statusConfig[OrderStatus.PENDIENTE];
+    const isPendingPayment = order.status === OrderStatus.PENDIENTE;
+
+    if (isPendingPayment) {
+        return (
+            <main className="min-h-screen bg-gray-50 py-12 px-4 flex items-center justify-center">
+                <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center">
+                    <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-amber-100">
+                        <FiClock className="text-amber-500" size={40} />
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Casi listo...</h2>
+                    <p className="text-gray-500 mb-8 leading-relaxed">
+                        Estamos esperando la confirmación de tu pago. En cuanto la red lo valide, habilitaremos tu panel, el chat con el abogado y la subida de documentos.
+                    </p>
+                    <div className="flex flex-col gap-3">
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-left">
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">Orden de referencia</p>
+                            <p className="font-mono text-sm text-azul-primario font-bold">{order.id}</p>
+                        </div>
+                        <Link href="/mis-servicios" className="btn-primary w-full py-3">
+                             Volver a Mis Servicios
+                        </Link>
+                    </div>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -185,7 +212,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                         {/* Siguiente pasos según estado */}
                         <div className="border-t border-gray-200 pt-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Próximos Pasos</h3>
-                            {order.status === OrderStatus.PENDING && (
+                            {order.status === OrderStatus.PENDIENTE && (
                                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                                     <div className="flex items-start">
                                         <FiClock className="text-yellow-600 mt-1 mr-3 flex-shrink-0" />
@@ -199,7 +226,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                 </div>
                             )}
 
-                            {order.status === OrderStatus.PROCESSING && (
+                            {order.status === OrderStatus.EN_PROGRESO && (
                                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
                                     <div className="flex items-start">
                                         <FiClock className="text-blue-600 mt-1 mr-3 flex-shrink-0" />
@@ -213,7 +240,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                 </div>
                             )}
 
-                            {order.status === OrderStatus.COMPLETED && (
+                            {order.status === OrderStatus.COMPLETADO && (
                                 <div className="bg-green-50 border-l-4 border-green-400 p-4">
                                     <div className="flex items-start">
                                         <FiFileText className="text-green-600 mt-1 mr-3 flex-shrink-0" />

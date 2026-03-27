@@ -1,8 +1,9 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { UserRole, OrderStatus } from '@prisma/client';
-import { serializeFinance, aggregateFinancials } from '@/lib/finance';
+import { UserRole, OrderStatus } from '@/shared/types/entities.types';
+import { serializeFinance } from '@/lib/finance';
+import { aggregateFinancials } from '@/services/finance.service';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 
 export interface FinancialSummaryFilters {
@@ -12,7 +13,7 @@ export interface FinancialSummaryFilters {
 
 /**
  * Server Action to fetch financial KPIs for Admin and Lawyers.
- * Uses the centralized src/lib/finance.ts logic for absolute precision.
+ * Uses the centralized src/services/finance.service.ts logic for absolute precision.
  */
 export async function getFinancialSummary(filters: FinancialSummaryFilters, user: { id: string, rol: UserRole }) {
     const { lawyerId, dateRange } = filters;
@@ -52,25 +53,26 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
         dateFilter = { gte: start };
     }
 
-    // 3. Base Query Filter (Excluding non-revenue orders)
+    // 3. Base Query Filter (Removing status filter to handle legcay casing in-memory)
     const where: any = {
-        activo: true,
         createdAt: dateFilter,
-        status: { 
-            notIn: [OrderStatus.CANCELADO, OrderStatus.FALLIDO] 
-        }
     };
 
-    // Security & Filtering by User Role
-    if (user.rol === 'ABOGADO') {
+    // Security & Filtering by User Role (In-case normalization fails elsewhere)
+    const role = (user.rol as string).toUpperCase();
+    console.log(`📊 [getFinancialSummary] User: ${user.id}, Normalized Role: ${role}`);
+
+    if (role === 'ABOGADO') {
         where.lawyerId = user.id;
-    } else if (user.rol === 'ADMIN' && lawyerId) {
+    } else if (role === 'ADMIN' && lawyerId) {
         where.lawyerId = lawyerId;
     }
+    
+    console.log(`📊 [getFinancialSummary] Where clause: ${JSON.stringify(where)}`);
 
     try {
-        // 4. Fetch Order Data
-        const orders = await prisma.order.findMany({
+        // 4. Fetch Order Data (Broad fetch, filtering status in JS)
+        const allOrders = await prisma.order.findMany({
             where,
             select: {
                 total: true,
@@ -79,8 +81,14 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
             }
         });
 
+        // 🏛️ RESCUE LOGIC: Filter out canceled/failed in-memory to handle casing errors
+        const orders = allOrders.filter((o: any) => {
+            const s = (o.status || '').toUpperCase();
+            return s !== 'CANCELADO' && s !== 'FALLIDO' && s !== 'CANCELLED' && s !== 'FAILED';
+        });
+
         // 5. Calculate Metrics using the Fintech-grade engine (Strict DB settings)
-        const stats = aggregateFinancials(orders, settings);
+        const stats = await aggregateFinancials(orders, settings);
         
         // 6. Structure Final KPIs based on Admin vs Lawyer needs
         const summary = {
@@ -101,7 +109,16 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
         // 7. Serialize for Next.js 15 Client Components
         return serializeFinance(summary);
     } catch (error) {
-        console.error('❌ Error en getFinancialSummary:', error);
-        throw new Error('Lo sentimos, hubo un error al calcular los datos financieros.');
+        console.error('❌ [DATABASE_REPAIR] Error en getFinancialSummary:', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            context: {
+                userId: user.id,
+                rol: role,
+                where
+            }
+        });
+        // We throw a generic error to the frontend but keep details in the server
+        throw new Error('Lo sentimos, hubo un error al calcular los datos financieros de la plataforma.');
     }
 }

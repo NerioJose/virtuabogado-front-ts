@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useOrdersHistory } from '../hooks/useOrdersHistory';
 import { GetOrdersFilters } from '../actions/getOrdersHistory';
-import { OrderStatus, UserRole } from '@prisma/client';
+import { OrderStatus, UserRole } from '@/shared/types/entities.types';
 import { 
     Search, 
     Calendar, 

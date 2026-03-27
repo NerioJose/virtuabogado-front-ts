@@ -13,31 +13,31 @@ import { OrderStatus } from '@/features/orders/types/orders.types';
 import { capitalizeName } from '@/utils/formatters';
 
 const statusConfig = {
-    [OrderStatus.PENDING]: {
+    [OrderStatus.PENDIENTE]: {
         label: 'Pendiente',
         icon: FiClock,
         color: 'text-yellow-600',
         bg: 'bg-yellow-100',
     },
-    [OrderStatus.PROCESSING]: {
+    [OrderStatus.EN_PROGRESO]: {
         label: 'Procesando',
         icon: FiClock,
         color: 'text-blue-600',
         bg: 'bg-blue-100',
     },
-    [OrderStatus.COMPLETED]: {
+    [OrderStatus.COMPLETADO]: {
         label: 'Completada',
         icon: FiCheckCircle,
         color: 'text-green-600',
         bg: 'bg-green-100',
     },
-    [OrderStatus.CANCELLED]: {
+    [OrderStatus.CANCELADO]: {
         label: 'Cancelada',
         icon: FiAlertCircle,
         color: 'text-red-600',
         bg: 'bg-red-100',
     },
-    [OrderStatus.FAILED]: {
+    [OrderStatus.FALLIDO]: {
         label: 'Fallida',
         icon: FiAlertCircle,
         color: 'text-red-600',

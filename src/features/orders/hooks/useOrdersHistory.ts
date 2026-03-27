@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getOrdersHistory, GetOrdersFilters } from '../actions/getOrdersHistory';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/shared/types/entities.types';
 
 export function useOrdersHistory(filters: GetOrdersFilters, user: { id: string, rol: UserRole }) {
     return useQuery({

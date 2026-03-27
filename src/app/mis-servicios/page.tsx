@@ -23,7 +23,7 @@ const getDisplayName = (user: any) => {
 
 export default function MisServiciosPage() {
   const router = useRouter();
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado' | 'cancelado'>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado' | 'cancelado'>('programado'); // Changed default to 'programado'
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // ============ ZUSTAND STORES ============
@@ -59,8 +59,11 @@ export default function MisServiciosPage() {
   const servicios = useMemo(() => {
     if (!user || !allOrders) return [];
 
-    // Mapear a formato de servicio para la UI
-    const mappedServices = allOrders.map((order: any) => mapOrderToServicio(order));
+    // Mapear a formato de servicio para la UI (SOLO PROCESADOS)
+    const processedOrders = allOrders.filter((order: any) => 
+        order.status !== 'PENDIENTE' && order.status !== 'PENDING'
+    );
+    const mappedServices = processedOrders.map((order: any) => mapOrderToServicio(order));
 
     // Ordenar por fecha (más reciente primero)
     return sortServicesByDate(mappedServices);

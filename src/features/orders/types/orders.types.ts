@@ -2,15 +2,9 @@
  * Tipos para el feature de órdenes
  */
 
-import { Servicio } from '@/shared/types/entities.types';
+import { Servicio, OrderStatus } from '@/shared/types/entities.types';
 
-export enum OrderStatus {
-    PENDING = 'PENDIENTE',
-    PROCESSING = 'EN_PROGRESO',
-    COMPLETED = 'COMPLETADO',
-    CANCELLED = 'CANCELADO',
-    FAILED = 'FALLIDO',
-}
+export { OrderStatus };
 
 export enum PaymentMethod {
     CREDIT_CARD = 'credit_card',
@@ -18,6 +12,7 @@ export enum PaymentMethod {
     PAYPAL = 'paypal',
     BANK_TRANSFER = 'bank_transfer',
     CASH = 'cash',
+    CRYPTO = 'crypto',
 }
 
 export interface OrderItem {

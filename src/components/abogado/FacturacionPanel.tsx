@@ -62,7 +62,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	// Derive invoices from ALL relevant orders
 	const facturas: Factura[] = useMemo(() => {
 		return orders
-			.filter(o => o.status !== OrderStatus.CANCELLED && o.status !== OrderStatus.FAILED)
+			.filter(o => o.status !== OrderStatus.CANCELADO && o.status !== OrderStatus.FALLIDO)
 			.map(o => ({
 				id: o.id.toString(),
 				numero: `F-${o.numericId || o.id.toString().slice(0, 8)}`,
@@ -71,7 +71,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 				concepto: o.items?.[0]?.serviceName || 'Servicios Legales',
 				fecha: new Date(o.createdAt).toISOString().split('T')[0],
 				importe: Number(o.total),
-				estado: o.status === OrderStatus.COMPLETED ? 'pagada' : 'pendiente'
+				estado: o.status === OrderStatus.COMPLETADO ? 'pagada' : 'pendiente'
 			}));
 	}, [orders]);
 
@@ -110,7 +110,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 			await updateOrder.mutateAsync({
 				id: facturaSeleccionada.id,
 				data: { 
-					status: OrderStatus.COMPLETED,
+					status: OrderStatus.COMPLETADO,
 					closedAt: new Date().toISOString()
 				}
 			});

@@ -12,9 +12,9 @@
 		"seed": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed_payments.ts"
 	},
 	"dependencies": {
-		"@prisma/adapter-pg": "^7.5.0",
-		"@prisma/client": "^7.5.0",
-		"@prisma/config": "^7.2.0",
+		"@prisma/adapter-pg": "^7.6.0",
+		"@prisma/client": "^7.6.0",
+		"@prisma/config": "^7.6.0",
 		"@supabase/ssr": "^0.8.0",
 		"@supabase/supabase-js": "^2.93.3",
 		"@tanstack/react-query": "^5.90.15",
@@ -30,6 +30,7 @@
 		"react-dom": "^19.0.0",
 		"react-icons": "^5.5.0",
 		"sonner": "^2.0.7",
+		"svix": "^1.89.0",
 		"zustand": "^5.0.8"
 	},
 	"devDependencies": {
@@ -42,7 +43,7 @@
 		"dotenv": "^17.2.3",
 		"eslint": "^9",
 		"eslint-config-next": "15.3.2",
-		"prisma": "^7.5.0",
+		"prisma": "^7.6.0",
 		"tailwindcss": "^4.1.6",
 		"ts-node": "^10.9.2",
 		"typescript": "^5"

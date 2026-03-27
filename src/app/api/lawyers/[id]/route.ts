@@ -123,16 +123,22 @@ export async function DELETE(
         }
 
         // Borrado lógico
-        await prisma.user.update({
+        console.log(`🗑️ API: Intentando borrar abogado (lógico) con ID: ${id}`);
+        const result = await prisma.user.update({
             where: { id },
             data: { activo: false },
         });
+        console.log(`✅ API: Abogado ${id} marcado como inactivo. Actualizando respuesta...`);
 
-        return NextResponse.json({ message: 'Abogado eliminado correctamente' });
+        return NextResponse.json({ 
+            success: true,
+            message: 'Abogado eliminado correctamente',
+            id: result.id
+        });
     } catch (error) {
         console.error('❌ API Error deleting lawyer:', error);
         return NextResponse.json(
-            { error: 'Error al eliminar el abogado' },
+            { error: 'Error al eliminar el abogado: ' + (error instanceof Error ? error.message : 'Error desconocido') },
             { status: 500 }
         );
     }

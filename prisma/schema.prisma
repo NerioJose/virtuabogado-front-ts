@@ -8,11 +8,11 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String     @id @default(uuid())
+  email        String     @unique
   passwordHash String?
   nombre       String
-  rol          UserRole @default(CLIENTE)
+  rol          UserRole   @default(CLIENTE)
   telefono     String?
   direccion    String?
   dni          String?
@@ -20,13 +20,13 @@ model User {
   matricula    String?
   experiencia  Int?
   picture      String?
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  orders       Order[]       @relation("ClientOrders")
-  cases        Order[]       @relation("LawyerCases")
-  messages     Message[]
+  activo       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   documents    Document[]
+  messages     Message[]
+  cases        Order[]    @relation("LawyerCases")
+  orders       Order[]    @relation("ClientOrders")
 }
 
 model Service {
@@ -39,58 +39,33 @@ model Service {
   orders      Order[]
 }
 
-// Order model moved below to support new relations
-
-
-enum UserRole {
-  CLIENTE
-  ABOGADO
-  ADMIN
-}
-
-enum OrderStatus {
-  PENDIENTE
-  EN_PROGRESO
-  REVISION
-  COMPLETADO
-  CANCELADO
-  FALLIDO
-}
-
 model Order {
-  id        String      @id @default(uuid())
-  numericId Int         @unique @default(autoincrement())
-  userId    String
-  lawyerId  String?     // Abogado asignado
-  serviceId Int
-  paymentMethodId String? // ID de la pasarela usada
-  total     Decimal     @db.Decimal(10, 2)
-  status    OrderStatus @default(PENDIENTE)
-  paymentId String?     // ID de transacción externa (Zenobank)
-  activo    Boolean     @default(true)
-  
-  // Desglose financiero (calculado al momento de la compra para histórico)
-  commissionAmount      Decimal? @db.Decimal(10, 2)
-  operationalCostAmount Decimal? @db.Decimal(10, 2)
-  platformFeeAmount     Decimal? @db.Decimal(10, 2)
-  taxAmount             Decimal? @db.Decimal(10, 2)
-  netProfitAmount       Decimal? @db.Decimal(10, 2)
-
-  // Timestamps del ciclo de vida
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  assignedAt DateTime?
-  closedAt   DateTime?
-
-  // Relaciones
-  service   Service     @relation(fields: [serviceId], references: [id])
-  user      User        @relation("ClientOrders", fields: [userId], references: [id])
-  lawyer    User?       @relation("LawyerCases", fields: [lawyerId], references: [id])
-  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
-  
-  messages  Message[]
-  documents Document[]
-  review    Review?
+  id                    String         @id @default(uuid())
+  numericId             Int            @unique @default(autoincrement())
+  userId                String
+  lawyerId              String?
+  serviceId             Int
+  paymentMethodId       String?
+  total                 Decimal        @db.Decimal(10, 2)
+  status                OrderStatus    @default(PENDIENTE)
+  paymentId             String?
+  activo                Boolean        @default(true)
+  commissionAmount      Decimal?       @db.Decimal(10, 2)
+  operationalCostAmount Decimal?       @db.Decimal(10, 2)
+  platformFeeAmount     Decimal?       @db.Decimal(10, 2)
+  taxAmount             Decimal?       @db.Decimal(10, 2)
+  netProfitAmount       Decimal?       @db.Decimal(10, 2)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  assignedAt            DateTime?
+  closedAt              DateTime?
+  documents             Document[]
+  messages              Message[]
+  lawyer                User?          @relation("LawyerCases", fields: [lawyerId], references: [id])
+  paymentMethod         PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  service               Service        @relation(fields: [serviceId], references: [id])
+  user                  User           @relation("ClientOrders", fields: [userId], references: [id])
+  review                Review?
 
   @@index([lawyerId, status])
   @@index([createdAt(sort: Desc)])
@@ -99,24 +74,24 @@ model Order {
 }
 
 model PaymentMethod {
-  id        String   @id @default(uuid())
-  name      String   @unique // 'zenobank', 'mock'
-  titulo    String   // 'Tarjeta de Crédito (Zenobank)', 'Simulación de Pago'
-  activo    Boolean  @default(true)
-  config    Json?    // Configuración específica (API keys, etc)
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  id         String   @id @default(uuid())
+  name       String
+  identifier String   @unique
+  isActive   Boolean  @default(true)
+  icon       String?
+  updatedAt  DateTime @updatedAt
+  orders     Order[]
 }
 
 model FinancialSettings {
-  id                            String   @id @default(uuid())
-  lawyer_commission_percentage  Decimal  @default(70) @db.Decimal(5, 2)
-  operational_costs_percentage  Decimal  @default(10) @db.Decimal(5, 2)
-  tax_percentage                Decimal  @default(15) @db.Decimal(5, 2)
-  platform_fee_percentage       Decimal  @default(5)  @db.Decimal(5, 2)
-  whatsappPhone                 String?  @map("whatsapp_phone")
-  updated_at                    DateTime @updatedAt
-  updated_by                    String?
+  id                           String   @id @default(uuid())
+  lawyer_commission_percentage Decimal  @default(70) @db.Decimal(5, 2)
+  operational_costs_percentage Decimal  @default(10) @db.Decimal(5, 2)
+  tax_percentage               Decimal  @default(15) @db.Decimal(5, 2)
+  platform_fee_percentage      Decimal  @default(5) @db.Decimal(5, 2)
+  whatsappPhone                String?  @map("whatsapp_phone")
+  updated_at                   DateTime @updatedAt
+  updated_by                   String?
 
   @@map("FinancialSettings")
 }
@@ -129,25 +104,21 @@ model Message {
   isSystem  Boolean  @default(false)
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  // Relaciones
   order     Order    @relation(fields: [orderId], references: [id])
   sender    User     @relation(fields: [senderId], references: [id])
 }
 
 model Document {
-  id        String   @id @default(uuid())
-  orderId   String
+  id         String   @id @default(uuid())
+  orderId    String
   uploaderId String
-  name      String
-  url       String
-  type      String   // PDF, IMAGE, etc
-  size      Int
-  createdAt DateTime @default(now())
-
-  // Relaciones
-  order     Order    @relation(fields: [orderId], references: [id])
-  uploader  User     @relation(fields: [uploaderId], references: [id])
+  name       String
+  url        String
+  type       String
+  size       Int
+  createdAt  DateTime @default(now())
+  order      Order    @relation(fields: [orderId], references: [id])
+  uploader   User     @relation(fields: [uploaderId], references: [id])
 }
 
 model Review {
@@ -156,7 +127,22 @@ model Review {
   rating    Int      @default(5)
   comment   String?
   createdAt DateTime @default(now())
-
-  // Relaciones
   order     Order    @relation(fields: [orderId], references: [id])
+}
+
+enum UserRole {
+  CLIENTE
+  ABOGADO
+  ADMIN
+}
+
+enum OrderStatus {
+  PAGO_PENDIENTE
+  PAGO_RECHAZADO
+  PENDIENTE
+  EN_PROGRESO
+  REVISION
+  COMPLETADO
+  CANCELADO
+  FALLIDO
 }

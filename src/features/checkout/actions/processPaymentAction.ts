@@ -80,7 +80,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 success: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?orderId=${order.id}`,
                 error: `${process.env.NEXT_PUBLIC_APP_URL}/payment/error?orderId=${order.id}`
             }
-        });
+        }, paymentMethod.config?.apiKey);
 
         // Actualizamos la orden con el ID de sesión de la pasarela
         await prisma.order.update({

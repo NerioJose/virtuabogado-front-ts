@@ -12,7 +12,7 @@ import { formatUSD } from '@/lib/finance';
 export default function VirtuStudents() {
     const { data: services, isLoading } = useServices();
     const { openCheckout } = useCheckout();
-    
+
     // Buscar el servicio académico dinámico por título EXACTO
     const studentService = (services || []).find(s => s.titulo === 'Asesoría Estudiantes de Derecho');
 
@@ -27,7 +27,7 @@ export default function VirtuStudents() {
         <section className="py-24 bg-gray-50/30 overflow-hidden">
             <div className="container mx-auto px-6">
                 <div className="text-center mb-16">
-                    <motion.span 
+                    <motion.span
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         className="text-vinotinto font-black uppercase tracking-widest text-sm mb-2 block"
@@ -35,7 +35,7 @@ export default function VirtuStudents() {
                         Academia & Excelencia
                     </motion.span>
                     <h2 className="text-4xl md:text-5xl font-bold text-azul-primario mb-4">
-                        Sección <span className="text-vinotinto italic">virtustudents</span>
+                        Sección <span className="text-vinotinto italic">VirtuStudents</span>
                     </h2>
                     <p className="text-gray-500 max-w-2xl mx-auto text-lg font-light leading-relaxed">
                         Formación estratégica y mentoría de alto nivel para los futuros juristas del país.
@@ -51,7 +51,7 @@ export default function VirtuStudents() {
                         className="group bg-white rounded-[40px] shadow-xl hover:shadow-2xl transition-all duration-700 border border-gray-100 relative overflow-hidden flex flex-col lg:flex-row items-stretch"
                     >
                         <div className="absolute top-0 left-0 w-2 h-full bg-vinotinto scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-700"></div>
-                        
+
                         <div className="w-full lg:w-1/2 relative min-h-[400px] overflow-hidden">
                             <Image
                                 src="/images/virtustudents.jpg"
@@ -60,7 +60,7 @@ export default function VirtuStudents() {
                                 className="object-cover transform group-hover:scale-105 transition-transform duration-1000"
                             />
                             <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
-                            
+
                             <div className="absolute bottom-8 left-8 p-6 glass-card border-white/20">
                                 <p className="text-white text-sm font-light italic">
                                     "La mentoría es el puente entre la teoría y la práctica de excelencia."
@@ -99,14 +99,14 @@ export default function VirtuStudents() {
                             </ul>
 
                             <div className="flex flex-col sm:flex-row items-center gap-10 pt-6">
-                                <motion.button 
+                                <motion.button
                                     onClick={() => openCheckout(studentService)}
                                     className="btn-primary flex items-center gap-3 group/btn px-10"
                                 >
-                                    Solicitar Tutoría 
+                                    Solicitar Tutoría
                                     <FiArrowRight className="group-hover/btn:translate-x-1 transition-transform" />
                                 </motion.button>
-                                
+
                                 <div className="flex flex-col border-l border-gray-100 pl-8">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inversión Alumno</span>
                                     <div className="flex items-baseline gap-1">

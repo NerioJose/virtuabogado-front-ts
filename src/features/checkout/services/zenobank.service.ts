@@ -22,9 +22,12 @@ export class ZenobankService {
 
     /**
      * Crea una sesión de checkout en Zenobank
+     * @param request Datos de la orden
+     * @param apiKey Clave de API dinâmica configurada en DB
      */
-    static async createCheckoutSession(request: ZenobankSessionRequest) {
-        // En un entorno real, esto sería un fetch a la API de Zenobank
+    static async createCheckoutSession(request: ZenobankSessionRequest, apiKey?: string) {
+        const activeKey = apiKey || this.apiKey;
+        // En un entorno real, esto sería un fetch a la API de Zenobank usando activeKey
         // Para esta implementación, simulamos el comportamiento esperado según el prompt
         
         console.log('💳 [Zenobank] Creando sesión para orden:', request.orderId);
@@ -41,10 +44,14 @@ export class ZenobankService {
 
     /**
      * Valida la firma HMAC de un webhook de Zenobank
+     * @param payload Cuerpo de la petición
+     * @param signature Firma enviada en headers
+     * @param webhookSecret Secreto dinámico configurado en DB
      */
-    static verifyWebhookSignature(payload: string, signature: string): boolean {
+    static verifyWebhookSignature(payload: string, signature: string, webhookSecret?: string): boolean {
         try {
-            const hmac = crypto.createHmac('sha256', this.webhookSecret);
+            const activeSecret = webhookSecret || this.webhookSecret;
+            const hmac = crypto.createHmac('sha256', activeSecret);
             const digest = hmac.update(payload).digest('hex');
             return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
         } catch (error) {

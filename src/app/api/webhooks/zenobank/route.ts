@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaClient } from '@/lib/prisma';
+const prisma = prismaClient as any;
 import { ZenobankService } from '@/features/checkout/services/zenobank.service';
 import { OrderStatus } from '@prisma/client';
 
@@ -12,8 +13,14 @@ export async function POST(req: NextRequest) {
 
     const body = await req.text();
     
+    // Recuperar configuración dinámica de la base de datos
+    const zenobankMethod = await prisma.paymentMethod.findUnique({
+        where: { name: 'zenobank' }
+    });
+    const webhookSecret = (zenobankMethod?.config as any)?.apiSecret;
+
     // VALIDACIÓN DE FIRMA HMAC (Cybersecurity requirement)
-    const isValid = ZenobankService.verifyWebhookSignature(body, signature);
+    const isValid = ZenobankService.verifyWebhookSignature(body, signature, webhookSecret);
 
     if (!isValid) {
         console.error('🚨 [Webhook] Firma inválida detectada!');

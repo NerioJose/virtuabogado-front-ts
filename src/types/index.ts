@@ -134,6 +134,7 @@ export type SeccionAdmin =
 	| 'finanzas'
 	| 'estadisticas'
 	| 'configuracion'
+	| 'pasarelas'
 	| 'historial';
 
 // Tipo unión para elementos seleccionables en el admin

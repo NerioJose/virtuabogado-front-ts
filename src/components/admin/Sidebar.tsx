@@ -1,4 +1,4 @@
-import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock } from 'react-icons/fi';
+import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard } from 'react-icons/fi';
 import Image from 'next/image';
 import { SeccionAdmin } from '@/types/index';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -134,6 +134,14 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
           >
             <FiClock className="text-xl" />
             <span>Historial</span>
+          </button>
+
+          <button 
+            onClick={() => setSeccionActiva('pasarelas' as SeccionAdmin)}
+            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'pasarelas' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
+          >
+            <FiCreditCard className="text-xl" />
+            <span>Pasarelas</span>
           </button>
 
           <button 

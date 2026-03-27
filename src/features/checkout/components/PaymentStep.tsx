@@ -1,274 +1,124 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiCreditCard, FiLock } from 'react-icons/fi';
+import { FiShield, FiCreditCard, FiArrowRight, FiLoader } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
-import type { PaymentData } from '../types/checkout.types';
+import { usePaymentMethods } from '../hooks/usePaymentMethods';
+import { processPaymentAction } from '../actions/processPaymentAction';
+import { toast } from 'sonner';
+import { formatUSD } from '@/lib/finance';
 
 export const PaymentStep: React.FC = () => {
-    const { setPaymentData, submitOrder, setStep, isLoading, total } = useCheckout();
+    const { service, setStep, total } = useCheckout();
+    const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [hasAttemptedAutoSelect, setHasAttemptedAutoSelect] = useState(false);
 
-    const [formData, setFormData] = useState<PaymentData>({
-        cardNumber: '',
-        cardHolder: '',
-        expiryDate: '',
-        cvv: '',
-        saveCard: false,
-    });
-
-    const [errors, setErrors] = useState<Partial<Record<keyof PaymentData, string>>>({});
-
-    const formatCardNumber = (value: string) => {
-        const cleaned = value.replace(/\s/g, '');
-        const chunks = cleaned.match(/.{1,4}/g);
-        return chunks ? chunks.join(' ') : cleaned;
-    };
-
-    const formatExpiryDate = (value: string) => {
-        const cleaned = value.replace(/\D/g, '');
-        if (cleaned.length >= 2) {
-            return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+    // Lógica de Selector Inteligente: Si solo hay 1 activo, procesar automáticamente
+    useEffect(() => {
+        if (!isLoadingMethods && methods && methods.length === 1 && !hasAttemptedAutoSelect && !isProcessing) {
+            console.log('🚀 [Zero-Trust] Único método activo detectado. Auto-seleccionando:', methods[0].name);
+            handlePayment(methods[0].id);
+            setHasAttemptedAutoSelect(true);
         }
-        return cleaned;
-    };
+    }, [methods, isLoadingMethods, hasAttemptedAutoSelect, isProcessing]);
 
-    const validateField = (name: keyof PaymentData, value: string): string | undefined => {
-        switch (name) {
-            case 'cardNumber':
-                const cleaned = value.replace(/\s/g, '');
-                if (!cleaned) return 'Número de tarjeta requerido';
-                if (cleaned.length < 15) return 'Número de tarjeta incompleto';
-                break;
-            case 'cardHolder':
-                if (!value.trim()) return 'Nombre del titular requerido';
-                if (value.trim().length < 3) return 'Nombre muy corto';
-                break;
-            case 'expiryDate':
-                if (!value) return 'Fecha de vencimiento requerida';
-                const [month, year] = value.split('/');
-                if (!month || !year) return 'Formato inválido (MM/AA)';
-                const monthNum = parseInt(month);
-                if (monthNum < 1 || monthNum > 12) return 'Mes inválido';
-                break;
-            case 'cvv':
-                if (!value) return 'CVV requerido';
-                if (value.length < 3) return 'CVV incompleto';
-                break;
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = e.target;
-
-        let newValue = type === 'checkbox' ? checked : value;
-
-        // Formatear campos específicos
-        if (name === 'cardNumber' && typeof newValue === 'string') {
-            newValue = formatCardNumber(newValue.replace(/\D/g, '').slice(0, 16));
-        } else if (name === 'expiryDate' && typeof newValue === 'string') {
-            newValue = formatExpiryDate(newValue);
-        } else if (name === 'cvv' && typeof newValue === 'string') {
-            newValue = newValue.replace(/\D/g, '').slice(0, 4);
-        }
-
-        setFormData(prev => ({ ...prev, [name]: newValue }));
-
-        // Limpiar error
-        if (errors[name as keyof PaymentData]) {
-            setErrors(prev => ({ ...prev, [name]: undefined }));
-        }
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        const error = validateField(name as keyof PaymentData, value);
-        if (error) {
-            setErrors(prev => ({ ...prev, [name]: error }));
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Validar todos los campos
-        const newErrors: Partial<Record<keyof PaymentData, string>> = {};
-
-        Object.keys(formData).forEach((key) => {
-            if (key !== 'saveCard') {
-                const error = validateField(key as keyof PaymentData, formData[key as keyof PaymentData] as string);
-                if (error) {
-                    newErrors[key as keyof PaymentData] = error;
+    const handlePayment = async (paymentMethodId: string) => {
+        if (isProcessing) return;
+        
+        setIsProcessing(true);
+        const loadingToast = toast.loading('Iniciando conexión segura con la pasarela...');
+        
+        try {
+            // Validación Zero-Trust: Enviamos solo el IDs, el backend valida el precio
+            const result = await processPaymentAction({ 
+                serviceId: service!.id, 
+                paymentMethodId 
+            });
+            
+            if (result.success) {
+                if (result.redirectUrl) {
+                    toast.success('Redirigiendo a pasarela segura...', { id: loadingToast });
+                    window.location.href = result.redirectUrl;
+                } else {
+                    toast.success('Pago completado con éxito', { id: loadingToast });
+                    setStep(3); // Ir a confirmación
                 }
             }
-        });
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
-
-        // Guardar datos de pago
-        setPaymentData(formData);
-
-        // Procesar pago
-        try {
-            await submitOrder();
-        } catch (error) {
-            console.error('Error processing payment:', error);
+        } catch (error: any) {
+            toast.error(error.message || 'Error al procesar el pago', { id: loadingToast });
+            setIsProcessing(false);
         }
     };
 
+    if (isLoadingMethods || (methods?.length === 1 && !hasAttemptedAutoSelect)) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <FiLoader className="w-10 h-10 text-azul-primario animate-spin" />
+                <p className="text-gray-500 animate-pulse font-medium">Configurando pasarela segura...</p>
+            </div>
+        );
+    }
+
     return (
-        <motion.form
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            onSubmit={handleSubmit}
-            className="space-y-4"
+        <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6"
         >
-            {/* Número de tarjeta */}
-            <div>
-                <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                    Número de tarjeta <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                    <FiCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        id="cardNumber"
-                        name="cardNumber"
-                        value={formData.cardNumber}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`
-              w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario
-              ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}
-            `}
-                        placeholder="1234 5678 9012 3456"
-                        maxLength={19}
-                    />
-                </div>
-                {errors.cardNumber && <p className="mt-1 text-xs text-red-600">{errors.cardNumber}</p>}
-            </div>
-
-            {/* Titular */}
-            <div>
-                <label htmlFor="cardHolder" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre del titular <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="cardHolder"
-                    name="cardHolder"
-                    value={formData.cardHolder}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`
-            w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario uppercase
-            ${errors.cardHolder ? 'border-red-500' : 'border-gray-300'}
-          `}
-                    placeholder="JUAN PEREZ"
-                />
-                {errors.cardHolder && <p className="mt-1 text-xs text-red-600">{errors.cardHolder}</p>}
-            </div>
-
-            {/* Vencimiento y CVV */}
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
-                        Vencimiento <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        id="expiryDate"
-                        name="expiryDate"
-                        value={formData.expiryDate}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`
-              w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario
-              ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}
-            `}
-                        placeholder="MM/AA"
-                        maxLength={5}
-                    />
-                    {errors.expiryDate && <p className="mt-1 text-xs text-red-600">{errors.expiryDate}</p>}
-                </div>
-
-                <div>
-                    <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">
-                        CVV <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            id="cvv"
-                            name="cvv"
-                            value={formData.cvv}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={`
-                w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario
-                ${errors.cvv ? 'border-red-500' : 'border-gray-300'}
-              `}
-                            placeholder="123"
-                            maxLength={4}
-                        />
-                        <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    </div>
-                    {errors.cvv && <p className="mt-1 text-xs text-red-600">{errors.cvv}</p>}
-                </div>
-            </div>
-
-            {/* Guardar tarjeta */}
-            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                <input
-                    type="checkbox"
-                    id="saveCard"
-                    name="saveCard"
-                    checked={formData.saveCard}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-azul-primario border-gray-300 rounded focus:ring-azul-primario"
-                />
-                <label htmlFor="saveCard" className="text-sm text-gray-700">
-                    Guardar tarjeta para futuras compras
-                </label>
-            </div>
-
-            {/* Información de seguridad */}
-            <div className="flex items-start gap-2 p-3 bg-green-50 rounded-lg">
-                <FiLock className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-green-800">
-                    Tu información está protegida con encriptación SSL de 256 bits
+            <div className="bg-azul-claro/20 p-4 rounded-2xl flex items-start gap-3 border border-azul-claro/30">
+                <FiShield className="text-azul-primario mt-1 flex-shrink-0" size={20} />
+                <p className="text-sm text-azul-primario/80 leading-relaxed font-medium">
+                    Arquitectura <span className="font-bold">Zero-Trust</span> activada. 
+                    El precio se valida directamente en el servidor para garantizar la máxima seguridad financiera.
                 </p>
             </div>
 
-            {/* Resumen y botones */}
-            <div className="border-t pt-4 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-600">Total a pagar:</span>
-                    <span className="text-2xl font-bold text-azul-primario">${total.toFixed(2)}</span>
+            <div className="space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">
+                    Selecciona tu método de pago
+                </p>
+                
+                {methods?.map((method) => (
+                    <button
+                        key={method.id}
+                        onClick={() => handlePayment(method.id)}
+                        disabled={isProcessing}
+                        className="w-full group flex items-center justify-between p-5 rounded-2xl border-2 border-gray-100 hover:border-azul-primario hover:bg-azul-claro/10 transition-all duration-300 disabled:opacity-50"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-azul-primario group-hover:scale-110 transition-transform">
+                                <FiCreditCard size={24} />
+                            </div>
+                            <div className="text-left">
+                                <p className="font-bold text-azul-primario text-lg">{method.titulo}</p>
+                                <p className="text-xs text-gray-500 font-medium">Procesamiento Instantáneo • HMAC Secured</p>
+                            </div>
+                        </div>
+                        <FiArrowRight className="text-gray-300 group-hover:text-azul-primario group-hover:translate-x-1 transition-all" size={20} />
+                    </button>
+                ))}
+            </div>
+
+            {/* Resumen Final */}
+            <div className="border-t border-gray-100 pt-6 mt-6">
+                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+                    <span className="text-gray-500 font-medium">Total Final a Pagar:</span>
+                    <span className="text-3xl font-black text-azul-primario">
+                        {formatUSD(total)}
+                    </span>
                 </div>
 
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setStep(1)}
-                        className="btn-secondary flex-1"
-                        disabled={isLoading}
-                    >
-                        ← Volver
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn-primary flex-1"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? 'Procesando...' : `Pagar $${total.toFixed(2)}`}
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    disabled={isProcessing}
+                    className="w-full mt-4 py-3 text-gray-400 hover:text-gray-600 text-sm font-bold transition-colors uppercase tracking-widest"
+                >
+                    ← Modificar mis datos
+                </button>
             </div>
-        </motion.form>
+        </motion.div>
     );
 };

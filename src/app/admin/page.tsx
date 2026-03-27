@@ -13,7 +13,8 @@ import {
 	FiPlus,
 	FiMenu,
 	FiX,
-	FiClock
+	FiClock,
+	FiCreditCard
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
@@ -42,6 +43,7 @@ const ConfiguracionPanel = lazy(
 	() => import('@/components/admin/ConfiguracionPanel')
 );
 const ModalContainer = lazy(() => import('@/components/admin/ModalContainer'));
+const MetodosPagoPanel = lazy(() => import('@/components/admin/MetodosPagoPanel'));
 import { OrdersHistoryTable } from '@/features/orders/components/OrdersHistoryTable';
 
 // Importar tipos
@@ -218,6 +220,8 @@ export default function AdminPage() {
 				return <FiSettings {...iconProps} />;
 			case 'historial':
 				return <FiClock {...iconProps} />;
+			case 'pasarelas':
+				return <FiCreditCard {...iconProps} />;
 			default:
 				return null;
 		}
@@ -233,6 +237,7 @@ export default function AdminPage() {
 			finanzas: 'Gestión Financiera',
 			estadisticas: 'Estadísticas y Reportes',
 			configuracion: 'Configuración',
+			pasarelas: 'Pasarelas de Pago',
 			historial: 'Historial de Casos',
 		};
 
@@ -326,6 +331,12 @@ export default function AdminPage() {
 				return (
 					<Suspense fallback={fallback}>
 						<ConfiguracionPanel />
+					</Suspense>
+				);
+			case 'pasarelas':
+				return (
+					<Suspense fallback={fallback}>
+						<MetodosPagoPanel />
 					</Suspense>
 				);
 			case 'historial':

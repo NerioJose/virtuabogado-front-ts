@@ -63,9 +63,10 @@ model Order {
   userId    String
   lawyerId  String?     // Abogado asignado
   serviceId Int
+  paymentMethodId String? // ID de la pasarela usada
   total     Decimal     @db.Decimal(10, 2)
   status    OrderStatus @default(PENDIENTE)
-  paymentId String?
+  paymentId String?     // ID de transacción externa (Zenobank)
   activo    Boolean     @default(true)
   
   // Desglose financiero (calculado al momento de la compra para histórico)
@@ -85,6 +86,7 @@ model Order {
   service   Service     @relation(fields: [serviceId], references: [id])
   user      User        @relation("ClientOrders", fields: [userId], references: [id])
   lawyer    User?       @relation("LawyerCases", fields: [lawyerId], references: [id])
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
   
   messages  Message[]
   documents Document[]
@@ -94,6 +96,16 @@ model Order {
   @@index([createdAt(sort: Desc)])
   @@index([userId])
   @@index([serviceId])
+}
+
+model PaymentMethod {
+  id        String   @id @default(uuid())
+  name      String   @unique // 'zenobank', 'mock'
+  titulo    String   // 'Tarjeta de Crédito (Zenobank)', 'Simulación de Pago'
+  activo    Boolean  @default(true)
+  config    Json?    // Configuración específica (API keys, etc)
+  updatedAt DateTime @updatedAt
+  orders    Order[]
 }
 
 model FinancialSettings {

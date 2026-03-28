@@ -93,7 +93,8 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
     
     try {
       console.log('Fetching orders for upload modal...');
-      const data = await ordersService.getAll({ lawyerId: abogadoId });
+      const response = await ordersService.getAll({ lawyerId: abogadoId });
+      const data = response.data || [];
       setOrders(data);
       console.log(`Fetched ${data.length} orders successfully.`);
     } catch (error) {

@@ -1,4 +1,4 @@
-'use server';
+
 
 import { Prisma } from '@prisma/client';
 
@@ -12,7 +12,7 @@ type Decimal = Prisma.Decimal;
  * CRITICAL: This function must rely on database-provided percentages.
  * If 0% is provided, the deduction MUST be 0.
  */
-export async function calculateOrderFinances(total: number | string | Decimal, settings: {
+export function calculateOrderFinances(total: number | string | Decimal, settings: {
     lawyer_commission_percentage: number | string | Decimal;
     operational_costs_percentage: number | string | Decimal;
     tax_percentage: number | string | Decimal;
@@ -48,7 +48,7 @@ export async function calculateOrderFinances(total: number | string | Decimal, s
  * Aggregates financials for a collection of orders based on strict DB settings.
  * Designed for use in Server Components and Server Actions.
  */
-export async function aggregateFinancials(orders: any[], settings: any) {
+export function aggregateFinancials(orders: any[], settings: any) {
     let totals = {
         gross: new Decimal(0),
         commissions: new Decimal(0),
@@ -59,7 +59,7 @@ export async function aggregateFinancials(orders: any[], settings: any) {
 
     for (const order of orders) {
         if (!order.total) continue;
-        const split = await calculateOrderFinances(order.total, settings);
+        const split = calculateOrderFinances(order.total, settings);
         totals.gross = totals.gross.plus(split.total);
         totals.commissions = totals.commissions.plus(split.comisionAbogado);
         totals.ops = totals.ops.plus(split.gastosOperativos);

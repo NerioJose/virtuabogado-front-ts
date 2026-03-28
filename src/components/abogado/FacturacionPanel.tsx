@@ -44,7 +44,8 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	// Use real orders as invoices
 	// Use real orders as invoices
 	const user = useAuthStore(state => state.user);
-	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(abogadoId);
+	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(abogadoId);
+	const orders = response?.data || [];
 	const updateOrder = useUpdateOrder(); 
 	const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
 	const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
@@ -54,7 +55,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 	// ============ REACT QUERY (Resumen Financiero Real) ============
 	const { data: summary, isLoading: isLoadingSummary } = useQuery({
-		queryKey: ['finances', periodo, abogadoId],
+		queryKey: ['Finance', periodo, abogadoId],
 		queryFn: () => getFinancialSummary({ lawyerId: abogadoId, dateRange: periodo as any }, { id: user!.id, rol: user!.rol as any }),
 		enabled: !!user
 	});

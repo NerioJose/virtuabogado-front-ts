@@ -62,6 +62,13 @@ export const PaymentStep: React.FC = () => {
     const handlePayment = async (paymentMethodId: string) => {
         if (isProcessingPayment) return;
 
+        // --- APERTURA SIMPLE (SIN NOMBRES NI COMPLICACIONES) ---
+        // Abrimos la pestaña al instante para que el navegador no la bloquee.
+        let checkoutWindow: Window | null = null;
+        if (paymentMethodId === 'zenobank') {
+            checkoutWindow = window.open('', '_blank');
+        }
+
         setIsProcessingPayment(true);
         const loadingToast = toast.loading('Preparando conexión segura...');
 
@@ -78,23 +85,28 @@ export const PaymentStep: React.FC = () => {
                 }
 
                 if (result.redirectUrl) {
-                    toast.success('Abriendo pasarela en nueva pestaña...', { id: loadingToast });
+                    toast.success('Abriendo pasarela...', { id: loadingToast });
                     
-                    // --- REGLA UX: ABRIR EN PESTAÑA NUEVA (USER INITIATED) ---
-                    const newWindow = window.open(result.redirectUrl, '_blank', 'noopener,noreferrer');
-                    
-                    if (newWindow) {
+                    if (checkoutWindow) {
+                        // Simplemente asignamos la dirección a la pestaña ya abierta
+                        checkoutWindow.location.href = result.redirectUrl;
                         setIsWaitingForWebhook(true);
                     } else {
-                        toast.error('El navegador bloqueó la ventana emergente. Por favor, permítela para continuar.', { id: loadingToast });
-                        setIsProcessingPayment(false);
+                        // Fallback si la apertura inicial falló
+                        window.location.href = result.redirectUrl;
                     }
                 } else {
+                    if (checkoutWindow) checkoutWindow.close();
                     toast.success('Solicitud procesada con éxito', { id: loadingToast });
                     setStep(3); // Confirmación
                 }
+            } else {
+                if (checkoutWindow) checkoutWindow.close();
+                toast.error(result.message || 'Error en el procesamiento', { id: loadingToast });
+                setIsProcessingPayment(false);
             }
         } catch (error: any) {
+            if (checkoutWindow) checkoutWindow.close();
             toast.error(error.message || 'Error en el procesamiento seguro', { id: loadingToast });
             setIsProcessingPayment(false);
         }

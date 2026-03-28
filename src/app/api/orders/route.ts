@@ -13,20 +13,23 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
     try {
         const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        // 🚀 OPTIMIZACIÓN SISTÉMICA: Usar headers inyectados por el middleware
+        const headerId = request.headers.get('x-user-id');
+        const headerEmail = request.headers.get('x-user-email');
+        const headerRole = request.headers.get('x-user-role');
 
-        // 1. Fallback: Check for Authorization header if cookies fail
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) {
-                    user = headerUser;
-                    console.log('✅ Orders API: Auth success via Authorization header');
-                }
-            }
+        let user: any = null;
+        let userRole: string | undefined = headerRole || undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: headerEmail };
+            console.log('⚡ [API Orders] Fast-auth via middleware headers');
+        } else {
+            // Fallback (solo si falla el middleware o en ciertos entornos de test)
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            user = supabaseUser;
+            console.log('🐢 [API Orders] Slow-auth via getUser() fallback');
         }
 
         if (!user) {
@@ -35,7 +38,9 @@ export async function GET(request: Request) {
         }
 
         // Obtener rol (Priorizar metadata de Supabase Auth, fallback a DB)
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
+        if (!userRole && user.user_metadata?.rol) {
+            userRole = (user.user_metadata.rol as string).toUpperCase();
+        }
         
         if (!userRole) {
             const userData = await prisma.user.findUnique({
@@ -57,6 +62,11 @@ export async function GET(request: Request) {
         const lawyerId = searchParams.get('lawyerId');
         const userId = searchParams.get('userId');
         const requestedStatus = searchParams.get('status');
+        
+        // Paginación
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '50');
+        const skip = (page - 1) * limit;
 
         const where: any = {};
 
@@ -81,39 +91,62 @@ export async function GET(request: Request) {
             where.status = requestedStatus; // Filtro exacto por Prisma
         }
 
-        const orders = await prisma.order.findMany({
-            where,
-            include: {
-                service: true,
-                user: {
-                    select: {
-                        id: true,
-                        nombre: true,
-                        email: true,
-                        telefono: true,
+        // OPTIMIZACIÓN CRÍTICA: Fetch auth, total count, data and settings in parallel
+        // Reducimos la latencia de 3 llamadas secuenciales a 1 llamada paralela.
+        const [totalCount, orders, settings] = await Promise.all([
+            prisma.order.count({ where }),
+            prisma.order.findMany({
+                where,
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    numericId: true,
+                    userId: true,
+                    lawyerId: true,
+                    total: true,
+                    status: true,
+                    paymentId: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    service: {
+                        select: {
+                            id: true,
+                            titulo: true,
+                            precio: true
+                        }
+                    },
+                    user: {
+                        select: {
+                            id: true,
+                            nombre: true,
+                            email: true,
+                        }
+                    },
+                    lawyer: {
+                        select: {
+                            nombre: true
+                        }
+                    },
+                    paymentMethod: {
+                        select: {
+                            name: true
+                        }
                     }
                 },
-                lawyer: {
-                    select: {
-                        nombre: true
-                    }
-                },
-                paymentMethod: true
-            } as any,
-            orderBy: {
-                createdAt: 'desc'
-            }
-        });
-
-        // 🏛️ FINANCIAL SETTINGS: Fetch for splits
-        const settings = await prisma.financialSettings.findUnique({
-            where: { id: FINANCIAL_SETTINGS_ID }
-        }) || {
-            lawyer_commission_percentage: 0,
-            operational_costs_percentage: 0,
-            tax_percentage: 0,
-            platform_fee_percentage: 0
-        };
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            }),
+            prisma.financialSettings.findUnique({
+                where: { id: FINANCIAL_SETTINGS_ID }
+            }).then(s => s || {
+                lawyer_commission_percentage: 0,
+                operational_costs_percentage: 0,
+                tax_percentage: 0,
+                platform_fee_percentage: 0
+            })
+        ]);
 
         // Mapear al formato que espera el frontend con desglose financiero dinámico
         const formattedOrders = (orders as any[]).map(order => {
@@ -152,9 +185,17 @@ export async function GET(request: Request) {
             };
         });
 
-        console.log(`📊 [API Orders] Backend returning ${formattedOrders.length} orders to client.`);
+        console.log(`📊 [API Orders] Backend returning ${formattedOrders.length} orders of ${totalCount} total.`);
 
-        return NextResponse.json(serializeFinance(formattedOrders));
+        return NextResponse.json(serializeFinance({
+            data: formattedOrders,
+            pagination: {
+                total: totalCount,
+                page,
+                limit,
+                totalPages: Math.ceil(totalCount / limit)
+            }
+        }));
     } catch (error) {
         console.error('❌ API Error fetching orders:', error);
         return NextResponse.json(
@@ -166,20 +207,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerEmail = request.headers.get('x-user-email');
+        const headerRole = request.headers.get('x-user-role');
 
-        // 1. Fallback: Check for Authorization header if cookies fail
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) {
-                    user = headerUser;
-                }
-            }
+        let user: any = null;
+        let userRole: string | undefined = headerRole || undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: headerEmail };
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            user = supabaseUser;
         }
 
         if (!user) {
@@ -233,8 +273,10 @@ export async function POST(request: Request) {
         const platformFeeAmount = currentPrice * platformFeePct;
         const netProfitAmount = currentPrice - commissionAmount - operationalCostAmount - taxAmount - platformFeeAmount;
 
-        // Seguridad: Determinar el ID del usuario final
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
+        // Obtener rol (Priorizar metadata de Supabase Auth, fallback a DB)
+        if (!userRole && user.user_metadata?.rol) {
+            userRole = (user.user_metadata.rol as string).toUpperCase();
+        }
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -324,18 +366,19 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     try {
-        const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerEmail = request.headers.get('x-user-email');
+        const headerRole = request.headers.get('x-user-role');
 
-        // 1. Fallback: Header
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) user = headerUser;
-            }
+        let user: any = null;
+        let userRoleHeader: string | undefined = headerRole || undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: headerEmail, user_metadata: { rol: headerRole } };
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            user = supabaseUser;
         }
 
         if (!user) {
@@ -355,7 +398,8 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
         }
         // Obtener rol
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase() || (headerRole as string)?.toUpperCase();
+        
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -414,18 +458,16 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
-        const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
 
-        // Auth fallbacks
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) user = headerUser;
-            }
+        let user: any = null;
+        if (headerId) {
+            user = { id: headerId, user_metadata: { rol: headerRole } };
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            user = supabaseUser;
         }
 
         if (!user) {
@@ -433,7 +475,7 @@ export async function DELETE(request: Request) {
         }
 
         // Solo ADMIN puede borrar
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
+        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase() || (headerRole as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },

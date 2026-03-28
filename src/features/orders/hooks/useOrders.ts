@@ -4,18 +4,19 @@ import { OrdersFilters, OrderStatus } from '../types/orders.types';
 import { apiClient } from '@/lib/apiClient';
 
 export const ORDER_KEYS = {
-    all: ['orders'] as const,
+    all: ['Order'] as const,
     lists: () => [...ORDER_KEYS.all, 'list'] as const,
     list: (filters: OrdersFilters) => [...ORDER_KEYS.lists(), filters] as const,
     details: () => [...ORDER_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...ORDER_KEYS.details(), id] as const,
 };
 
-export function useOrders(filters?: OrdersFilters) {
+export function useOrders(filters?: OrdersFilters & { page?: number; limit?: number }) {
     return useQuery({
         queryKey: ORDER_KEYS.list(filters || {}),
         queryFn: () => ordersService.getAll(filters),
         staleTime: 1000 * 60 * 2, // 2 minutes - orders change frequently
+        select: (response) => response // Default select
     });
 }
 
@@ -51,8 +52,15 @@ export const useCreateOrder = () => {
             const previousOrders = queryClient.getQueryData(ORDER_KEYS.list({}));
 
             // Optimistically update to show the new order immediately
-            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any[] = []) => {
-                return [...old, { ...newOrder, id: 'temp-' + Date.now(), createdAt: new Date() }];
+            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any) => {
+                const currentData = old?.data || [];
+                return {
+                    ...old,
+                    data: [
+                        { ...newOrder, id: 'temp-' + Date.now(), createdAt: new Date() },
+                        ...currentData
+                    ]
+                };
             });
 
             // Return context with snapshot for rollback
@@ -97,12 +105,16 @@ export const useUpdateOrder = () => {
             });
 
             // Optimistically update all list queries that might contain this order
-            queryClient.setQueriesData({ queryKey: ORDER_KEYS.lists() }, (old: any[] = []) => {
-                return old.map((order: any) =>
-                    String(order.id) === orderId
-                        ? { ...order, ...data, updatedAt: new Date() }
-                        : order
-                );
+            queryClient.setQueriesData({ queryKey: ORDER_KEYS.lists() }, (old: any) => {
+                if (!old?.data) return old;
+                return {
+                    ...old,
+                    data: old.data.map((order: any) =>
+                        String(order.id) === orderId
+                            ? { ...order, ...data, updatedAt: new Date() }
+                            : order
+                    )
+                };
             });
 
             return { previousOrder, previousLists, orderId };
@@ -148,8 +160,12 @@ export const useDeleteOrder = () => {
 
             const previousOrders = queryClient.getQueryData(ORDER_KEYS.list({}));
 
-            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any[] = []) => {
-                return old.filter((order: any) => String(order.id) !== orderId);
+            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any) => {
+                if (!old?.data) return old;
+                return {
+                    ...old,
+                    data: old.data.filter((order: any) => String(order.id) !== orderId)
+                };
             });
 
             return { previousOrders };

@@ -8,7 +8,7 @@ export const ConfirmationStep: React.FC = () => {
     const { orderId, service, userData, closeCheckout, tempPassword, paymentMethod } = useCheckout();
     
     // Determinamos si es un pago que requiere confirmación externa (Zenobank/Cripto)
-    const isPendingConfirmation = paymentMethod === 'zenobank' || paymentMethod === 'crypto';
+    const isPendingConfirmation = (paymentMethod as string) === 'zenobank' || (paymentMethod as string) === 'crypto';
 
     const handleClose = () => {
         closeCheckout();

@@ -12,7 +12,9 @@ interface CasosAbogadoPanelProps {
 }
 
 function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: CasosAbogadoPanelProps) {
-  const { data: misCasos = [], isLoading, error } = useOrdersByLawyer(abogadoId);
+  // ============ REACT QUERY ============
+  const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
+  const misCasos = response?.data || [];
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
   const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);

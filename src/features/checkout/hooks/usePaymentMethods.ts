@@ -3,7 +3,7 @@ import { getPaymentMethodsAction } from '../actions/paymentMethods';
 
 export function usePaymentMethods(adminView: boolean = false) {
     return useQuery({
-        queryKey: ['PaymentMethods', adminView],
+        queryKey: ['PaymentMethod', adminView],
         queryFn: () => getPaymentMethodsAction(adminView),
         staleTime: 0, 
         refetchOnWindowFocus: true,

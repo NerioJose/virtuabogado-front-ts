@@ -8,7 +8,9 @@ interface AgendaPanelProps {
 }
 
 export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelProps) {
-  const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
+  // ============ REACT QUERY ============
+  const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
+  const orders = response?.data || [];
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
 
   // Función para formatear fecha

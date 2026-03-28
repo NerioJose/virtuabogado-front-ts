@@ -10,7 +10,7 @@ import { serializeFinance } from '@/lib/finance';
  */
 export async function createOrderInDB(data: {
     userId: string;
-    serviceId: string;
+    serviceId: number;
     paymentId: string;
     total: number;
     lawyerId?: string;

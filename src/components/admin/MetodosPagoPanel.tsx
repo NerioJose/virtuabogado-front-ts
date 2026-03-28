@@ -44,7 +44,7 @@ export default function MetodosPagoPanel() {
         try {
             const result = await togglePaymentMethodAction(id, !currentStatus);
             if (result.success) {
-                await queryClient.invalidateQueries({ queryKey: ['PaymentMethods'] });
+                await queryClient.invalidateQueries({ queryKey: ['PaymentMethod'] });
                 toast.success('Estado actualizado correctamente', { id: loadingToast });
             } else {
                 toast.error(result.message || 'Error al actualizar', { id: loadingToast });
@@ -61,7 +61,7 @@ export default function MetodosPagoPanel() {
         try {
             const result = await deletePaymentMethodAction(id);
             if (result.success) {
-                await queryClient.invalidateQueries({ queryKey: ['PaymentMethods'] });
+                await queryClient.invalidateQueries({ queryKey: ['PaymentMethod'] });
                 toast.success('Configuración eliminada', { id: loadingToast });
             } else {
                 toast.error(result.message || 'Error al eliminar', { id: loadingToast });
@@ -110,7 +110,7 @@ export default function MetodosPagoPanel() {
             }
 
             if (result.success) {
-                await queryClient.invalidateQueries({ queryKey: ['PaymentMethods'] });
+                await queryClient.invalidateQueries({ queryKey: ['PaymentMethod'] });
                 toast.success('Configuración guardada', { id: loadingToast });
                 setIsModalOpen(false);
             } else {

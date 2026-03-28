@@ -28,7 +28,7 @@ export const useRealtimeSubscription = () => {
                     type: 'active' 
                 });
                 queryClient.refetchQueries({
-                    queryKey: ['services'],
+                    queryKey: ['Service'],
                     type: 'active'
                 });
             }
@@ -70,13 +70,15 @@ export const useRealtimeSubscription = () => {
                 
                 // Invalida TODO lo relacionado a órdenes para un refresh total
                 queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
-                queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+                queryClient.invalidateQueries({ queryKey: ['DashboardStats'] });
+                queryClient.invalidateQueries({ queryKey: ['Finance'] });
+                queryClient.invalidateQueries({ queryKey: ['FinancialSummary'] });
             } else if (eventName === 'service-updated') {
                 if (eventPayload?.serviceId) {
                     const { useServicesStore } = require('@/features/services/store/servicesStore');
                     useServicesStore.getState().updateServiceState(eventPayload.serviceId, eventPayload);
                 }
-                queryClient.invalidateQueries({ queryKey: ['services'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
             }
         };
 
@@ -135,6 +137,11 @@ export const useRealtimeSubscription = () => {
                     });
                     // Also invalidate inactive ones so they'll be fresh on next use
                     queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
+                    // CASCADE INVALIDATION: Orders affect finances and stats
+                    queryClient.invalidateQueries({ queryKey: ['DashboardStats'] });
+                    queryClient.invalidateQueries({ queryKey: ['Finance'] });
+                    queryClient.invalidateQueries({ queryKey: ['FinancialSummary'] });
+                    
                     if (payload.new && 'id' in payload.new) {
                         queryClient.refetchQueries({ 
                             queryKey: ORDER_KEYS.detail(payload.new.id),
@@ -144,22 +151,26 @@ export const useRealtimeSubscription = () => {
                     break;
                 case 'Service':
                     console.log('🛠️ Actualizando servicios...');
-                    queryClient.invalidateQueries({ queryKey: ['services'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
                     break;
                 case 'FinancialSettings':
                     console.log('💰 Actualizando configuración financiera...');
                     queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
-                    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['DashboardStats'], refetchType: 'all' });
+                    break;
+                case 'PaymentMethod':
+                    console.log('💳 Actualizando métodos de pago...');
+                    queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
                     break;
                 case 'Message':
                     console.log('💬 Nuevo mensaje detectado');
                     if (payload.new && 'orderId' in payload.new) {
-                        queryClient.refetchQueries({ 
-                            queryKey: ['messages', payload.new.orderId],
+                        queryClient.refetchQueries({
+                            queryKey: ['Message', payload.new.orderId],
                             type: 'active'
                         });
                     }
-                    queryClient.invalidateQueries({ queryKey: ['messages'] });
+                    queryClient.invalidateQueries({ queryKey: ['Message'] });
                     break;
             }
         };
@@ -184,11 +195,11 @@ export const useRealtimeSubscription = () => {
             const channel = supabase.channel(channelName);
             channelRef = channel;
 
-            let tables = ['Order', 'Message', 'Service'];
+            let tables = ['Order', 'Message', 'Service', 'PaymentMethod'];
             if (user?.rol === 'ADMIN') {
-                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message'];
+                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod'];
             } else if (user?.rol === 'ABOGADO') {
-                tables = ['User', 'Order', 'Service', 'Message'];
+                tables = ['User', 'Order', 'Service', 'Message', 'PaymentMethod'];
             }
 
             tables.forEach(table => {

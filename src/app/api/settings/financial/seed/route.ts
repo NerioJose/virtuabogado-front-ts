@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         const { data: existing } = await supabase
             .from('FinancialSettings')
             .select('id')
-            .eq('id', FIXED_SETTINGS_ID)
+            .eq('id', FINANCIAL_SETTINGS_ID)
             .maybeSingle();
 
         if (existing) {

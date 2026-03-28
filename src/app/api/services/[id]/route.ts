@@ -31,17 +31,19 @@ export async function PATCH(
     try {
         const { id } = await params;
         const body = await req.json();
-        const { titulo, descripcion, precio, imagenUrl, activo } = body;
+        
+        // --- DATA DINÁMICA: Solo enviamos a Prisma lo que realmente viene en el body ---
+        // Esto evita errores de validación (como "precio must not be null") al hacer updates parciales
+        const updateData: any = {};
+        if (body.titulo !== undefined) updateData.titulo = body.titulo;
+        if (body.descripcion !== undefined) updateData.descripcion = body.descripcion;
+        if (body.precio !== undefined) updateData.precio = body.precio;
+        if (body.imagenUrl !== undefined) updateData.imagenUrl = body.imagenUrl;
+        if (body.activo !== undefined) updateData.activo = body.activo;
 
         const service = await prisma.service.update({
             where: { id: parseInt(id) },
-            data: {
-                titulo,
-                descripcion,
-                precio,
-                imagenUrl,
-                activo
-            }
+            data: updateData
         });
 
         // 📡 Broadcast a todos los usuarios

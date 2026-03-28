@@ -59,6 +59,8 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
         [OrderStatus.COMPLETADO]: { color: 'bg-green-100 text-green-800', text: 'Completado' },
         [OrderStatus.CANCELADO]: { color: 'bg-red-100 text-red-800', text: 'Cancelado' },
         [OrderStatus.FALLIDO]: { color: 'bg-red-100 text-red-800', text: 'Fallido' },
+        [OrderStatus.PAGO_PENDIENTE]: { color: 'bg-amber-100 text-amber-800', text: 'Pago pendiente' },
+        [OrderStatus.PAGO_RECHAZADO]: { color: 'bg-red-100 text-red-800', text: 'Pago rechazado' },
     };
 
     const status = statusConfig[order.status] || statusConfig[OrderStatus.PENDIENTE];

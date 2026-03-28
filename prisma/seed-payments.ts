@@ -7,31 +7,32 @@ async function main() {
 
   const methods = [
     {
-      name: 'mock',
-      titulo: 'Pago con Tarjeta (Próximamente)',
-      activo: true,
-      config: {}
+      identifier: 'mock',
+      name: 'Pago con Tarjeta (Próximamente)',
+      isActive: true,
+      icon: 'FiCreditCard'
     },
     {
-      name: 'zenobank',
-      titulo: 'Criptomonedas',
-      activo: true,
-      config: {}
+      identifier: 'zenobank',
+      name: 'Criptomonedas',
+      isActive: true,
+      icon: 'SiBitcoin'
     }
   ];
 
   for (const method of methods) {
     await prisma.paymentMethod.upsert({
-      where: { name: method.name },
+      where: { identifier: method.identifier },
       update: {
-        titulo: method.titulo,
-        activo: method.activo,
+        name: method.name,
+        isActive: method.isActive,
+        icon: method.icon
       },
       create: {
+        identifier: method.identifier,
         name: method.name,
-        titulo: method.titulo,
-        activo: method.activo,
-        config: method.config,
+        isActive: method.isActive,
+        icon: method.icon
       },
     });
   }

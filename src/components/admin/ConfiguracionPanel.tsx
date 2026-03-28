@@ -22,7 +22,8 @@ import ServiciosPanel from './ServiciosPanel';
 // Componente para configuración financiera (Extraído por claridad)
 function FinancialSettingsSection() {
 	const { data: financialSettings, isLoading: loadingSettings } = useFinancialSettings();
-	const { data: orders = [] } = useOrders();
+	const { data: response } = useOrders();
+	const orders = response?.data || [];
 	const updateSettings = useUpdateFinancialSettings();
 
 	const [lawyerCommission, setLawyerCommission] = useState<number>(0);

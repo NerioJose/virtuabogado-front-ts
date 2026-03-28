@@ -23,8 +23,10 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         isSending, 
         isUploading 
     } = useChat(orderId);
-    const { data: orders = [] } = useOrders();
-    const { user } = useAuthStore();
+	// ============ REACT QUERY ============
+	const { data: response, isLoading } = useOrders();
+	const orders = response?.data || [];
+	const { user } = useAuthStore();
     const [newMessage, setNewMessage] = useState('');
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [errorModalOpen, setErrorModalOpen] = useState(false);

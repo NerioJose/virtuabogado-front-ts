@@ -345,21 +345,27 @@ export const useCheckoutStore = create<CheckoutState>()(
                 
                 // 1. Update the list cache for this specific user
                 queryClient.setQueryData(orderKey, (old: any) => {
-                    const currentList = Array.isArray(old) ? old : [];
+                    const currentData = old?.data || [];
                     // Avoid duplicates
-                    if (currentList.some((o: any) => o.id === orderForStore.id)) {
-                        return currentList;
+                    if (currentData.some((o: any) => o.id === orderForStore.id)) {
+                        return old;
                     }
-                    return [orderForStore, ...currentList];
+                    return {
+                        ...old,
+                        data: [orderForStore, ...currentData]
+                    };
                 });
 
                 // 2. Update the general lists (used by admin/others if active)
                 queryClient.setQueryData(ORDER_KEYS.list({}), (old: any) => {
-                    const currentList = Array.isArray(old) ? old : [];
-                    if (currentList.some((o: any) => o.id === orderForStore.id)) {
-                        return currentList;
+                    const currentData = old?.data || [];
+                    if (currentData.some((o: any) => o.id === orderForStore.id)) {
+                        return old;
                     }
-                    return [orderForStore, ...currentList];
+                    return {
+                        ...old,
+                        data: [orderForStore, ...currentData]
+                    };
                 });
 
                 // 3. Set the detail cache for the destination page

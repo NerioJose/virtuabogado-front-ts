@@ -16,6 +16,9 @@ import {
 import { logAbandonment } from '../../lib/utils/analytics';
 import { saveCartData } from '../../lib/utils/cartRecovery';
 
+
+import { Suspense } from 'react';
+
 // Interfaz para los datos del servicio
 interface ServiceData {
 	id: string;
@@ -25,7 +28,7 @@ interface ServiceData {
 	precioFormateado?: string;
 }
 
-export default function ErrorPagoPage() {
+function ErrorPagoContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -249,5 +252,13 @@ export default function ErrorPagoPage() {
 				</div>
 			</div>
 		</main>
+	);
+}
+
+export default function ErrorPagoPage() {
+	return (
+		<Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+			<ErrorPagoContent />
+		</Suspense>
 	);
 }

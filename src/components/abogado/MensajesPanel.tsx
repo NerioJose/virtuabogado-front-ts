@@ -17,7 +17,8 @@ interface MensajesPanelProps {
 }
 
 export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesPanelProps) {
-	const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
+	const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
+	const orders = response?.data || [];
 	const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
 	const [busqueda, setBusqueda] = useState('');
 	const [modalAbierto, setModalAbierto] = useState(false);

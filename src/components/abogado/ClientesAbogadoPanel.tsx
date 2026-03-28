@@ -25,7 +25,8 @@ interface Cliente {
 
 export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onNavigateToMensajes }: ClientesAbogadoPanelProps) {
   // Use real data from orders to derive clients
-  const { data: orders = [], isLoading } = useOrdersByLawyer(abogadoId);
+  const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
+  const orders = response?.data || [];
   const [busqueda, setBusqueda] = useState('');
   const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
 

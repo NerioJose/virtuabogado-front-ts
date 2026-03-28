@@ -15,11 +15,13 @@ export const ordersService = {
     /**
      * Obtener todas las órdenes con filtros opcionales
      */
-    async getAll(filters?: OrdersFilters): Promise<Order[]> {
+    async getAll(filters?: OrdersFilters & { page?: number; limit?: number }): Promise<{ data: Order[]; pagination: any }> {
         const params = new URLSearchParams();
         if (filters?.lawyerId) params.append('lawyerId', filters.lawyerId);
         if (filters?.userId) params.append('userId', filters.userId);
         if (filters?.status) params.append('status', filters.status);
+        if (filters?.page) params.append('page', filters.page.toString());
+        if (filters?.limit) params.append('limit', filters.limit.toString());
 
         const response = await fetch(`/api/orders?${params.toString()}`, {
             cache: 'no-store'

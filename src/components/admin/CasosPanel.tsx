@@ -18,7 +18,8 @@ interface CasosPanelProps {
 
 function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   // ============ REACT QUERY HOOK ============
-  const { data: orders = [] } = useOrders();
+  const { data: response, isLoading } = useOrders({ limit: 100 });
+  const orders = response?.data || [];
 
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
 

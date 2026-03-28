@@ -3,9 +3,9 @@ import { servicesService } from '../services/services.service';
 import { CreateServiceRequest, UpdateServiceRequest, Service } from '../types/services.types';
 
 export const servicesKeys = {
-    all: ['services'] as const,
-    active: ['services', 'active'] as const,
-    detail: (id: number) => ['services', id] as const,
+    all: ['Service'] as const,
+    active: ['Service', 'active'] as const,
+    detail: (id: number) => ['Service', id] as const,
 };
 
 import { useServicesStore } from '../store/servicesStore';

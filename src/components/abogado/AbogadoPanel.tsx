@@ -20,6 +20,7 @@ import {
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
+import { UserRole } from '@/shared/types/entities.types';
 import CasosAbogadoPanel from './CasosAbogadoPanel';
 import AgendaPanel from './AgendaPanel';
 import MensajesPanel from './MensajesPanel';
@@ -59,12 +60,13 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const { user: userAuth, logout: storeLogout } = useAuthStore();
 	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
 
-	const { data: orders = [], isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
+	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
+	const orders = response?.data || [];
 
 	// Fetch unified financial summary for KPIs
 	const { data: summary, isLoading: isLoadingSummary } = useQuery({
-		queryKey: ['financial-summary', currentAbogadoId],
-		queryFn: () => getFinancialSummary({ lawyerId: currentAbogadoId }, { id: userAuth?.id || '', rol: 'ABOGADO' }),
+		queryKey: ['FinancialSummary', currentAbogadoId],
+		queryFn: () => getFinancialSummary({ lawyerId: currentAbogadoId }, { id: userAuth?.id || '', rol: UserRole.ABOGADO }),
 		enabled: !!userAuth?.id
 	});
 
@@ -386,7 +388,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 										<FiClock className="text-azul-primario" />
 										Historial de Casos Asignados
 									</h2>
-									<OrdersHistoryTable user={{ id: currentAbogadoId, rol: 'ABOGADO' }} />
+									<OrdersHistoryTable user={{ id: currentAbogadoId, rol: UserRole.ABOGADO }} />
 								</div>
 							)}
 						</>

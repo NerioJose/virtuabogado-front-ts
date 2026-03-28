@@ -3,7 +3,7 @@ import { lawyersService } from '../services/lawyers.service';
 import { Lawyer, LawyersFilters } from '../types/lawyers.types';
 
 export const LAWYER_KEYS = {
-    all: ['lawyers'] as const,
+    all: ['User', 'lawyers'] as const,
     lists: () => [...LAWYER_KEYS.all, 'list'] as const,
     list: (filters: LawyersFilters) => [...LAWYER_KEYS.lists(), filters] as const,
     details: () => [...LAWYER_KEYS.all, 'detail'] as const,

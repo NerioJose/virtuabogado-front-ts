@@ -19,6 +19,24 @@ const statusConfig = {
         color: 'text-yellow-600',
         bg: 'bg-yellow-100',
     },
+    [OrderStatus.PAGO_PENDIENTE]: {
+        label: 'Pago Pendiente',
+        icon: FiClock,
+        color: 'text-amber-600',
+        bg: 'bg-amber-100',
+    },
+    [OrderStatus.PAGO_RECHAZADO]: {
+        label: 'Pago Rechazado',
+        icon: FiAlertCircle,
+        color: 'text-red-600',
+        bg: 'bg-red-100',
+    },
+    [OrderStatus.REVISION]: {
+        label: 'En Revisión',
+        icon: FiClock,
+        color: 'text-purple-600',
+        bg: 'bg-purple-100',
+    },
     [OrderStatus.EN_PROGRESO]: {
         label: 'Procesando',
         icon: FiClock,
@@ -46,16 +64,15 @@ const statusConfig = {
 };
 
 export default function RecentOrders() {
-    const { data: orders = [], isLoading } = useOrders();
+    const { data: response, isLoading } = useOrders({ limit: 5 });
+    const orders = response?.data || [];
+    const pagination = response?.pagination;
 
     // Derived state
-    const ordersCount = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+    const ordersCount = pagination?.total || orders.length;
+    const totalRevenue = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
 
-    // Mostrar solo las 5 órdenes más recientes (basado en la última actualización/actividad)
-    const recentOrders = [...orders]
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 5);
+    const recentOrders = orders; // Ya vienen limitados y ordenados por el servidor
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">

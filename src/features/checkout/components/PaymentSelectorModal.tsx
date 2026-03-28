@@ -6,6 +6,7 @@ import { usePaymentMethods } from '../hooks/usePaymentMethods';
 import { processPaymentAction } from '../actions/processPaymentAction';
 import { toast } from 'sonner';
 import { Loader2, CreditCard, ShieldCheck, ArrowRight } from 'lucide-react';
+import { PaymentMethodDB } from '../types/checkout.types';
 
 interface PaymentSelectorModalProps {
     serviceId: number;
@@ -78,7 +79,7 @@ export function PaymentSelectorModal({ serviceId, isOpen, onClose, onSuccess }: 
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {methods?.map((method) => (
+                                {methods?.map((method: PaymentMethodDB) => (
                                     <button
                                         key={method.id}
                                         onClick={() => handlePayment(method.id)}
@@ -89,7 +90,7 @@ export function PaymentSelectorModal({ serviceId, isOpen, onClose, onSuccess }: 
                                                 <CreditCard className="w-6 h-6" />
                                             </div>
                                             <div className="text-left">
-                                                <p className="font-bold text-azul-primario">{method.titulo}</p>
+                                                <p className="font-bold text-azul-primario">{method.name}</p>
                                                 <p className="text-xs text-gray-500">Activado vía Admin Dashboard</p>
                                             </div>
                                         </div>

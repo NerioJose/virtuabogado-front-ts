@@ -17,7 +17,8 @@ interface AbogadosPanelProps {
 function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
   // ============ REACT QUERY ============
   const { data: lawyers = [], isLoading } = useLawyers();
-  const { data: orders = [] } = useOrders(); // Switched to React Query hook
+  const { data: ordersResponse } = useOrders();
+  const orders = ordersResponse?.data || [];
 
   // Filtros locales
   const [especialidadFilter, setEspecialidadFilter] = useState<string>('todas');

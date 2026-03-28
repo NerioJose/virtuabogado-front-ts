@@ -3,7 +3,7 @@ import { clientsService } from '../services/clients.service';
 import { Client, ClientsFilters } from '../types/clients.types';
 
 export const CLIENT_KEYS = {
-    all: ['clients'] as const,
+    all: ['User', 'clients'] as const,
     lists: () => [...CLIENT_KEYS.all, 'list'] as const,
     list: (filters: ClientsFilters) => [...CLIENT_KEYS.lists(), filters] as const,
     details: () => [...CLIENT_KEYS.all, 'detail'] as const,

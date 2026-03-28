@@ -29,6 +29,7 @@ import { useDeleteLawyer, useUpdateLawyer, useCreateLawyer } from '@/features/la
 // Importar componentes principales
 import Sidebar from '@/components/admin/Sidebar';
 import DashboardStats from '@/components/admin/DashboardStats';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 // Lazy loading para componentes pesados
 const RecentOrders = lazy(() => import('@/components/admin/RecentOrders'));
@@ -421,12 +422,17 @@ export default function AdminPage() {
 					</div>
 				</div>
 
-				{/* Contenido dinámico según la sección activa */}
-				<div className="p-4 md:p-6 max-w-[1600px] mx-auto">{renderSeccionContent()}</div>
+			{/* Contenido dinámico según la sección activa */}
+				<div className="p-4 md:p-6 max-w-[1600px] mx-auto">
+					<ErrorBoundary>
+						{renderSeccionContent()}
+					</ErrorBoundary>
+				</div>
 			</div>
 
 			{/* Modal dinámico */}
 			{modalAbierto && (
+				<ErrorBoundary onReset={() => setModalAbierto(false)}>
 				<Suspense
 					fallback={
 						<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -448,6 +454,7 @@ export default function AdminPage() {
 						onSave={handleSave}
 					/>
 				</Suspense>
+				</ErrorBoundary>
 			)}
 		</div>
 	);

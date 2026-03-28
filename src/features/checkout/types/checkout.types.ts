@@ -23,7 +23,14 @@ export interface PaymentData {
 }
 
 // Método de pago
-export type PaymentMethod = 'card' | 'paypal' | 'transfer';
+export type PaymentMethod = 'card' | 'paypal' | 'transfer' | 'zenobank' | 'crypto';
+
+export interface PaymentMethodDB {
+    id: string;
+    identifier: string;
+    name: string;
+    isActive: boolean;
+}
 
 // Solicitud de pago
 export interface PaymentRequest {

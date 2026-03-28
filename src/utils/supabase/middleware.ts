@@ -73,5 +73,19 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
+    if (user && isProtectedRoute) {
+        // En rutas protegidas, inyectamos el ID y ROL en los headers para que la API no tenga que llamar a getUser()
+        const requestHeaders = new Headers(request.headers);
+        requestHeaders.set('x-user-id', user.id);
+        requestHeaders.set('x-user-email', user.email || '');
+        requestHeaders.set('x-user-role', (user.user_metadata?.rol || 'CLIENTE').toUpperCase());
+        
+        return NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        });
+    }
+
     return supabaseResponse
 }

@@ -4,8 +4,8 @@ import { Message } from '../types/chat.types';
 import { useEffect } from 'react';
 
 export const chatKeys = {
-    all: ['chat'] as const,
-    messages: (orderId: string) => [...chatKeys.all, 'messages', orderId] as const,
+    all: ['Message'] as const,
+    messages: (orderId: string) => [...chatKeys.all, orderId] as const,
 };
 
 export function useChat(orderId: string) {

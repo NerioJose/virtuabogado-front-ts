@@ -16,7 +16,8 @@ function EstadisticasPanel() {
   const [periodo, setPeriodo] = useState<'mes' | 'trimestre' | 'año'>('mes');
 
   // ============ STORES GLOBALES & HOOKS ============
-  const { data: orders = [] } = useOrders();
+  const { data: response, isLoading } = useOrders({ limit: 500 });
+  const orders = response?.data || [];
   const { data: clients = [] } = useClients();
   const { data: lawyers = [] } = useLawyers();
 
@@ -132,7 +133,11 @@ function EstadisticasPanel() {
       </div>
 
       {/* Mensaje informativo si no hay datos */}
-      {orders.length === 0 && (
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : orders.length === 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
           <FiBarChart2 className="text-blue-600 text-5xl mx-auto mb-3" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

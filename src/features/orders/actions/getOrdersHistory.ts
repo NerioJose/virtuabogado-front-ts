@@ -103,9 +103,9 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
             }
         ]);
 
-        // 5. Enrich with Financial Splits (Calculated on the fly for stability)
-        const enrichedData = await Promise.all(orders.map(async (order: any) => {
-            const financials = await calculateOrderFinances(order.total || 0, settings as any);
+        // 5. Enrich with Financial Splits (Synchronous Math)
+        const enrichedData = orders.map((order: any) => {
+            const financials = calculateOrderFinances(order.total || 0, settings as any);
             return {
                 ...order,
                 financials: {
@@ -114,7 +114,7 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
                     netoPlataforma: financials.netoPlataforma
                 }
             };
-        }));
+        });
 
         // 6. Professional Serialization for Next.js 15
         return serializeFinance({

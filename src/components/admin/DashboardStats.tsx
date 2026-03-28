@@ -190,11 +190,12 @@ function DashboardStats() {
 	const user = useAuthStore(state => state.user);
 	const { data: clients = [], isLoading: clientsLoading } = useClients();
 	const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
-	const { data: orders = [], isLoading: ordersLoading } = useOrders();
+	const { data: response, isLoading: ordersLoading } = useOrders();
+	const orders = response?.data || [];
 	
 	// GET UNIFIED FINANCIAL SUMMARY (Single Source of Truth)
 	const { data: summary, isLoading: financialLoading } = useQuery({
-		queryKey: ['finances-summary-dashboard', user?.id],
+		queryKey: ['FinanceSummaryDashboard', user?.id],
 		queryFn: () => getFinancialSummary({ dateRange: 'all' }, { id: user!.id, rol: user!.rol as any }),
 		enabled: !!user
 	});

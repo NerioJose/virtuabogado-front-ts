@@ -21,6 +21,10 @@ export function formatUSD(amount: number | string | null | undefined): string {
  */
 export function serializeFinance<T>(data: T): T {
     if (data === null || data === undefined) return data;
+    
+    // Fast-path for primitives
+    const dataType = typeof data;
+    if (dataType !== 'object') return data;
 
     if (Array.isArray(data)) {
         return data.map(item => serializeFinance(item)) as any;
@@ -30,19 +34,18 @@ export function serializeFinance<T>(data: T): T {
         return data.toISOString() as any;
     }
 
-    if (typeof data === 'object') {
-        // Handle Prisma Decimal or any object with .toNumber()
-        if ((data as any).toNumber && typeof (data as any).toNumber === 'function') {
-            return (data as any).toNumber();
-        }
-
-        const Entries = Object.entries(data).map(([key, value]) => [
-            key,
-            serializeFinance(value)
-        ]);
-        
-        return Object.fromEntries(Entries) as any;
+    // Handle Prisma Decimal or any object with .toNumber()
+    if ((data as any).toNumber && typeof (data as any).toNumber === 'function') {
+        return (data as any).toNumber();
     }
 
-    return data;
+    // Batch process object entries
+    const result: any = {};
+    for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            result[key] = serializeFinance((data as any)[key]);
+        }
+    }
+    
+    return result;
 }

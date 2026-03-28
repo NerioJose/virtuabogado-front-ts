@@ -32,7 +32,8 @@ export default function MisServiciosPage() {
   const checkAuth = useAuthStore((state) => state.checkAuth);
 
   // ============ REACT QUERY ============
-  const { data: allOrders = [], isLoading } = useOrdersByUser(user?.id || '');
+  const { data: response, isLoading } = useOrdersByUser(user?.id || '');
+  const allOrders = response?.data || [];
   // const allOrders = useOrdersStore((state) => state.orders); -- Legacy removed
 
   // Esperar a que Zustand se hidrate desde localStorage

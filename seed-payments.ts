@@ -3,14 +3,14 @@ const prisma = new PrismaClient();
 
 async function main() {
     await prisma.paymentMethod.upsert({
-        where: { name: 'stripe' },
-        update: { activo: true, titulo: 'Tarjeta de Crédito / Débito' },
-        create: { name: 'stripe', titulo: 'Tarjeta de Crédito / Débito', activo: true, config: {} }
+        where: { identifier: 'stripe' },
+        update: { isActive: true, name: 'Tarjeta de Crédito / Débito' },
+        create: { identifier: 'stripe', name: 'Tarjeta de Crédito / Débito', isActive: true }
     });
     await prisma.paymentMethod.upsert({
-        where: { name: 'zenobank' },
-        update: { activo: true, titulo: 'Pago con Criptomonedas (Zenobank)' },
-        create: { name: 'zenobank', titulo: 'Pago con Criptomonedas (Zenobank)', activo: true, config: {} }
+        where: { identifier: 'zenobank' },
+        update: { isActive: true, name: 'Pago con Criptomonedas (Zenobank)' },
+        create: { identifier: 'zenobank', name: 'Pago con Criptomonedas (Zenobank)', isActive: true }
     });
     console.log("Payment methods seeded/activated.");
 }

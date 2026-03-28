@@ -32,13 +32,14 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 
 	// ============ REACT QUERY (Datos Financieros Reales con Precision) ============
 	const { data: summary, isLoading: isLoadingSummary } = useQuery({
-		queryKey: ['finances', periodo, user?.id],
+		queryKey: ['Finance', periodo, user?.id],
 		queryFn: () => getFinancialSummary({ dateRange: periodo as any }, { id: user!.id, rol: user!.rol as any }),
 		enabled: !!user
 	});
 
 	// Para la tabla seguimos usando las órdenes generales
-	const { data: orders = [], isLoading: isLoadingOrders } = useOrders();
+	const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 500 });
+	const orders = response?.data || [];
 
 	// Filtrar órdenes por búsqueda
 	const ordenesFiltradas = useMemo(() => {

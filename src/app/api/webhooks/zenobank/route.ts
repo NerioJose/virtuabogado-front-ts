@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma as prismaClient } from '@/lib/prisma';
 const prisma = prismaClient as any;
-import { ZenobankService } from '@/features/checkout/services/zenobank.service';
 import { OrderStatus } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
+import { Webhook } from 'svix';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(req: NextRequest) {
-    // REQUERIMIENTO: svix-id, svix-timestamp, svix-signature
     const svixId = req.headers.get('svix-id');
     const svixTimestamp = req.headers.get('svix-timestamp');
     const svixSignature = req.headers.get('svix-signature');
@@ -15,32 +15,36 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing Svix headers' }, { status: 401 });
     }
 
-    const body = await req.text();
-    
-    // VALIDACIÓN DE FIRMA SVIX (Cybersecurity requirement)
-    // Se usa el Raw Body tal como exige la regla de oro de seguridad
-    const isValid = ZenobankService.verifyWebhookSignature(body, {
-        'svix-id': svixId,
-        'svix-timestamp': svixTimestamp,
-        'svix-signature': svixSignature
-    });
-
-    if (!isValid) {
-        console.error('🚨 [Webhook] Firma SVIX inválida detectada! Acceso denegado.');
-        return NextResponse.json({ error: 'Invalid signature signature' }, { status: 401 });
+    const secret = process.env.ZENOBANK_WEBHOOK_SECRET;
+    if (!secret) {
+        console.error('❌ [Webhook] ZENOBANK_WEBHOOK_SECRET no configurado');
+        return NextResponse.json({ error: 'Configuración incompleta' }, { status: 500 });
     }
 
-    const payload = JSON.parse(body);
-    const { type, data } = payload; 
-    
-    // Zenobank v1: data contiene la información del checkout
-    const orderId = data?.orderId || payload.orderId;
-    const paymentId = data?.id || payload.id;
+    const payload = await req.text();
+    const headers = {
+        'svix-id': svixId,
+        'svix-timestamp': svixTimestamp,
+        'svix-signature': svixSignature,
+    };
 
-    console.log(`✅ [Webhook] Evento verificado: ${type} para orden ${orderId}`);
+    const wh = new Webhook(secret);
+    let evt: any;
 
     try {
-        // IDEMPOTENCIA: Verificar si la orden ya fue procesada
+        evt = wh.verify(payload, headers);
+    } catch (err) {
+        console.error('🚨 [Webhook] Firma SVIX inválida:', err);
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
+    const { type, data } = evt; 
+    const orderId = data?.orderId || evt.orderId;
+    const paymentId = data?.id || evt.id;
+
+    console.log(`✅ [Webhook SVIX] Evento verificado: ${type} para orden ${orderId}`);
+
+    try {
         const currentOrder = await prisma.order.findUnique({
             where: { id: orderId }
         });
@@ -50,45 +54,66 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        if (currentOrder.status === OrderStatus.COMPLETADO) {
-            console.log(`⏭️ [Webhook] Orden ${orderId} ya estaba COMPLETADA. Ignorando duplicado.`);
+        // Si ya está pagada o completada, ignoramos para evitar loops
+        if (currentOrder.status === OrderStatus.PAID || currentOrder.status === OrderStatus.COMPLETADO) {
+            console.log(`⏭️ [Webhook] Orden ${orderId} ya procesada. Ignorando.`);
             return NextResponse.json({ received: true, status: 'already_processed' });
         }
 
-        // REGLA DE NEGOCIO: Transiciones de estado basadas en el resultado del pago
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
+            // 👨‍⚖️ AUTO-ASSIGNMENT (Post-Pago): Solo asignar casos que ya están pagos
+            const activeLawyers = await prisma.user.findMany({
+                where: { rol: 'ABOGADO', activo: true },
+                select: { id: true }
+            });
+
+            // Si la orden ya venía con un abogado pre-asignado lo respetamos, si no y solo hay 1 abogado, se lo damos.
+            let targetLawyerId = currentOrder.lawyerId;
+            let assignedAt = currentOrder.assignedAt;
+
+            if (!targetLawyerId && activeLawyers.length === 1) {
+                targetLawyerId = activeLawyers[0].id;
+                assignedAt = new Date();
+                console.log(`⚖️ [Webhook] Auto-asignando orden ${orderId} al abogado único:`, targetLawyerId);
+            }
+
+            // Lógica de Negocio: Si hay abogado (manual o auto), empezamos a trabajar. Si no, queda PENDIENTE de que el Admin asigne.
+            const resolvedStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PENDIENTE; 
+
             await prisma.order.update({
                 where: { id: orderId },
                 data: { 
-                    status: OrderStatus.PENDIENTE, // Listo para asignación
-                    paymentId: paymentId
+                    status: resolvedStatus, 
+                    paymentId: paymentId,
+                    lawyerId: targetLawyerId,
+                    assignedAt: assignedAt
                 }
             });
 
-            // 📡 ACTIVACIÓN: Ahora que el pago es real, notificamos al Dashboard
+            // 📡 Notificamos al sistema reactivo con el abogado ya asignado
             broadcastOrderUpdate({
                 orderId: orderId,
                 userId: currentOrder.userId,
-                lawyerId: currentOrder.lawyerId,
-                status: OrderStatus.PENDIENTE,
-                eventType: 'updated'
+                lawyerId: targetLawyerId,
+                status: resolvedStatus,
+                eventType: 'created' // Enviamos 'created' para que al abogado le suene como nuevo caso pagado!
             });
 
-            console.log(`💰 [Webhook] Orden ${orderId} marcada como PAGADA con éxito y notificada al Dashboard.`);
-        } else if (type === 'payment.failed' || type === 'checkout.expired' || type === 'checkout.canceled') {
+            // 🚀 LIMPIEZA DE CACHÉ NEXT.JS (Requisito Lead Architect)
+            revalidatePath('/', 'layout');
+
+            console.log(`💰 [Webhook] Orden ${orderId} marcada como PENDIENTE y caché revalidada.`);
+        } else if (['payment.failed', 'checkout.expired', 'checkout.canceled'].includes(type)) {
             await prisma.order.update({
                 where: { id: orderId },
-                data: { 
-                    status: OrderStatus.PAGO_RECHAZADO,
-                    paymentId: paymentId || currentOrder.paymentId
-                }
+                data: { status: OrderStatus.PAGO_RECHAZADO }
             });
-            console.warn(`❌ [Webhook] Orden ${orderId} marcada como RECHAZADA/FALLIDA (Evento: ${type}).`);
+            console.warn(`❌ [Webhook] Orden ${orderId} rechazada.`);
         }
 
         return NextResponse.json({ received: true, status: 'processed' });
     } catch (error) {
-        console.error('❌ [Webhook] Error procesando evento de Zenobank:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('❌ [Webhook] Error interno:', error);
+        return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
 }

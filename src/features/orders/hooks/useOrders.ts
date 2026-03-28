@@ -9,6 +9,7 @@ export const ORDER_KEYS = {
     list: (filters: OrdersFilters) => [...ORDER_KEYS.lists(), filters] as const,
     details: () => [...ORDER_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...ORDER_KEYS.details(), id] as const,
+    status: (id: string) => [...ORDER_KEYS.detail(id), 'status'] as const,
 };
 
 export function useOrders(filters?: OrdersFilters & { page?: number; limit?: number }) {

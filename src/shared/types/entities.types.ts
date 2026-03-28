@@ -11,6 +11,7 @@ export enum UserRole {
 
 export enum OrderStatus {
     PAGO_PENDIENTE = 'PAGO_PENDIENTE',
+    PAID = 'PAID',
     PAGO_RECHAZADO = 'PAGO_RECHAZADO',
     PENDIENTE = 'PENDIENTE',
     EN_PROGRESO = 'EN_PROGRESO',

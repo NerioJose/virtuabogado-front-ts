@@ -4,6 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiShield, FiCreditCard, FiArrowRight, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { SiBitcoin } from 'react-icons/si';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
+import { useOrderStatus } from '../hooks/useOrderStatus';
 import { useCheckout } from '../hooks/useCheckout';
 import { usePaymentMethods } from '../hooks/usePaymentMethods';
 import { processPaymentAction } from '../actions/processPaymentAction';
@@ -11,6 +15,8 @@ import { toast } from 'sonner';
 import { formatUSD } from '@/lib/finance';
 
 export const PaymentStep: React.FC = () => {
+    const router = useRouter();
+    const queryClient = useQueryClient();
     const { 
         service, 
         setStep, 
@@ -25,37 +31,51 @@ export const PaymentStep: React.FC = () => {
         reset
     } = useCheckout();
 
-    // --- LÓGICA DE DETECCIÓN AUTOMÁTICA (Polling) ---
+    // Requisito Fintech: Persistencia de Sesión
+    // Si la sesión expira o el usuario recarga, recuperamos la orden de localStorage
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-
-        if (isWaitingForWebhook && orderId) {
-            console.log(`📡 [UX] Iniciando monitoreo de orden: ${orderId}`);
-            
-            interval = setInterval(async () => {
-                try {
-                    const response = await fetch(`/api/orders/${orderId}`);
-                    if (response.ok) {
-                        const order = await response.json();
-                        if (order.status === 'COMPLETADO' || order.status === 'SUCCESS') {
-                            console.log('✅ [UX] ¡Pago confirmado vía Webhook! Redirigiendo...');
-                            clearInterval(interval);
-                            markAsCompleted();
-                            setIsWaitingForWebhook(false);
-                            setIsProcessingPayment(false);
-                            setStep(3); // Ir a éxito
-                        }
-                    }
-                } catch (err) {
-                    console.error('❌ Error en el sondeo de la orden:', err);
-                }
-            }, 5000); // Cada 5 segundos
+        if (orderId) {
+            localStorage.setItem('virtuabogado_pending_order', orderId);
+        } else if (isWaitingForWebhook) {
+            const savedOrder = localStorage.getItem('virtuabogado_pending_order');
+            if (savedOrder) setOrderId(savedOrder);
         }
+    }, [orderId, isWaitingForWebhook, setOrderId]);
 
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [isWaitingForWebhook, orderId, setStep, markAsCompleted, setIsWaitingForWebhook, setIsProcessingPayment]);
+    // Requisito Fintech: Polling de Estado (TanStack Query v5)
+    // El hook se encarga del refetchInterval: 3000 automáticamente
+    const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
+
+    // Requisito Fintech: Redirección Automática Autónoma (Totalmente Transparente)
+    useEffect(() => {
+        const currentStatus = statusData?.status?.trim().toUpperCase();
+        console.log("🛰️ Monitor de Pago - Estado detectado:", currentStatus);
+
+        if (currentStatus === 'PAID') {
+            // Apagar el loop de monitoreo instantáneamente
+            setIsWaitingForWebhook(false);
+
+            // Limpieza profunda de sesión de compra
+            window.localStorage.removeItem('virtuabogado_checkout');
+            window.localStorage.removeItem('activeOrderId');
+            window.localStorage.removeItem('virtuabogado_pending_order');
+            
+            // Destrucción inmediata del modal en memoria (React/Zustand)
+            reset();
+
+            // Redirección directa al dashboard final del cliente validado
+            window.location.href = '/mis-servicios';
+        } else if (currentStatus === 'ERROR') {
+            // El webhook dictaminó que falló, caducó o fue rechazado
+            toast.error('El pago no pudo ser completado o fue rechazado. Por favor, intenta de nuevo.');
+            
+            // Limpiamos la orden fallida de la memoria para que pueda crear una nueva
+            window.localStorage.removeItem('activeOrderId');
+            window.localStorage.removeItem('virtuabogado_pending_order');
+            setOrderId('');
+            setIsWaitingForWebhook(false);
+        }
+    }, [statusData?.status, router, reset, setOrderId, setIsWaitingForWebhook]);
 
     const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
 
@@ -149,9 +169,12 @@ export const PaymentStep: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-3 max-w-xs mx-auto">
-                    <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-                        <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1">Detección Automática</p>
-                        <p className="text-[10px] text-green-600 font-medium">Esta ventana se actualizará sola cuando el pago sea procesado.</p>
+                    <div className="bg-green-50/50 p-4 rounded-xl border border-green-100 flex flex-col items-center justify-center text-center space-y-2">
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center animate-pulse">
+                            <FiShield className="text-green-600" size={16} />
+                        </div>
+                        <p className="text-xs text-green-700 font-bold uppercase tracking-wider">Verificación Activa</p>
+                        <p className="text-[10px] text-green-600 font-medium">No cierres esta pestaña. Te redirigiremos automáticamente.</p>
                     </div>
                     
                     <button

@@ -61,6 +61,12 @@ const statusConfig = {
         color: 'text-red-600',
         bg: 'bg-red-100',
     },
+    [OrderStatus.PAID]: {
+        label: 'Pago Exitóso',
+        icon: FiCheckCircle,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-100',
+    },
 };
 
 export default function RecentOrders() {
@@ -110,7 +116,12 @@ export default function RecentOrders() {
             ) : (
                 <div className="space-y-3">
                     {recentOrders.map((order, index) => {
-                        const config = statusConfig[order.status];
+                        const config = statusConfig[order.status as OrderStatus] || {
+                            label: order.status || 'Desconocido',
+                            icon: FiAlertCircle,
+                            color: 'text-gray-600',
+                            bg: 'bg-gray-100',
+                        };
                         const StatusIcon = config.icon;
 
                         return (

@@ -138,6 +138,7 @@ enum UserRole {
 
 enum OrderStatus {
   PAGO_PENDIENTE
+  PAID
   PAGO_RECHAZADO
   PENDIENTE
   EN_PROGRESO

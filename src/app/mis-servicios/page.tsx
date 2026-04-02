@@ -12,6 +12,7 @@ import { FiCalendar, FiClock, FiFileText, FiExternalLink, FiDownload, FiMessageS
 import { useOrdersByUser } from '@/features/orders/hooks/useOrders';
 // Zustand stores
 import { useAuthStore } from '@/features/auth';
+import { useChatStore } from '@/features/chat/store/chatStore';
 import { mapOrderToServicio, getStatusColor, getStatusText, sortServicesByDate, type ServicioCliente } from '@/features/orders';
 
 // Helper for extracting name from raw or mapped user
@@ -23,13 +24,14 @@ const getDisplayName = (user: any) => {
 
 export default function MisServiciosPage() {
   const router = useRouter();
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado' | 'cancelado'>('programado'); // Changed default to 'programado'
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado' | 'cancelado'>('todos');
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // ============ ZUSTAND STORES ============
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const unreadOrders = useChatStore((state) => state.unreadOrders);
 
   // ============ REACT QUERY ============
   const { data: response, isLoading } = useOrdersByUser(user?.id || '');
@@ -62,7 +64,7 @@ export default function MisServiciosPage() {
 
     // Mapear a formato de servicio para la UI (SOLO PROCESADOS)
     const processedOrders = allOrders.filter((order: any) => 
-        order.status !== 'PENDIENTE' && order.status !== 'PENDING'
+        order.status !== 'PAGO_PENDIENTE' && order.status !== 'PAGO_RECHAZADO'
     );
     const mappedServices = processedOrders.map((order: any) => mapOrderToServicio(order));
 
@@ -247,9 +249,21 @@ export default function MisServiciosPage() {
                   {/* Header del servicio */}
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
                     <div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(servicio.estado)}`}>
-                        {getStatusText(servicio.estado)}
-                      </span>
+                      <div className="flex flex-wrap gap-2 items-center mb-2">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(servicio.estado)}`}>
+                          {getStatusText(servicio.estado)}
+                        </span>
+                        {unreadOrders.includes(servicio.id) && (
+                          <motion.span 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-500 text-white shadow-sm animate-pulse"
+                          >
+                            <FiMessageSquare className="mr-1" size={10} />
+                            NUEVO MENSAJE
+                          </motion.span>
+                        )}
+                      </div>
                       <h2 className="text-xl font-semibold text-gray-900 mt-2">{servicio.nombre}</h2>
                       <p className="text-sm text-gray-500 mt-1">
                         Orden #{servicio.numeroOrden}

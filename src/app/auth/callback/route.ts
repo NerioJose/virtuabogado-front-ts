@@ -15,6 +15,13 @@ export async function GET(request: NextRequest) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!error) {
+            const type = searchParams.get('type') ?? '';
+            
+            // Si es un flujo de recuperación, forzar redirección a la página de cambio de clave
+            if (type === 'recovery') {
+                return NextResponse.redirect(`${origin}/auth/reset-password`);
+            }
+
             // Redirigir con parámetro para que el frontend sepa que el login fue exitoso
             // y pueda reabrir el checkout si estaba pendiente
             const redirectUrl = new URL(next, origin);

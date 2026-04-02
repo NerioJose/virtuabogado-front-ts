@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { initializeAuth } from '@/features/auth/store/authStore';
 import { useEffect, useState } from 'react';
+import UploadManager from '@/features/storage/components/UploadManager';
 
 // Componente "dummy" para usar el hook de suscripción dentro del contexto de QueryClient
 const RealtimeSubscription = () => {
@@ -29,11 +30,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             new QueryClient({
                 defaultOptions: {
                     queries: {
-                        // Keep data fresh for 2 minutes - data won't refetch during this time
-                        staleTime: 1000 * 60 * 2, // 2 minutes
+                        // Keep data fresh for 30 seconds
+                        staleTime: 1000 * 30, // 30 seconds (Balanced for Venezuelan high-latency)
 
                         // Keep unused data in cache for 5 minutes before garbage collection
-                        gcTime: 1000 * 60 * 5, // 5 minutes (formerly cacheTime)
+                        gcTime: 1000 * 60 * 5, // 5 minutes
 
                         // Only refetch on mount if data is stale (past staleTime)
                         // Setting to false prevents the flash of empty content
@@ -56,6 +57,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
             <RealtimeSubscription />
             {children}
+            <UploadManager />
             <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
     );

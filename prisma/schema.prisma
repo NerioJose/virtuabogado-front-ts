@@ -71,6 +71,7 @@ model Order {
   @@index([createdAt(sort: Desc)])
   @@index([userId])
   @@index([serviceId])
+  @@index([status, createdAt(sort: Desc)])
 }
 
 model PaymentMethod {
@@ -106,6 +107,9 @@ model Message {
   createdAt DateTime @default(now())
   order     Order    @relation(fields: [orderId], references: [id])
   sender    User     @relation(fields: [senderId], references: [id])
+
+  @@index([orderId, createdAt(sort: Asc)])
+  @@index([senderId])
 }
 
 model Document {
@@ -119,6 +123,9 @@ model Document {
   createdAt  DateTime @default(now())
   order      Order    @relation(fields: [orderId], references: [id])
   uploader   User     @relation(fields: [uploaderId], references: [id])
+
+  @@index([orderId])
+  @@index([uploaderId])
 }
 
 model Review {
@@ -146,4 +153,14 @@ enum OrderStatus {
   COMPLETADO
   CANCELADO
   FALLIDO
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }

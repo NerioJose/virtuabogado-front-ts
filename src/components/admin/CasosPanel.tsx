@@ -4,12 +4,14 @@
  */
 
 import { useMemo, memo } from 'react';
-import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserPlus } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserPlus, FiMessageSquare } from 'react-icons/fi';
 import { ElementoSeleccionable } from '@/types/index';
 // import { useOrdersStore } from '@/features/orders';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useState } from 'react';
+import { useChatStore } from '@/features/chat/store/chatStore';
+import { motion } from 'framer-motion';
 
 interface CasosPanelProps {
   terminoBusqueda: string;
@@ -20,6 +22,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   // ============ REACT QUERY HOOK ============
   const { data: response, isLoading } = useOrders({ limit: 100 });
   const orders = response?.data || [];
+  const unreadOrders = useChatStore((state) => state.unreadOrders);
 
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
 
@@ -106,7 +109,12 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
               <div key={order.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-azul-primario">#{order.numericId}</span>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs font-bold text-azul-primario">#{order.numericId}</span>
+                       {unreadOrders.includes(order.id) && (
+                         <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                       )}
+                    </div>
                     <span className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString('es-ES')}</span>
                   </div>
                   <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
@@ -159,9 +167,13 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                   </button>
                   <button
                     onClick={() => abrirModal('ver', order as unknown as ElementoSeleccionable)}
-                    className="p-2 text-azul-primario bg-azul-primario/5 rounded-lg hover:bg-azul-primario/10 transition-colors"
-                    title="Ver">
-                    <FiEye size={18} />
+                    className={`p-2 rounded-lg hover:bg-azul-primario/10 transition-colors ${
+                      unreadOrders.includes(order.id) 
+                      ? 'text-red-500 bg-red-50 animate-pulse ring-1 ring-red-200' 
+                      : 'text-azul-primario bg-azul-primario/5'
+                    }`}
+                    title={unreadOrders.includes(order.id) ? "Nuevo Mensaje" : "Ver"}>
+                    {unreadOrders.includes(order.id) ? <FiMessageSquare size={18} /> : <FiEye size={18} />}
                   </button>
                   <button
                     onClick={() => abrirModal('editar', order as unknown as ElementoSeleccionable)}
@@ -225,7 +237,15 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                 ordenesFiltradas.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-azul-primario">#{order.numericId}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium text-azul-primario">#{order.numericId}</div>
+                        {unreadOrders.includes(order.id) && (
+                          <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{order.userName}</div>
@@ -281,9 +301,9 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                         </button>
                         <button
                           onClick={() => abrirModal('ver', order as unknown as ElementoSeleccionable)}
-                          className="text-azul-primario hover:text-azul-primario/80"
-                          title="Ver detalles">
-                          <FiEye />
+                          className={`${unreadOrders.includes(order.id) ? 'text-red-500 animate-pulse transform scale-110' : 'text-azul-primario hover:text-azul-primario/80'} transition-all`}
+                          title={unreadOrders.includes(order.id) ? "Nuevo Mensaje" : "Ver detalles"}>
+                          {unreadOrders.includes(order.id) ? <FiMessageSquare /> : <FiEye />}
                         </button>
                         <button
                           onClick={() => abrirModal('editar', order as unknown as ElementoSeleccionable)}

@@ -20,6 +20,7 @@
 		"@tanstack/react-query": "^5.90.15",
 		"@tanstack/react-query-devtools": "^5.91.2",
 		"bcryptjs": "^3.0.3",
+		"browser-image-compression": "^2.0.2",
 		"framer-motion": "^12.11.0",
 		"jose": "^6.1.3",
 		"lucide-react": "0.470.0",
@@ -29,8 +30,10 @@
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-icons": "^5.5.0",
+		"resend": "^6.10.0",
 		"sonner": "^2.0.7",
 		"svix": "^1.89.0",
+		"uuid": "^13.0.0",
 		"zustand": "^5.0.8"
 	},
 	"devDependencies": {
@@ -40,6 +43,7 @@
 		"@types/pg": "^8.16.0",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
+		"@types/uuid": "^11.0.0",
 		"dotenv": "^17.2.3",
 		"eslint": "^9",
 		"eslint-config-next": "15.3.2",

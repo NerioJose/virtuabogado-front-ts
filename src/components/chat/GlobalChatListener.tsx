@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { FiMessageCircle, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
+import { useChatStore } from '@/features/chat/store/chatStore';
 
 /**
  * GlobalChatListener: Centraliza todas las suscripciones de Supabase Realtime (Broadcast)
@@ -30,6 +31,11 @@ export default function GlobalChatListener() {
         }
 
         const supabase = createClient();
+
+        // 0. SOLICITAR PERMISOS DE NOTIFICACIÓN (Browser Native)
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().catch(console.error);
+        }
         
         // Nos suscribimos al canal global de este usuario específico
         const channel = supabase.channel(`global_${user.id}`);
@@ -54,25 +60,56 @@ export default function GlobalChatListener() {
 
                     // Si el mensaje es de otra persona, lanzar notificaciones
                     if (newMessage.senderId !== user.id) {
-                        // A. Reproducir sonido de notificación
-                        try {
-                            const audio = new Audio('/virtuabogado-chat.mp3');
-                            audio.volume = 1.0;
-                            audio.play().catch(e => console.warn('🔇 Audio bloqueado por el navegador:', e));
-                        } catch (err) {
-                            console.error("Error al reproducir audio:", err);
+                        // Omitir notificaciones (Sonido/Toast) si ya estamos en ese chat abierto
+                        const activeOrder = useChatStore.getState().activeOrderId;
+                        if (activeOrder === newMessage.orderId) {
+                            console.log("🤫 Silenciando notificación global porque el chat está activo.");
+                        } else {
+                            // A. Reproducir sonido de notificación
+                            try {
+                                const audio = new Audio('/virtuabogado-chat.mp3');
+                                audio.volume = 1.0;
+                                audio.play().catch(e => console.warn('🔇 Audio bloqueado por el navegador:', e));
+                            } catch (err) {
+                                console.error("Error al reproducir audio:", err);
+                            }
+
+                            // B. Mostrar Toast Notification (Barra flotante inferior)
+                            setToastMessage(newMessage);
+
+                            // C. Parpadeo en la Pestaña (Tab Notification)
+                            if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
+                            let isBlinking = true;
+                            blinkIntervalRef.current = setInterval(() => {
+                                document.title = isBlinking ? '(1) 💬 Nuevo Mensaje' : originalTitleRef.current;
+                                isBlinking = !isBlinking;
+                            }, 1000);
+
+                            // D. Notificación Nativa del Navegador (Estilo WhatsApp/Facebook)
+                            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                                try {
+                                    const n = new Notification(`${newMessage.sender?.nombre || 'Alguien'} te escribió`, {
+                                        body: newMessage.content.startsWith('http') ? '📷 Imagen o archivo enviado' : newMessage.content,
+                                        icon: '/logo/logo_resized.png',
+                                        tag: newMessage.orderId,
+                                        requireInteraction: false
+                                    });
+
+                                    n.onclick = () => {
+                                        window.focus();
+                                        if (user?.rol === 'CLIENTE') router.push('/mis-servicios');
+                                        else if (user?.rol === 'ABOGADO') router.push('/abogado');
+                                        else router.push('/admin');
+                                        n.close();
+                                    };
+                                } catch (err) {
+                                    console.error("Error al lanzar notificación nativa:", err);
+                                }
+                            }
                         }
 
-                        // B. Mostrar Toast Notification (Barra flotante inferior)
-                        setToastMessage(newMessage);
-
-                        // C. Parpadeo en la Pestaña (Tab Notification)
-                        if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
-                        let isBlinking = true;
-                        blinkIntervalRef.current = setInterval(() => {
-                            document.title = isBlinking ? '(1) 💬 Nuevo Mensaje' : originalTitleRef.current;
-                            isBlinking = !isBlinking;
-                        }, 1000);
+                        // E. Marcar como No Leído en el Store Global (siempre, el store ya filtra si está activo)
+                        useChatStore.getState().markAsUnread(newMessage.orderId);
 
                         // Auto-cerrar notificaciones después de 10 segundos
                         setTimeout(() => {

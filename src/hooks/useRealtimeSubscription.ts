@@ -67,7 +67,29 @@ export const useRealtimeSubscription = () => {
                         lawyerId: eventPayload.lawyerId,
                     });
                 }
-                
+
+                // ─── Redirección automática post-pago ────────────────────────────
+                // Si el cliente está esperando confirmación de Zenobank (isWaitingForWebhook),
+                // y el broadcast indica que su orden fue confirmada → redirigir inmediatamente.
+                const successStatuses = ['PENDIENTE', 'EN_PROGRESO', 'PAID', 'COMPLETADO'];
+                if (successStatuses.includes(eventPayload?.status)) {
+                    const { useCheckoutStore } = require('@/features/checkout/store/checkoutStore');
+                    const checkoutState = useCheckoutStore.getState();
+                    
+                    if (
+                        checkoutState.isWaitingForWebhook &&
+                        checkoutState.orderId === eventPayload?.orderId
+                    ) {
+                        console.log('💰 [Realtime] Pago confirmado vía broadcast. Redirigiendo a /mis-servicios...');
+                        checkoutState.setIsWaitingForWebhook(false);
+                        window.localStorage.removeItem('virtuabogado_pending_order');
+                        checkoutState.reset();
+                        window.location.href = '/mis-servicios';
+                        return;
+                    }
+                }
+                // ─────────────────────────────────────────────────────────────────
+
                 // Invalida TODO lo relacionado a órdenes para un refresh total
                 queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['DashboardStats'] });

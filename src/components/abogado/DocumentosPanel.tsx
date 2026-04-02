@@ -7,6 +7,8 @@ import { ordersService } from '@/features/orders/services/orders.service';
 import { Order } from '@/features/orders/types/orders.types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { capitalizeName } from '@/utils/formatters';
+import { useResumableUpload } from '@/features/storage/hooks/useResumableUpload';
+import { compressImage } from '@/utils/imageCompression';
 
 interface DocumentosPanelProps {
   abogadoId: string;
@@ -125,40 +127,37 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
     }
   };
 
+  const { startUpload } = useResumableUpload();
+
   const processUpload = async () => {
     if (!selectedFile || !selectedOrderId) return;
 
     try {
       setLoading(true);
       setShowUploadModal(false);
-      setNotificacion({ tipo: 'info', mensaje: `Subiendo ${selectedFile.name}...` });
+      setNotificacion({ tipo: 'info', mensaje: `Iniciando subida de ${selectedFile.name}...` });
 
-      // 1. Storage
-      const filePath = `${selectedOrderId}/${Date.now()}_${selectedFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('case-files')
-        .upload(filePath, selectedFile);
+      // A. Compresión (Worker-based)
+      const fileToUpload = await compressImage(selectedFile);
 
-      if (uploadError) throw uploadError;
+      // B. Subida Reanudable (TUS)
+      // El startUpload ya gestiona el registro en el UploadManager y el progreso
+      const publicUrl = await startUpload(selectedOrderId, fileToUpload);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('case-files')
-        .getPublicUrl(filePath);
-
-      // 2. DB
+      // C. Registro en Base de Datos Técnica
       await documentsService.create({
         orderId: selectedOrderId,
         name: selectedFile.name,
         url: publicUrl,
-        type: selectedFile.type,
-        size: selectedFile.size
+        type: fileToUpload.type,
+        size: fileToUpload.size
       });
 
-      setNotificacion({ tipo: 'success', mensaje: 'Documento subido correctamente' });
-      fetchDocumentos(); // Recargar
+      setNotificacion({ tipo: 'success', mensaje: 'Documento sincronizado correctamente' });
+      fetchDocumentos(); // Recargar lista
     } catch (error: any) {
       console.error('Error al subir documento:', error);
-      setNotificacion({ tipo: 'error', mensaje: 'Error al subir documento' });
+      setNotificacion({ tipo: 'error', mensaje: 'Error: La subida falló o fue cancelada' });
     } finally {
       setLoading(false);
       setSelectedFile(null);

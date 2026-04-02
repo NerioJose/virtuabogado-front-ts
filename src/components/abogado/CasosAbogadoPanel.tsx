@@ -2,6 +2,8 @@ import { useState, useEffect, memo, useMemo } from 'react';
 import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
+import { useChatStore } from '@/features/chat/store/chatStore';
+import { motion } from 'framer-motion';
 import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 
@@ -15,6 +17,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
   // ============ REACT QUERY ============
   const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
   const misCasos = response?.data || [];
+  const unreadOrders = useChatStore((state) => state.unreadOrders);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
   const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -31,22 +34,20 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
     setModalAbierto(true);
   };
 
-  const handleConfirmarCompletar = async () => {
+  const handleConfirmarCompletar = () => {
     if (!casoParaCompletar) return;
-    try {
-      await updateOrder.mutateAsync({
-        id: casoParaCompletar,
-        data: { 
-          status: OrderStatus.COMPLETADO,
-          closedAt: new Date().toISOString()
-        }
-      });
-      setModalAbierto(false);
-      setCasoParaCompletar(null);
-    } catch (error) {
-      console.error('Error al completar el caso:', error);
-      alert('Hubo un error al intentar completar el caso.');
-    }
+    
+    // Optimizamos flujo: Cerramos modal y lanzamos mutación sin esperar (Optimistic UI)
+    updateOrder.mutate({
+      id: casoParaCompletar,
+      data: { 
+        status: OrderStatus.COMPLETADO,
+        closedAt: new Date().toISOString()
+      }
+    });
+
+    setModalAbierto(false);
+    setCasoParaCompletar(null);
   };
 
   // Ya no necesitamos useEffect para fetchOrders porque useQuery lo maneja automáticamente
@@ -236,8 +237,16 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               casosFiltrados.map((caso) => (
                 <tr key={caso.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-azul-primario">
-                      {caso.items[0]?.serviceName || 'Servicio Legal'}
+                    <div className="flex items-center gap-2">
+                       <div className="text-sm font-medium text-azul-primario">
+                         {caso.items[0]?.serviceName || 'Servicio Legal'}
+                       </div>
+                       {unreadOrders.includes(caso.id) && (
+                         <span className="flex h-2 w-2">
+                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                           <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                         </span>
+                       )}
                     </div>
                     <div className="text-xs text-gray-500">ID: {caso.id.slice(0, 8)}...</div>
                   </td>
@@ -269,8 +278,12 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                         <FiEye />
                       </button>
                       <button
-                        className="text-green-500 hover:text-green-600"
-                        title="Enviar mensaje"
+                        className={`hover:opacity-80 transition-all ${
+                          unreadOrders.includes(caso.id) 
+                          ? 'text-red-500 animate-pulse scale-110' 
+                          : 'text-green-500 hover:text-green-600'
+                        }`}
+                        title={unreadOrders.includes(caso.id) ? "Responder Mensaje" : "Enviar mensaje"}
                         onClick={() => setCasoSeleccionado(caso.id)}
                       >
                         <FiMessageSquare />

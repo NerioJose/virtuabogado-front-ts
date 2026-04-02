@@ -1,425 +1,362 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiMail, FiUser, FiPhone, FiLock, FiCheckCircle } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiMail, FiUser, FiPhone, FiLock, FiChevronRight, FiArrowLeft, FiAlertCircle, FiLoader } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
 import type { UserCheckoutData } from '../types/checkout.types';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export const UserDataStep: React.FC = () => {
     const { 
         userData: storeUserData,
         setUserData, 
-        setStep, 
         isLoading, 
-        error,
+        error: storeError,
         isExistingUser, 
         checkUserExists, 
-        sendOtp, 
-        verifyOtp,
-        authenticateUser
+        authenticateUser 
     } = useCheckout();
 
-    useEffect(() => {
-        if (storeUserData) {
-            setFormData(prev => ({
-                ...prev,
-                ...storeUserData,
-                name: storeUserData.name || storeUserData.nombre || prev.name,
-                nombre: storeUserData.nombre || storeUserData.name || prev.nombre,
-            }));
-        }
-    }, [storeUserData]);
-
-    // Función para traducir errores técnicos a mensajes amigables
-    const getFriendlyErrorMessage = (err: string | null) => {
-        if (!err) return null;
-        if (err.toLowerCase().includes('rate limit exceeded')) {
-            return 'Límite de seguridad alcanzado. Por favor, espere unos minutos o use su contraseña para entrar ahora mismo.';
-        }
-        if (err.includes('Invalid login credentials')) {
-            return 'Credenciales inválidas. Verifique su contraseña.';
-        }
-        return err;
-    };
-
+    // 1. Estados Locales
+    const [email, setEmail] = useState(storeUserData?.email || '');
+    const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+    const [hasChecked, setHasChecked] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [isOtpMode, setIsOtpMode] = useState(false);
-    const [otpSent, setOtpSent] = useState(false);
-    const [otpCode, setOtpCode] = useState('');
-    const [emailCheckLoading, setEmailCheckLoading] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
 
-    const [formData, setFormData] = useState<UserCheckoutData>({
-        email: '',
-        password: '', // Nuevo campo
-        name: '',
-        nombre: '',
-        phone: '',
-        createAccount: true,
+    const [formData, setFormData] = useState({
+        password: '',
+        name: storeUserData?.nombre || '',
+        phone: storeUserData?.phone || '',
     });
 
-    const [errors, setErrors] = useState<Partial<Record<keyof UserCheckoutData, string>>>({});
-
-    const validateField = (name: keyof UserCheckoutData, value: string | boolean): string | undefined => {
-        switch (name) {
-            case 'email':
-                if (!value) return 'Email requerido';
-                if (typeof value === 'string' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                    return 'Email inválido';
-                }
-                break;
-            case 'name':
-                if (!value) return 'Nombre requerido';
-                if (typeof value === 'string' && value.trim().length < 3) {
-                    return 'Nombre muy corto';
-                }
-                break;
-            case 'password':
-                if (!value) return 'Contraseña requerida';
-                if (typeof value === 'string' && value.length < 6) return 'Mínimo 6 caracteres';
-                break;
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = e.target;
-        const newValue = type === 'checkbox' ? checked : value;
-
-        setFormData(prev => {
-            const newData = { ...prev, [name]: newValue };
-            if (name === 'name') newData.nombre = value as string;
-            return newData;
-        });
-
-        if (errors[name as keyof UserCheckoutData]) {
-            setErrors(prev => ({ ...prev, [name]: undefined }));
-        }
-    };
-
-    const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        const error = validateField(name as keyof UserCheckoutData, value);
-        if (error) {
-            setErrors(prev => ({ ...prev, [name]: error }));
+    // 2. Debounce para verificación de Email
+    useEffect(() => {
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        
+        if (!isValidEmail) {
+            setHasChecked(false);
             return;
         }
 
-        // Si es el email, verificar si existe el usuario
-        if (name === 'email' && value) {
-            setEmailCheckLoading(true);
+        const timer = setTimeout(async () => {
+            setIsCheckingEmail(true);
+            setLocalError(null);
             try {
-                await checkUserExists(value);
+                await checkUserExists(email);
+                setHasChecked(true);
+            } catch (err) {
+                console.error('Error checking email:', err);
             } finally {
-                setEmailCheckLoading(false);
+                setIsCheckingEmail(false);
             }
-        }
+        }, 800); // Debounce de 800ms para no saturar
+
+        return () => clearTimeout(timer);
+    }, [email, checkUserExists]);
+
+    // 3. Manejadores
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        if (localError) setLocalError(null);
     };
 
-    const handleRequestOtp = async () => {
-        if (!formData.email) return;
-        try {
-            await sendOtp(formData.email);
-            setOtpSent(true);
-            setIsOtpMode(true);
-        } catch (err) {
-            console.error('Error sending OTP:', err);
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        if (!otpCode || otpCode.length < 6) return;
-        try {
-            await verifyOtp(formData.email, otpCode);
-        } catch (err) {
-            console.error('Error verifying OTP:', err);
-        }
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setEmail(e.target.value);
+        if (localError) setLocalError(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        const newErrors: Partial<Record<keyof UserCheckoutData, string>> = {};
         
-        // Validar campos condicionalmente
-        const fieldsToValidate: (keyof UserCheckoutData)[] = ['email'];
-        
-        // Solo validar nombre si es un usuario nuevo
-        if (!isExistingUser) {
-            fieldsToValidate.push('name');
+        // Validaciones básicas antes de enviar
+        if (isExistingUser && !formData.password) {
+            setLocalError('Por favor, ingrese su contraseña.');
+            return;
         }
-        
-        // Solo validar password si no se está usando el modo OTP
-        if (!otpSent) {
-            fieldsToValidate.push('password');
-        }
-
-        fieldsToValidate.forEach((field) => {
-            const error = validateField(field, formData[field] as string);
-            if (error) newErrors[field] = error;
-        });
-
-        if (Object.keys(newErrors).length > 0) {
-            console.warn('⚠️ Errores de validación en Checkout:', newErrors);
-            setErrors(newErrors);
+        if (!isExistingUser && (!formData.name || !formData.password)) {
+            setLocalError('Por favor, complete todos los campos requeridos (*).');
             return;
         }
 
-        // --- AUTO-LOGIN / REGISTER INMEDIATO ---
-        // Intentamos autenticar antes de pasar al paso 2
-        try {
-            const success = await authenticateUser(formData);
-            if (!success) {
-                // El error ya debería estar en el store y mostrarse via useCheckout().error
-                return;
-            }
-            
-            // Si tiene éxito, authenticateUser ya cambia el step a 2
-            console.log('✅ Checkout: Usuario autenticado. Pasando al pago.');
-        } catch (err) {
-            console.error('❌ Error en el proceso de Paso 1:', err);
+        const success = await authenticateUser({
+            email,
+            password: formData.password,
+            name: formData.name,
+            nombre: formData.name,
+            phone: formData.phone,
+            createAccount: !isExistingUser
+        });
+
+        if (!success) {
+            setLocalError('Error de autenticación. Verifique sus datos.');
         }
     };
 
+    const handleResetEmail = () => {
+        setHasChecked(false);
+        setEmail('');
+        setFormData({ password: '', name: '', phone: '' });
+    };
+
+    const handleResetPassword = async () => {
+        if (!email) return;
+        try {
+            const { createClient } = await import('@/utils/supabase/client');
+            const supabase = createClient();
+            await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth/callback?next=/perfil/seguridad`
+            });
+            setShowResetModal(true);
+        } catch (err) {
+            console.error('Error reset password:', err);
+            setLocalError('No se pudo enviar el enlace de recuperación.');
+        }
+    };
+
+    // 4. Renderizado de Errores
+    const displayError = localError || storeError;
+
     return (
-        <motion.form
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            onSubmit={handleSubmit}
-            className="space-y-4"
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-md mx-auto"
         >
-            <div className={`p-4 rounded-xl border flex items-start gap-4 transition-colors duration-300 ${isExistingUser ? 'bg-azul-primario/5 border-azul-primario/20 text-azul-primario' : 'bg-green-50 border-green-100 text-green-800'}`}>
-                <div className="text-2xl mt-0.5">
-                    {isExistingUser ? '🛡️' : '👤'}
-                </div>
-                <div className="flex-1">
-                    <p className="font-semibold text-sm mb-1 leading-tight">
-                        {isExistingUser ? 'Cuenta Registrada' : 'Nueva Cuenta Segura'}
-                    </p>
-                    <p className="text-xs opacity-90 leading-normal">
-                        {isExistingUser 
-                            ? 'Se ha detectado una cuenta asociada a este correo electrónico. Por favor, valide su identidad para continuar con el trámite.' 
-                            : 'Cree su cuenta para realizar el seguimiento legal de su caso y acceder a su espacio personal.'}
-                    </p>
-                </div>
-            </div>
-
-            {/* Email */}
-            <div>
-                <label htmlFor="email" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    Correo Electrónico <span className="text-red-500 font-bold">*</span>
-                </label>
-                <div className="relative group">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-4 focus:ring-azul-primario/10 focus:border-azul-primario transition-all duration-200 outline-none ${errors.email ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-gray-50/30'}`}
-                        placeholder="ejemplo@email.com"
-                    />
-                    {emailCheckLoading && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <div className="w-4 h-4 border-2 border-azul-primario/20 border-t-azul-primario rounded-full animate-spin"></div>
-                        </div>
-                    )}
-                </div>
-                {errors.email && (
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                        <span>⚠️</span> {errors.email}
-                    </motion.p>
-                )}
-            </div>
-
-            {/* Password / OTP Selector */}
-            {!otpSent ? (
-                <div className="space-y-4">
-                    {/* Sección Contraseña Tradicional */}
-                    <div>
-                        <label htmlFor="password" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            {isExistingUser ? 'Contraseña Registrada' : 'Establecer Contraseña'} <span className="text-red-500 font-bold">*</span>
-                        </label>
-                        <div className="relative group">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors text-lg">🔒</span>
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                id="password"
-                                name="password"
-                                value={formData.password || ''}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-4 focus:ring-azul-primario/10 focus:border-azul-primario transition-all duration-200 outline-none ${errors.password ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-gray-50/30'}`}
-                                placeholder={isExistingUser ? "••••••••" : "Cree una clave para su cuenta"}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-azul-primario transition-colors p-1"
-                            >
-                                {showPassword ? "Ocultar" : "Mostrar"}
-                            </button>
-                        </div>
-                        {errors.password && (
-                            <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                                <span>⚠️</span> {errors.password}
-                            </motion.p>
-                        )}
-                    </div>
-
-                    {/* Opción Alternativa Profesional para Usuarios Existentes */}
-                    {isExistingUser && (
-                        <div className="pt-2">
-                            <div className="relative flex items-center justify-center mb-4">
-                                <div className="absolute inset-0 border-t border-gray-100 w-full" />
-                                <span className="relative px-3 bg-white text-[10px] uppercase tracking-[0.2em] font-bold text-gray-300">O BIEN</span>
-                            </div>
-                            
-                            <button 
-                                type="button"
-                                onClick={handleRequestOtp}
-                                disabled={isLoading}
-                                className="w-full py-3 px-4 border-2 border-dashed border-azul-primario/30 rounded-xl text-azul-primario hover:bg-azul-primario/5 hover:border-azul-primario/50 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-50"
-                            >
-                                <span className="text-xl group-hover:scale-110 transition-transform duration-200">✉️</span>
-                                <div className="text-left">
-                                    <span className="block text-sm font-bold leading-tight">Acceso mediante enlace seguro</span>
-                                    <span className="block text-[10px] opacity-70 uppercase tracking-wider font-semibold">Le enviaremos un correo de entrada rápida</span>
-                                </div>
-                            </button>
-
-                            {error && (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: -10 }} 
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-700"
-                                >
-                                    <span className="mt-0.5">⚠️</span>
-                                    <p className="text-[11px] font-medium leading-tight">
-                                        {getFriendlyErrorMessage(error)}
-                                    </p>
-                                </motion.div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            ) : (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-6 bg-azul-primario/5 rounded-2xl border border-azul-primario/20 text-center shadow-sm"
-                >
-                    <div className="w-16 h-16 bg-azul-primario/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                        📨
-                    </div>
-                    <h3 className="font-bold text-azul-primario text-lg mb-2">
-                        Verifique su correo
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-                        Se ha generado un enlace y un código de acceso para <strong>{formData.email}</strong>.<br/>
-                        Revise su bandeja de entrada (incluyendo spam).
-                    </p>
-                    
-                    {/* Campo para ingresar código de 6 dígitos manual */}
-                    <div className="mb-6 space-y-3">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">O ingrese el código de 6 dígitos</label>
-                        <div className="flex justify-center">
-                            <input
-                                type="text"
-                                maxLength={6}
-                                value={otpCode}
-                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                                placeholder="000000"
-                                className="w-32 text-center text-2xl font-black tracking-[0.3em] py-2 border-b-2 border-azul-primario bg-transparent outline-none focus:border-vinotinto transition-colors"
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleVerifyOtp}
-                            disabled={isLoading || otpCode.length < 6}
-                            className="text-xs font-bold text-vinotinto hover:underline disabled:opacity-30"
-                        >
-                            {isLoading ? 'Verificando...' : 'Validar Código'}
-                        </button>
-                    </div>
-
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-azul-primario/10 rounded-full text-[11px] text-gray-500 font-medium">
-                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                        Válido por 60 minutos
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={handleRequestOtp}
-                        disabled={isLoading}
-                        className="mt-6 block w-full text-xs text-azul-primario hover:underline font-bold disabled:opacity-50 uppercase tracking-widest"
-                    >
-                        {isLoading ? 'Solicitando nuevo enlace...' : '¿No ha recibido el correo? Reenviar'}
-                    </button>
-                    
-                    {error && (
-                        <p className="mt-4 text-xs text-red-600 font-medium p-2 bg-red-50 rounded-lg">
-                            ⚠️ {getFriendlyErrorMessage(error)}
-                        </p>
-                    )}
-                </motion.div>
-            )}
-
-            {/* Nombre */}
-            {!isExistingUser && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <label htmlFor="name" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Nombre Completo <span className="text-red-500 font-bold">*</span>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                
+                {/* ETAPA 1: Identificación (Email) */}
+                <div className="relative">
+                    <label htmlFor="email" className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
+                        Correo Electrónico
                     </label>
                     <div className="relative group">
-                        <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
+                        <FiMail className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${hasChecked ? 'text-green-500' : 'text-gray-400 group-focus-within:text-azul-primario'}`} />
                         <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-4 focus:ring-azul-primario/10 focus:border-azul-primario transition-all duration-200 outline-none ${errors.name ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-gray-50/30'}`}
-                            placeholder="Juan Pérez"
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={handleEmailChange}
+                            disabled={hasChecked || isLoading}
+                            className={`w-full pl-11 pr-12 py-4 bg-white border-2 rounded-2xl transition-all duration-300 outline-none
+                                ${hasChecked 
+                                    ? 'border-green-100 bg-green-50/30 text-gray-700' 
+                                    : 'border-gray-100 focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5'
+                                }
+                                disabled:opacity-80
+                            `}
+                            placeholder="tu@email.com"
+                            required
                         />
+                        <AnimatePresence>
+                            {isCheckingEmail && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }} 
+                                    animate={{ opacity: 1 }} 
+                                    exit={{ opacity: 0 }}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2"
+                                >
+                                    <FiLoader className="animate-spin text-azul-primario" />
+                                </motion.div>
+                            )}
+                            {hasChecked && !isLoading && (
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    type="button"
+                                    onClick={handleResetEmail}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+                                    title="Cambiar email"
+                                >
+                                    <FiArrowLeft />
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
                     </div>
-                    {errors.name && (
-                        <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
-                            <span>⚠️</span> {errors.name}
-                        </motion.p>
-                    )}
-                </motion.div>
-            )}
-
-            {/* Teléfono */}
-            <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono <span className="text-xs text-gray-500">(opcional)</span>
-                </label>
-                <div className="relative">
-                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-primario focus:border-azul-primario"
-                        placeholder="+58 424 123 4567"
-                    />
                 </div>
-            </div>
 
-            <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full btn-primary mt-6 flex justify-center items-center"
-            >
-                Continuar al Pago →
-            </button>
-        </motion.form>
+                {/* ETAPA 2: Autenticación Dinámica */}
+                <AnimatePresence mode="wait">
+                    {hasChecked && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="space-y-5 overflow-hidden pt-2"
+                        >
+                            <div className={`p-4 rounded-2xl border flex items-center gap-3 mb-2 transition-all duration-500 ${isExistingUser ? 'bg-azul-primario/5 border-azul-primario/10' : 'bg-vinotinto/5 border-vinotinto/10'}`}>
+                                <div className="text-xl">
+                                    {isExistingUser ? '👋' : '✨'}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-gray-800 leading-tight">
+                                        {isExistingUser ? '¡Hola de nuevo!' : '¡Bienvenido a VirtuAbogado!'}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 font-medium">
+                                        {isExistingUser 
+                                            ? 'Hemos detectado tu cuenta. Introduce tu contraseña para continuar.' 
+                                            : 'No tienes cuenta aún. Crea una ahora para asegurar tu caso.'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Campo Nombre (Solo para nuevos) */}
+                            {!isExistingUser && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                >
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                        Nombre Completo <span className="text-red-400">*</span>
+                                    </label>
+                                    <div className="relative group">
+                                        <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
+                                            placeholder="Ej: Juan Pérez"
+                                            required
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Campo Password (Ambos casos) */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <div className="flex justify-between items-center px-1 mb-2">
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                                        {isExistingUser ? 'Tu Contraseña' : 'Crea una contraseña'} <span className="text-red-400">*</span>
+                                    </label>
+                                    {isExistingUser && (
+                                        <button 
+                                            type="button"
+                                            onClick={handleResetPassword}
+                                            className="text-[10px] font-bold text-azul-primario hover:underline"
+                                        >
+                                            ¿Olvidaste tu clave?
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="relative group">
+                                    <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                        className="w-full pl-11 pr-12 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-azul-primario transition-colors"
+                                    >
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">{showPassword ? 'Ocultar' : 'Ver'}</span>
+                                    </button>
+                                </div>
+                            </motion.div>
+
+                            {/* Campo Teléfono (Opcional, solo nuevos) */}
+                            {!isExistingUser && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                        WhatsApp / Teléfono <span className="text-[9px] text-gray-300 font-normal normal-case">(Opcional)</span>
+                                    </label>
+                                    <div className="relative group">
+                                        <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-azul-primario transition-colors" />
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
+                                            placeholder="+58 412..."
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Botón de Acción Principal */}
+                            <motion.button
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full py-4 bg-azul-primario text-white rounded-2xl font-bold shadow-lg shadow-azul-primario/25 hover:bg-azul-oscuro transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <FiLoader className="animate-spin" />
+                                        <span>Procesando...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>{isExistingUser ? 'Acceder y Continuar' : 'Crear Cuenta y Continuar'}</span>
+                                        <FiChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Mensajes de Error Profesionales */}
+                <AnimatePresence>
+                    {displayError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-start gap-3"
+                        >
+                            <FiAlertCircle className="text-red-500 mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                                <p className="text-[11px] font-bold text-red-800 uppercase tracking-widest mb-1">Error de Validación</p>
+                                <p className="text-xs text-red-600 font-medium leading-relaxed">{displayError}</p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* PIE DEL PASO 1 */}
+                <p className="text-center text-[10px] text-gray-400 font-medium px-4">
+                    Al continuar, aceptas la creación de un perfil legal seguro protegido con cifrado de grado bancario (SSL/TLS).
+                </p>
+            </form>
+
+            {/* MODAL DE ÉXITO (PROYECTO) */}
+            <ConfirmModal
+                isOpen={showResetModal}
+                variant="success"
+                title="Correo Enviado"
+                message={
+                    <span>
+                        Hemos enviado un enlace para restablecer tu contraseña a <strong>{email}</strong>. 
+                        Por favor revisa tu bandeja de entrada o spam.
+                    </span>
+                }
+                confirmText="Entendido"
+                showCancel={false}
+                onConfirm={() => setShowResetModal(false)}
+                onClose={() => setShowResetModal(false)}
+            />
+        </motion.div>
     );
 };

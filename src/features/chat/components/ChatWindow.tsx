@@ -5,6 +5,7 @@ import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { FiSend, FiPaperclip, FiLock, FiVolume2, FiVolumeX, FiFileText, FiDownload, FiImage, FiTrash2, FiShield } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useChatStore } from '../store/chatStore';
 
 interface ChatWindowProps {
     orderId: string;
@@ -54,7 +55,10 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
              // Forzar que siempre se guarde explícitamente y esté activo inicialmente como solicitaste
              document.cookie = "chatSoundEnabled=true; path=/; max-age=31536000";
         }
-    }, []);
+
+        // Marcar como leído al entrar al chat
+        useChatStore.getState().markAsRead(orderId);
+    }, [orderId]);
 
     const toggleSound = () => {
         const newState = !soundEnabled;

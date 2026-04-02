@@ -42,40 +42,25 @@ export const PaymentStep: React.FC = () => {
         }
     }, [orderId, isWaitingForWebhook, setOrderId]);
 
-    // Requisito Fintech: Polling de Estado (TanStack Query v5)
-    // El hook se encarga del refetchInterval: 3000 automáticamente
+    // Polling de Estado: TanStack Query con refetchInterval de 3s
+    // staleTime:0 garantiza que siempre consulta el servidor (sin caché)
     const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
 
-    // Requisito Fintech: Redirección Automática Autónoma (Totalmente Transparente)
+    // Sincronización de Estado via Polling (Backup de Realtime)
+    // Cambiamos el estado visual si la orden se confirma en segundo plano
     useEffect(() => {
+        if (!statusData) return;
         const currentStatus = statusData?.status?.trim().toUpperCase();
-        console.log("🛰️ Monitor de Pago - Estado detectado:", currentStatus);
-
+        
         if (currentStatus === 'PAID') {
-            // Apagar el loop de monitoreo instantáneamente
-            setIsWaitingForWebhook(false);
-
-            // Limpieza profunda de sesión de compra
-            window.localStorage.removeItem('virtuabogado_checkout');
-            window.localStorage.removeItem('activeOrderId');
-            window.localStorage.removeItem('virtuabogado_pending_order');
-            
-            // Destrucción inmediata del modal en memoria (React/Zustand)
-            reset();
-
-            // Redirección directa al dashboard final del cliente validado
-            window.location.href = '/mis-servicios';
+            console.log('✨ [PaymentStep] Pago detectado via polling. Sincronizando UI...');
+            // No hacemos redirect duro aquí para permitir que el Broadcast (Realtime) 
+            // maneje la "emisión" principal de forma fluida, o que el usuario vea el éxito.
         } else if (currentStatus === 'ERROR') {
-            // El webhook dictaminó que falló, caducó o fue rechazado
-            toast.error('El pago no pudo ser completado o fue rechazado. Por favor, intenta de nuevo.');
-            
-            // Limpiamos la orden fallida de la memoria para que pueda crear una nueva
-            window.localStorage.removeItem('activeOrderId');
-            window.localStorage.removeItem('virtuabogado_pending_order');
-            setOrderId('');
+            toast.error('El pago no pudo ser completado. Por favor, intenta de nuevo.');
             setIsWaitingForWebhook(false);
         }
-    }, [statusData?.status, router, reset, setOrderId, setIsWaitingForWebhook]);
+    }, [statusData?.status, setIsWaitingForWebhook]);
 
     const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
 
@@ -149,6 +134,8 @@ export const PaymentStep: React.FC = () => {
 
     // --- ESTADO: ESPERANDO WEBHOOK (Pantalla Original) ---
     if (isWaitingForWebhook) {
+        const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
+
         return (
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -156,43 +143,73 @@ export const PaymentStep: React.FC = () => {
                 className="py-12 text-center space-y-8"
             >
                 <div className="relative w-24 h-24 mx-auto">
-                    <div className="absolute inset-0 border-4 border-azul-primario/10 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
-                    <FiShield className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-azul-primario" size={32} />
+                    {isPaid ? (
+                        <motion.div 
+                           initial={{ scale: 0 }}
+                           animate={{ scale: 1 }}
+                           className="absolute inset-0 bg-green-50 rounded-full flex items-center justify-center border-4 border-green-500"
+                        >
+                            <FiShield className="text-green-600" size={32} />
+                        </motion.div>
+                    ) : (
+                        <>
+                            <div className="absolute inset-0 border-4 border-azul-primario/10 rounded-full"></div>
+                            <div className="absolute inset-0 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
+                            <FiShield className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-azul-primario" size={32} />
+                        </>
+                    )}
                 </div>
 
                 <div className="space-y-3">
-                    <h3 className="text-2xl font-black text-gray-900 tracking-tight">Esperando confirmación...</h3>
+                    <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                        {isPaid ? '¡Pago Confirmado!' : 'Esperando confirmación...'}
+                    </h3>
                     <p className="text-gray-500 max-w-xs mx-auto text-balance leading-relaxed text-sm">
-                        He abierto la pasarela en una nueva pestaña. Por favor, completa allí el pago para continuar.
+                        {isPaid 
+                            ? 'Tu pago ha sido validado correctamente. Redirigiendo a tu panel...' 
+                            : 'He abierto la pasarela en una nueva pestaña. Por favor, completa allí el pago para continuar.'}
                     </p>
                 </div>
 
                 <div className="flex flex-col gap-3 max-w-xs mx-auto">
-                    <div className="bg-green-50/50 p-4 rounded-xl border border-green-100 flex flex-col items-center justify-center text-center space-y-2">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center animate-pulse">
-                            <FiShield className="text-green-600" size={16} />
+                    {isPaid ? (
+                        <button
+                            onClick={() => window.location.href = '/mis-servicios'}
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-green-200 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                        >
+                            Ir a mis servicios
+                            <FiArrowRight size={20} />
+                        </button>
+                    ) : (
+                        <div className="bg-green-50/50 p-4 rounded-xl border border-green-100 flex flex-col items-center justify-center text-center space-y-2">
+                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center animate-pulse">
+                                <FiShield className="text-green-600" size={16} />
+                            </div>
+                            <p className="text-xs text-green-700 font-bold uppercase tracking-wider">Verificación Activa</p>
+                            <p className="text-[10px] text-green-600 font-medium">No cierres esta pestaña. Te redirigiremos automáticamente.</p>
                         </div>
-                        <p className="text-xs text-green-700 font-bold uppercase tracking-wider">Verificación Activa</p>
-                        <p className="text-[10px] text-green-600 font-medium">No cierres esta pestaña. Te redirigiremos automáticamente.</p>
-                    </div>
+                    )}
                     
-                    <button
-                        onClick={() => {
-                            setIsWaitingForWebhook(false);
-                            setIsProcessingPayment(false);
-                        }}
-                        className="py-3 text-gray-400 hover:text-azul-primario text-xs font-bold transition-all uppercase tracking-widest"
-                    >
-                        ← Volver a métodos de pago
-                    </button>
-                    
-                    <button
-                        onClick={() => reset()}
-                        className="text-[10px] text-gray-300 hover:text-red-400 uppercase font-bold transition-colors"
-                    >
-                        Cancelar Proceso
-                    </button>
+                    {!isPaid && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    setIsWaitingForWebhook(false);
+                                    setIsProcessingPayment(false);
+                                }}
+                                className="py-3 text-gray-400 hover:text-azul-primario text-xs font-bold transition-all uppercase tracking-widest"
+                            >
+                                ← Volver a métodos de pago
+                            </button>
+                            
+                            <button
+                                onClick={() => reset()}
+                                className="text-[10px] text-gray-300 hover:text-red-400 uppercase font-bold transition-colors"
+                            >
+                                Cancelar Proceso
+                            </button>
+                        </>
+                    )}
                 </div>
             </motion.div>
         );

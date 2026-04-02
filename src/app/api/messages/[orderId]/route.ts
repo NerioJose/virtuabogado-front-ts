@@ -184,6 +184,9 @@ export async function POST(
             broadcastPromises.push(sendBroadcast(supabaseAdmin, `global_${order.lawyerId}`, { new: newMessage }));
         }
 
+        // Notificar a la "SALA DE CHAT" (para todos los que están viendo este caso, incluyendo ADMINS)
+        broadcastPromises.push(sendBroadcast(supabaseAdmin, `chat_${orderId}`, { new: newMessage }));
+
         // Emitimos todos en paralelo para no bloquear (el utility garantiza que todos lleguen)
         await Promise.all(broadcastPromises);
 
@@ -259,6 +262,10 @@ export async function DELETE(
             const broadcastPromises = [];
             if (order.userId) broadcastPromises.push(sendBroadcast(supabaseAdmin, `global_${order.userId}`, { deleted: { id: messageId, orderId } }));
             if (order.lawyerId) broadcastPromises.push(sendBroadcast(supabaseAdmin, `global_${order.lawyerId}`, { deleted: { id: messageId, orderId } }));
+            
+            // Notificar a la "SALA DE CHAT" (Borrado en tiempo real)
+            broadcastPromises.push(sendBroadcast(supabaseAdmin, `chat_${orderId}`, { deleted: { id: messageId, orderId } }));
+            
             await Promise.all(broadcastPromises);
         }
 

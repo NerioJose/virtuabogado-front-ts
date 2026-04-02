@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FiMail, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { createClient } from '@/utils/supabase/client';
 // Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
 
 export default function RecuperarPasswordPage() {
@@ -48,19 +49,29 @@ export default function RecuperarPasswordPage() {
       return;
     }
 
-    // Enviar solicitud
+    // Enviar solicitud a nuestra API personalizada (Resend)
+    console.log('🔥 NUEVA LOGICA DE RESEND ACTIVADA 🔥');
     setIsSubmitting(true);
+    setErrors({});
 
     try {
-      // Aquí iría la llamada a la API para solicitar el restablecimiento de contraseña
-      // Por ahora, simulamos una respuesta exitosa después de 1 segundo
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/auth/reset-password/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al procesar la solicitud');
+      }
 
       setStep('confirmation');
-    } catch (error) {
-      console.error('Error al enviar la solicitud:', error);
+    } catch (error: any) {
+      console.error('Error en recuperar-password:', error);
       setErrors({
-        form: 'Ocurrió un error al enviar la solicitud. Por favor, inténtalo de nuevo más tarde.',
+        form: error.message || 'Ocurrió un error al enviar el correo.',
       });
     } finally {
       setIsSubmitting(false);

@@ -141,9 +141,10 @@ export const useCheckoutStore = create<CheckoutState>()(
         },
 
         checkUserExists: async (email: string) => {
-            const exists = await checkoutService.checkUserExists(email);
-            set({ isExistingUser: exists });
-            return exists;
+            const { checkUserExistsAction } = await import('../actions/checkUserAction');
+            const result = await checkUserExistsAction(email);
+            set({ isExistingUser: result.exists });
+            return result.exists;
         },
 
         sendOtp: async (email: string) => {
@@ -395,6 +396,11 @@ export const useCheckoutStore = create<CheckoutState>()(
         },
 
         reset: () => {
+            if (typeof window !== 'undefined') {
+                window.localStorage.removeItem('virtuabogado_checkout');
+                window.localStorage.removeItem('activeOrderId');
+                window.localStorage.removeItem('virtuabogado_pending_order');
+            }
             set(getInitialState());
         },
     })

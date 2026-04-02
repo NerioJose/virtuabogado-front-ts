@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Abogado } from '@/types/index';
@@ -15,23 +16,29 @@ import {
 	FiFileText,
 	FiLogOut,
 	FiMenu,
-	FiX
+	FiX,
+	FiLoader
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { UserRole } from '@/shared/types/entities.types';
-import CasosAbogadoPanel from './CasosAbogadoPanel';
-import AgendaPanel from './AgendaPanel';
-import MensajesPanel from './MensajesPanel';
-import ClientesAbogadoPanel from './ClientesAbogadoPanel';
-import FacturacionPanel from './FacturacionPanel';
-import DocumentosPanel from './DocumentosPanel';
-import PerfilAbogadoPanel from './PerfilAbogadoPanel';
 import { formatCurrency } from '@/utils/formatters';
-import { OrdersHistoryTable } from '@/features/orders/components/OrdersHistoryTable';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
+
+// OPTIMIZACIÓN (Dynamic Imports): Cargamos solo lo crítico (Casos) y el resto bajo demanda
+const CasosAbogadoPanel = dynamic(() => import('./CasosAbogadoPanel'), { 
+    loading: () => <div className="p-8 flex justify-center"><FiLoader className="animate-spin text-azul-primario" size={32} /></div>,
+    ssr: false 
+});
+const AgendaPanel = dynamic(() => import('./AgendaPanel'), { ssr: false });
+const MensajesPanel = dynamic(() => import('./MensajesPanel'), { ssr: false });
+const ClientesAbogadoPanel = dynamic(() => import('./ClientesAbogadoPanel'), { ssr: false });
+const FacturacionPanel = dynamic(() => import('./FacturacionPanel'), { ssr: false });
+const DocumentosPanel = dynamic(() => import('./DocumentosPanel'), { ssr: false });
+const PerfilAbogadoPanel = dynamic(() => import('./PerfilAbogadoPanel'), { ssr: false });
+const OrdersHistoryTable = dynamic(() => import('@/features/orders/components/OrdersHistoryTable').then(mod => mod.OrdersHistoryTable), { ssr: false });
 
 interface AbogadoPanelProps {
 	abogadoId?: string;
@@ -44,6 +51,20 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const [selectedCasoId, setSelectedCasoId] = useState<string | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+	const { user: userAuth, logout: storeLogout } = useAuthStore();
+	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
+
+	// Fetch de datos optimizado con TanStack Query (Caché global configurado en Providers)
+	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
+	const orders = response?.data || [];
+
+	const { data: summary } = useQuery({
+		queryKey: ['FinancialSummary', currentAbogadoId],
+		queryFn: () => getFinancialSummary({ lawyerId: currentAbogadoId }, { id: userAuth?.id || '', rol: UserRole.ABOGADO }),
+		enabled: !!userAuth?.id,
+        staleTime: 1000 * 60 * 5, // 5 min para KPIs financieros
+	});
+
 	const handleNavClick = (id: string) => {
 		setSeccionActiva(id);
 		setSelectedClienteId(null);
@@ -54,49 +75,11 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		setSelectedCasoId(casoId);
 		setSeccionActiva('casos');
 	};
+
 	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	const { user: userAuth, logout: storeLogout } = useAuthStore();
-	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
-
-	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
-	const orders = response?.data || [];
-
-	// Fetch unified financial summary for KPIs
-	const { data: summary, isLoading: isLoadingSummary } = useQuery({
-		queryKey: ['FinancialSummary', currentAbogadoId],
-		queryFn: () => getFinancialSummary({ lawyerId: currentAbogadoId }, { id: userAuth?.id || '', rol: UserRole.ABOGADO }),
-		enabled: !!userAuth?.id
-	});
-
-	// Manejador de cierre de sesión
-	const handleLogout = async () => {
-		try {
-			storeLogout();
-			router.push('/login');
-		} catch (error) {
-			console.error('Error al cerrar sesión:', error);
-		}
-	};
-
-	// Calcular estadísticas en tiempo real
-	const estadisticas = useMemo(() => {
-		const uniqueClients = new Set();
-		orders.forEach((order: any) => {
-			if (order.userId) uniqueClients.add(order.userId);
-		});
-
-		return {
-			casosActivos: orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length,
-			casosPendientes: orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length,
-			casosCompletados: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length,
-			clientesActivos: uniqueClients.size,
-			proximaCita: new Date().toISOString(), // Mock por ahora
-			ingresosMes: summary?.lawyerPendingBalance || 0, // Server-verified balance
-		};
-	}, [orders, summary]);
-
+	// Sincronización de estado local con AuthStore
 	useEffect(() => {
 		if (userAuth) {
 			setAbogado({
@@ -116,17 +99,41 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		}
 	}, [userAuth]);
 
+	// Estadísticas memoizadas para evitar re-renders costosos
+	const estadisticas = useMemo(() => {
+		if (!orders.length) return { casosActivos: 0, casosPendientes: 0, casosCompletados: 0, clientesActivos: 0, proximaCita: new Date().toISOString(), ingresosMes: 0 };
+        
+        const uniqueClients = new Set();
+		orders.forEach((order: any) => {
+			if (order.userId) uniqueClients.add(order.userId);
+		});
+
+		return {
+			casosActivos: orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length,
+			casosPendientes: orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length,
+			casosCompletados: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length,
+			clientesActivos: uniqueClients.size,
+			proximaCita: new Date().toISOString(), // Mock
+			ingresosMes: summary?.lawyerPendingBalance || 0,
+		};
+	}, [orders, summary]);
+
+	const handleLogout = async () => {
+		storeLogout();
+		router.push('/login');
+	};
+
 	if (loading || isLoadingOrders) {
 		return (
-			<div className="flex items-center justify-center h-full">
-				<div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
+			<div className="flex items-center justify-center min-h-[400px]">
+				<FiLoader className="animate-spin text-azul-primario" size={40} />
 			</div>
 		);
 	}
 
 	return (
 		<div className="flex min-h-screen bg-gray-100">
-			{/* Sidebar - Overlay for mobile */}
+			{/* Sidebar responsivo con overlay */}
 			{isSidebarOpen && (
 				<div 
 					className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
@@ -138,12 +145,12 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 				w-64 bg-white shadow-xl fixed h-full z-50 transition-transform duration-300 ease-in-out
 				${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
 			`}>
-				<div className="p-6 border-b border-gray-200 flex justify-between items-center">
+				<div className="p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario/5">
 					<div>
-						<h2 className="text-xl font-bold text-azul-primario">
-							Panel Abogado
+						<h2 className="text-xl font-bold text-azul-primario tracking-tight">
+							Dashboard
 						</h2>
-						<p className="text-sm text-gray-600 mt-1">{abogado?.nombre || 'Cargando...'}</p>
+						<p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Estatus: Abogado Verificado</p>
 					</div>
 					<button 
 						onClick={() => setIsSidebarOpen(false)}
@@ -153,203 +160,195 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 					</button>
 				</div>
 
-				<nav className="mt-6 overflow-y-auto max-h-[calc(100vh-120px)]">
-					<ul>
+				<nav className="mt-4 overflow-y-auto max-h-[calc(100vh-120px)]">
+					<ul className="px-3 space-y-1">
 						<li>
 							<button
 								onClick={() => { handleNavClick('casos'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'casos'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'casos'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiBriefcase className="mr-3" />
-								<span>Mis Casos</span>
+								<span className="font-semibold text-sm">Mis Casos</span>
 							</button>
 						</li>
 						<li>
 							<button
 								onClick={() => { handleNavClick('agenda'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'agenda'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'agenda'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiCalendar className="mr-3" />
-								<span>Agenda</span>
+								<span className="font-semibold text-sm">Agenda</span>
 							</button>
 						</li>
-						<li>
+                        <li>
 							<button
 								onClick={() => { handleNavClick('mensajes'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'mensajes'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'mensajes'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiMessageSquare className="mr-3" />
-								<span>Mensajes</span>
+								<span className="font-semibold text-sm">Mensajes</span>
 							</button>
 						</li>
 						<li>
 							<button
 								onClick={() => { handleNavClick('clientes'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'clientes'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'clientes'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiUser className="mr-3" />
-								<span>Mis Clientes</span>
+								<span className="font-semibold text-sm">Mis Clientes</span>
 							</button>
 						</li>
 						<li>
 							<button
 								onClick={() => { handleNavClick('facturacion'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'facturacion'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'facturacion'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiDollarSign className="mr-3" />
-								<span>Facturación</span>
+								<span className="font-semibold text-sm">Facturación</span>
 							</button>
 						</li>
 						<li>
 							<button
 								onClick={() => { handleNavClick('documentos'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'documentos'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'documentos'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiFileText className="mr-3" />
-								<span>Documentos</span>
+								<span className="font-semibold text-sm">Documentos</span>
 							</button>
 						</li>
-						<li>
+						<li className="pt-4 mt-4 border-t border-gray-100">
 							<button
 								onClick={() => { handleNavClick('perfil'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'perfil'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'perfil'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiUser className="mr-3" />
-								<span>Mi Perfil</span>
+								<span className="font-semibold text-sm">Mi Perfil</span>
 							</button>
 						</li>
 						<li>
 							<button
 								onClick={() => { handleNavClick('historial'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-6 py-3 text-left ${seccionActiva === 'historial'
-									? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-									: 'text-gray-600 hover:bg-gray-100'
+								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'historial'
+									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
+									: 'text-gray-500 hover:bg-gray-100'
 									}`}>
 								<FiClock className="mr-3" />
-								<span>Historial</span>
+								<span className="font-semibold text-sm">Historial</span>
 							</button>
 						</li>
-						<li className="mt-6 border-t border-gray-200 pt-4">
+						<li className="mt-8">
 							<button
 								onClick={handleLogout}
-								className="w-full flex items-center px-6 py-3 text-left text-red-600 hover:bg-red-50">
-								<FiLogOut className="mr-3" />
-								<span>Cerrar Sesión</span>
+								className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all group">
+								<FiLogOut className="mr-3 group-hover:-translate-x-1 transition-transform" />
+								<span className="font-bold text-sm">Cerrar Sesión</span>
 							</button>
 						</li>
 					</ul>
 				</nav>
 			</div>
 
-			{/* Contenido principal */}
-			<div className="lg:ml-64 flex-1 p-4 md:p-6 transition-all duration-300">
-				{/* Móvil: botón para abrir Sidebar */}
+			{/* Main Content Area */}
+			<div className="lg:ml-64 flex-1 p-4 md:p-8 transition-all duration-300">
+				{/* Móvil Toggle */}
 				<button 
 					onClick={() => setIsSidebarOpen(true)}
-					className="lg:hidden mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200 flex items-center gap-2 text-azul-primario"
+					className="lg:hidden mb-6 p-3 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 text-azul-primario group active:scale-95 transition-all"
 				>
-					<FiMenu />
-					<span className="text-sm font-semibold">Menú</span>
+					<div className="bg-azul-primario/10 p-2 rounded-lg">
+                        <FiMenu />
+                    </div>
+					<span className="text-sm font-bold uppercase tracking-wider">Menú de Gestión</span>
 				</button>
-				{/* Tarjetas de estadísticas */}
+
+				{/* Dashboard Stats */}
 				{seccionActiva === 'casos' && (
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 						<motion.div
-							initial={{ opacity: 0, y: 20 }}
+							initial={{ opacity: 0, y: 15 }}
 							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.3 }}
-							className="bg-white rounded-xl shadow-md p-6">
+							className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
 							<div className="flex justify-between items-start">
 								<div>
-									<p className="text-gray-500 text-sm">Casos Activos</p>
-									<h3 className="text-3xl font-bold text-azul-primario mt-2">
+									<p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Activos</p>
+									<h3 className="text-4xl font-black text-gray-800 mt-1">
 										{estadisticas.casosActivos}
 									</h3>
 								</div>
-								<div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-									<FiBriefcase size={24} />
+								<div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+									<FiBriefcase size={22} />
 								</div>
 							</div>
-							<div className="mt-4 flex items-center text-amber-500 text-sm">
-								<FiClock className="mr-1" />
-								<span>
-									{estadisticas.casosPendientes} pendientes de revisión
-								</span>
+							<div className="mt-4 flex items-center text-amber-500 font-bold text-[11px] bg-amber-50 rounded-full px-3 py-1 w-fit">
+								<FiClock className="mr-1.5" />
+								<span>{estadisticas.casosPendientes} por revisar</span>
 							</div>
 						</motion.div>
 
 						<motion.div
-							initial={{ opacity: 0, y: 20 }}
+							initial={{ opacity: 0, y: 15 }}
 							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.3, delay: 0.1 }}
-							className="bg-white rounded-xl shadow-md p-6">
+							transition={{ delay: 0.1 }}
+							className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:shadow-purple-500/5 transition-all group">
 							<div className="flex justify-between items-start">
 								<div>
-									<p className="text-gray-500 text-sm">Próxima Cita</p>
-									<h3 className="text-xl font-bold text-azul-primario mt-2">
-										{new Date(estadisticas.proximaCita).toLocaleDateString(
-											'es-ES',
-											{
-												day: '2-digit',
-												month: '2-digit',
-												hour: '2-digit',
-												minute: '2-digit',
-											}
-										)}
+									<p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Próxima Cita</p>
+									<h3 className="text-xl font-black text-gray-800 mt-2">
+										Hoy, {new Date(estadisticas.proximaCita).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
 									</h3>
 								</div>
-								<div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
-									<FiCalendar size={24} />
+								<div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+									<FiCalendar size={22} />
 								</div>
 							</div>
-							<div className="mt-4 flex items-center text-gray-500 text-sm">
-								<FiUser className="mr-1" />
-								<span>{estadisticas.clientesActivos} clientes activos</span>
+							<div className="mt-4 flex items-center text-gray-500 font-bold text-[11px] bg-gray-50 rounded-full px-3 py-1 w-fit">
+								<FiUser className="mr-1.5" />
+								<span>{estadisticas.clientesActivos} Clientes</span>
 							</div>
 						</motion.div>
 
 						<motion.div
-							initial={{ opacity: 0, y: 20 }}
+							initial={{ opacity: 0, y: 15 }}
 							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.3, delay: 0 }}
-							className="bg-white rounded-xl shadow-md p-6">
+							transition={{ delay: 0.2 }}
+							className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:shadow-green-500/5 transition-all group">
 							<div className="flex justify-between items-start">
 								<div>
-									<p className="text-gray-500 text-sm">Ingresos del Mes</p>
-									<h3 className="text-3xl font-bold text-azul-primario mt-2">
+									<p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Balance Pendiente</p>
+									<h3 className="text-3xl font-black text-gray-800 mt-1">
 										{formatCurrency(estadisticas.ingresosMes)}
 									</h3>
 								</div>
-								<div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
-									<FiDollarSign size={24} />
+								<div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+									<FiDollarSign size={22} />
 								</div>
 							</div>
-							<div className="mt-4 flex items-center text-green-500 text-sm">
-								<FiCheckCircle className="mr-1" />
-								<span>{estadisticas.casosCompletados} casos completados</span>
+							<div className="mt-4 flex items-center text-green-500 font-bold text-[11px] bg-green-50 rounded-full px-3 py-1 w-fit">
+								<FiCheckCircle className="mr-1.5" />
+								<span>{estadisticas.casosCompletados} Exitosos</span>
 							</div>
 						</motion.div>
 					</div>
 				)}
 
-				{/* Contenido dinámico según la sección activa */}
-				<div className="bg-white rounded-xl shadow-md p-6">
+				{/* DYNAMIC CONTENT AREA */}
+				<div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-50 p-2 md:p-8 min-h-[500px]">
 					{abogado ? (
-						<>
+						<Suspense fallback={<div className="flex justify-center p-20"><FiLoader className="animate-spin text-azul-primario" size={40} /></div>}>
 							{seccionActiva === 'casos' && (
 								<CasosAbogadoPanel 
 									abogadoId={abogado.id} 
@@ -383,21 +382,20 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 								<PerfilAbogadoPanel abogado={abogado} />
 							)}
 							{seccionActiva === 'historial' && (
-								<div className="py-2">
-									<h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-										<FiClock className="text-azul-primario" />
-										Historial de Casos Asignados
+								<div className="py-4 px-2">
+									<h2 className="text-2xl font-black text-gray-800 mb-8 flex items-center gap-3">
+										<div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center">
+                                            <FiClock className="text-azul-primario" />
+                                        </div>
+										Historial de Gestión
 									</h2>
 									<OrdersHistoryTable user={{ id: currentAbogadoId, rol: UserRole.ABOGADO }} />
 								</div>
 							)}
-						</>
+						</Suspense>
 					) : (
-						<div className="flex justify-center items-center h-64">
-							<div className="text-center">
-								<div className="w-16 h-16 border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-								<p className="text-azul-primario font-medium">Cargando datos del abogado...</p>
-							</div>
+						<div className="flex justify-center items-center h-64 text-azul-primario">
+							<FiLoader className="animate-spin" size={48} />
 						</div>
 					)}
 				</div>

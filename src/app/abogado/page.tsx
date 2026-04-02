@@ -1,40 +1,51 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import AbogadoPanel from '@/components/abogado/AbogadoPanel';
-import { useAuthStore } from '@/features/auth/store/authStore';
+import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
 
-export default function AbogadoPage() {
-	const router = useRouter();
-	const { user, isAuthenticated, checkAuth } = useAuthStore();
+/**
+ * Componente Skeleton para el Dashboard (PPR Shell)
+ */
+const DashboardSkeleton = () => (
+    <div className="flex min-h-screen bg-gray-100 animate-pulse">
+        <div className="w-64 bg-white shadow-xl h-full hidden lg:block" />
+        <div className="flex-1 p-6">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="h-32 bg-white rounded-xl shadow-md" />
+                <div className="h-32 bg-white rounded-xl shadow-md" />
+                <div className="h-32 bg-white rounded-xl shadow-md" />
+            </div>
+            <div className="h-64 bg-white rounded-xl shadow-md" />
+        </div>
+    </div>
+);
 
-	// Verificar autenticación y rol de abogado
-	useEffect(() => {
-		checkAuth();
-	}, [checkAuth]);
+export default async function AbogadoPage() {
+    const cookieStore = await cookies();
+    const supabase = await createClient();
 
-	useEffect(() => {
-		if (!isAuthenticated && user === null) {
-			router.push('/login');
-		} else if (user && user.rol !== UserRole.ABOGADO) {
-			console.error('No autorizado');
-			router.push('/login');
-		}
-	}, [isAuthenticated, user, router]);
+    // 1. Verificación SRE-Grade de Autenticación (Server-Side)
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-	if (!isAuthenticated || !user) {
-		return (
-			<div className="flex items-center justify-center min-h-screen bg-gray-100">
-				<div className="text-center">
-					<div className="w-16 h-16 border-4 border-azul-primario border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-					<p className="text-azul-primario font-medium">
-						Cargando panel de abogado...
-					</p>
-				</div>
-			</div>
-		);
-	}
+    if (error || !user) {
+        redirect('/login');
+    }
 
-	return <AbogadoPanel abogadoId={user.id} />;
+    // 2. Verificación de Rol
+    const role = user.user_metadata?.rol?.toUpperCase();
+    if (role !== UserRole.ABOGADO) {
+        redirect('/login');
+    }
+
+    return (
+        <Suspense fallback={<DashboardSkeleton />}>
+            <AbogadoPanel abogadoId={user.id} />
+        </Suspense>
+    );
 }
+
+// Habilitar PPR de forma incremental para esta ruta
+export const experimental_ppr = true;

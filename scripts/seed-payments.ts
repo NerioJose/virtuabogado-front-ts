@@ -1,18 +1,50 @@
 import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('🌱 Seeding payment methods...');
+
+  const methods = [
+    {
+      identifier: 'mock',
+      name: 'Pago con Tarjeta (Próximamente)',
+      isActive: true,
+      icon: 'FiCreditCard'
+    },
+    {
+      identifier: 'zenobank',
+      name: 'Criptomonedas',
+      isActive: true,
+      icon: 'SiBitcoin'
+    }
+  ];
+
+  for (const method of methods) {
     await prisma.paymentMethod.upsert({
-        where: { identifier: 'stripe' },
-        update: { isActive: true, name: 'Tarjeta de Crédito / Débito' },
-        create: { identifier: 'stripe', name: 'Tarjeta de Crédito / Débito', isActive: true }
+      where: { identifier: method.identifier },
+      update: {
+        name: method.name,
+        isActive: method.isActive,
+        icon: method.icon
+      },
+      create: {
+        identifier: method.identifier,
+        name: method.name,
+        isActive: method.isActive,
+        icon: method.icon
+      },
     });
-    await prisma.paymentMethod.upsert({
-        where: { identifier: 'zenobank' },
-        update: { isActive: true, name: 'Pago con Criptomonedas (Zenobank)' },
-        create: { identifier: 'zenobank', name: 'Pago con Criptomonedas (Zenobank)', isActive: true }
-    });
-    console.log("Payment methods seeded/activated.");
+  }
+
+  console.log('✅ Payment methods seeded successfully.');
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch((e) => {
+    console.error('❌ Error seeding payment methods:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

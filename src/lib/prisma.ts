@@ -9,8 +9,16 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
     const isDev = process.env.NODE_ENV === 'development';
     
+    const dbUrl = process.env.DATABASE_URL;
+    
+    if (!dbUrl) {
+        console.error('❌ [Prisma] Error: DATABASE_URL no está definida en las variables de entorno.');
+        // No lanzamos error aquí para permitir que Next.js levante el servidor, 
+        // pero las consultas fallarán con un mensaje claro.
+    }
+
     const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        connectionString: dbUrl,
         max: isDev ? 10 : 20, 
         idleTimeoutMillis: 20000,
         connectionTimeoutMillis: 5000, 

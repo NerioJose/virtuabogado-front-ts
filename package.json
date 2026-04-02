@@ -53,7 +53,7 @@
 		"typescript": "^5"
 	},
 	"pnpm": {
-		"allowedBuildScripts": [
+		"onlyBuiltDependencies": [
 			"@prisma/client",
 			"prisma",
 			"@prisma/engines",

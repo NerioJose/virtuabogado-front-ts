@@ -140,7 +140,7 @@ export async function GET(request: Request) {
             }),
             prisma.financialSettings.findUnique({
                 where: { id: FINANCIAL_SETTINGS_ID }
-            }).then(s => s || {
+            }).then((s: any) => s || {
                 lawyer_commission_percentage: 0,
                 operational_costs_percentage: 0,
                 tax_percentage: 0,
@@ -149,7 +149,7 @@ export async function GET(request: Request) {
         ]);
 
         // Mapear al formato que espera el frontend con desglose financiero dinámico
-        const formattedOrders = (orders as any[]).map(order => {
+        const formattedOrders = (orders as any[]).map((order: any) => {
             // Calcular desgloses en tiempo real para máxima precisión
             const total = Number(order.total);
             const lawyerPct = Number(settings.lawyer_commission_percentage) / 100;

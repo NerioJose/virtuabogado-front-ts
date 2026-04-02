@@ -69,7 +69,7 @@ export async function GET() {
 
         // Usamos createMany para eficiencia
         await prisma.service.createMany({
-            data: servicios.map(s => ({
+            data: servicios.map((s: any) => ({
                 id: s.id,
                 titulo: s.titulo,
                 descripcion: s.descripcion,

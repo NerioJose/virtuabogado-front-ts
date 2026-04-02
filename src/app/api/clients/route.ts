@@ -138,7 +138,7 @@ export async function POST(request: Request) {
                 const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
                 if (listError) return NextResponse.json({ error: 'Error al verificar usuario existente' }, { status: 500 });
                 
-                const existingUser = usersData.users.find(u => u.email === email);
+                const existingUser = usersData.users.find((u: any) => u.email === email);
                 if (!existingUser) return NextResponse.json({ error: 'Usuario no encontrado tras conflicto' }, { status: 500 });
                 
                 userId = existingUser.id;

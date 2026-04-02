@@ -52,7 +52,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
         );
     }
 
-    const statusConfig = {
+    const statusConfig: Record<string, { color: string, text: string }> = {
         [OrderStatus.PENDIENTE]: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendiente de asignación' },
         [OrderStatus.REVISION]: { color: 'bg-purple-100 text-purple-800', text: 'En revisión' },
         [OrderStatus.EN_PROGRESO]: { color: 'bg-blue-100 text-blue-800', text: 'En proceso' },
@@ -61,6 +61,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
         [OrderStatus.FALLIDO]: { color: 'bg-red-100 text-red-800', text: 'Fallido' },
         [OrderStatus.PAGO_PENDIENTE]: { color: 'bg-amber-100 text-amber-800', text: 'Pago pendiente' },
         [OrderStatus.PAGO_RECHAZADO]: { color: 'bg-red-100 text-red-800', text: 'Pago rechazado' },
+        [OrderStatus.PAID]: { color: 'bg-green-100 text-green-800', text: 'Pagado' },
     };
 
     const status = statusConfig[order.status] || statusConfig[OrderStatus.PENDIENTE];

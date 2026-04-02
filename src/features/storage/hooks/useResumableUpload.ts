@@ -41,11 +41,11 @@ export function useResumableUpload() {
                     cacheControl: '3600',
                     upsert: true,
                     resumable: true,
-                    onProgressUpdate: (progress) => {
+                    onProgressUpdate: (progress: any) => {
                         const percent = Math.floor((progress.loaded / progress.total) * 100);
                         updateProgress(id, percent);
                     }
-                });
+                } as any);
 
             if (error) throw error;
 

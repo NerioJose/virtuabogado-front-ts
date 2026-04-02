@@ -4,12 +4,12 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
-		"build": "next build",
+		"build": "prisma generate && next build",
 		"start": "next start",
 		"lint": "next lint"
 	},
 	"prisma": {
-		"seed": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed_payments.ts"
+		"seed": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/seed_payments.ts"
 	},
 	"dependencies": {
 		"@prisma/adapter-pg": "^7.6.0",
@@ -51,5 +51,13 @@
 		"tailwindcss": "^4.1.6",
 		"ts-node": "^10.9.2",
 		"typescript": "^5"
+	},
+	"pnpm": {
+		"allowedBuildScripts": [
+			"@prisma/client",
+			"prisma",
+			"@prisma/engines",
+			"sharp"
+		]
 	}
 }

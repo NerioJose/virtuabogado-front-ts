@@ -1,20 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLock, FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { useSearchParams } from 'next/navigation';
-
 /**
  * ResetPasswordPage: Pantalla Premium de cambio de clave.
  * Recibe el token por URL y lo valida contra nuestra API.
  */
 export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-azul-primario"></div>
+            </main>
+        }>
+            <ResetPasswordContent />
+        </Suspense>
+    );
+}
+
+function ResetPasswordContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');

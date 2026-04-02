@@ -40,7 +40,7 @@ export async function GET() {
             success: true, 
             upsertedService: service,
             totalServices: allServices.length,
-            allServices: allServices.map(s => ({ id: s.id, titulo: s.titulo, activo: s.activo }))
+            allServices: allServices.map((s: any) => ({ id: s.id, titulo: s.titulo, activo: s.activo }))
         });
     } catch (error: any) {
         console.error('Force Seed Error:', error);

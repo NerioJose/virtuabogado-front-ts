@@ -140,6 +140,8 @@ export const UserDataStep: React.FC = () => {
                         <input
                             type="email"
                             id="email"
+                            name="email"
+                            autoComplete="email"
                             value={email}
                             onChange={handleEmailChange}
                             disabled={hasChecked || isLoading}
@@ -219,6 +221,7 @@ export const UserDataStep: React.FC = () => {
                                         <input
                                             type="text"
                                             name="name"
+                                            autoComplete="name"
                                             value={formData.name}
                                             onChange={handleInputChange}
                                             className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
@@ -236,9 +239,16 @@ export const UserDataStep: React.FC = () => {
                                 transition={{ delay: 0.1 }}
                             >
                                 <div className="flex justify-between items-center px-1 mb-2">
-                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">
-                                        {isExistingUser ? 'Tu Contraseña' : 'Crea una contraseña'} <span className="text-red-400">*</span>
-                                    </label>
+                                    <div className="flex flex-col">
+                                        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                                            {isExistingUser ? 'Tu Contraseña' : 'Crea una contraseña'} <span className="text-red-400">*</span>
+                                        </label>
+                                        {!isExistingUser && (
+                                            <span className="text-[9px] text-azul-primario font-bold uppercase tracking-wider flex items-center gap-1">
+                                                <FiLock size={8} /> Mínimo 6 caracteres
+                                            </span>
+                                        )}
+                                    </div>
                                     {isExistingUser && (
                                         <button 
                                             type="button"
@@ -254,6 +264,7 @@ export const UserDataStep: React.FC = () => {
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         name="password"
+                                        autoComplete={isExistingUser ? "current-password" : "new-password"}
                                         value={formData.password}
                                         onChange={handleInputChange}
                                         className="w-full pl-11 pr-12 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
@@ -285,6 +296,7 @@ export const UserDataStep: React.FC = () => {
                                         <input
                                             type="tel"
                                             name="phone"
+                                            autoComplete="tel"
                                             value={formData.phone}
                                             onChange={handleInputChange}
                                             className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"

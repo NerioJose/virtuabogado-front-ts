@@ -3,13 +3,13 @@
  * Ensures 100% consistency in currency display across the platform ($ USD).
  * [CLIENT-SAFE]
  */
-export function formatUSD(amount: number | string | null | undefined): string {
+export function formatUSD(amount: number | string | null | undefined, precision: number = 2): string {
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : (amount || 0);
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: precision,
+        maximumFractionDigits: precision,
     }).format(numericAmount);
 }
 

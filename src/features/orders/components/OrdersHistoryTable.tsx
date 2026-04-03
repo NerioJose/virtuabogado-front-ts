@@ -97,10 +97,79 @@ export function OrdersHistoryTable({ user }: Props) {
                 </div>
             </div>
 
-            {/* TABLA PRO-RESPONSIVA (Horizontal Scroll para móvil) */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* VISTA MÓVIL: CARDS PREMIUM */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {isLoading ? (
+                    [...Array(3)].map((_, i) => (
+                        <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm animate-pulse">
+                            <div className="h-4 bg-slate-100 rounded w-1/3 mb-4"></div>
+                            <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+                        </div>
+                    ))
+                ) : !data || data.data.length === 0 ? (
+                    <div className="bg-white rounded-[2rem] border border-slate-100 p-12 text-center">
+                        <p className="text-slate-400 font-bold italic">No se encontraron registros</p>
+                    </div>
+                ) : (
+                    data.data.map((order: any) => {
+                        const status = statusConfig[order.status as OrderStatus];
+                        const StatusIcon = status.icon;
+                        
+                        return (
+                            <div key={order.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all">
+                                {/* Header: ID & Status */}
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{order.id.slice(0, 8)}</span>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black border uppercase tracking-tighter shadow-sm ${status.color}`}>
+                                        <StatusIcon className="size-3" />
+                                        {status.label}
+                                    </span>
+                                </div>
+
+                                {/* Service Title */}
+                                <h4 className="font-black text-slate-800 text-sm mb-4 leading-tight">{order.service.titulo}</h4>
+                                
+                                {/* Client Info */}
+                                <div className="flex items-center gap-3 mb-6 p-3 bg-slate-50 rounded-2xl border border-slate-100/50">
+                                    <div className="size-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-black border-2 border-white shadow-sm">
+                                        {order.user.nombre.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-black text-slate-700 truncate">{order.user.nombre}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 truncate">{order.user.email || 'Sin email'}</p>
+                                    </div>
+                                </div>
+
+                                {/* Financial Details & Date */}
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                                    <div>
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest block mb-1">Fecha</span>
+                                        <span className="text-xs font-black text-slate-500">
+                                            {new Date(order.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest block mb-1 text-right">
+                                            {user.rol === 'ABOGADO' ? 'Su Neto' : 'Total'}
+                                        </span>
+                                        <span className="text-sm font-black text-slate-900">
+                                            {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
+                                        </span>
+                                        {user.rol === 'ABOGADO' && (
+                                            <p className="text-[10px] text-rose-500 font-bold mt-0.5">Com: -{formatUSD(order.financials?.comisionLawyer || 0)}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* VISTA DESKTOP: TABLA ELEGANTE */}
+            <div className="hidden md:block bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar-horizontal">
-                    <div className="min-w-[1000px]">
+                    <div className="w-full">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50/50 border-bottom border-slate-200">

@@ -195,9 +195,94 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
         </div>
       </div>
 
-      {/* TABLA PRO-RESPONSIVA (Horizontal Scroll para móvil) */}
-      <div className="overflow-x-auto rounded-[2rem] border border-slate-100 shadow-sm bg-white custom-scrollbar-horizontal">
-        <div className="min-w-[1000px]">
+      {/* VISTA MÓVIL: CARDS PREMIUM */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {casosFiltrados.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 border border-slate-100">
+              <FiBriefcase size={32} />
+            </div>
+            <p className="text-slate-400 font-bold italic">No hay casos en esta sección</p>
+          </div>
+        ) : (
+          casosFiltrados.map((caso) => (
+            <div key={caso.id} className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98] relative overflow-hidden group">
+              {/* Status Badge - Top Right */}
+              <div className="absolute top-5 right-5">
+                <span className={`px-3 py-1.5 text-[9px] font-black rounded-xl uppercase tracking-tighter shadow-sm border ${
+                  caso.status === OrderStatus.PENDIENTE ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                  caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                  caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                  'bg-rose-50 text-rose-600 border-rose-100'
+                }`}>
+                  {caso.status}
+                </span>
+              </div>
+
+              {/* Header: Icon + Info */}
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario shadow-inner">
+                  <FiBriefcase size={22} />
+                </div>
+                <div className="pr-20">
+                  <h3 className="text-sm font-black text-slate-800 leading-tight mb-1">
+                    {caso.items[0]?.serviceName || 'Servicio Legal'}
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {caso.id.slice(0, 8)}</p>
+                </div>
+              </div>
+
+              {/* Body: Client & Date */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-black text-slate-500">
+                    {caso.userName?.charAt(0) || 'U'}
+                  </div>
+                  <span className="text-xs font-bold text-slate-600 truncate">{caso.userName}</span>
+                </div>
+                <div className="flex flex-col items-end justify-center">
+                  <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Fecha Inicio</span>
+                  <span className="text-xs font-black text-slate-500">
+                    {new Date(caso.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  className="flex-1 h-11 rounded-2xl bg-slate-50 text-slate-500 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition-all"
+                  onClick={() => setCasoSeleccionado(caso.id)}
+                >
+                  <FiEye size={16} /> Ver Detalles
+                </button>
+                <button
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                    unreadOrders.includes(caso.id) 
+                    ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200' 
+                    : 'bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white'
+                  }`}
+                  onClick={() => setCasoSeleccionado(caso.id)}
+                >
+                  <FiMessageSquare size={18} />
+                </button>
+              </div>
+
+              {/* Notification Dot */}
+              {unreadOrders.includes(caso.id) && (
+                <div className="absolute top-2 left-2 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* VISTA DESKTOP: TABLA ELEGANTE */}
+      <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto custom-scrollbar-horizontal">
           <table className="w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>

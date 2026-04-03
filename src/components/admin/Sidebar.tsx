@@ -41,8 +41,8 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
         <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 rounded-full bg-vinotinto blur-3xl opacity-20" />
       </div>
 
-      <div className="p-8 relative">
-        <div className="flex justify-between items-center mb-10">
+      <div className="p-6 relative flex flex-col h-full overflow-hidden">
+        <div className="flex justify-between items-center mb-6 shrink-0">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -51,8 +51,8 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             <Image 
               src="/logo/logo_sf_1.png" 
               alt="VirtuAbogado Logo" 
-              width={160} 
-              height={55} 
+              width={140} 
+              height={48} 
               priority
               className="drop-shadow-md"
             />
@@ -71,18 +71,18 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-10 px-1"
+              className="mb-6 px-1 shrink-0"
             >
               <div className="flex items-center p-4 bg-white/10 rounded-[1.5rem] border border-white/10 backdrop-blur-md shadow-xl">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-vinotinto to-rose-600 flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20">
+                <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-vinotinto to-rose-600 flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20 shrink-0">
                   {user.nombre.charAt(0).toUpperCase()}
                 </div>
-                <div className="ml-4 overflow-hidden">
-                  <p className="text-sm font-black text-white truncate tracking-tight">
+                <div className="ml-3 overflow-hidden">
+                  <p className="text-xs font-black text-white truncate tracking-tight">
                     {formattedName}
                   </p>
-                  <div className="flex items-center mt-1">
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-amber-500 text-azul-primario shadow-sm">
+                  <div className="flex items-center mt-0.5">
+                    <span className="text-[8px] font-black px-1.5 py-0.5 rounded-lg uppercase tracking-wider bg-amber-500 text-azul-primario shadow-sm">
                        ADMINISTRADOR
                     </span>
                   </div>
@@ -92,7 +92,8 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
           )}
         </AnimatePresence>
         
-        <nav className="space-y-1.5">
+        {/* Navegación con Scroll interno si es necesario */}
+        <nav className="space-y-1.5 overflow-y-auto flex-1 pr-2 custom-scrollbar pb-4">
           {menuItems.map((item, idx) => (
             <motion.button 
               key={item.id}
@@ -103,13 +104,13 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 setSeccionActiva(item.id as SeccionAdmin);
                 onClose?.();
               }}
-              className={`flex items-center space-x-3 w-full p-3.5 rounded-2xl transition-all duration-300 group
+              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group
                 ${seccionActiva === item.id 
                   ? 'bg-white text-azul-primario font-black shadow-lg shadow-black/10 translate-x-1' 
                   : 'text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1'
                 }`}
             >
-              <div className={`text-xl transition-transform group-hover:scale-110 ${seccionActiva === item.id ? 'text-azul-primario font-black' : ''}`}>
+              <div className={`text-lg transition-transform group-hover:scale-110 ${seccionActiva === item.id ? 'text-azul-primario font-black' : ''}`}>
                 {item.icon}
               </div>
               <span className="text-sm tracking-tight">{item.label}</span>
@@ -122,15 +123,14 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             </motion.button>
           ))}
         </nav>
-      </div>
-      
-      <div className="mt-auto p-8 relative">
-        <div className="pt-6 border-t border-white/10">
+
+        {/* Footer del Sidebar siempre visible abajo */}
+        <div className="pt-4 border-t border-white/10 shrink-0 mt-2">
           <button 
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full p-4 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all duration-300 font-black text-sm uppercase tracking-widest group shadow-sm active:scale-95"
+            className="flex items-center space-x-3 w-full p-3.5 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all duration-300 font-black text-xs uppercase tracking-widest group shadow-sm active:scale-95"
           >
-            <FiLogOut className="text-xl group-hover:rotate-12 transition-transform" />
+            <FiLogOut className="text-lg group-hover:rotate-12 transition-transform" />
             <span>Cerrar sesión</span>
           </button>
         </div>

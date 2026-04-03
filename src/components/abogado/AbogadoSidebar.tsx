@@ -39,43 +39,44 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
   };
 
   return (
-    <div className="w-64 bg-white shadow-md fixed h-full">
-      <div className="p-6 border-b border-gray-200">
+    <div className="w-64 bg-white shadow-md fixed h-full flex flex-col overflow-hidden">
+      <div className="p-5 border-b border-gray-200 shrink-0">
         <h2 className="text-xl font-bold text-azul-primario">Panel Abogado</h2>
-        <p className="text-sm text-gray-600 mt-1">{abogado?.nombre || 'Cargando...'}</p>
+        <p className="text-xs text-gray-500 mt-1 truncate">{abogado?.nombre || 'Cargando...'}</p>
       </div>
 
-      <nav className="mt-6">
-        <ul>
+      <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+        <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <li key={item.id}>
                 <button
                   onClick={() => onSeccionChange(item.id as SeccionAbogado)}
-                  className={`w-full flex items-center px-6 py-3 text-left ${
+                  className={`w-full flex items-center px-6 py-3 text-left transition-colors ${
                     seccionActiva === item.id
-                      ? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-azul-claro/20 text-azul-primario border-r-4 border-azul-primario font-bold'
+                      : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  <Icon className="mr-3" />
-                  <span>{item.label}</span>
+                  <Icon className="mr-3 text-lg" />
+                  <span className="text-sm">{item.label}</span>
                 </button>
               </li>
             );
           })}
-          <li className="mt-6 border-t border-gray-200 pt-4">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-6 py-3 text-left text-red-600 hover:bg-red-50"
-            >
-              <FiLogOut className="mr-3" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </li>
         </ul>
       </nav>
+
+      <div className="p-4 border-t border-gray-200 shrink-0">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center px-4 py-3 text-left text-red-600 hover:bg-red-50 rounded-xl transition-colors font-bold text-sm"
+        >
+          <FiLogOut className="mr-3 text-lg" />
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
     </div>
   );
 }

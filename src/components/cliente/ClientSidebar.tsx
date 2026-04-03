@@ -45,9 +45,9 @@ export default function ClientSidebar({
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header / Logo */}
-      <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-azul-primario/[0.02]">
+      <div className="p-4 px-6 border-b border-slate-100 flex justify-between items-center bg-azul-primario/[0.02] shrink-0">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-azul-primario rounded-2xl flex items-center justify-center text-white shadow-lg shadow-azul-primario/20">
             <FiHome size={20} />
@@ -66,8 +66,8 @@ export default function ClientSidebar({
       </div>
 
       {/* User Info (Premium) */}
-      <div className="p-6">
-        <div className="p-4 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center gap-4 group">
+      <div className="p-4 px-6 shrink-0">
+        <div className="p-3 bg-slate-50 rounded-[1.5rem] border border-slate-100 flex items-center gap-3 group">
           <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
             {userPicture ? (
               <Image src={userPicture} alt={userName} width={48} height={48} className="w-full h-full object-cover" />
@@ -117,7 +117,7 @@ export default function ClientSidebar({
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-6 border-t border-slate-50">
+      <div className="p-4 px-6 border-t border-slate-50 shrink-0">
         <button
           onClick={handleLogout}
           className="w-full flex items-center px-6 py-4 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-[2rem] transition-all group font-black text-xs uppercase tracking-widest shadow-sm"

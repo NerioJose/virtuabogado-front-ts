@@ -55,13 +55,13 @@ export async function GET(request: Request) {
 
         // 🏛️ RESCUE LOGIC: Fetch all users and filter in-memory to handle legacy casing (Enum validation safety)
         const allUsers = await prisma.user.findMany({
-            where: { activo: true },
-            include: { orders: true },
+            // REMOVED: where: { activo: true }, -> Allow Admin to see all clients (Active/Inactive)
+            // REMOVED FOR STABILITY: include: { orders: true }, -> Avoid heavy join causing 500s
             orderBy: { createdAt: 'desc' }
         });
 
         const clients = allUsers.filter((u: any) => 
-            u.rol?.toUpperCase() === 'CLIENTE'
+            u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE'
         );
 
         // Mapear al formato que espera el frontend
@@ -75,8 +75,8 @@ export async function GET(request: Request) {
             status: 'active', // Default
             createdAt: client.createdAt,
             updatedAt: client.updatedAt,
-            serviciosContratados: (client.orders || []).length,
-            totalGastado: (client.orders || []).reduce((sum: number, order: any) => sum + Number(order.total || 0), 0),
+            serviciosContratados: 0, // Placeholder for stability
+            totalGastado: 0, // Placeholder for stability
         }));
 
         return NextResponse.json(serializeFinance(formattedClients));

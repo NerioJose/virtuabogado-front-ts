@@ -70,9 +70,10 @@ export async function GET(request: Request) {
         const skip = (page - 1) * limit;
 
         const where: any = {};
+        const isAdmin = role === 'ADMIN';
 
         // Seguridad: Restringir filtros según rol si no es ADMIN
-        if (role !== 'ADMIN') {
+        if (!isAdmin) {
             if (role === 'ABOGADO') {
                 where.lawyerId = user.id;
             } else {
@@ -83,11 +84,14 @@ export async function GET(request: Request) {
             if (userId) where.userId = userId;
         }
 
-        // 🛡️ REGLA: Filtro por defecto (Ocultar ruido de pagos pendientes para Admin/Abogado)
+        // 🛡️ REGLA DE VISIBILIDAD: El ADMIN y el ABOGADO ven todo lo que les corresponde sin filtros restrictivos de pago.
+        // Solo el CLIENTE tiene el filtro restrictivo por defecto.
         if (!requestedStatus) {
-            where.status = {
-                notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
-            };
+            if (!isAdmin && role !== 'ABOGADO') {
+                where.status = {
+                    notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
+                };
+            }
         } else {
             where.status = requestedStatus; // Filtro exacto por Prisma
         }

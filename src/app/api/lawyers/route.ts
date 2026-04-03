@@ -54,13 +54,13 @@ export async function GET(request: Request) {
 
         console.log('🏛️ [API Lawyers] Fetching all users for administrative categorization...');
         const allUsers = await prisma.user.findMany({
-            where: { activo: true },
-            include: { orders: true },
+            // REMOVED: where: { activo: true }, -> Allow Admin to see all lawyers (Active/Inactive)
+            // REMOVED FOR STABILITY: include: { orders: true }, -> Avoid heavy join causing 500s
             orderBy: { createdAt: 'desc' }
         });
 
-        const clients = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'CLIENTE');
-        const lawyers = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'ABOGADO');
+        const clients = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE');
+        const lawyers = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'ABOGADO' || u.rol === 'ABOGADO');
 
         console.log(`📊 [API Lawyers] Consolidated Results -> Clients: ${clients.length}, Lawyers: ${lawyers.length}`);
 
@@ -74,8 +74,8 @@ export async function GET(request: Request) {
             status: lawyer.activo ? 'ACTIVO' : 'INACTIVO', 
             matricula: lawyer.matricula || undefined,
             experiencia: lawyer.experiencia || undefined,
-            casosActivos: (lawyer.orders || []).filter((o: any) => o.status === 'PROCESSING' || o.status === 'PENDIENTE').length,
-            casosCompletados: (lawyer.orders || []).filter((o: any) => o.status === 'COMPLETED' || o.status === 'COMPLETADO').length,
+            casosActivos: 0, // Placeholder for stability
+            casosCompletados: 0, // Placeholder for stability
             rating: 5,
             createdAt: lawyer.createdAt,
             updatedAt: lawyer.updatedAt,

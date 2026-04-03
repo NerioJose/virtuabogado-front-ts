@@ -145,6 +145,20 @@ export const useAuthStore = create<AuthState>()(
                             isAuthenticated: true,
                             isLoading: false,
                         });
+
+                        // 🔄 SILENT SYNC: Garantizar que el usuario exista en Prisma para el Dashboard del Admin
+                        try {
+                            fetch('/api/auth/sync', { method: 'POST' })
+                                .then(res => res.json())
+                                .then(syncData => {
+                                    if (syncData.success) {
+                                        console.log('🔄 [Auth Sync] Perfil sincronizado con éxito');
+                                    }
+                                })
+                                .catch(err => console.warn('⚠️ [Auth Sync] Falló el intento de sincronización:', err));
+                        } catch (e) {
+                            // Ignoramos errores de sync para no bloquear la app principal
+                        }
                     } else {
                         set({
                             user: null,

@@ -20,21 +20,6 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         throw new Error('Debe iniciar sesión para realizar la compra.');
     }
 
-    // --- FIX: Sincronización de Usuario ---
-    await prisma.user.upsert({
-        where: { id: user.id },
-        update: {
-            email: user.email!,
-            nombre: user.user_metadata?.nombre || user.email!.split('@')[0],
-        },
-        create: {
-            id: user.id,
-            email: user.email!,
-            nombre: user.user_metadata?.nombre || user.email!.split('@')[0],
-            rol: 'CLIENTE',
-        }
-    });
-
     // 1. VALIDACIÓN ZERO-TRUST
     const service = await prisma.service.findUnique({
         where: { id: serviceId }

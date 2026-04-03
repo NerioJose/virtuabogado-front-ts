@@ -15,7 +15,7 @@ const SeccionFAQ = React.memo(() => {
     },
     {
       pregunta: "¿En qué áreas del derecho se especializan?",
-      respuesta: "Nos especializamos en derecho civil, mercantil, laboral y familiar. Nuestro equipo tiene amplia experiencia en contratos, disputas comerciales, asuntos laborales y procedimientos familiares."
+      respuesta: "Contamos con especialistas en derecho civil, mercantil, laboral y familiar. VirtuAbogado tiene amplia experiencia en contratos, disputas comerciales, asuntos laborales y procedimientos familiares."
     },
     {
       pregunta: "¿Cómo funcionan los honorarios?",

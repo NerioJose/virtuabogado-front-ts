@@ -3,7 +3,6 @@
 import HeroSection from '@/components/nosotros/HeroSection';
 import NuestraHistoriaSection from '@/components/nosotros/NuestraHistoriaSection';
 import MisionVisionSection from '@/components/nosotros/MisionVisionSection';
-import NuestroEquipoSection from '@/components/nosotros/NuestroEquipoSection';
 import ValoresSection from '@/components/nosotros/ValoresSection';
 import CTASection from '@/components/nosotros/CTASection';
 
@@ -19,8 +18,6 @@ export default function NosotrosPage() {
 			{/* Misión y Visión */}
 			<MisionVisionSection />
 
-			{/* Nuestro Equipo */}
-			<NuestroEquipoSection />
 
 			{/* Valores */}
 			<ValoresSection />

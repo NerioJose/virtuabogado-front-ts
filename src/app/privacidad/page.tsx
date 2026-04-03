@@ -74,7 +74,7 @@ export default function PrivacidadPage() {
                                 4. Derechos ARCO
                             </h2>
                             <p>
-                                Usted tiene derecho a Acceder, Rectificar, Cancelar u Oponerse al tratamiento de sus datos personales. Puede ejercer estos derechos enviando una solicitud formal a nuestro oficial de privacidad en info@virtuabogado.com.
+                                Usted tiene derecho a Acceder, Rectificar, Cancelar u Oponerse al tratamiento de sus datos personales. Puede ejercer estos derechos enviando una solicitud formal a nuestro oficial de privacidad en virtuabogado.legal@gmail.com.
                             </p>
                         </section>
 

@@ -87,7 +87,7 @@ export default function TerminosPage() {
                             ← Volver al inicio
                         </Link>
                         <p className="text-slate-400 text-sm italic">
-                            Si tiene dudas, escríbanos a info@virtuabogado.com
+                            Si tiene dudas, escríbanos a virtuabogado.legal@gmail.com
                         </p>
                     </div>
                 </motion.div>

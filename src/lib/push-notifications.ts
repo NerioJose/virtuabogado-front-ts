@@ -4,7 +4,7 @@ import { prisma } from './prisma';
 // Configurar VAPID (Keys deben estar en .env)
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
-const email = process.env.VAPID_EMAIL || 'mailto:info@virtuabogado.com';
+const email = process.env.VAPID_EMAIL || 'mailto:virtuabogado.legal@gmail.com';
 
 if (publicKey && privateKey) {
   webpush.setVapidDetails(email, publicKey, privateKey);

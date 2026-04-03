@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiShield, FiCreditCard, FiArrowRight, FiLoader, FiAlertCircle, FiLock, FiCheckCircle } from 'react-icons/fi';
 import { SiBitcoin, SiVisa, SiMastercard, SiAmericanexpress } from 'react-icons/si';
 import { FaCcPaypal } from 'react-icons/fa';
@@ -33,7 +33,6 @@ export const PaymentStep: React.FC = () => {
     } = useCheckout();
 
     // Requisito Fintech: Persistencia de Sesión
-    // Si la sesión expira o el usuario recarga, recuperamos la orden de localStorage
     useEffect(() => {
         if (orderId) {
             localStorage.setItem('virtuabogado_pending_order', orderId);
@@ -43,20 +42,16 @@ export const PaymentStep: React.FC = () => {
         }
     }, [orderId, isWaitingForWebhook, setOrderId]);
 
-    // Polling de Estado: TanStack Query con refetchInterval de 3s
-    // staleTime:0 garantiza que siempre consulta el servidor (sin caché)
+    // Polling de Estado
     const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
 
-    // Sincronización de Estado via Polling (Backup de Realtime)
-    // Cambiamos el estado visual si la orden se confirma en segundo plano
+    // Sincronización de Estado
     useEffect(() => {
         if (!statusData) return;
         const currentStatus = statusData?.status?.trim().toUpperCase();
         
         if (currentStatus === 'PAID') {
             console.log('✨ [PaymentStep] Pago detectado via polling. Sincronizando UI...');
-            // No hacemos redirect duro aquí para permitir que el Broadcast (Realtime) 
-            // maneje la "emisión" principal de forma fluida, o que el usuario vea el éxito.
         } else if (currentStatus === 'ERROR') {
             toast.error('El pago no pudo ser completado. Por favor, intenta de nuevo.');
             setIsWaitingForWebhook(false);
@@ -68,8 +63,6 @@ export const PaymentStep: React.FC = () => {
     const handlePayment = async (paymentMethodId: string) => {
         if (isProcessingPayment) return;
 
-        // --- APERTURA SIMPLE (SIN NOMBRES NI COMPLICACIONES) ---
-        // Abrimos la pestaña al instante para que el navegador no la bloquee.
         let checkoutWindow: Window | null = null;
         if (paymentMethodId === 'zenobank') {
             checkoutWindow = window.open('', '_blank');
@@ -85,7 +78,6 @@ export const PaymentStep: React.FC = () => {
             });
 
             if (result.success) {
-                // Guardamos el orderId en el store para el polling
                 if (result.order?.id) {
                     setOrderId(result.order.id);
                 }
@@ -94,17 +86,15 @@ export const PaymentStep: React.FC = () => {
                     toast.success('Abriendo pasarela...', { id: loadingToast });
                     
                     if (checkoutWindow) {
-                        // Simplemente asignamos la dirección a la pestaña ya abierta
                         checkoutWindow.location.href = result.redirectUrl;
                         setIsWaitingForWebhook(true);
                     } else {
-                        // Fallback si la apertura inicial falló
                         window.location.href = result.redirectUrl;
                     }
                 } else {
                     if (checkoutWindow) checkoutWindow.close();
                     toast.success('Solicitud procesada con éxito', { id: loadingToast });
-                    setStep(3); // Confirmación
+                    setStep(3);
                 }
             } else {
                 if (checkoutWindow) checkoutWindow.close();
@@ -133,7 +123,6 @@ export const PaymentStep: React.FC = () => {
         );
     }
 
-    // --- ESTADO: ESPERANDO WEBHOOK (Pantalla Original) ---
     if (isWaitingForWebhook) {
         const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
 
@@ -216,7 +205,6 @@ export const PaymentStep: React.FC = () => {
         );
     }
 
-    // --- ESTADO DE MANTENIMIENTO (0 Pasarelas) ---
     if (!methods || methods.length === 0) {
         return (
             <motion.div
@@ -249,19 +237,31 @@ export const PaymentStep: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="space-y-6"
         >
-            <div className="bg-azul-claro/20 p-4 rounded-2xl flex items-start gap-4 border border-azul-claro/30 shadow-inner">
-                <div className="bg-azul-primario/10 p-2 rounded-xl">
-                    <FiLock className="text-azul-primario" size={24} />
+            {/* --- BLOQUE: CONEXIÓN BLINDADA (GLASSMORPHISM PREMIUM) --- */}
+            <motion.div 
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative overflow-hidden bg-white/40 backdrop-blur-xl p-5 rounded-[2.5rem] flex items-center gap-5 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] group"
+            >
+                <div className="absolute inset-0 bg-gradient-to-br from-azul-primario/[0.02] to-transparent pointer-events-none" />
+                <div className="relative bg-azul-primario/10 p-3 rounded-2xl shadow-inner border border-azul-primario/5">
+                    <motion.div
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                        <FiLock className="text-azul-primario" size={26} />
+                    </motion.div>
                 </div>
-                <div className="flex-1">
-                    <p className="text-xs text-azul-primario leading-relaxed font-bold uppercase tracking-widest mb-0.5">
-                        Conexión Blindada (SSL)
+                <div className="relative flex-1">
+                    <p className="text-[11px] text-azul-primario leading-relaxed font-black uppercase tracking-[0.15em] mb-0.5 flex items-center gap-2">
+                        Conexión Blindada (HSTS)
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                     </p>
-                    <p className="text-[10px] text-azul-primario/60 leading-tight">
-                        Tus datos financieros viajan encriptados bajo el estándar industrial <span className="font-bold">AES-256 bits</span>. VirtuAbogado no almacena tus datos bancarios.
+                    <p className="text-[10px] text-slate-500 leading-tight font-medium">
+                        Tus datos financieros viajan encriptados bajo el estándar industrial <span className="font-bold text-slate-700">AES-256 bits</span>. VirtuAbogado no almacena datos bancarios.
                     </p>
                 </div>
-            </div>
+            </motion.div>
 
             <div className="space-y-3">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">
@@ -321,37 +321,58 @@ export const PaymentStep: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Zenobank/Crypto Critical Alert */}
+                {/* --- ALERTA TÁCTICA: PRECISIÓN CRIPTO ZENOBANK --- */}
                 {methods?.some((m: any) => m.identifier === 'zenobank') && (
                     <motion.div 
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3 shadow-sm"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-[2.5rem] flex items-start gap-5 shadow-sm relative overflow-hidden group"
                     >
-                        <div className="bg-amber-100 p-2 rounded-xl animate-pulse">
-                            <FiAlertCircle className="text-amber-600" size={20} />
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <SiBitcoin size={60} />
                         </div>
-                        <div className="flex-1">
-                            <p className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">Aviso Importante: Pagos Cripto</p>
-                            <p className="text-[10px] text-amber-700 leading-relaxed font-medium">
-                                Para evitar retrasos en tu activación, al abrirse la pasarela de <span className="font-bold">Zenobank</span>, debes transferir el monto <span className="font-bold text-amber-800 underline uppercase">exacto</span> indicado (incluyendo todos los decimales). Zenobank aplica una tasa mínima que debe ser cubierta con exactitud.
+                        <div className="bg-amber-100 p-3 rounded-2xl shadow-inner border border-amber-200">
+                            <motion.div
+                                animate={{ rotate: [0, -10, 10, 0] }}
+                                transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
+                            >
+                                <FiAlertCircle className="text-amber-600" size={28} />
+                            </motion.div>
+                        </div>
+                        <div className="flex-1 space-y-2">
+                            <p className="text-[11px] font-black text-amber-800 uppercase tracking-[0.15em] flex items-center gap-2">
+                                <span className="flex h-2 w-2 relative">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                </span>
+                                REQUISITO: PRECISIÓN DECIMAL
                             </p>
+                            <p className="text-[10px] text-amber-800/80 leading-relaxed font-medium">
+                                Para evitar que tu activación sea rechazada, al abrirse <span className="font-bold text-amber-900">Zenobank</span>, debes transferir el monto <span className="font-black text-amber-900 underline underline-offset-4 decoration-2 decoration-amber-500">EXACTO</span> indicado:
+                            </p>
+                            <div className="bg-white/60 p-3 rounded-xl border border-amber-200/50 flex justify-between items-center group-hover:bg-white transition-colors">
+                                <span className="text-[10px] font-black text-amber-900 uppercase tracking-widest">Importe requerido:</span>
+                                <span className="text-xl font-mono font-black text-amber-900 tracking-tighter">
+                                    {formatUSD(total, 2)}
+                                </span>
+                            </div>
                         </div>
                     </motion.div>
                 )}
 
-                {/* Trust Badges Bar */}
-                <div className="flex flex-col items-center gap-4 py-4 px-2 border border-gray-100 rounded-2xl mb-6 bg-gray-50/30">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Pasarelas Seguras & Trust Badges</p>
-                    <div className="flex items-center justify-center gap-6 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                        <SiVisa size={28} title="Visa" />
-                        <SiMastercard size={28} title="Mastercard" />
-                        <SiAmericanexpress size={26} title="Amex" />
-                        <FaCcPaypal size={28} title="PayPal" />
-                        <SiBitcoin size={24} title="Bitcoin/Crypto" />
+                {/* --- BARRA DE CONFIANZA: SEGURIDAD GARANTIZADA --- */}
+                <div className="flex flex-col items-center gap-6 py-8 px-4 border border-slate-100 rounded-[2.5rem] mb-8 bg-slate-50/30 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-azul-primario/5 to-transparent" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2">Pasarelas Seguras & Trust Badges</p>
+                    <div className="flex items-center justify-center gap-8 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                        <SiVisa size={32} />
+                        <SiMastercard size={32} />
+                        <SiAmericanexpress size={30} />
+                        <FaCcPaypal size={32} />
+                        <SiBitcoin size={28} />
                     </div>
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase tracking-widest border border-green-100">
-                        <FiShield size={12} /> Pago Garantizado & Protegido
+                    <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] border border-emerald-100/50 shadow-sm">
+                        <FiCheckCircle className="animate-pulse" /> Pago Garantizado & Encriptado
                     </div>
                 </div>
 

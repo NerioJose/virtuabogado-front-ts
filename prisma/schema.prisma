@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
 }
 
 model User {
@@ -28,6 +28,7 @@ model User {
   cases        Order[]    @relation("LawyerCases")
   orders       Order[]    @relation("ClientOrders")
   payouts      LawyerPayout[] @relation("LawyerPayouts")
+  pushSubscriptions PushSubscription[] @relation("UserPushSubscriptions")
 }
 
 model Service {
@@ -190,4 +191,16 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

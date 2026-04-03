@@ -30,6 +30,11 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="es" suppressHydrationWarning>
+			<head>
+				<link rel="manifest" href="/manifest.json" />
+				<meta name="theme-color" content="#0056b3" />
+				<link rel="apple-touch-icon" href="/logo/logo_resized.png" />
+			</head>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}>
 				<Providers>

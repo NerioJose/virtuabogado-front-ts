@@ -38,7 +38,7 @@ const InformacionContacto = React.memo(() => {
         </svg>
       ),
       title: 'Correo electrónico',
-      primary: 'info@virtuabogado.com',
+      primary: 'virtuabogado.legal@gmail.com',
       secondary: 'Respondemos en 24-48 horas'
     },
     {

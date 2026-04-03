@@ -8,6 +8,7 @@ import { serializeFinance } from '@/lib/finance';
 import { calculateOrderFinances } from '@/services/finance.service';
 
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
+import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -442,13 +443,24 @@ export async function PUT(request: Request) {
         });
 
         // 📡 Broadcast a todos los dashboards para reactividad instantánea
-        broadcastOrderUpdate({
-            orderId: updatedOrder.id,
-            userId: updatedOrder.userId,
-            lawyerId: updatedOrder.lawyerId,
-            status: updatedOrder.status,
-            eventType: 'updated',
         });
+
+        // 🔔 NOTIFICACIONES PUSH TÁCTICAS
+        // 1. Si el estado cambia a PAID -> Notificar a todos los ADMINS (Efecto Shopify)
+        if (status === 'PAID') {
+            console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id}`);
+            notifyNewSale(updatedOrder.id, updatedOrder.total.toString()).catch(err => 
+                console.error('❌ Error disparando push de venta:', err)
+            );
+        }
+
+        // 2. Si se asigna un Abogado -> Notificar al Abogado específico
+        if (lawyerId) {
+            console.log(`⚖️ [Push] Disparando alerta de asignación para Abogado: ${lawyerId}`);
+            notifyNewCase(lawyerId, updatedOrder.id).catch(err => 
+                console.error('❌ Error disparando push de asignación:', err)
+            );
+        }
 
         return NextResponse.json(updatedOrder);
     } catch (error) {

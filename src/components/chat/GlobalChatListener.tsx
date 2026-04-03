@@ -5,9 +5,10 @@ import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
-import { FiMessageCircle, FiX } from 'react-icons/fi';
-import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/features/chat/store/chatStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { FiBell, FiMessageCircle, FiX } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
 
 /**
  * GlobalChatListener: Centraliza todas las suscripciones de Supabase Realtime (Broadcast)
@@ -18,9 +19,30 @@ export default function GlobalChatListener() {
     const { user } = useAuthStore();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const { isSubscribed, subscribe, permission } = usePushNotifications();
+    const [showPushBanner, setShowPushBanner] = useState(false);
     const [toastMessage, setToastMessage] = useState<any>(null);
     const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const originalTitleRef = useRef<string>('');
+
+    useEffect(() => {
+        if (!user) return;
+
+        // Verificar si el usuario ya descartó este banner permanentemente
+        const bannerDismissed = localStorage.getItem('push_banner_dismissed');
+        if (bannerDismissed === 'true') return;
+
+        // Mostrar banner de invitación a Push solo para Admin/Abogados que no estén suscritos
+        if ((user.rol === 'ADMIN' || user.rol === 'ABOGADO') && !isSubscribed && permission === 'default') {
+            const timer = setTimeout(() => setShowPushBanner(true), 5000); // 5s después del login
+            return () => clearTimeout(timer);
+        }
+    }, [user, isSubscribed, permission]);
+
+    const handleDismissBanner = () => {
+        setShowPushBanner(false);
+        localStorage.setItem('push_banner_dismissed', 'true');
+    };
 
     useEffect(() => {
         if (!user) return;
@@ -186,6 +208,45 @@ export default function GlobalChatListener() {
                                     Haz clic para responder →
                                 </p>
                             </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 🔔 BANNER DE INVITACIÓN A NOTIFICACIONES PUSH (Estilo Shopify) */}
+                <AnimatePresence>
+                    {showPushBanner && (
+                        <motion.div
+                            initial={{ x: 300, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: 300, opacity: 0 }}
+                            className="pointer-events-auto w-80 bg-azul-primario text-white p-5 rounded-2xl shadow-2xl flex flex-col gap-3 border border-white/20"
+                        >
+                            <div className="flex items-start justify-between">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    <FiBell />
+                                </div>
+                                <button 
+                                    onClick={handleDismissBanner}
+                                    className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                                >
+                                    <FiX size={18} />
+                                </button>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-lg mb-1">¡Activa el "Ca-Ching!" 💰</h4>
+                                <p className="text-sm opacity-90 leading-relaxed">
+                                    Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.
+                                </p>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    const success = await subscribe();
+                                    if (success) setShowPushBanner(false);
+                                }}
+                                className="w-full bg-white text-azul-primario font-bold py-2.5 rounded-xl hover:bg-azul-claro hover:text-white transition-all active:scale-95 shadow-lg"
+                            >
+                                Activar Notificaciones
+                            </button>
                         </motion.div>
                     )}
                 </AnimatePresence>

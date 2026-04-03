@@ -5,6 +5,7 @@ import { OrderStatus } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { Webhook } from 'svix';
 import { revalidatePath } from 'next/cache';
+import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
 
 export async function POST(req: NextRequest) {
     const svixId = req.headers.get('svix-id');
@@ -98,6 +99,21 @@ export async function POST(req: NextRequest) {
                 status: resolvedStatus,
                 eventType: 'created' // Enviamos 'created' para que al abogado le suene como nuevo caso pagado!
             });
+
+            // 🔔 NOTIFICACIONES PUSH TÁCTICAS
+            // 1. Alerta de Venta para Admin (Efecto Shopify)
+            console.log(`💰 [Webhook Push] Notificando venta de Orden #${orderId}`);
+            notifyNewSale(orderId, currentOrder.total.toString()).catch(err => 
+                console.error('❌ Error enviando push de venta:', err)
+            );
+
+            // 2. Alerta de Asignación si hay abogado
+            if (targetLawyerId) {
+                console.log(`⚖️ [Webhook Push] Notificando asignación al abogado: ${targetLawyerId}`);
+                notifyNewCase(targetLawyerId, orderId).catch(err => 
+                    console.error('❌ Error enviando push de asignación:', err)
+                );
+            }
 
             // 🚀 LIMPIEZA DE CACHÉ NEXT.JS (Requisito Lead Architect)
             revalidatePath('/', 'layout');

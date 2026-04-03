@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { notifyNewMessage } from '@/lib/push-notifications';
+
 
 // Utilidad para asegurar el envío del broadcast en un entorno Serverless iterativo
 async function sendBroadcast(supabaseAdmin: any, channelName: string, payload: any) {
@@ -187,8 +189,20 @@ export async function POST(
         // Notificar a la "SALA DE CHAT" (para todos los que están viendo este caso, incluyendo ADMINS)
         broadcastPromises.push(sendBroadcast(supabaseAdmin, `chat_${orderId}`, { new: newMessage }));
 
+        // ======= PUSH NOTIFICATIONS =======
+        const pushPromises = [];
+        const senderName = newMessage.sender?.nombre || 'Alguien';
+        
+        if (order.userId && order.userId !== senderId) {
+            pushPromises.push(notifyNewMessage(order.userId, senderName, content, orderId));
+        }
+        
+        if (order.lawyerId && order.lawyerId !== senderId) {
+            pushPromises.push(notifyNewMessage(order.lawyerId, senderName, content, orderId));
+        }
+
         // Emitimos todos en paralelo para no bloquear (el utility garantiza que todos lleguen)
-        await Promise.all(broadcastPromises);
+        await Promise.all([...broadcastPromises, ...pushPromises]);
 
         return NextResponse.json(newMessage);
     } catch (error: any) {

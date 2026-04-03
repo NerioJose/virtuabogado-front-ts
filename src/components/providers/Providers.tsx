@@ -21,8 +21,24 @@ const RealtimeSubscription = () => {
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     useEffect(() => {
-        // Sincronizar estado de autenticación con la sesión de Supabase al montar la app
+        // Sincronizar estado de autenticación
         initializeAuth();
+
+        // 📡 REGISTRO DE SERVICE WORKER (Para Notificaciones Push)
+        if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker
+                    .register('/sw.js')
+                    .then((reg) => console.log('✅ Service Worker registrado para Push:', reg.scope))
+                    .catch((err) => console.error('❌ Error registrando Service Worker:', err));
+            });
+        } else if ('serviceWorker' in navigator && process.env.NODE_ENV === 'development') {
+            // En desarrollo también lo registramos para pruebas locales
+            navigator.serviceWorker
+                .register('/sw.js')
+                .then((reg) => console.log('🛠️ [Dev] Service Worker registrado:', reg.scope))
+                .catch((err) => console.warn('⚠️ [Dev] SW Error:', err));
+        }
     }, []);
 
     const [queryClient] = useState(

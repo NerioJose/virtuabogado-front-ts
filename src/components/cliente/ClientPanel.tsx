@@ -38,7 +38,7 @@ export default function ClientPanel({
 }: ClientPanelProps) {
   const [seccionActiva, setSeccionActiva] = useState('servicios');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'completado' | 'cancelado'>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'>('todos');
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
 
   // Estadísticas para el componente ClientStats
@@ -46,6 +46,7 @@ export default function ClientPanel({
     total: servicios.length,
     pendientes: servicios.filter(s => s.estado === 'pendiente').length,
     programados: servicios.filter(s => s.estado === 'programado').length,
+    revisiones: servicios.filter(s => s.estado === 'revision').length,
     completados: servicios.filter(s => s.estado === 'completado').length,
     cancelados: servicios.filter(s => s.estado === 'cancelado').length,
   }), [servicios]);
@@ -149,7 +150,7 @@ export default function ClientPanel({
                 <div className="mb-8 overflow-x-auto no-scrollbar py-2">
                   <div className="flex items-center gap-2 min-w-max">
                     <span className="px-4 py-2 bg-slate-100 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">Filtros</span>
-                    {(['todos', 'pendiente', 'programado', 'completado'] as const).map((estado) => (
+                    {(['todos', 'pendiente', 'programado', 'revision', 'completado'] as const).map((estado) => (
                       <button
                         key={estado}
                         onClick={() => setFiltroEstado(estado)}
@@ -159,11 +160,11 @@ export default function ClientPanel({
                             : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
                         }`}
                       >
-                        {estado === 'programado' ? 'En Proceso' : estado}
+                        {estado === 'programado' ? 'En Proceso' : estado === 'revision' ? 'En Revisión' : estado}
                         <span className={`px-2 py-0.5 rounded-md ml-2 text-[10px] ${
                           filtroEstado === estado ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
                         }`}>
-                          {estado === 'todos' ? statsData.total : (statsData as any)[estado === 'programado' ? 'programados' : estado + 's']}
+                          {estado === 'todos' ? statsData.total : (statsData as any)[estado === 'programado' ? 'programados' : estado === 'revision' ? 'revisiones' : estado + 's']}
                         </span>
                       </button>
                     ))}

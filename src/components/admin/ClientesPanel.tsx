@@ -28,12 +28,14 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
   };
 
   const clientesFiltrados = useMemo(() => {
-    const term = terminoBusqueda.toLowerCase();
+    const term = terminoBusqueda.toLowerCase().trim();
     return clients.filter(cliente => {
       const coincideTermino =
-        cliente.nombre.toLowerCase().includes(term) ||
-        cliente.email.toLowerCase().includes(term) ||
-        (cliente.telefono && cliente.telefono.includes(term));
+        cliente.nombre?.toLowerCase().includes(term) ||
+        cliente.email?.toLowerCase().includes(term) ||
+        (cliente.telefono && cliente.telefono.includes(term)) ||
+        cliente.id?.toLowerCase().includes(term);
+
       if (filtroActividad === 'todos') return coincideTermino;
       if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.createdAt);
       if (filtroActividad === 'inactivo') return coincideTermino && !esClienteReciente(cliente.createdAt);

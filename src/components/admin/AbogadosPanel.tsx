@@ -30,11 +30,11 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
   }, [lawyers]);
 
   const filteredLawyers = useMemo(() => {
-    const term = terminoBusqueda.toLowerCase();
+    const term = terminoBusqueda.toLowerCase().trim();
     return lawyers.filter(lawyer => {
       const matchesSearch =
-        lawyer.nombre.toLowerCase().includes(term) ||
-        lawyer.email.toLowerCase().includes(term) ||
+        lawyer.nombre?.toLowerCase().includes(term) ||
+        lawyer.email?.toLowerCase().includes(term) ||
         (lawyer.telefono && lawyer.telefono.includes(term));
       const matchesSpecialty = especialidadFilter === 'todas' || lawyer.especialidad === especialidadFilter;
       const matchesStatus = statusFilter === 'ALL' || lawyer.status === statusFilter;

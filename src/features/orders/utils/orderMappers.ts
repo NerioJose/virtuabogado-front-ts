@@ -5,12 +5,13 @@ import { Order, OrderStatus } from '../types/orders.types';
  */
 export const mapOrderStatusToVisual = (
     status: OrderStatus
-): 'pendiente' | 'programado' | 'completado' | 'cancelado' => {
+): 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado' => {
     switch (status) {
         case OrderStatus.PAGO_PENDIENTE:
         case OrderStatus.PENDIENTE:
             return 'pendiente';
         case OrderStatus.REVISION:
+            return 'revision';
         case OrderStatus.EN_PROGRESO:
             return 'programado';
         case OrderStatus.COMPLETADO:
@@ -27,12 +28,14 @@ export const mapOrderStatusToVisual = (
 /**
  * Obtiene el texto descriptivo del estado
  */
-export const getStatusText = (status: 'pendiente' | 'programado' | 'completado' | 'cancelado'): string => {
+export const getStatusText = (status: 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'): string => {
     switch (status) {
         case 'pendiente':
             return 'Pendiente de asignación';
         case 'programado':
             return 'En proceso';
+        case 'revision':
+            return 'En revisión';
         case 'completado':
             return 'Servicio completado';
         case 'cancelado':
@@ -45,12 +48,14 @@ export const getStatusText = (status: 'pendiente' | 'programado' | 'completado' 
 /**
  * Obtiene las clases de color para el badge según el estado
  */
-export const getStatusColor = (status: 'pendiente' | 'programado' | 'completado' | 'cancelado'): string => {
+export const getStatusColor = (status: 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'): string => {
     switch (status) {
         case 'pendiente':
             return 'bg-yellow-100 text-yellow-800';
         case 'programado':
             return 'bg-blue-100 text-blue-800';
+        case 'revision':
+            return 'bg-purple-100 text-purple-800';
         case 'completado':
             return 'bg-green-100 text-green-800';
         case 'cancelado':
@@ -111,7 +116,7 @@ export interface ServicioCliente {
     nombre: string;
     descripcion: string;
     fecha: string;
-    estado: 'pendiente' | 'programado' | 'completado' | 'cancelado';
+    estado: 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado';
     precio: number;
     numeroOrden: string;
     fechaCita?: string;
@@ -149,7 +154,7 @@ export const sortServicesByDate = (services: ServicioCliente[]): ServicioCliente
  */
 export const filterServicesByStatus = (
     services: ServicioCliente[],
-    status?: 'pendiente' | 'programado' | 'completado' | 'cancelado'
+    status?: 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'
 ): ServicioCliente[] => {
     if (!status) return services;
     return services.filter(service => service.estado === status);

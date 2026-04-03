@@ -176,6 +176,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                 { id: 'todos', label: 'Todos', color: 'bg-azul-primario' },
                 { id: OrderStatus.PENDIENTE, label: 'Pendientes', color: 'bg-amber-500' },
                 { id: OrderStatus.EN_PROGRESO, label: 'En proceso', color: 'bg-blue-500' },
+                { id: OrderStatus.REVISION, label: 'Revisión', color: 'bg-purple-500' },
                 { id: OrderStatus.COMPLETADO, label: 'Completados', color: 'bg-emerald-500' }
               ].map((f) => (
                 <button

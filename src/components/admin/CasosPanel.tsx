@@ -19,17 +19,19 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
 
   const ordenesFiltradas = useMemo(() => {
-    return orders.filter(order => {
-      const coincideTermino =
-        order.userName.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-        order.userEmail.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-        order.items.some(item =>
-          item.serviceName.toLowerCase().includes(terminoBusqueda.toLowerCase())
-        ) ||
-        (order.lawyerName && order.lawyerName.toLowerCase().includes(terminoBusqueda.toLowerCase()));
+    const term = terminoBusqueda.toLowerCase().trim();
+    return orders.filter((orden) => {
+      const coincideBusqueda =
+        orden.userName?.toLowerCase().includes(term) ||
+        orden.userEmail?.toLowerCase().includes(term) ||
+        orden.items?.some((item) => item.serviceName?.toLowerCase().includes(term)) ||
+        orden.lawyerName?.toLowerCase().includes(term) ||
+        orden.id?.toLowerCase().includes(term);
 
-      const coincideEstado = filtroEstado === 'todos' || order.status === filtroEstado;
-      return coincideTermino && coincideEstado;
+      const coincideEstado =
+        filtroEstado === 'todos' || orden.status === filtroEstado;
+
+      return coincideBusqueda && coincideEstado;
     });
   }, [orders, terminoBusqueda, filtroEstado]);
 
@@ -42,10 +44,15 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   };
 
   const statusConfig = {
-    [OrderStatus.PENDIENTE]: { color: 'text-amber-600', bg: 'bg-amber-50', icon: <FiClock /> },
-    [OrderStatus.EN_PROGRESO]: { color: 'text-blue-600', bg: 'bg-blue-50', icon: <FiBriefcase /> },
-    [OrderStatus.COMPLETADO]: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <FiCheckCircle /> },
-    [OrderStatus.CANCELADO]: { color: 'text-rose-600', bg: 'bg-rose-50', icon: <FiXCircle /> },
+    [OrderStatus.PENDIENTE]: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700', icon: <FiClock /> },
+    [OrderStatus.EN_PROGRESO]: { label: 'En Proceso', color: 'bg-blue-100 text-blue-700', icon: <FiBriefcase /> },
+    [OrderStatus.REVISION]: { label: 'En Revisión', color: 'bg-purple-100 text-purple-700', icon: <FiEye /> },
+    [OrderStatus.COMPLETADO]: { label: 'Completado', color: 'bg-emerald-100 text-emerald-700', icon: <FiCheckCircle /> },
+    [OrderStatus.CANCELADO]: { label: 'Cancelado', color: 'bg-rose-100 text-rose-700', icon: <FiXCircle /> },
+    [OrderStatus.FALLIDO]: { label: 'Fallido', color: 'bg-red-100 text-red-700', icon: <FiXCircle /> },
+    [OrderStatus.PAID]: { label: 'Pagado', color: 'bg-emerald-100 text-emerald-700', icon: <FiDollarSign /> },
+    [OrderStatus.PAGO_PENDIENTE]: { label: 'Pago Pend.', color: 'bg-slate-100 text-slate-500', icon: <FiClock /> },
+    [OrderStatus.PAGO_RECHAZADO]: { label: 'Pago Rech.', color: 'bg-red-100 text-red-700', icon: <FiXCircle /> },
   };
 
   if (isLoading && orders.length === 0) {
@@ -71,7 +78,9 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
               { id: 'todos', label: 'Todos', count: orders.length },
               { id: OrderStatus.PENDIENTE, label: 'Pendientes', count: orders.filter(o => o.status === OrderStatus.PENDIENTE).length },
               { id: OrderStatus.EN_PROGRESO, label: 'En Proceso', count: orders.filter(o => o.status === OrderStatus.EN_PROGRESO).length },
+              { id: OrderStatus.REVISION, label: 'En Revisión', count: orders.filter(o => o.status === OrderStatus.REVISION).length },
               { id: OrderStatus.COMPLETADO, label: 'Completados', count: orders.filter(o => o.status === OrderStatus.COMPLETADO).length },
+              { id: OrderStatus.CANCELADO, label: 'Cancelados', count: orders.filter(o => o.status === OrderStatus.CANCELADO).length },
             ].map((btn) => (
               <button
                 key={btn.id}

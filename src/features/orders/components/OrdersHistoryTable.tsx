@@ -69,10 +69,10 @@ export function OrdersHistoryTable({ user }: Props) {
                     />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                     {/* Filtro de Estado */}
                     <select 
-                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                         value={filters.status || ''}
                         onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
                     >
@@ -84,7 +84,7 @@ export function OrdersHistoryTable({ user }: Props) {
 
                     {/* Filtro de Tiempo */}
                     <select 
-                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                         value={filters.dateRange || ''}
                         onChange={(e) => handleFilterChange('dateRange', e.target.value || undefined)}
                     >
@@ -257,25 +257,25 @@ export function OrdersHistoryTable({ user }: Props) {
 
                 {/* Paginación */}
                 {!isLoading && data && data.totalPages > 1 && (
-                    <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between">
-                        <p className="text-sm text-slate-500">
-                            Mostrando <span className="font-medium">{((filters.page - 1) * (filters.limit || 10)) + 1}</span> a <span className="font-medium">{Math.min(filters.page * (filters.limit || 10), data.total)}</span> de <span className="font-medium">{data.total}</span> resultados
+                    <div className="px-6 py-6 bg-slate-50/50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-slate-500 font-bold text-center sm:text-left order-2 sm:order-1">
+                            Mostrando <span className="text-slate-900">{((filters.page - 1) * (filters.limit || 10)) + 1}</span> - <span className="text-slate-900">{Math.min(filters.page * (filters.limit || 10), data.total)}</span> de <span className="text-slate-900">{data.total}</span>
                         </p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 order-1 sm:order-2">
                             <button 
                                 onClick={() => handlePageChange(filters.page - 1)}
                                 disabled={filters.page === 1}
-                                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                             >
                                 <ChevronLeft className="size-4" />
                             </button>
-                            <span className="text-sm font-medium text-slate-600 px-2">
-                                Página {filters.page} de {data.totalPages}
+                            <span className="text-xs font-black text-slate-600 px-3 py-1.5 bg-white border border-slate-100 rounded-lg shadow-inner">
+                                {filters.page} / {data.totalPages}
                             </span>
                             <button 
                                 onClick={() => handlePageChange(filters.page + 1)}
                                 disabled={filters.page === data.totalPages}
-                                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                             >
                                 <ChevronRight className="size-4" />
                             </button>

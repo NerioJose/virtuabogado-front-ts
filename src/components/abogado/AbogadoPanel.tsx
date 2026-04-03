@@ -133,7 +133,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	}
 
 	return (
-		<div className="flex min-h-screen bg-gray-100">
+		<div className="flex min-h-screen bg-gray-100 max-w-[100vw] overflow-x-hidden">
 			{/* Sidebar responsivo con overlay */}
 			{isSidebarOpen && (
 				<motion.div 
@@ -209,7 +209,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 			</motion.div>
 
 			{/* Main Content Area */}
-			<div className="lg:ml-72 flex-1 min-h-screen flex flex-col transition-all duration-500 bg-slate-50/50">
+			<div className="lg:ml-72 flex-1 min-h-screen flex flex-col transition-all duration-500 bg-slate-50/50 overflow-x-hidden w-full max-w-full">
 				{/* Móvil Header / Top Bar */}
 				<header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 lg:hidden px-4 h-16 flex items-center justify-between">
 					<button 

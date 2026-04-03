@@ -195,153 +195,102 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
         </div>
       </div>
 
-      {/* VISTA MÓVIL (Cards) */}
-      <div className="grid grid-cols-1 gap-4 md:hidden pb-10">
-        {casosFiltrados.length === 0 ? (
-          <div className="py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-             <p className="text-slate-400 font-bold">No hay casos que coincidan</p>
-          </div>
-        ) : (
-          casosFiltrados.map((caso) => (
-            <motion.div 
-              key={caso.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              onClick={() => setCasoSeleccionado(caso.id)}
-              className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden"
-            >
-              {unreadOrders.includes(caso.id) && (
-                <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-bl-xl shadow-sm animate-pulse" />
-              )}
-              
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h4 className="font-black text-slate-800 text-sm leading-tight mb-1">
-                    {caso.items[0]?.serviceName || 'Servicio Legal'}
-                  </h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {caso.id.slice(0, 8)}</p>
-                </div>
-                <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-tighter shadow-sm ${
-                  caso.status === OrderStatus.PENDIENTE ? 'bg-amber-100 text-amber-700' :
-                  caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-100 text-blue-700' :
-                  caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-100 text-emerald-700' :
-                  'bg-rose-100 text-rose-700'
-                }`}>
-                  {caso.status}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between mt-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 font-bold text-xs">
-                    {caso.userName?.charAt(0) || 'U'}
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-black text-slate-700">{caso.userName}</p>
-                    <p className="text-[10px] font-bold text-slate-400 italic">Iniciado el {new Date(caso.createdAt).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                   <div className={`p-2 rounded-xl bg-slate-50 text-slate-400 ${unreadOrders.includes(caso.id) ? 'text-red-500' : ''}`}>
-                      <FiMessageSquare size={16} />
-                   </div>
-                   <div className="p-2 rounded-xl bg-azul-primario text-white shadow-md shadow-azul-primario/25">
-                      <FiEye size={16} />
-                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </div>
-
-      {/* VISTA DESKTOP (Tabla) */}
-      <div className="hidden md:block overflow-x-auto rounded-3xl border border-slate-100 shadow-sm bg-white custom-scrollbar">
-        <table className="min-w-full lg:min-w-[900px] divide-y divide-slate-100">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
-              <th scope="col" className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-50">
-            {casosFiltrados.length === 0 ? (
+      {/* TABLA PRO-RESPONSIVA (Horizontal Scroll para móvil) */}
+      <div className="overflow-x-auto rounded-[2rem] border border-slate-100 shadow-sm bg-white custom-scrollbar-horizontal">
+        <div className="min-w-[1000px]">
+          <table className="w-full divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-bold italic">
-                  No se encontraron casos asignados.
-                </td>
+                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso / ID</th>
+                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
+                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Inicio</th>
+                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                <th scope="col" className="px-6 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
               </tr>
-            ) : (
-              casosFiltrados.map((caso) => (
-                <tr key={caso.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-azul-primario/5 rounded-xl flex items-center justify-center text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition-all duration-300">
-                          <FiBriefcase size={18} />
-                       </div>
-                       <div>
-                          <div className="text-sm font-black text-slate-800">
-                            {caso.items[0]?.serviceName || 'Servicio Legal'}
-                          </div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter italic">ID: {caso.id.slice(0, 8)}...</div>
-                       </div>
-                       {unreadOrders.includes(caso.id) && (
-                         <span className="flex h-2 w-2">
-                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                           <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                         </span>
-                       )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-black text-slate-700">{caso.userName}</div>
-                    <div className="text-xs font-bold text-slate-400 italic">{caso.userEmail}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-black text-slate-700">
-                      {new Date(caso.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-tighter shadow-sm ${
-                      caso.status === OrderStatus.PENDIENTE ? 'bg-amber-100 text-amber-700' :
-                      caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-100 text-blue-700' :
-                      caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-100 text-emerald-700' :
-                      'bg-rose-100 text-rose-700'
-                    }`}>
-                      {caso.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
-                        title="Ver detalles"
-                        onClick={() => setCasoSeleccionado(caso.id)}
-                      >
-                        <FiEye size={18} />
-                      </button>
-                      <button
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
-                          unreadOrders.includes(caso.id) 
-                          ? 'bg-red-50 text-red-500 animate-pulse' 
-                          : 'bg-slate-50 text-slate-400 hover:bg-green-500 hover:text-white'
-                        }`}
-                        title={unreadOrders.includes(caso.id) ? "Responder Mensaje" : "Enviar mensaje"}
-                        onClick={() => setCasoSeleccionado(caso.id)}
-                      >
-                        <FiMessageSquare size={18} />
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-50">
+              {casosFiltrados.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold italic">
+                    No se encontraron casos asignados.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                casosFiltrados.map((caso) => (
+                  <tr key={caso.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center gap-4">
+                         <div className="w-11 h-11 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition-all duration-300 shadow-sm">
+                            <FiBriefcase size={20} />
+                         </div>
+                         <div>
+                            <div className="text-sm font-black text-slate-800 tracking-tight">
+                              {caso.items[0]?.serviceName || 'Servicio Legal'}
+                            </div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: {caso.id.slice(0, 8)}</div>
+                         </div>
+                         {unreadOrders.includes(caso.id) && (
+                           <div className="relative flex h-2 w-2">
+                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                           </div>
+                         )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 border border-slate-200">
+                             {caso.userName?.charAt(0) || 'U'}
+                         </div>
+                         <div>
+                            <div className="text-sm font-black text-slate-700 leading-none">{caso.userName}</div>
+                            <div className="text-[10px] font-bold text-slate-400 mt-1">{caso.userEmail}</div>
+                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="text-sm font-black text-slate-600">
+                        {new Date(caso.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className={`px-3 py-1.5 text-[10px] font-black rounded-xl uppercase tracking-tighter shadow-sm border ${
+                        caso.status === OrderStatus.PENDIENTE ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                        caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                        caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                        'bg-rose-50 text-rose-600 border-rose-100'
+                      }`}>
+                        {caso.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-right text-sm">
+                      <div className="flex justify-end gap-2.5">
+                        <button
+                          className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                          title="Ver detalles"
+                          onClick={() => setCasoSeleccionado(caso.id)}
+                        >
+                          <FiEye size={18} />
+                        </button>
+                        <button
+                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm ${
+                            unreadOrders.includes(caso.id) 
+                            ? 'bg-red-500 text-white animate-pulse' 
+                            : 'bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white'
+                          }`}
+                          title={unreadOrders.includes(caso.id) ? "Responder Mensaje" : "Enviar mensaje"}
+                          onClick={() => setCasoSeleccionado(caso.id)}
+                        >
+                          <FiMessageSquare size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

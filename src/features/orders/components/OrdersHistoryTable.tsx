@@ -97,151 +97,100 @@ export function OrdersHistoryTable({ user }: Props) {
                 </div>
             </div>
 
-            {/* VISTA MÓVIL (Cards) */}
-            <div className="grid grid-cols-1 gap-4 md:hidden pb-6">
-                {isLoading ? (
-                    [...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm animate-pulse">
-                            <div className="h-4 bg-slate-100 rounded w-1/3 mb-4"></div>
-                            <div className="h-4 bg-slate-100 rounded w-1/2"></div>
-                        </div>
-                    ))
-                ) : data?.data.length === 0 ? (
-                    <div className="py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                        <p className="text-slate-400 font-bold">No hay registros</p>
-                    </div>
-                ) : (
-                    data?.data.map((order: any) => {
-                        const status = statusConfig[order.status as OrderStatus];
-                        const StatusIcon = status.icon;
-                        
-                        return (
-                            <div key={order.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{order.id.slice(0, 8)}</span>
-                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black border ${status.color}`}>
-                                        <StatusIcon size={12} />
-                                        {status.label}
-                                    </span>
-                                </div>
-                                <h4 className="font-black text-slate-800 text-sm mb-1">{order.service.titulo}</h4>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="size-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-bold">
-                                        {order.user.nombre.charAt(0)}
-                                    </div>
-                                    <span className="text-xs text-slate-500">{order.user.nombre}</span>
-                                </div>
-                                <div className="flex justify-between items-end pt-3 border-t border-slate-50">
-                                    <span className="text-[10px] text-slate-400 font-bold">
-                                        {new Date(order.createdAt).toLocaleDateString()}
-                                    </span>
-                                    <div className="text-right">
-                                        {user.rol === 'ABOGADO' && (
-                                            <p className="text-[10px] text-rose-500 font-bold">Com: -{formatUSD(order.financials?.comisionLawyer || 0)}</p>
-                                        )}
-                                        <p className="text-sm font-black text-slate-900">
-                                            {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
-
-            {/* Tabla (Desktop) */}
-            <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse min-w-[900px]">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-bottom border-slate-200">
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Caso / ID</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Servicio</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cliente</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
-                                {user.rol === 'ABOGADO' && (
-                                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Comisión</th>
-                                )}
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">{user.rol === 'ABOGADO' ? 'Su Neto' : 'Monto total'}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {isLoading ? (
-                                [...Array(5)].map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
-                                        <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
-                                        <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded w-28"></div></td>
-                                        <td className="px-6 py-4"><div className="h-6 bg-slate-100 rounded-full w-20"></div></td>
-                                        <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded w-20"></div></td>
-                                        <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded w-16 ml-auto"></div></td>
-                                    </tr>
-                                ))
-                            ) : data?.data.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                                        No se encontraron casos con los filtros seleccionados.
-                                    </td>
+            {/* TABLA PRO-RESPONSIVA (Horizontal Scroll para móvil) */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar-horizontal">
+                    <div className="min-w-[1000px]">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/50 border-bottom border-slate-200">
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso / ID</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Servicio</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
+                                    {user.rol === 'ABOGADO' && (
+                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Comisión</th>
+                                    )}
+                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{user.rol === 'ABOGADO' ? 'Su Neto' : 'Monto total'}</th>
                                 </tr>
-                            ) : (
-                                data?.data.map((order: any) => {
-                                    const status = statusConfig[order.status as OrderStatus];
-                                    const StatusIcon = status.icon;
-                                    
-                                    return (
-                                        <tr key={order.id} className={`hover:bg-slate-50 transition-colors ${isPlaceholderData ? 'opacity-50' : ''}`}>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-slate-900 truncate max-w-[120px]">
-                                                    #{order.id.slice(0, 8)}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-slate-600 font-medium">
-                                                {order.service.titulo}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="size-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-100">
-                                                        {order.user.nombre.charAt(0)}
-                                                    </div>
-                                                    <span className="text-sm text-slate-600">{order.user.nombre}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${status.color}`}>
-                                                    <StatusIcon className="size-3" />
-                                                    {status.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-slate-500">
-                                                {new Date(order.createdAt).toLocaleDateString('es-ES', { 
-                                                    day: '2-digit', 
-                                                    month: 'short', 
-                                                    year: 'numeric' 
-                                                })}
-                                            </td>
-                                            {user.rol === 'ABOGADO' && (
-                                                <td className="px-6 py-4 text-sm font-medium text-red-500 text-right">
-                                                    -{formatUSD(order.financials?.comisionLawyer || 0)}
-                                                </td>
-                                            )}
-                                            <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right">
-                                                {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
-                                            </td>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {isLoading ? (
+                                    [...Array(5)].map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
+                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
+                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-28"></div></td>
+                                            <td className="px-6 py-5"><div className="h-6 bg-slate-100 rounded-full w-20"></div></td>
+                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-20"></div></td>
+                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-16 ml-auto"></div></td>
                                         </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                    ))
+                                ) : !data || data.data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={user.rol === 'ABOGADO' ? 7 : 6} className="px-6 py-12 text-center text-slate-400 italic font-bold">
+                                            No se encontraron registros.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    data.data.map((order: any) => {
+                                        const status = statusConfig[order.status as OrderStatus];
+                                        const StatusIcon = status.icon;
+                                        
+                                        return (
+                                            <tr key={order.id} className={`hover:bg-slate-50 transition-colors ${isPlaceholderData ? 'opacity-50' : ''}`}>
+                                                <td className="px-6 py-5">
+                                                    <div className="text-sm font-black text-slate-900">
+                                                        #{order.id.slice(0, 8)}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5 text-sm text-slate-600 font-black">
+                                                    {order.service.titulo}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="size-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black border border-blue-100">
+                                                            {order.user.nombre.charAt(0)}
+                                                        </div>
+                                                        <span className="text-sm text-slate-600 font-bold">{order.user.nombre}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black border uppercase tracking-tighter ${status.color}`}>
+                                                        <StatusIcon className="size-3" />
+                                                        {status.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5 text-sm text-slate-500 font-bold">
+                                                    {new Date(order.createdAt).toLocaleDateString('es-ES', { 
+                                                        day: '2-digit', 
+                                                        month: 'short', 
+                                                        year: 'numeric' 
+                                                    })}
+                                                </td>
+                                                {user.rol === 'ABOGADO' && (
+                                                    <td className="px-6 py-5 text-sm font-black text-red-500 text-right">
+                                                        -{formatUSD(order.financials?.comisionLawyer || 0)}
+                                                    </td>
+                                                )}
+                                                <td className="px-6 py-5 text-sm font-black text-slate-900 text-right">
+                                                    {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 {/* Paginación */}
                 {!isLoading && data && data.totalPages > 1 && (
                     <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between">
                         <p className="text-sm text-slate-500">
-                            Mostrando <span className="font-medium">{((filters.page - 1) * filters.limit) + 1}</span> a <span className="font-medium">{Math.min(filters.page * filters.limit, data.total)}</span> de <span className="font-medium">{data.total}</span> resultados
+                            Mostrando <span className="font-medium">{((filters.page - 1) * (filters.limit || 10)) + 1}</span> a <span className="font-medium">{Math.min(filters.page * (filters.limit || 10), data.total)}</span> de <span className="font-medium">{data.total}</span> resultados
                         </p>
                         <div className="flex items-center gap-2">
                             <button 
@@ -268,3 +217,4 @@ export function OrdersHistoryTable({ user }: Props) {
         </div>
     );
 }
+

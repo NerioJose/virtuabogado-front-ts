@@ -245,17 +245,37 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                       </span>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('asignar', order as any)} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                      <div className="flex justify-end gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <motion.button 
+                          whileHover={{ scale: 1.1, y: -2 }} 
+                          onClick={() => abrirModal('asignar', order as any)} 
+                          className="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                          title="Asignar Abogado"
+                        >
                           <FiUserPlus size={18} />
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('ver', order as any)} className={`p-2 rounded-lg transition-all ${isUnread ? 'bg-rose-500 text-white animate-pulse' : 'bg-azul-primario/5 text-azul-primario'}`}>
+                        <motion.button 
+                          whileHover={{ scale: 1.1, y: -2 }} 
+                          onClick={() => abrirModal('ver', order as any)} 
+                          className={`p-2 rounded-lg transition-all border shadow-sm ${isUnread ? 'bg-rose-500 text-white animate-pulse border-rose-600' : 'bg-azul-primario/10 text-azul-primario border-azul-primario/20 hover:bg-azul-primario hover:text-white'}`}
+                          title={isUnread ? 'Ver Mensaje Nuevo' : 'Ver Expediente'}
+                        >
                           {isUnread ? <FiMessageSquare size={18} /> : <FiEye size={18} />}
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('editar', order as any)} className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                        <motion.button 
+                          whileHover={{ scale: 1.1, y: -2 }} 
+                          onClick={() => abrirModal('editar', order as any)} 
+                          className="p-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200 hover:bg-azul-primario hover:text-white transition-all shadow-sm"
+                          title="Cambiar Estado"
+                        >
                           <FiEdit size={18} />
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('eliminar', order as any)} className="p-2 bg-rose-50 text-rose-500 rounded-lg">
+                        <motion.button 
+                          whileHover={{ scale: 1.1, y: -2 }} 
+                          onClick={() => abrirModal('eliminar', order as any)} 
+                          className="p-2 bg-rose-50 text-rose-500 rounded-lg border border-rose-100 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                          title="Eliminar Caso"
+                        >
                           <FiTrash2 size={18} />
                         </motion.button>
                       </div>

@@ -239,14 +239,29 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                       </div>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('ver', lawyer as any)} className="p-2 bg-azul-primario/5 text-azul-primario rounded-lg">
+                      <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          onClick={() => abrirModal('ver', lawyer as any)} 
+                          className="p-2 bg-azul-primario/10 text-azul-primario rounded-lg border border-azul-primario/10 hover:bg-azul-primario hover:text-white transition-all"
+                          title="Ver Detalle"
+                        >
                           <FiUserCheck size={18} />
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('editar', lawyer as any)} className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          onClick={() => abrirModal('editar', lawyer as any)} 
+                          className="p-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200/40 hover:bg-azul-primario hover:text-white transition-all"
+                          title="Editar Perfil"
+                        >
                           <FiEdit2 size={18} />
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('eliminar', lawyer as any)} className="p-2 bg-rose-50 text-rose-500 rounded-lg">
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          onClick={() => abrirModal('eliminar', lawyer as any)} 
+                          className="p-2 bg-rose-50 text-rose-500 rounded-lg border border-rose-100/50 hover:bg-rose-500 hover:text-white transition-all"
+                          title="Eliminar"
+                        >
                           <FiTrash2 size={18} />
                         </motion.button>
                       </div>

@@ -136,11 +136,11 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 data: { paymentId: session.id }
             });
 
-            return serializeFinance({ 
+            return { 
                 success: true, 
                 redirectUrl: session.checkoutUrl || session.url,
-                order: updatedOrder
-            });
+                order: { id: updatedOrder.id, status: updatedOrder.status }
+            };
         } catch (error) {
             console.error('🛑 [Zenobank Action Error]:', error);
             throw error;
@@ -157,11 +157,11 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
             }
         });
 
-        return serializeFinance({ 
+        return { 
             success: true, 
             message: 'Pago completado con éxito.',
-            order: finalOrder
-        });
+            order: { id: finalOrder.id, status: finalOrder.status }
+        };
     }
 
     throw new Error('Pasarela de pago no soportada.');

@@ -33,16 +33,12 @@ export class ZenobankService {
         console.log('💳 [Zenobank] Petición de Checkout:', request.orderId);
 
         try {
-            // Body exacto según requerimiento de producción
+            // Body exacto según documentación oficial de Zenobank API v1
             const body = {
                 orderId: String(request.orderId),
-                priceAmount: request.amount.toFixed(2), // REQUISITO: String de alta precisión (2 decimales)
+                priceAmount: request.amount.toFixed(2), // Requerimiento: String con decimales
                 priceCurrency: 'USD',
-                description: request.description,
-                customerEmail: request.customer.email,
-                customerName: request.customer.name,
-                successRedirectUrl: request.redirectUrls.success,
-                cancelRedirectUrl: request.redirectUrls.error
+                successRedirectUrl: request.redirectUrls.success
             };
 
             const response = await fetch(this.apiUrl, {

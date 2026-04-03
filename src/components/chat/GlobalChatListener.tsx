@@ -21,6 +21,7 @@ export default function GlobalChatListener() {
     const queryClient = useQueryClient();
     const { isSubscribed, subscribe, permission } = usePushNotifications();
     const [showPushBanner, setShowPushBanner] = useState(false);
+    const [isSubscribing, setIsSubscribing] = useState(false);
     const [toastMessage, setToastMessage] = useState<any>(null);
     const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const originalTitleRef = useRef<string>('');
@@ -28,20 +29,20 @@ export default function GlobalChatListener() {
     useEffect(() => {
         if (!user) return;
 
-        // Verificar si el usuario ya descartó este banner permanentemente
-        const bannerDismissed = localStorage.getItem('push_banner_dismissed');
-        if (bannerDismissed === 'true') return;
+        // DEBUG: Reset dismissal status if user is in testing
+        // const bannerDismissed = localStorage.getItem('push_banner_dismissed');
+        // if (bannerDismissed === 'true') return;
 
         // Mostrar banner de invitación a Push solo para Admin/Abogados que no estén suscritos
-        if ((user.rol === 'ADMIN' || user.rol === 'ABOGADO') && !isSubscribed && permission === 'default') {
-            const timer = setTimeout(() => setShowPushBanner(true), 5000); // 5s después del login
+        if ((user.rol === 'ADMIN' || user.rol === 'ABOGADO') && !isSubscribed) {
+            const timer = setTimeout(() => setShowPushBanner(true), 3000); // 3s después del login
             return () => clearTimeout(timer);
         }
-    }, [user, isSubscribed, permission]);
+    }, [user, isSubscribed]);
 
     const handleDismissBanner = () => {
         setShowPushBanner(false);
-        localStorage.setItem('push_banner_dismissed', 'true');
+        // localStorage.setItem('push_banner_dismissed', 'true');
     };
 
     useEffect(() => {
@@ -243,12 +244,28 @@ export default function GlobalChatListener() {
                             </div>
                                 <button
                                     onClick={async () => {
-                                        const success = await subscribe();
-                                        if (success) setShowPushBanner(false);
+                                        if (isSubscribing) return;
+                                        setIsSubscribing(true);
+                                        try {
+                                            const success = await subscribe();
+                                            if (success) {
+                                                setShowPushBanner(false);
+                                                alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
+                                            } else {
+                                                alert('⚠️ No se pudo completar la suscripción. Revisa los permisos de tu navegador.');
+                                            }
+                                        } catch (err) {
+                                            alert('❌ Error crítico: ' + (err instanceof Error ? err.message : String(err)));
+                                        } finally {
+                                            setIsSubscribing(false);
+                                        }
                                     }}
-                                    className="w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-all active:scale-95 shadow-lg relative z-10 border border-vinotinto/20"
+                                    disabled={isSubscribing}
+                                    className={`w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg relative z-10 border border-vinotinto/20 ${
+                                        isSubscribing ? 'opacity-50 cursor-wait' : 'hover:bg-gray-100'
+                                    }`}
                                 >
-                                    Activar Notificaciones
+                                    {isSubscribing ? 'Configurando...' : 'Activar Notificaciones'}
                                 </button>
                         </motion.div>
                     )}

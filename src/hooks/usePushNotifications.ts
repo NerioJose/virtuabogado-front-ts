@@ -49,12 +49,22 @@ export function usePushNotifications() {
    */
   const subscribe = useCallback(async () => {
     try {
+      if (!VAPID_PUBLIC_KEY) {
+        const errorMsg = '❌ No se encontró la llave pública VAPID en las variables de entorno.';
+        console.error(errorMsg);
+        alert(errorMsg);
+        return false;
+      }
+
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.error('❌ Este navegador no soporta Notificaciones Push.');
+        const errorMsg = '❌ Este navegador no soporta Notificaciones Push.';
+        console.error(errorMsg);
+        alert(errorMsg);
         return false;
       }
 
       setIsLoading(true);
+      console.log('📡 [Push] Iniciando proceso de solicitud de permisos...');
 
       // 1. Solicitar permiso al sistema operativo/navegador
       const result = await Notification.requestPermission();

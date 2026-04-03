@@ -182,8 +182,8 @@ export default function GlobalChatListener() {
                                 else router.push('/admin');
                             }}
                         >
-                            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-azul-primario/10 to-transparent border-b border-gray-100">
-                                <div className="flex items-center gap-2 text-azul-primario font-bold text-xs uppercase tracking-widest">
+                            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-vinotinto/10 to-transparent border-b border-gray-100">
+                                <div className="flex items-center gap-2 text-vinotinto font-bold text-xs uppercase tracking-widest">
                                     <FiMessageCircle className="animate-bounce" />
                                     <span>Notificación</span>
                                 </div>
@@ -204,7 +204,7 @@ export default function GlobalChatListener() {
                                 <p className="line-clamp-2 leading-relaxed opacity-80 italic">
                                     "{toastMessage.content.startsWith('http') ? '📷 Imagen o archivo enviado' : toastMessage.content}"
                                 </p>
-                                <p className="text-[10px] text-azul-primario mt-3 font-semibold text-right uppercase tracking-tighter">
+                                <p className="text-[10px] text-vinotinto mt-3 font-semibold text-right uppercase tracking-tighter">
                                     Haz clic para responder →
                                 </p>
                             </div>
@@ -219,9 +219,12 @@ export default function GlobalChatListener() {
                             initial={{ x: 300, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: 300, opacity: 0 }}
-                            className="pointer-events-auto w-80 bg-azul-primario text-white p-5 rounded-2xl shadow-2xl flex flex-col gap-3 border border-white/20"
+                            className="pointer-events-auto w-80 bg-gradient-to-br from-vinotinto to-[#7a1b1e] text-white p-5 rounded-2xl shadow-2xl flex flex-col gap-3 border border-white/20 relative overflow-hidden"
                         >
-                            <div className="flex items-start justify-between">
+                            {/* Decorative element for premium feel */}
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+                            
+                            <div className="flex items-start justify-between relative z-10">
                                 <div className="p-2 bg-white/20 rounded-lg">
                                     <FiBell />
                                 </div>
@@ -238,15 +241,15 @@ export default function GlobalChatListener() {
                                     Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.
                                 </p>
                             </div>
-                            <button
-                                onClick={async () => {
-                                    const success = await subscribe();
-                                    if (success) setShowPushBanner(false);
-                                }}
-                                className="w-full bg-white text-azul-primario font-bold py-2.5 rounded-xl hover:bg-azul-claro hover:text-white transition-all active:scale-95 shadow-lg"
-                            >
-                                Activar Notificaciones
-                            </button>
+                                <button
+                                    onClick={async () => {
+                                        const success = await subscribe();
+                                        if (success) setShowPushBanner(false);
+                                    }}
+                                    className="w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-all active:scale-95 shadow-lg relative z-10 border border-vinotinto/20"
+                                >
+                                    Activar Notificaciones
+                                </button>
                         </motion.div>
                     )}
                 </AnimatePresence>

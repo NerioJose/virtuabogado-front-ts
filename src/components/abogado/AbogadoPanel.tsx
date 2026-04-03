@@ -230,7 +230,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
                     </div>
 				</header>
 
-				<main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+				<main className="flex-1 px-2 py-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
 					{/* Welcome Header (Desktop) */}
 					<header className="hidden lg:flex justify-between items-center mb-10">
 						<div>

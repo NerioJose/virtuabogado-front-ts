@@ -256,8 +256,8 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
       </div>
 
       {/* VISTA DESKTOP (Tabla) */}
-      <div className="hidden md:block overflow-hidden rounded-3xl border border-slate-100 shadow-sm bg-white">
-        <table className="min-w-full divide-y divide-slate-100">
+      <div className="hidden md:block overflow-x-auto rounded-3xl border border-slate-100 shadow-sm bg-white custom-scrollbar">
+        <table className="min-w-full lg:min-w-[900px] divide-y divide-slate-100">
           <thead className="bg-slate-50/50">
             <tr>
               <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso</th>

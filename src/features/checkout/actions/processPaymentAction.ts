@@ -20,6 +20,19 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         throw new Error('Debe iniciar sesión para realizar la compra.');
     }
 
+    // 0. SINCRONIZACIÓN DE USUARIO (Evita error de Foreign Key 'Order_userId_fkey')
+    // Aseguramos que el usuario autenticado en Supabase Auth exista físicamente en nuestro public.User
+    await prisma.user.upsert({
+        where: { id: user.id },
+        update: {},
+        create: {
+            id: user.id,
+            email: user.email!,
+            nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
+            rol: 'CLIENTE',
+        }
+    });
+
     // 1. VALIDACIÓN ZERO-TRUST
     const service = await prisma.service.findUnique({
         where: { id: serviceId }

@@ -298,7 +298,19 @@ export async function POST(request: Request) {
             finalUserId = userId;
         }
 
-        console.log('📦 API: Creating order for user:', finalUserId);
+        console.log('📦 API: Syncing user and creating order for user:', finalUserId);
+
+        // 0. SINCRONIZACIÓN DE USUARIO (Evita error de Foreign Key 'Order_userId_fkey')
+        await prisma.user.upsert({
+            where: { id: finalUserId },
+            update: {},
+            create: {
+                id: finalUserId,
+                email: user.email || 'correo@pendiente.com',
+                nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
+                rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
+            }
+        });
 
         // 👨‍⚖️ AUTO-ASSIGNMENT: If only one lawyer is active, assign automatically
         const activeLawyers = await prisma.user.findMany({

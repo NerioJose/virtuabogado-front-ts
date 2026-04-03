@@ -67,7 +67,7 @@ interface ModalContainerProps {
 }
 
 // Función para obtener campos por sección
-const obtenerCamposPorSeccion = (seccion: string) => {
+const obtenerCamposPorSeccion = (seccion: string, tipo: string) => {
 	switch (seccion) {
 		case 'abogados':
 			return [
@@ -91,6 +91,14 @@ const obtenerCamposPorSeccion = (seccion: string) => {
 					type: 'text',
 					required: false,
 				},
+				...(tipo === 'crear' ? [
+					{
+						key: 'password',
+						label: 'Contraseña inicial',
+						type: 'password',
+						required: true,
+					}
+				] : [])
 			];
 		case 'clientes':
 			return [
@@ -104,6 +112,14 @@ const obtenerCamposPorSeccion = (seccion: string) => {
 				{ key: 'telefono', label: 'Teléfono', type: 'tel', required: true },
 				{ key: 'direccion', label: 'Dirección', type: 'text', required: false },
 				{ key: 'dni', label: 'DNI/RUC', type: 'text', required: false },
+				...(tipo === 'crear' ? [
+					{
+						key: 'password',
+						label: 'Contraseña inicial',
+						type: 'password',
+						required: true,
+					}
+				] : [])
 			];
 		case 'casos':
 			return [
@@ -216,7 +232,7 @@ export default function ModalContainer({
 			const initialForm: any = { ...elemento };
 
 			// Mapear campos para ver cuáles son de tipo 'date'
-			const campos = obtenerCamposPorSeccion(seccion);
+			const campos = obtenerCamposPorSeccion(seccion, tipo);
 			campos.forEach(campo => {
 				if (campo.type === 'date' && initialForm[campo.key]) {
 					try {
@@ -233,7 +249,7 @@ export default function ModalContainer({
 			setFormData(initialForm);
 		} else if (tipo === 'crear') {
 			// Inicializar formulario vacío para crear
-			const campos = obtenerCamposPorSeccion(seccion);
+			const campos = obtenerCamposPorSeccion(seccion, tipo);
 			const initialData: FormDataType = {};
 			campos.forEach((campo) => {
 				initialData[campo.key] = campo.type === 'number' ? 0 : '';
@@ -264,7 +280,7 @@ export default function ModalContainer({
 
 	// Función para validar el formulario
 	const validateForm = useCallback((): boolean => {
-		const campos = obtenerCamposPorSeccion(seccion);
+		const campos = obtenerCamposPorSeccion(seccion, tipo);
 		const errors: Record<string, string> = {};
 
 		// Para 'asignar', solo validamos que haya un abogado seleccionado
@@ -303,7 +319,7 @@ export default function ModalContainer({
 
 		setValidationErrors(errors);
 		return Object.keys(errors).length === 0;
-	}, [formData, seccion]);
+	}, [formData, seccion, tipo]);
 
 	// Función para enviar el formulario
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -657,7 +673,7 @@ export default function ModalContainer({
 								)}
 
 								<div className="space-y-4">
-									{obtenerCamposPorSeccion(seccion).map(renderCampo)}
+									{obtenerCamposPorSeccion(seccion, tipo).map(renderCampo)}
 								</div>
 							</form>
 

@@ -102,6 +102,34 @@ export function useAuth() {
         }
     };
 
+    /**
+     * Cambiar la contraseña del usuario actual
+     */
+    const changePassword = async (currentPassword: string, newPassword: string) => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // 1. Verificar la contraseña actual
+            const isValid = await authService.verifyPassword(currentPassword);
+            if (!isValid) {
+                throw new Error('La contraseña actual es incorrecta');
+            }
+
+            // 2. Actualizar a la nueva contraseña
+            await authService.updatePassword(newPassword);
+            
+            return true;
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'Error al cambiar la contraseña';
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         user,
         isAuthenticated,
@@ -110,5 +138,6 @@ export function useAuth() {
         login,
         register,
         logout,
+        changePassword,
     };
 }

@@ -11,12 +11,15 @@ import {
 	FiCheck,
 	FiClock,
 	FiX,
+	FiLock,
+	FiShield,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
 import { createClient } from '@/utils/supabase/client';
 import { lawyersService } from '@/features/lawyers/services/lawyers.service';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 interface PerfilAbogadoPanelProps {
 	abogado: {
@@ -46,6 +49,12 @@ export default function PerfilAbogadoPanel({
 	});
 	const [guardando, setGuardando] = useState(false);
 	const [exito, setExito] = useState(false);
+	const { changePassword, isLoading: cambiandopassword } = useAuth();
+	const [passwords, setPasswords] = useState({
+		actual: '',
+		nueva: '',
+		confirmar: ''
+	});
 
 	const [notificacion, setNotificacion] = useState<{tipo: 'success' | 'info' | 'error', mensaje: string} | null>(null);
 
@@ -139,11 +148,31 @@ export default function PerfilAbogadoPanel({
 		}
 	};
 
+	const handlePasswordChange = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (passwords.nueva !== passwords.confirmar) {
+			setNotificacion({ tipo: 'error', mensaje: 'Las nuevas contraseñas no coinciden' });
+			return;
+		}
+		if (passwords.nueva.length < 6) {
+			setNotificacion({ tipo: 'error', mensaje: 'La contraseña debe tener al menos 6 caracteres' });
+			return;
+		}
+
+		try {
+			await changePassword(passwords.actual, passwords.nueva);
+			setNotificacion({ tipo: 'success', mensaje: 'Contraseña actualizada correctamente' });
+			setPasswords({ actual: '', nueva: '', confirmar: '' });
+		} catch (error: any) {
+			setNotificacion({ tipo: 'error', mensaje: error.message || 'Error al actualizar contraseña' });
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			{/* Notificación */}
 			{notificacion && (
-				<div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-right-4 bg-azul-primario text-white`}>
+				<div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-right-4 ${notificacion.tipo === 'error' ? 'bg-rose-500' : 'bg-azul-primario'} text-white`}>
 					<FiCheck />
 					<span>{notificacion.mensaje}</span>
 				</div>
@@ -354,6 +383,74 @@ export default function PerfilAbogadoPanel({
 							</div>
 						</div>
 					</div>
+				</div>
+			</div>
+
+			{/* Nueva sección de seguridad */}
+			<div className="bg-white rounded-lg shadow-sm overflow-hidden">
+				<div className="p-6 border-b border-gray-100 flex items-center gap-3">
+					<div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+						<FiShield size={20} />
+					</div>
+					<div>
+						<h3 className="text-lg font-bold text-gray-800">Seguridad de la cuenta</h3>
+						<p className="text-xs text-gray-500">Cambia tu contraseña para mantener tu cuenta segura</p>
+					</div>
+				</div>
+				<div className="p-6">
+					<form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								<FiLock className="inline-block mr-2 text-gray-400" />
+								Contraseña actual
+							</label>
+							<input
+								type="password"
+								required
+								value={passwords.actual}
+								onChange={(e) => setPasswords({...passwords, actual: e.target.value})}
+								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-azul-primario focus:ring-azul-primario sm:text-sm"
+								placeholder="••••••••"
+							/>
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Nueva contraseña
+								</label>
+								<input
+									type="password"
+									required
+									value={passwords.nueva}
+									onChange={(e) => setPasswords({...passwords, nueva: e.target.value})}
+									className="block w-full rounded-md border-gray-300 shadow-sm focus:border-azul-primario focus:ring-azul-primario sm:text-sm"
+									placeholder="••••••••"
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Confirmar nueva contraseña
+								</label>
+								<input
+									type="password"
+									required
+									value={passwords.confirmar}
+									onChange={(e) => setPasswords({...passwords, confirmar: e.target.value})}
+									className="block w-full rounded-md border-gray-300 shadow-sm focus:border-azul-primario focus:ring-azul-primario sm:text-sm"
+									placeholder="••••••••"
+								/>
+							</div>
+						</div>
+						<div className="pt-2">
+							<button
+								type="submit"
+								disabled={cambiandopassword}
+								className="px-6 py-2.5 bg-rose-600 text-white rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 disabled:opacity-50"
+							>
+								{cambiandopassword ? 'Actualizando...' : 'Actualizar contraseña'}
+							</button>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>

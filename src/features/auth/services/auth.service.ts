@@ -85,6 +85,43 @@ export class AuthService {
     }
 
     /**
+     * Verificar contraseña actual (Re-autenticación)
+     */
+    async verifyPassword(currentPassword: string): Promise<boolean> {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user || !user.email) throw new Error("Usuario no autenticado");
+
+        const { error } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: currentPassword
+        });
+
+        if (error) {
+            console.error('Error al verificar contraseña:', error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Actualizar contraseña del usuario actual
+     */
+    async updatePassword(newPassword: string): Promise<void> {
+        const supabase = createClient();
+        const { error } = await supabase.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) {
+            console.error('Error al actualizar contraseña:', error);
+            throw new Error(error.message);
+        }
+    }
+
+    /**
      * Helper para mapear usuario de Supabase a entidad User del dominio
      */
     public mapSupabaseUserToEntity(supabaseUser: any): User {

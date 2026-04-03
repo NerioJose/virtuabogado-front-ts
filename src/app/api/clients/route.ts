@@ -122,7 +122,7 @@ export async function POST(request: Request) {
         let userId: string;
 
         // 1. Intentar crear en Supabase Auth
-        const tempPassword = `VirtuClient2024!_${Math.random().toString(36).slice(-4)}`;
+        const tempPassword = body.password || `VirtuClient2024!_${Math.random().toString(36).slice(-4)}`;
         
         const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
             email,
@@ -142,10 +142,15 @@ export async function POST(request: Request) {
                 
                 userId = existingUser.id;
 
-                // Actualizar metadatos del usuario existente para asegurar rol CLIENTE
-                await adminClient.auth.admin.updateUserById(userId, {
+                // Actualizar metadatos y contraseña si se proporcionó
+                const updateData: any = {
                     user_metadata: { ...existingUser.user_metadata, rol: 'CLIENTE', nombre }
-                });
+                };
+                if (body.password) {
+                    updateData.password = body.password;
+                }
+
+                await adminClient.auth.admin.updateUserById(userId, updateData);
             } else {
                 console.error('❌ Supabase Auth error:', authError);
                 return NextResponse.json({ error: authError.message }, { status: 400 });

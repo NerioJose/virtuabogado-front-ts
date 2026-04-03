@@ -13,13 +13,17 @@ import {
   FiChevronRight,
   FiFileText,
   FiMenu,
-  FiUser
+  FiUser,
+  FiLock,
+  FiShield,
+  FiCheck
 } from 'react-icons/fi';
 import Link from 'next/link';
 import Image from 'next/image';
 import ClientSidebar from './ClientSidebar';
 import ClientStats from './ClientStats';
 import { getStatusColor, getStatusText, type ServicioCliente } from '@/features/orders';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 interface ClientPanelProps {
   user: any;
@@ -40,6 +44,11 @@ export default function ClientPanel({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'>('todos');
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  
+  // Estado para cambio de contraseña
+  const { changePassword, isLoading: cambiandopassword } = useAuth();
+  const [passwords, setPasswords] = useState({ actual: '', nueva: '', confirmar: '' });
+  const [notificacion, setNotificacion] = useState<{ tipo: 'success' | 'error', mensaje: string } | null>(null);
 
   // Estadísticas para el componente ClientStats
   const statsData = useMemo(() => ({
@@ -57,9 +66,30 @@ export default function ClientPanel({
       const coincideEstado = filtroEstado === 'todos' || s.estado === filtroEstado;
       const coincideBusqueda = s.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase()) || 
                               s.numeroOrden.toLowerCase().includes(terminoBusqueda.toLowerCase());
-      return coincideEstado && coincideBusqueda;
+    return coincideEstado && coincideBusqueda;
     });
   }, [servicios, filtroEstado, terminoBusqueda]);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwords.nueva !== passwords.confirmar) {
+      setNotificacion({ tipo: 'error', mensaje: 'Las nuevas contraseñas no coinciden' });
+      return;
+    }
+    if (passwords.nueva.length < 6) {
+      setNotificacion({ tipo: 'error', mensaje: 'La contraseña debe tener al menos 6 caracteres' });
+      return;
+    }
+
+    try {
+      await changePassword(passwords.actual, passwords.nueva);
+      setNotificacion({ tipo: 'success', mensaje: 'Contraseña actualizada correctamente' });
+      setPasswords({ actual: '', nueva: '', confirmar: '' });
+      setTimeout(() => setNotificacion(null), 5000);
+    } catch (error: any) {
+      setNotificacion({ tipo: 'error', mensaje: error.message || 'Error al actualizar contraseña' });
+    }
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -329,6 +359,79 @@ export default function ClientPanel({
                       Editar Perfil
                     </button>
                   </div>
+                </div>
+
+                {/* Sección de Seguridad */}
+                <div className="mt-10 pt-10 border-t border-slate-100">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
+                      <FiShield size={24} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-xl font-black text-slate-800 tracking-tight uppercase">Seguridad</h3>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Protege tu cuenta VirtuAbogado</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handlePasswordChange} className="space-y-5 text-left max-w-md mx-auto md:mx-0">
+                    {notificacion && (
+                      <div className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-bold ${notificacion.tipo === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
+                        {notificacion.tipo === 'success' ? <FiCheckCircle /> : <FiLock />}
+                        {notificacion.mensaje}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Contraseña Actual</label>
+                      <div className="relative">
+                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                        <input 
+                          type="password" 
+                          required
+                          value={passwords.actual}
+                          onChange={(e) => setPasswords({...passwords, actual: e.target.value})}
+                          placeholder="••••••••"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition-all font-bold text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Nueva Contraseña</label>
+                        <input 
+                          type="password" 
+                          required
+                          value={passwords.nueva}
+                          onChange={(e) => setPasswords({...passwords, nueva: e.target.value})}
+                          placeholder="••••••••"
+                          className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition-all font-bold text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Confirmar Nueva</label>
+                        <input 
+                          type="password" 
+                          required
+                          value={passwords.confirmar}
+                          onChange={(e) => setPasswords({...passwords, confirmar: e.target.value})}
+                          placeholder="••••••••"
+                          className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition-all font-bold text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={cambiandopassword}
+                        className="w-full py-5 bg-azul-primario text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-azul-primario/20 hover:shadow-azul-primario/40 transition-all disabled:opacity-50"
+                      >
+                        {cambiandopassword ? 'Procesando...' : 'Actualizar Credenciales'}
+                      </motion.button>
+                    </div>
+                  </form>
                 </div>
               </motion.div>
             )}

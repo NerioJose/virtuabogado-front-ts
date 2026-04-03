@@ -15,7 +15,7 @@ export async function getPendingPayoutsSummary() {
                 status: 'COMPLETADO',
                 payoutId: null,
                 lawyerId: { not: null }
-            } as any,
+            },
             include: {
                 lawyer: {
                     select: {

@@ -254,7 +254,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             value={formData.telefono}
             onChange={handleChange}
             className={`w-full px-4 py-3 border ${errors.telefono ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
-            placeholder="+34 XXX XXX XXX"
+            placeholder="+58 XXX XXX XXX"
           />
           {errors.telefono && <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>}
         </div>

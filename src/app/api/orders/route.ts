@@ -443,6 +443,12 @@ export async function PUT(request: Request) {
         });
 
         // 📡 Broadcast a todos los dashboards para reactividad instantánea
+        broadcastOrderUpdate({
+            orderId: updatedOrder.id,
+            userId: updatedOrder.userId,
+            lawyerId: updatedOrder.lawyerId,
+            status: updatedOrder.status,
+            eventType: 'updated'
         });
 
         // 🔔 NOTIFICACIONES PUSH TÁCTICAS

@@ -13,9 +13,9 @@ export async function getPendingPayoutsSummary() {
         const pendingOrders = await prisma.order.findMany({
             where: {
                 status: 'COMPLETADO',
-                // payoutId: null,
+                payoutId: null,
                 lawyerId: { not: null }
-            },
+            } as any,
             include: {
                 lawyer: {
                     select: {
@@ -84,10 +84,10 @@ export async function createPayout(data: {
                 where: {
                     id: { in: data.orderIds },
                     lawyerId: data.lawyerId,
-                    // payoutId: null
+                    payoutId: null
                 },
                 data: {
-                    // payoutId: newPayout.id
+                    payoutId: newPayout.id
                 }
             });
 

@@ -76,17 +76,21 @@ export async function sendPushNotification(userId: string, options: PushNotifica
 /**
  * Notificación Especial: ¡Nueva Venta Confirmada! (Solo para Admin) 💰🔔
  */
-export async function notifyNewSale(orderId: string, total: string) {
+export async function notifyNewSale(orderId: string, total: string, needsAssignment: boolean = false) {
   // Buscar a todos los ADMINS
   const admins = await prisma.user.findMany({
     where: { rol: 'ADMIN', activo: true },
     select: { id: true }
   });
 
+  const body = needsAssignment 
+    ? `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - ¡ATENCIÓN: REQUIERE ASIGNAR ABOGADO!`
+    : `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - La tarea ya ha sido asignada.`;
+
   const promises = admins.map(admin => 
     sendPushNotification(admin.id, {
-      title: '💰 ¡Nueva Venta en VirtuAbogado!',
-      body: `Se ha confirmado un pago de $${total}. Orden #${orderId}`,
+      title: needsAssignment ? '🚨 ASIGNACIÓN PENDIENTE ⚖️' : '💰 ¡Nueva Venta en VirtuAbogado!',
+      body: body,
       url: '/admin',
       tag: `sale-${orderId}`,
       icon: '/logo/logo_sf_1.png'
@@ -102,7 +106,7 @@ export async function notifyNewSale(orderId: string, total: string) {
 export async function notifyNewCase(lawyerId: string, orderId: string) {
   await sendPushNotification(lawyerId, {
     title: '⚖️ Nuevo Caso Asignado',
-    body: `Se te ha asignado un nuevo caso legal. Orden #${orderId}`,
+    body: `Se te ha asignado el caso #${orderId}. ¡Entra para ver los detalles y comenzar a trabajar!`,
     url: '/abogado',
     tag: `case-${orderId}`,
     icon: '/logo/logo_sf_1.png'

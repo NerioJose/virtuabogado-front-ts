@@ -101,9 +101,9 @@ export async function POST(req: NextRequest) {
             });
 
             // 🔔 NOTIFICACIONES PUSH TÁCTICAS
-            // 1. Alerta de Venta para Admin (Efecto Shopify)
+            // 1. Alerta de Venta para Admin (Efecto Shopify + Alerta de Gestión)
             console.log(`💰 [Webhook Push] Notificando venta de Orden #${orderId}`);
-            notifyNewSale(orderId, currentOrder.total.toString()).catch(err => 
+            notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId).catch(err => 
                 console.error('❌ Error enviando push de venta:', err)
             );
 

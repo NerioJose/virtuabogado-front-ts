@@ -53,10 +53,9 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // 🏛️ RESCUE LOGIC: Fetch all users and filter in-memory to handle legacy casing (Enum validation safety)
+        console.log('🏛️ [API Clients] Fetching active users for administrative management...');
         const allUsers = await prisma.user.findMany({
-            // REMOVED: where: { activo: true }, -> Allow Admin to see all clients (Active/Inactive)
-            // REMOVED FOR STABILITY: include: { orders: true }, -> Avoid heavy join causing 500s
+            where: { activo: true },
             orderBy: { createdAt: 'desc' }
         });
 

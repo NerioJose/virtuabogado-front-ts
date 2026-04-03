@@ -122,49 +122,28 @@ export async function DELETE(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // 1. Limpieza de relaciones para evitar errores de integridad referencial
-        console.log(`🧹 API: Iniciando limpieza de relaciones para el usuario ${id}...`);
-
-        // Desvincular órdenes (para no perder el historial de ventas)
-        await prisma.order.updateMany({
-            where: { lawyerId: id },
-            data: { lawyerId: null }
-        });
-
-        // Borrar pagos de abogado (usando as any como en payoutActions.ts para saltar desajuste de tipado)
-        await (prisma as any).lawyerPayout.deleteMany({
-            where: { lawyerId: id }
-        });
-
-        // Borrar mensajes enviados
-        await prisma.message.deleteMany({
-            where: { senderId: id }
-        });
-
-        // Borrar documentos subidos
-        await prisma.document.deleteMany({
-            where: { uploaderId: id }
-        });
-
-        // 2. Borrado Real en Prisma
-        console.log(`🗑️ API: Ejecutando borrado real en base de datos para ID: ${id}`);
-        const result = await prisma.user.delete({
+        // 1. Archivado Lógico (Soft Delete)
+        // Mantenemos Órdenes, Mensajes, Documentos y Pagos intactos para preservar el historial de la plataforma
+        console.log(`🏛️ API: Archivado lógico del abogado ID: ${id}`);
+        const result = await prisma.user.update({
             where: { id },
+            data: { activo: false },
         });
 
-        // 3. Borrado en Supabase Auth (Opcional, usando Admin Client)
+        // 2. Bloqueo de acceso en Supabase Auth (Opcional pero recomendado para ex-colaboradores)
         try {
             const { createAdminClient } = await import('@/utils/supabase/admin');
             const adminClient = createAdminClient();
+            // Eliminamos de Auth para impedir el login, pero el registro en la DB (User table) permanece para trazabilidad
             await adminClient.auth.admin.deleteUser(id);
-            console.log(`✅ API: Usuario ${id} eliminado también de Supabase Auth.`);
+            console.log(`✅ API: Usuario ${id} eliminado de Supabase Auth para bloquear acceso.`);
         } catch (authError) {
-            console.warn(`⚠️ API: No se pudo eliminar de Auth, pero el registro en DB fue borrado.`, authError);
+            console.warn(`⚠️ API: No se pudo eliminar de Auth, pero el registro en DB fue archivado correctamente.`, authError);
         }
 
         return NextResponse.json({ 
             success: true,
-            message: 'Abogado y sus dependencias eliminados correctamente',
+            message: 'Abogado archivado correctamente. Toda su información histórica ha sido preservada.',
             id: result.id
         });
     } catch (error) {

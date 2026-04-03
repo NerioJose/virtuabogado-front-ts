@@ -130,61 +130,46 @@ export async function DELETE(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // 1. Limpieza de relaciones en cascada
-        console.log(`🧹 API: Limpiando órdenes y dependencias para el cliente ${id}...`);
-
-        // Obtener IDs de las órdenes para limpieza manual si fuera necesario (aunque Prisma debería manejarlo)
-        const userOrders = await prisma.order.findMany({
-            where: { userId: id },
-            select: { id: true }
+        // 1. Archivado Lógico y Depuración de Datos Sensibles
+        // Mantenemos las Órdenes para preservar el historial de la plataforma, pero limpiamos datos personales
+        console.log(`🏛️ API: Archivado y depuración de datos para el cliente ID: ${id}`);
+        
+        // Primero, eliminar los documentos físicos/registros de archivos (solicitado: "no los documentos")
+        await prisma.document.deleteMany({
+            where: { 
+                OR: [
+                    { uploaderId: id },
+                    { order: { userId: id } }
+                ]
+            }
         });
-        const orderIds = userOrders.map(o => o.id);
 
-        if (orderIds.length > 0) {
-            // Borrar reseñas de sus órdenes
-            await prisma.review.deleteMany({
-                where: { orderId: { in: orderIds } }
-            });
-
-            // Borrar mensajes asociados a sus órdenes
-            await prisma.message.deleteMany({
-                where: { orderId: { in: orderIds } }
-            });
-
-            // Borrar documentos asociados a sus órdenes
-            await prisma.document.deleteMany({
-                where: { orderId: { in: orderIds } }
-            });
-
-            // Borrar las órdenes
-            await prisma.order.deleteMany({
-                where: { userId: id }
-            });
-        }
-
-        // También borrar mensajes y documentos donde el usuario sea el remitente directo (fuera de órdenes si existen)
-        await prisma.message.deleteMany({ where: { senderId: id } });
-        await prisma.document.deleteMany({ where: { uploaderId: id } });
-
-        // 2. Borrado Real en Prisma
-        console.log(`🗑️ API: Ejecutando borrado real para el cliente ID: ${id}`);
-        await prisma.user.delete({
+        // Segundo, actualizar el usuario para inactivarlo y vaciar PII (solicitado: "no los datos")
+        await prisma.user.update({
             where: { id },
+            data: { 
+                activo: false,
+                dni: null,
+                direccion: null,
+                telefono: null
+                // Mantenemos nombre y email para trazabilidad básica en las órdenes antiguas
+            },
         });
 
-        // 3. Borrado en Supabase Auth (Opcional)
+        // 2. Bloqueo de acceso en Supabase Auth
         try {
             const { createAdminClient } = await import('@/utils/supabase/admin');
             const adminClient = createAdminClient();
+            // Eliminamos de Auth para impedir el login, pero el registro en DB permanece para trazabilidad financiera
             await adminClient.auth.admin.deleteUser(id);
-            console.log(`✅ API: Usuario ${id} borrado de Supabase Auth.`);
+            console.log(`✅ API: Acceso bloqueado para el cliente ${id} en Supabase Auth.`);
         } catch (authError) {
-            console.warn(`⚠️ API: No se pudo borrar de Auth, pero el registro en DB fue eliminado.`, authError);
+            console.warn(`⚠️ API: No se pudo eliminar de Auth, pero el cliente fue depurado en DB.`, authError);
         }
 
         return NextResponse.json({ 
             success: true,
-            message: 'Cliente y todo su historial eliminados correctamente' 
+            message: 'Cliente archivado y datos sensibles depurados. Historial de casos preservado.' 
         });
     } catch (error) {
         console.error('❌ API Error deleting client:', error);

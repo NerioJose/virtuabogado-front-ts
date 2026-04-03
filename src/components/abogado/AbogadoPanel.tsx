@@ -336,7 +336,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 					)}
 
 					{/* DYNAMIC CONTENT AREA */}
-					<div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-100 p-3 md:p-8 min-h-[600px] relative">
+					<div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-100 p-3 md:p-8 min-h-[600px] relative overflow-hidden max-w-full">
 						{abogado ? (
 							<Suspense fallback={<div className="flex justify-center p-20"><FiLoader className="animate-spin text-azul-primario" size={40} /></div>}>
 							{seccionActiva === 'casos' && (
@@ -372,7 +372,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 								<PerfilAbogadoPanel abogado={abogado} />
 							)}
 							{seccionActiva === 'historial' && (
-								<div className="py-4 px-2">
+								<div className="py-4">
 									<h2 className="text-2xl font-black text-gray-800 mb-8 flex items-center gap-3">
 										<div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center">
                                             <FiClock className="text-azul-primario" />

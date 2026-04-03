@@ -167,7 +167,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
 
         {/* Filtros Adaptativos */}
         <div className="w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-          <div className="flex items-center gap-2 min-w-max">
+          <div className="flex items-center gap-2 w-full">
             <div className="p-2 bg-slate-100 rounded-lg text-slate-500">
               <FiFilter size={16} />
             </div>

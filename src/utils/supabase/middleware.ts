@@ -70,13 +70,13 @@ export async function updateSession(request: NextRequest) {
 
     // 2. REDIRECCIÓN SI ESTÁ AUTENTICADO PERO ENTRA A LOGIN/REGISTRO
     if (user && (currentPath === '/login' || currentPath === '/register')) {
-        const userRole = user.user_metadata?.rol || 'CLIENTE';
+        const userRole = (user.user_metadata?.rol || 'CLIENTE').toUpperCase();
 
         const url = request.nextUrl.clone();
         switch (userRole) {
             case 'ADMIN': url.pathname = '/admin'; break;
             case 'ABOGADO': url.pathname = '/abogado'; break;
-            default: url.pathname = '/clientes'; break;
+            default: url.pathname = '/mis-servicios'; break;
         }
         return NextResponse.redirect(url);
     }

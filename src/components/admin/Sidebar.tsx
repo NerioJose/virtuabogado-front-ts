@@ -1,5 +1,6 @@
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard } from 'react-icons/fi';
 import Image from 'next/image';
+import Link from 'next/link';
 import { SeccionAdmin } from '@/types/index';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
@@ -48,14 +49,16 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             animate={{ opacity: 1, x: 0 }}
             className="flex-1 flex justify-center lg:justify-start"
           >
-            <Image 
-              src="/logo/logo_sf_1.png" 
-              alt="VirtuAbogado Logo" 
-              width={140} 
-              height={48} 
-              priority
-              className="drop-shadow-md"
-            />
+            <Link href="/" className="transition-transform hover:scale-105 active:scale-95">
+              <Image 
+                src="/logo/logo_sf_1.png" 
+                alt="VirtuAbogado Logo" 
+                width={140} 
+                height={48} 
+                priority
+                className="drop-shadow-md"
+              />
+            </Link>
           </motion.div>
           <button 
             onClick={onClose}

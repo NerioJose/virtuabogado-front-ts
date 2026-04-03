@@ -35,11 +35,10 @@ export function useAuth() {
                     ? ROUTES.ADMIN
                     : user.rol === UserRole.ABOGADO
                         ? ROUTES.ABOGADO
-                        : ROUTES.HOME;
+                        : ROUTES.MIS_SERVICIOS;
 
+            router.refresh();
             router.push(redirectPath);
-            // Removed router.refresh() - it causes unnecessary delay. Next.js automatically fetches fresh data on route change.
-
             return user;
         } catch (err) {
             const errorMessage =
@@ -64,11 +63,10 @@ export function useAuth() {
 
             // Redirigir según el rol
             const redirectPath =
-                user.rol === UserRole.ABOGADO ? ROUTES.ABOGADO : ROUTES.HOME;
+                user.rol === UserRole.ABOGADO ? ROUTES.ABOGADO : ROUTES.MIS_SERVICIOS;
 
+            router.refresh();
             router.push(redirectPath);
-            // Removed router.refresh() - it causes unnecessary delay. Next.js automatically fetches fresh data on route change.
-
             return user;
         } catch (err) {
             const errorMessage =

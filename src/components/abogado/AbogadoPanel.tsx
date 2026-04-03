@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Abogado } from '@/types/index';
 import {
@@ -151,15 +152,15 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
                 `}
             >
 				<div className="p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario/[0.02]">
-					<div>
-						<h2 className="text-xl font-black text-azul-primario tracking-tight flex items-center gap-2">
+					<Link href="/" className="group/logo">
+						<h2 className="text-xl font-black text-azul-primario tracking-tight flex items-center gap-2 group-hover/logo:scale-105 transition-transform">
 							<div className="w-8 h-8 bg-azul-primario rounded-lg flex items-center justify-center text-white">
                                 <FiBriefcase size={18} />
                             </div>
                             VirtuAbogado
 						</h2>
 						<p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Panel de Gestión</p>
-					</div>
+					</Link>
 					<button 
 						onClick={() => setIsSidebarOpen(false)}
 						className="lg:hidden p-2 text-slate-400 hover:text-red-500 transition-colors"

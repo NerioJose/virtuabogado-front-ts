@@ -122,17 +122,49 @@ export async function DELETE(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // Borrado lógico
-        console.log(`🗑️ API: Intentando borrar abogado (lógico) con ID: ${id}`);
-        const result = await prisma.user.update({
-            where: { id },
-            data: { activo: false },
+        // 1. Limpieza de relaciones para evitar errores de integridad referencial
+        console.log(`🧹 API: Iniciando limpieza de relaciones para el usuario ${id}...`);
+
+        // Desvincular órdenes (para no perder el historial de ventas)
+        await prisma.order.updateMany({
+            where: { lawyerId: id },
+            data: { lawyerId: null }
         });
-        console.log(`✅ API: Abogado ${id} marcado como inactivo. Actualizando respuesta...`);
+
+        // Borrar pagos de abogado (usando as any como en payoutActions.ts para saltar desajuste de tipado)
+        await (prisma as any).lawyerPayout.deleteMany({
+            where: { lawyerId: id }
+        });
+
+        // Borrar mensajes enviados
+        await prisma.message.deleteMany({
+            where: { senderId: id }
+        });
+
+        // Borrar documentos subidos
+        await prisma.document.deleteMany({
+            where: { uploaderId: id }
+        });
+
+        // 2. Borrado Real en Prisma
+        console.log(`🗑️ API: Ejecutando borrado real en base de datos para ID: ${id}`);
+        const result = await prisma.user.delete({
+            where: { id },
+        });
+
+        // 3. Borrado en Supabase Auth (Opcional, usando Admin Client)
+        try {
+            const { createAdminClient } = await import('@/utils/supabase/admin');
+            const adminClient = createAdminClient();
+            await adminClient.auth.admin.deleteUser(id);
+            console.log(`✅ API: Usuario ${id} eliminado también de Supabase Auth.`);
+        } catch (authError) {
+            console.warn(`⚠️ API: No se pudo eliminar de Auth, pero el registro en DB fue borrado.`, authError);
+        }
 
         return NextResponse.json({ 
             success: true,
-            message: 'Abogado eliminado correctamente',
+            message: 'Abogado y sus dependencias eliminados correctamente',
             id: result.id
         });
     } catch (error) {

@@ -97,8 +97,31 @@ export const useDeleteClient = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: clientsService.delete,
+        onMutate: async (id) => {
+            // Cancel any outgoing refetches to avoid overwriting optimistic update
+            await queryClient.cancelQueries({ queryKey: CLIENT_KEYS.all });
+
+            // Snapshot the previous value
+            const previousClients = queryClient.getQueryData(CLIENT_KEYS.list({}));
+
+            // Optimistically update to remove the client
+            queryClient.setQueryData(CLIENT_KEYS.list({}), (old: Client[] = []) => {
+                return old.filter(client => client.id !== id);
+            });
+
+            return { previousClients };
+        },
+        onError: (err, id, context) => {
+            // Rollback to previous state on error
+            if (context?.previousClients) {
+                queryClient.setQueryData(CLIENT_KEYS.list({}), context.previousClients);
+            }
+            console.error('❌ Error al eliminar cliente:', err);
+        },
         onSuccess: () => {
+            // Invalidate to ensure sync with server
             queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all });
+            console.log('✅ Cliente eliminado y caché actualizada');
         },
     });
 };

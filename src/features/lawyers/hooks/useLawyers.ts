@@ -97,8 +97,31 @@ export const useDeleteLawyer = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: lawyersService.delete,
+        onMutate: async (id) => {
+            // Cancel any outgoing refetches for the list
+            await queryClient.cancelQueries({ queryKey: LAWYER_KEYS.all });
+
+            // Snapshot the previous value
+            const previousLawyers = queryClient.getQueryData(LAWYER_KEYS.list({}));
+
+            // Optimistically update to remove the lawyer
+            queryClient.setQueryData(LAWYER_KEYS.list({}), (old: Lawyer[] = []) => {
+                return old.filter(lawyer => lawyer.id !== id);
+            });
+
+            return { previousLawyers };
+        },
+        onError: (err, id, context) => {
+            // Rollback to previous state on error
+            if (context?.previousLawyers) {
+                queryClient.setQueryData(LAWYER_KEYS.list({}), context.previousLawyers);
+            }
+            console.error('❌ Error al eliminar abogado:', err);
+        },
         onSuccess: () => {
+            // Invalidate to ensure sync with server
             queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all });
+            console.log('✅ Abogado eliminado y caché invalidada');
         },
     });
 };

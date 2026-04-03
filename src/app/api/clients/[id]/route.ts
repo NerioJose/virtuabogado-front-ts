@@ -130,13 +130,62 @@ export async function DELETE(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // Borrado lógico
-        await prisma.user.update({
+        // 1. Limpieza de relaciones en cascada
+        console.log(`🧹 API: Limpiando órdenes y dependencias para el cliente ${id}...`);
+
+        // Obtener IDs de las órdenes para limpieza manual si fuera necesario (aunque Prisma debería manejarlo)
+        const userOrders = await prisma.order.findMany({
+            where: { userId: id },
+            select: { id: true }
+        });
+        const orderIds = userOrders.map(o => o.id);
+
+        if (orderIds.length > 0) {
+            // Borrar reseñas de sus órdenes
+            await prisma.review.deleteMany({
+                where: { orderId: { in: orderIds } }
+            });
+
+            // Borrar mensajes asociados a sus órdenes
+            await prisma.message.deleteMany({
+                where: { orderId: { in: orderIds } }
+            });
+
+            // Borrar documentos asociados a sus órdenes
+            await prisma.document.deleteMany({
+                where: { orderId: { in: orderIds } }
+            });
+
+            // Borrar las órdenes
+            await prisma.order.deleteMany({
+                where: { userId: id }
+            });
+        }
+
+        // También borrar mensajes y documentos donde el usuario sea el remitente directo (fuera de órdenes si existen)
+        await prisma.message.deleteMany({ where: { senderId: id } });
+        await prisma.document.deleteMany({ where: { uploaderId: id } });
+
+        // 2. Borrado Real en Prisma
+        console.log(`🗑️ API: Ejecutando borrado real para el cliente ID: ${id}`);
+        await prisma.user.delete({
             where: { id },
-            data: { activo: false },
         });
 
-        return NextResponse.json({ message: 'Cliente eliminado correctamente' });
+        // 3. Borrado en Supabase Auth (Opcional)
+        try {
+            const { createAdminClient } = await import('@/utils/supabase/admin');
+            const adminClient = createAdminClient();
+            await adminClient.auth.admin.deleteUser(id);
+            console.log(`✅ API: Usuario ${id} borrado de Supabase Auth.`);
+        } catch (authError) {
+            console.warn(`⚠️ API: No se pudo borrar de Auth, pero el registro en DB fue eliminado.`, authError);
+        }
+
+        return NextResponse.json({ 
+            success: true,
+            message: 'Cliente y todo su historial eliminados correctamente' 
+        });
     } catch (error) {
         console.error('❌ API Error deleting client:', error);
         return NextResponse.json(

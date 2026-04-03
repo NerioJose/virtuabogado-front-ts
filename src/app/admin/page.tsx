@@ -2,20 +2,8 @@
 
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-	FiUsers,
-	FiUserCheck,
-	FiBriefcase,
-	FiDollarSign,
-	FiPieChart,
-	FiSettings,
-	FiSearch,
-	FiPlus,
-	FiMenu,
-	FiX,
-	FiClock,
-	FiCreditCard
-} from 'react-icons/fi';
+import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiSearch, FiPlus, FiMenu, FiX, FiClock, FiCreditCard } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
 // import { initializeOrders } from '@/features/orders';
@@ -364,7 +352,7 @@ export default function AdminPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen bg-gray-100">
+		<div className="flex min-h-screen bg-slate-50/50">
 			{/* Sidebar */}
 			<Sidebar
 				seccionActiva={seccionActiva}
@@ -378,56 +366,90 @@ export default function AdminPage() {
 			/>
 
 			{/* Contenido principal */}
-			<div className="flex-1 lg:ml-64 min-w-0 transition-all duration-300">
-				{/* Barra superior */}
-				<div className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20">
+			<div className={`flex-1 min-w-0 transition-all duration-500 ease-in-out lg:ml-72`}>
+				{/* Barra superior Premium */}
+				<header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 px-4 py-4 md:px-8 flex justify-between items-center shadow-sm">
 					<div className="flex items-center gap-4">
-						<button
+						<motion.button
+							whileHover={{ scale: 1.05 }}
+							whileTap={{ scale: 0.95 }}
 							onClick={() => setIsSidebarOpen(true)}
-							className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+							className="lg:hidden w-10 h-10 flex items-center justify-center text-slate-600 bg-slate-100/50 hover:bg-slate-100 rounded-xl transition-all"
 						>
 							<FiMenu size={24} />
-						</button>
-						<h1 className="text-xl md:text-2xl font-bold text-azul-primario flex items-center">
-							{getSeccionIcon(seccionActiva)}
-							<span className="truncate">{getSeccionTitulo(seccionActiva)}</span>
-						</h1>
+						</motion.button>
+						<div className="flex flex-col">
+							<h1 className="text-lg md:text-xl font-black text-azul-primario flex items-center leading-none">
+								<span className="p-2 bg-azul-primario/5 rounded-lg mr-2 lg:hidden">
+									{getSeccionIcon(seccionActiva)}
+								</span>
+								<span className="truncate tracking-tight uppercase">{getSeccionTitulo(seccionActiva)}</span>
+							</h1>
+							<p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest mt-1 hidden md:block">
+								VirtuAbogado Admin System
+							</p>
+						</div>
 					</div>
 
-					<div className="flex items-center gap-2 md:space-x-4">
+					<div className="flex items-center gap-2 md:gap-4">
 						{allowsSearch(seccionActiva) && (
-							<div className="relative">
-								<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+							<div className="relative group hidden sm:block">
+								<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-azul-primario transition-colors" />
 								<input
 									type="text"
 									placeholder="Buscar..."
 									value={terminoBusqueda}
 									onChange={(e) => setTerminoBusqueda(e.target.value)}
-									className="pl-9 pr-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario text-sm w-32 md:w-64 transition-all"
-									aria-label="Buscar elementos"
+									className="pl-10 pr-4 py-2.5 bg-slate-100/50 border-transparent border focus:border-azul-primario focus:bg-white rounded-[1.2rem] focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm w-40 md:w-72 transition-all font-medium placeholder:text-slate-400"
 								/>
 							</div>
 						)}
 
 						{allowsCreate(seccionActiva) && (
-							<button
+							<motion.button
+								whileHover={{ scale: 1.02, y: -1 }}
+								whileTap={{ scale: 0.98 }}
 								onClick={() => abrirModal('crear')}
-								className="flex items-center justify-center gap-1 bg-azul-primario text-white p-2 md:px-4 md:py-2 rounded-lg hover:bg-azul-primario/90 transition-colors focus:outline-none focus:ring-2 focus:ring-azul-primario focus:ring-offset-2"
-								title={`Crear nuevo ${getNuevoButtonText(seccionActiva)}`}
-								aria-label={`Crear nuevo ${getNuevoButtonText(seccionActiva)}`}>
+								className="flex items-center justify-center gap-2 bg-azul-primario text-white px-3 py-2.5 md:px-6 md:py-3 rounded-[1.2rem] hover:bg-azul-primario/90 transition-all focus:outline-none focus:ring-4 focus:ring-azul-primario/20 shadow-lg shadow-azul-primario/20 font-black text-xs md:text-sm uppercase tracking-widest"
+							>
 								<FiPlus size={20} className="md:size-4" />
 								<span className="hidden md:inline">Nuevo {getNuevoButtonText(seccionActiva)}</span>
-							</button>
+							</motion.button>
 						)}
 					</div>
-				</div>
+				</header>
 
-			{/* Contenido dinámico según la sección activa */}
-				<div className="p-4 md:p-6 max-w-[1600px] mx-auto">
+				{/* Contenido dinámico con transiciones fluidas */}
+				<main className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto min-h-[calc(100vh-80px)]">
+					{allowsSearch(seccionActiva) && (
+						<div className="mb-6 sm:hidden">
+							<div className="relative group">
+								<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-azul-primario transition-colors" />
+								<input
+									type="text"
+									placeholder="Buscar..."
+									value={terminoBusqueda}
+									onChange={(e) => setTerminoBusqueda(e.target.value)}
+									className="pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-azul-primario rounded-[1rem] focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm w-full transition-all font-medium"
+								/>
+							</div>
+						</div>
+					)}
+
 					<ErrorBoundary>
-						{renderSeccionContent()}
+						<AnimatePresence mode="wait">
+							<motion.div
+								key={seccionActiva}
+								initial={{ opacity: 0, y: 15 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -15 }}
+								transition={{ duration: 0.3, ease: "easeOut" }}
+							>
+								{renderSeccionContent()}
+							</motion.div>
+						</AnimatePresence>
 					</ErrorBoundary>
-				</div>
+				</main>
 			</div>
 
 			{/* Modal dinámico */}

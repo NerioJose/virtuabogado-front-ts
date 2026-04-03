@@ -15,6 +15,7 @@ interface FormData {
 interface FormErrors {
   nombre?: string;
   email?: string;
+  telefono?: string;
   asunto?: string;
   mensaje?: string;
 }
@@ -56,6 +57,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
   // Debounce para validación en tiempo real
   const debouncedEmail = useDebounce(formData.email, 500);
   const debouncedNombre = useDebounce(formData.nombre, 300);
+  const debouncedTelefono = useDebounce(formData.telefono, 300);
 
   const validateField = useCallback((fieldName: keyof FormData, value: string): string | undefined => {
     switch (fieldName) {
@@ -64,6 +66,8 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
       case 'email':
         if (!value.trim()) return 'El correo electrónico es requerido';
         return !/\S+@\S+\.\S+/.test(value) ? 'El correo electrónico no es válido' : undefined;
+      case 'telefono':
+        return !value.trim() ? 'El teléfono es requerido' : undefined;
       case 'asunto':
         return !value ? 'El asunto es requerido' : undefined;
       case 'mensaje':
@@ -88,6 +92,13 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
     }
   }, [debouncedNombre, formData.nombre, validateField]);
 
+  useEffect(() => {
+    if (debouncedTelefono && formData.telefono) {
+      const telefonoError = validateField('telefono', debouncedTelefono);
+      setErrors(prev => ({ ...prev, telefono: telefonoError }));
+    }
+  }, [debouncedTelefono, formData.telefono, validateField]);
+
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -104,9 +115,9 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
     Object.keys(formData).forEach(key => {
       const fieldName = key as keyof FormData;
-      if (fieldName !== 'telefono') { // telefono es opcional
-        const error = validateField(fieldName, formData[fieldName]);
-        if (error) newErrors[fieldName] = error;
+      const error = validateField(fieldName, formData[fieldName]);
+      if (error) {
+        newErrors[fieldName as keyof FormErrors] = error;
       }
     });
 
@@ -134,6 +145,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
       
 *Nombre:* ${formData.nombre}
 *Email:* ${formData.email}
+*Teléfono:* ${formData.telefono}
 *Asunto:* ${formData.asunto}
 *Mensaje:* ${formData.mensaje}`;
 
@@ -233,7 +245,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
         <div>
           <label htmlFor="telefono" className="block text-sm font-medium text-azul-primario mb-1">
-            Teléfono (opcional)
+            Teléfono *
           </label>
           <input
             type="tel"
@@ -241,9 +253,10 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             name="telefono"
             value={formData.telefono}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200"
+            className={`w-full px-4 py-3 border ${errors.telefono ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
             placeholder="+34 XXX XXX XXX"
           />
+          {errors.telefono && <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>}
         </div>
 
         <div>

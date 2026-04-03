@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FiMail, FiArrowLeft, FiCheck } from 'react-icons/fi';
-import { createClient } from '@/utils/supabase/client';
-// Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
+import { FiMail, FiArrowLeft, FiCheckCircle, FiLoader, FiAlertCircle } from 'react-icons/fi';
 
 export default function RecuperarPasswordPage() {
   const [email, setEmail] = useState('');
@@ -23,7 +21,6 @@ export default function RecuperarPasswordPage() {
     const { name, value } = e.target;
     setEmail(value);
 
-    // Limpiar error cuando el usuario comienza a escribir
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -34,8 +31,6 @@ export default function RecuperarPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validar formulario
     const newErrors: Record<string, string> = {};
 
     if (!email) {
@@ -49,8 +44,6 @@ export default function RecuperarPasswordPage() {
       return;
     }
 
-    // Enviar solicitud a nuestra API personalizada (Resend)
-    console.log('🔥 NUEVA LOGICA DE RESEND ACTIVADA 🔥');
     setIsSubmitting(true);
     setErrors({});
 
@@ -79,138 +72,140 @@ export default function RecuperarPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <Link href="/" className="inline-block">
+    <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_#e8f4fd_0%,_transparent_100%)]">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <div className="text-center mb-8">
+          <Link href="/">
             <Image
               src="/logo/logo_sf_1.png"
               alt="VirtuAbogado Logo"
-              width={180}
-              height={60}
+              width={200}
+              height={70}
               className="mx-auto"
             />
           </Link>
-          <h2 className="mt-6 text-3xl font-extrabold text-azul-primario">
-            Recuperar contraseña
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {step === 'email' ?
-              'Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.' :
-              'Revisa tu bandeja de entrada para seguir las instrucciones.'
-            }
-          </p>
         </div>
 
-        {step === 'email' ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
-          >
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Correo electrónico
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border ${errors.email ? 'border-red-300' : 'border-gray-300'
-                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-azul-primario focus:border-azul-primario sm:text-sm`}
-                    placeholder="tu@email.com"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-
-              {errors.form && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="flex">
-                    <div className="ml-3">
-                      <p className="text-sm text-red-700">{errors.form}</p>
+        <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-blue-900/5 p-8 md:p-10 border border-white relative overflow-hidden">
+            {/* Subtle highlight decoration */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-azul-primario/5 rounded-full blur-3xl -mr-16 -mt-16" />
+            
+            <AnimatePresence mode="wait">
+                {step === 'email' ? (
+                <motion.div
+                    key="step-email"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="relative z-10"
+                >
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2">
+                        Recuperar Acceso
+                        </h2>
+                        <p className="text-sm font-bold text-slate-500 leading-relaxed">
+                        Ingresa tu correo electrónico y te enviaremos instrucciones de seguridad para restablecer tu cuenta.
+                        </p>
                     </div>
-                  </div>
-                </div>
-              )}
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-azul-primario hover:bg-azul-primario/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-azul-primario ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-                    }`}
+                    <form className="space-y-6" onSubmit={handleSubmit}>
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                Correo Electrónico
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <FiMail className={`h-5 w-5 ${errors.email ? 'text-red-400' : 'text-slate-400'}`} />
+                                </div>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={handleChange}
+                                    className={`block w-full pl-12 pr-4 py-4 bg-slate-50/50 border ${
+                                        errors.email ? 'border-red-200' : 'border-slate-200'
+                                    } rounded-2xl focus:ring-2 focus:ring-azul-primario/20 focus:border-azul-primario outline-none font-bold text-slate-700 placeholder:text-slate-300 transition-all`}
+                                    placeholder="ejemplo@correo.com"
+                                />
+                            </div>
+                            {errors.email && (
+                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] font-black text-red-500 uppercase tracking-widest ml-1">
+                                {errors.email}
+                            </motion.p>
+                            )}
+                        </div>
+
+                        {errors.form && (
+                            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3">
+                                <FiAlertCircle className="text-red-500 shrink-0 mt-0.5" />
+                                <p className="text-xs font-bold text-red-700">{errors.form}</p>
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all shadow-lg shadow-azul-primario/25 disabled:opacity-70 flex items-center justify-center gap-2"
+                        >
+                            {isSubmitting ? (
+                                <FiLoader className="animate-spin" />
+                            ) : (
+                                'Enviar Instrucciones'
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="mt-10 pt-8 border-t border-slate-100 text-center">
+                        <Link
+                            href="/login"
+                            className="text-xs font-black text-azul-primario uppercase tracking-widest hover:text-azul-primario/80 flex items-center justify-center gap-2 group"
+                        >
+                            <FiArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
+                            <span>Volver al inicio de sesión</span>
+                        </Link>
+                    </div>
+                </motion.div>
+                ) : (
+                <motion.div
+                    key="step-confirmation"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-4 relative z-10"
                 >
-                  {isSubmitting ? 'Enviando...' : 'Enviar instrucciones'}
-                </button>
-              </div>
-            </form>
+                    <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-emerald-50 mb-8">
+                        <FiCheckCircle className="h-10 w-10 text-emerald-500" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Solicitud Enviada</h3>
+                    <p className="text-sm font-bold text-slate-500 leading-relaxed mb-8">
+                        Hemos enviado un correo a <strong className="text-azul-primario">{email}</strong> con los pasos para restaurar tu acceso.
+                    </p>
+                    <div className="bg-slate-50 rounded-2xl p-4 mb-10 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-100">
+                        Si no lo recibes, revisa tu carpeta de Spam.
+                    </div>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    ¿Recordaste tu contraseña?
-                  </span>
-                </div>
-              </div>
+                    <Link
+                        href="/login"
+                        className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                    >
+                        <FiArrowLeft />
+                        Volver al inicio
+                    </Link>
+                </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
 
-              <div className="mt-6 text-center">
-                <Link
-                  href="/login"
-                  className="font-medium text-azul-primario hover:text-azul-primario/80 flex items-center justify-center gap-1"
-                >
-                  <FiArrowLeft className="h-4 w-4" />
-                  <span>Volver al inicio de sesión</span>
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center"
-          >
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-              <FiCheck className="h-6 w-6 text-green-600" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">Solicitud enviada</h3>
-            <p className="mt-2 text-sm text-gray-500">
-              Hemos enviado un correo electrónico a <strong>{email}</strong> con instrucciones para restablecer tu contraseña.
-            </p>
-            <p className="mt-1 text-sm text-gray-500">
-              Si no recibes el correo en unos minutos, revisa tu carpeta de spam o correo no deseado.
-            </p>
-
-            <div className="mt-6">
-              <Link
-                href="/login"
-                className="font-medium text-azul-primario hover:text-azul-primario/80 flex items-center justify-center gap-1"
-              >
-                <FiArrowLeft className="h-4 w-4" />
-                <span>Volver al inicio de sesión</span>
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </div>
+        <p className="text-center mt-10 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+            © 2026 VirtuAbogado — Seguridad Legal Premium
+        </p>
+      </motion.div>
     </main>
   );
 }

@@ -243,86 +243,102 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
         className="hidden" 
       />
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Mis Documentos</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <div className="w-8 h-8 bg-azul-primario/10 rounded-lg flex items-center justify-center text-azul-primario">
+            <FiFolder size={18} />
+          </div>
+          Mis Documentos
+        </h2>
 
         <button 
           onClick={handleSubirClick}
-          className="bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors flex items-center shadow-md">
-          <FiUpload className="mr-2" />
+          className="w-full sm:w-auto bg-azul-primario text-white px-5 py-2.5 rounded-2xl hover:bg-azul-primario/90 transition-all flex items-center justify-center shadow-lg shadow-azul-primario/25 font-bold text-sm active:scale-95">
+          <FiUpload className="mr-2" size={18} />
           Subir documento
         </button>
       </div>
 
-      {/* Modal de subida */}
+      {/* Modal de subida (Restaurado y Mejorado) */}
       <AnimatePresence>
         {showUploadModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
             >
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario text-white">
-                <h3 className="text-lg font-bold">Subir Documento</h3>
-                <button onClick={() => setShowUploadModal(false)} className="hover:rotate-90 transition-transform">
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-azul-primario/5">
+                <div>
+                  <h3 className="text-xl font-black text-azul-primario tracking-tight">Cargar Archivo</h3>
+                  <p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Sincronización con expediente</p>
+                </div>
+                <button 
+                  onClick={() => setShowUploadModal(false)} 
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+                >
                   <FiX size={20} />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-8 space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Caso (Obligatorio)</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Vincular a Caso</label>
                   <select 
                     value={selectedOrderId}
                     onChange={(e) => setSelectedOrderId(e.target.value)}
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-azul-primario focus:ring-azul-primario"
+                    className="w-full h-12 px-4 rounded-2xl border-slate-100 bg-slate-50 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-azul-primario focus:border-azul-primario transition-all"
                   >
-                    <option value="">Seleccione un caso...</option>
+                    <option value="">Seleccione un caso activo...</option>
                     {orders.map(order => (
                       <option key={order.id} value={order.id}>
-                        {order.service?.titulo} - {order.user?.nombre} (#{order.numericId})
+                        {order.service?.titulo} - {order.user?.nombre} (#ID: {order.numericId})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Archivo</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Expediente Digital</label>
                   <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                      selectedFile ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:border-azul-primario hover:bg-azul-claro/5'
+                    className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                      selectedFile ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-100 hover:border-azul-primario hover:bg-azul-primario/[0.02]'
                     }`}
                   >
                     {selectedFile ? (
                       <>
-                        <FiCheck className="text-green-500 mb-2" size={32} />
-                        <span className="text-sm font-medium text-gray-900 line-clamp-1">{selectedFile.name}</span>
-                        <span className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                        <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 mb-4 animate-bounce">
+                          <FiCheck size={32} />
+                        </div>
+                        <span className="text-sm font-black text-slate-800 line-clamp-1">{selectedFile.name}</span>
+                        <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB / Listo</span>
                       </>
                     ) : (
                       <>
-                        <FiUpload className="text-gray-400 mb-2" size={32} />
-                        <span className="text-sm text-gray-600">Haz clic para seleccionar un archivo</span>
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-4 group-hover:text-azul-primario transition-colors">
+                          <FiUpload size={32} />
+                        </div>
+                        <span className="text-sm font-black text-slate-400 group-hover:text-azul-primario transition-colors">Seleccionar Archivo</span>
+                        <p className="text-[10px] font-bold text-slate-300 mt-2 uppercase tracking-widest font-mono">PDF, DOC, JPG, PNG</p>
                       </>
                     )}
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-4 pt-4">
                   <button 
                     onClick={() => setShowUploadModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 h-14 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs hover:bg-slate-100 transition-all uppercase tracking-widest"
                   >
                     Cancelar
                   </button>
                   <button 
                     disabled={!selectedFile || !selectedOrderId || loading}
                     onClick={processUpload}
-                    className="flex-1 px-4 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md"
+                    className="flex-[2] h-14 bg-azul-primario text-white rounded-2xl font-black text-xs hover:shadow-xl hover:shadow-azul-primario/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest shadow-lg shadow-azul-primario/20"
                   >
-                    {loading ? 'Subiendo...' : 'Subir Ahora'}
+                    {loading ? 'Sincronizando...' : 'Subir Expediente'}
                   </button>
                 </div>
               </div>
@@ -331,137 +347,160 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row md:items-center gap-4">
-        {/* Buscador */}
-        <div className="relative flex-1">
+      {/* Buscador y Filtros Adaptativos */}
+      <div className="flex flex-col gap-4 bg-slate-50 p-4 rounded-[2rem] border border-slate-100">
+        <div className="relative">
           <input
             type="text"
-            placeholder="Buscar por caso, cliente o nombre de archivo..."
+            placeholder="Buscar por caso, cliente o archivo..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario"
+            className="pl-11 pr-4 py-3 w-full bg-white border-none rounded-2xl shadow-sm focus:ring-2 focus:ring-azul-primario text-sm placeholder:text-slate-400 font-medium"
           />
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
         </div>
 
-        {/* Filtros */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 whitespace-nowrap">Filtrar por:</span>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFiltroTipo('todos')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtroTipo === 'todos'
-                ? 'bg-azul-primario text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setFiltroTipo('pdf')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtroTipo === 'pdf'
-                ? 'bg-red-500 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              PDFs
-            </button>
-            <button
-              onClick={() => setFiltroTipo('doc')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filtroTipo === 'doc'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Word
-            </button>
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tipo:</span>
+          <div className="flex gap-2 min-w-max">
+            {[
+              { id: 'todos', label: 'Todos', color: 'bg-azul-primario' },
+              { id: 'pdf', label: 'PDFs', color: 'bg-rose-500' },
+              { id: 'doc', label: 'Word', color: 'bg-blue-500' }
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFiltroTipo(f.id as any)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all ${filtroTipo === f.id
+                  ? `${f.color} text-white shadow-md`
+                  : 'bg-white text-slate-500 hover:text-azul-primario'
+                  }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Lista de documentos */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+      {/* VISTA MÓVIL (Cards) */}
+      <div className="grid grid-cols-1 gap-4 md:hidden pb-10">
         {documentosFiltrados.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
-              <FiFolder size={32} />
-            </div>
-            <h3 className="text-gray-900 font-medium">No se encontraron documentos</h3>
-            <p className="text-gray-500 mt-1">Sube el primer documento de un caso para comenzar</p>
+          <div className="py-16 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100">
+             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                <FiFolder size={32} />
+             </div>
+             <p className="text-slate-400 font-bold">No se encontraron documentos</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50/50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Documento
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Cliente / Caso
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Fecha de Subida
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Tamaño
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {documentosFiltrados.map((documento) => (
-                  <tr key={documento.id} className="hover:bg-azul-claro/5 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                          {obtenerIconoDocumento(documento.nombre)}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-semibold text-gray-900">{documento.nombre}</div>
-                          <div className="text-[10px] text-gray-400 uppercase tracking-tighter font-bold">{documento.tipo}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{documento.cliente || 'Desconocido'}</div>
-                      <div className="text-xs text-azul-primario font-medium">{documento.caso || 'Sin caso'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600 flex items-center">
-                        <FiClock className="mr-1.5 text-gray-400" size={14} />
-                        {documento.fechaSubida}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 font-mono">{documento.tamaño}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-1">
-                        <button
-                          onClick={() => handleDescargar(documento)}
-                          className="text-azul-primario hover:bg-azul-primario hover:text-white p-2 rounded-lg transition-all"
-                          title="Descargar / Ver"
-                        >
-                          <FiDownload size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleEliminar(documento)}
-                          className="text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-all"
-                          title="Eliminar"
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          documentosFiltrados.map((doc) => (
+            <motion.div 
+              key={doc.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
+                  {obtenerIconoDocumento(doc.nombre)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-black text-slate-800 text-sm truncate mb-0.5">
+                    {doc.nombre}
+                  </h4>
+                  <p className="text-[10px] font-bold text-azul-primario uppercase tracking-tighter truncate">{doc.caso}</p>
+                  
+                  <div className="mt-4 flex items-center gap-4 text-[10px] font-bold text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <FiClock size={12} />
+                      {doc.fechaSubida}
+                    </span>
+                    <span>{doc.tamaño}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-slate-50 flex gap-2">
+                <button
+                  onClick={() => handleDescargar(doc)}
+                  className="flex-1 py-2.5 bg-slate-50 text-azul-primario rounded-xl font-black text-[11px] flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition-all active:scale-95"
+                >
+                  <FiDownload size={14} />
+                  DESCARGAR
+                </button>
+                <button
+                  onClick={() => handleEliminar(doc)}
+                  className="w-12 h-[42px] bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+                >
+                  <FiTrash2 size={16} />
+                </button>
+              </div>
+            </motion.div>
+          ))
         )}
+      </div>
+
+      {/* VISTA DESKTOP (Tabla) */}
+      <div className="hidden md:block bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-50">
+          <thead className="bg-slate-50/50">
+            <tr>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Documento</th>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Caso</th>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subida</th>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tamaño</th>
+              <th scope="col" className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-slate-50">
+            {documentosFiltrados.map((documento) => (
+              <tr key={documento.id} className="hover:bg-slate-50/50 transition-colors group">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                      {obtenerIconoDocumento(documento.nombre)}
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-black text-slate-800">{documento.nombre}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-black leading-none">{documento.tipo}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-black text-slate-700">{documento.cliente || 'Desconocido'}</div>
+                  <div className="text-xs text-azul-primario font-bold tracking-tight">{documento.caso || 'Sin caso'}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-slate-500 font-bold flex items-center">
+                    <FiClock className="mr-1.5 text-slate-300" size={14} />
+                    {documento.fechaSubida}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-xs text-slate-400 font-black font-mono">{documento.tamaño}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => handleDescargar(documento)}
+                      className="w-10 h-10 bg-slate-50 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                      title="Descargar / Ver"
+                    >
+                      <FiDownload size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleEliminar(documento)}
+                      className="w-10 h-10 bg-slate-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                      title="Eliminar"
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <ConfirmModal 

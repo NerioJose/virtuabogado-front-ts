@@ -4,6 +4,7 @@ import { SeccionAdmin } from '@/types/index';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
   seccionActiva: SeccionAdmin;
@@ -20,149 +21,157 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
     ? capitalizeName(user.nombre) 
     : formatLawyerName(user?.nombre);
 
-  return (
-    <>
-      {/* Overlay para móvil */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
-          onClick={onClose}
-        />
-      )}
+  const menuItems = [
+    { id: 'dashboard', label: 'Inicio', icon: <FiHome /> },
+    { id: 'abogados', label: 'Abogados', icon: <FiUserCheck /> },
+    { id: 'clientes', label: 'Clientes', icon: <FiUsers /> },
+    { id: 'casos', label: 'Casos y Expedientes', icon: <FiBriefcase /> },
+    { id: 'finanzas', label: 'Finanzas', icon: <FiDollarSign /> },
+    { id: 'estadisticas', label: 'Estadísticas', icon: <FiPieChart /> },
+    { id: 'historial', label: 'Historial', icon: <FiClock /> },
+    { id: 'pasarelas', label: 'Pasarelas', icon: <FiCreditCard /> },
+    { id: 'configuracion', label: 'Ajustes', icon: <FiSettings /> },
+  ];
 
-      <div className={`
-        w-64 bg-azul-primario text-white h-screen fixed left-0 top-0 overflow-y-auto z-50 transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex-1 flex justify-center lg:justify-center">
-              <Image 
-                src="/logo/logo_sf_1.png" 
-                alt="VirtuAbogado Logo" 
-                width={150} 
-                height={50} 
-                priority
-              />
-            </div>
-            <button 
-              onClick={onClose}
-              className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <FiX size={20} />
-            </button>
-          </div>
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-azul-primario text-white shadow-2xl relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-64 h-64 rounded-full bg-white blur-3xl" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 rounded-full bg-vinotinto blur-3xl opacity-20" />
+      </div>
+
+      <div className="p-8 relative">
+        <div className="flex justify-between items-center mb-10">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex-1 flex justify-center lg:justify-start"
+          >
+            <Image 
+              src="/logo/logo_sf_1.png" 
+              alt="VirtuAbogado Logo" 
+              width={160} 
+              height={55} 
+              priority
+              className="drop-shadow-md"
+            />
+          </motion.div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+          >
+            <FiX size={24} />
+          </button>
         </div>
 
-        {/* Perfil de Usuario */}
-        {user && (
-          <div className="px-6 mb-8 mt-[-1rem]">
-            <div className="flex items-center p-3 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-              <div className="h-10 w-10 rounded-full bg-vinotinto flex items-center justify-center text-white font-bold text-lg shadow-inner">
-                {user.nombre.charAt(0).toUpperCase()}
-              </div>
-              <div className="ml-3 overflow-hidden">
-                <p className="text-sm font-bold text-white truncate" title={formattedName}>
-                  {formattedName}
-                </p>
-                <div className="flex items-center mt-0.5">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase border ${
-                    user.rol === UserRole.ADMIN ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                    user.rol === UserRole.ABOGADO ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
-                    'bg-gray-500/20 text-gray-300 border-gray-500/30'
-                  }`}>
-                    {user.rol}
-                  </span>
+        {/* Perfil de Usuario Premium */}
+        <AnimatePresence>
+          {user && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-10 px-1"
+            >
+              <div className="flex items-center p-4 bg-white/10 rounded-[1.5rem] border border-white/10 backdrop-blur-md shadow-xl">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-vinotinto to-rose-600 flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20">
+                  {user.nombre.charAt(0).toUpperCase()}
+                </div>
+                <div className="ml-4 overflow-hidden">
+                  <p className="text-sm font-black text-white truncate tracking-tight">
+                    {formattedName}
+                  </p>
+                  <div className="flex items-center mt-1">
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider bg-amber-500 text-azul-primario shadow-sm">
+                       ADMINISTRADOR
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
         
-        <nav className="space-y-2 px-6">
-          <button 
-            onClick={() => setSeccionActiva('dashboard' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'dashboard' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiHome className="text-xl" />
-            <span>Dashboard</span>
-          </button>
-          
-          <button 
-            onClick={() => setSeccionActiva('abogados' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'abogados' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiUserCheck className="text-xl" />
-            <span>Abogados</span>
-          </button>
-          
-          <button 
-            onClick={() => setSeccionActiva('clientes' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'clientes' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiUsers className="text-xl" />
-            <span>Clientes</span>
-          </button>
-          
-          <button 
-            onClick={() => setSeccionActiva('casos' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'casos' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiBriefcase className="text-xl" />
-            <span>Casos</span>
-          </button>
-          
-          <button 
-            onClick={() => setSeccionActiva('finanzas' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'finanzas' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiDollarSign className="text-xl" />
-            <span>Finanzas</span>
-          </button>
-          
-          <button 
-            onClick={() => setSeccionActiva('estadisticas' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'estadisticas' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiPieChart className="text-xl" />
-            <span>Estadísticas</span>
-          </button>
-          
-          <button 
-            onClick={() => setSeccionActiva('historial' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'historial' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiClock className="text-xl" />
-            <span>Historial</span>
-          </button>
-
-          <button 
-            onClick={() => setSeccionActiva('pasarelas' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'pasarelas' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiCreditCard className="text-xl" />
-            <span>Pasarelas</span>
-          </button>
-
-          <button 
-            onClick={() => setSeccionActiva('configuracion' as SeccionAdmin)}
-            className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${seccionActiva === 'configuracion' ? 'bg-white text-azul-primario' : 'hover:bg-azul-primario/80'}`}
-          >
-            <FiSettings className="text-xl" />
-            <span>Configuración</span>
-          </button>
+        <nav className="space-y-1.5">
+          {menuItems.map((item, idx) => (
+            <motion.button 
+              key={item.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              onClick={() => {
+                setSeccionActiva(item.id as SeccionAdmin);
+                onClose?.();
+              }}
+              className={`flex items-center space-x-3 w-full p-3.5 rounded-2xl transition-all duration-300 group
+                ${seccionActiva === item.id 
+                  ? 'bg-white text-azul-primario font-black shadow-lg shadow-black/10 translate-x-1' 
+                  : 'text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1'
+                }`}
+            >
+              <div className={`text-xl transition-transform group-hover:scale-110 ${seccionActiva === item.id ? 'text-azul-primario font-black' : ''}`}>
+                {item.icon}
+              </div>
+              <span className="text-sm tracking-tight">{item.label}</span>
+              {seccionActiva === item.id && (
+                <motion.div 
+                  layoutId="active-pill"
+                  className="ml-auto w-1.5 h-1.5 rounded-full bg-azul-primario"
+                />
+              )}
+            </motion.button>
+          ))}
         </nav>
-        
-        <div className="pt-6 mt-6 border-t border-white/20 px-6">
+      </div>
+      
+      <div className="mt-auto p-8 relative">
+        <div className="pt-6 border-t border-white/10">
           <button 
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-red-600 transition-colors"
+            className="flex items-center space-x-3 w-full p-4 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all duration-300 font-black text-sm uppercase tracking-widest group shadow-sm active:scale-95"
           >
-            <FiLogOut className="text-xl" />
+            <FiLogOut className="text-xl group-hover:rotate-12 transition-transform" />
             <span>Cerrar sesión</span>
           </button>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Overlay para móvil con desenfoque */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/40 z-[60] lg:hidden backdrop-blur-sm"
+            onClick={onClose}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar (Siempre visible en LG+) */}
+      <div className="hidden lg:block fixed left-0 top-0 w-72 h-screen z-50">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile Sidebar (Drawer con Framer Motion) */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed left-0 top-0 w-[85%] sm:w-80 h-screen z-[70] lg:hidden"
+          >
+            {sidebarContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -5,6 +5,7 @@ import { UserRole } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 import { serializeFinance } from '@/lib/finance';
+import { calculateOrderFinances } from '@/services/finance.service';
 
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 
@@ -150,10 +151,8 @@ export async function GET(request: Request) {
 
         // Mapear al formato que espera el frontend con desglose financiero dinámico
         const formattedOrders = (orders as any[]).map((order: any) => {
-            // Calcular desgloses en tiempo real para máxima precisión
-            const total = Number(order.total);
-            const lawyerPct = Number(settings.lawyer_commission_percentage) / 100;
-            const comisionLawyer = total * lawyerPct;
+            // Calcular desgloses usando el motor centralizado para máxima precisión
+            const split = calculateOrderFinances(order.total, settings);
 
             return {
                 id: order.id,
@@ -171,17 +170,17 @@ export async function GET(request: Request) {
                     price: Number(order.service?.precio || 0),
                     quantity: 1,
                 }],
-                subtotal: total,
-                tax: 0,
-                total: total,
+                subtotal: split.total,
+                tax: split.impuestos,
+                total: split.total,
                 status: order.status,
                 paymentMethod: (order.paymentMethod?.name || 'Tarjeta de Crédito') as any,
                 transactionId: order.paymentId,
                 createdAt: order.createdAt,
                 updatedAt: order.updatedAt,
-                // Inyectar datos financieros calculados
-                commissionAmount: comisionLawyer,
-                netProfitAmount: total - comisionLawyer, // Lo que resta para la plataforma
+                // Inyectar datos financieros precisos
+                commissionAmount: split.comisionAbogado,
+                netProfitAmount: split.netoPlataforma, 
             };
         });
 
@@ -261,17 +260,15 @@ export async function POST(request: Request) {
             } as any;
         }
 
-        // 🧮 CALCULATIONS: Perform the breakdown
-        const commissionPct = Number(settings!.lawyer_commission_percentage) / 100;
-        const operationalPct = Number(settings!.operational_costs_percentage) / 100;
-        const taxPct = Number(settings!.tax_percentage) / 100;
-        const platformFeePct = Number(settings!.platform_fee_percentage) / 100;
+        // 🧮 CALCULATIONS: Perform the breakdown using the central Fintech engine
+        // Using non-null assertion as we handle the fallback above
+        const split = calculateOrderFinances(currentPrice, settings!);
 
-        const commissionAmount = currentPrice * commissionPct;
-        const operationalCostAmount = currentPrice * operationalPct;
-        const taxAmount = currentPrice * taxPct;
-        const platformFeeAmount = currentPrice * platformFeePct;
-        const netProfitAmount = currentPrice - commissionAmount - operationalCostAmount - taxAmount - platformFeeAmount;
+        const commissionAmount = split.comisionAbogado;
+        const operationalCostAmount = split.gastosOperativos;
+        const taxAmount = split.impuestos;
+        const platformFeeAmount = split.platformFee;
+        const netProfitAmount = split.netoPlataforma;
 
         // Obtener rol (Priorizar metadata de Supabase Auth, fallback a DB)
         if (!userRole && user.user_metadata?.rol) {

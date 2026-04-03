@@ -7,6 +7,7 @@ import { useCheckout } from '../hooks/useCheckout';
 import type { UserCheckoutData } from '../types/checkout.types';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import Link from 'next/link';
 
 export const UserDataStep: React.FC = () => {
     const { 
@@ -336,8 +337,10 @@ export const UserDataStep: React.FC = () => {
                 </AnimatePresence>
 
                 {/* PIE DEL PASO 1 */}
-                <p className="text-center text-[10px] text-gray-400 font-medium px-4">
-                    Al continuar, aceptas la creación de un perfil legal seguro protegido con cifrado de grado bancario (SSL/TLS).
+                <p className="text-center text-[10px] text-gray-400 font-medium px-4 leading-relaxed">
+                    Al continuar, confirmas que has leído y aceptas nuestros{' '}
+                    <Link href="/terminos" className="text-azul-primario font-bold hover:underline">Términos y condiciones</Link> y nuestra{' '}
+                    <Link href="/privacidad" className="text-azul-primario font-bold hover:underline">Política de privacidad</Link>.
                 </p>
             </form>
 

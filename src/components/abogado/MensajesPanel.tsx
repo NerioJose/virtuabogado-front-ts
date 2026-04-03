@@ -100,49 +100,62 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-250px)] overflow-hidden bg-white rounded-xl">
+		<div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-250px)] overflow-hidden bg-white rounded-3xl shadow-sm border border-slate-100">
 			{/* Lista de conversaciones */}
-			<div className={`w-full md:w-1/3 border-r border-gray-100 flex flex-col ${conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
-				<div className="p-4 border-b border-gray-50">
-					<h2 className="text-lg font-bold text-gray-800 mb-4">Mensajes</h2>
+			<div className={`w-full md:w-[350px] border-r border-slate-50 flex flex-col bg-white ${conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
+				<div className="p-6 border-b border-slate-50">
+					<h2 className="text-xl font-black text-slate-800 tracking-tight mb-4 flex items-center gap-2">
+                        <div className="w-8 h-8 bg-azul-primario/10 rounded-lg flex items-center justify-center text-azul-primario">
+                            <FiMessageSquare size={18} />
+                        </div>
+                        Mensajes
+                    </h2>
 					<div className="relative">
 						<input
 							type="text"
 							placeholder="Buscar cliente o caso..."
 							value={busqueda}
 							onChange={(e) => setBusqueda(e.target.value)}
-							className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-azul-primario text-sm"
+							className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-azul-primario text-sm font-medium placeholder:text-slate-400"
 						/>
-						<FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+						<FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
 					</div>
 				</div>
 
-				<div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+				<div className="flex-1 overflow-y-auto custom-scrollbar">
 					{conversaciones.length === 0 ? (
-						<div className="p-8 text-center text-gray-400 text-sm">
-							No se encontraron conversaciones
+						<div className="p-12 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <FiMessageSquare size={24} />
+                            </div>
+							<p className="text-slate-400 font-bold text-sm tracking-tight">No hay mensajes aún</p>
 						</div>
 					) : (
 						conversaciones.map((conv) => (
 							<div
 								key={conv.id}
 								onClick={() => setConversacionActiva(conv.id)}
-								className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${conversacionActiva === conv.id ? 'bg-azul-claro/10 border-l-4 border-azul-primario' : ''
+								className={`p-5 mx-2 my-1 rounded-2xl cursor-pointer transition-all duration-200 group ${conversacionActiva === conv.id 
+                                    ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25' 
+                                    : 'hover:bg-slate-50'
 									}`}>
-								<div className="flex justify-between items-start mb-1">
-									<h3 className="font-semibold text-gray-900 truncate pr-2">
+								<div className="flex justify-between items-start mb-1.5">
+									<h3 className={`text-sm font-black truncate pr-2 ${conversacionActiva === conv.id ? 'text-white' : 'text-slate-800'}`}>
 										{conv.participante}
 									</h3>
-									<span className="text-[10px] text-gray-400 whitespace-nowrap">
+									<span className={`text-[10px] font-bold whitespace-nowrap uppercase tracking-tighter ${conversacionActiva === conv.id ? 'text-white/70' : 'text-slate-400'}`}>
 										{formatearFecha(conv.fechaUltimoMensaje)}
 									</span>
 								</div>
-								<p className="text-xs text-azul-primario font-medium truncate mb-1">
+								<p className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${conversacionActiva === conv.id ? 'text-white/90' : 'text-azul-primario'}`}>
 									{conv.caso}
 								</p>
-								<p className="text-xs text-gray-500 truncate">
-									{conv.ultimoMensaje}
-								</p>
+								<div className="flex items-center gap-1.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${conversacionActiva === conv.id ? 'bg-white' : 'bg-slate-300'}`} />
+                                    <p className={`text-xs truncate font-medium ${conversacionActiva === conv.id ? 'text-white/80' : 'text-slate-400 italic'}`}>
+                                        {conv.ultimoMensaje}
+                                    </p>
+                                </div>
 							</div>
 						))
 					)}
@@ -150,59 +163,58 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 			</div>
 
 			{/* Área de chat */}
-			<div className={`w-full md:w-2/3 flex flex-col bg-gray-50/30 ${!conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
+			<div className={`w-full md:flex-1 flex flex-col bg-slate-50/30 ${!conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
 				{conversacionActiva ? (
 					<>
-						{/* Cabecera móvil */}
-						<div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
-							<div className="flex items-center">
+						{/* Cabecera del Chat */}
+						<div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-sm z-10 shadow-sm">
+							<div className="flex items-center gap-4">
 								<button 
 									onClick={() => setConversacionActiva(null)}
-								className="mr-3 md:hidden p-2 hover:bg-gray-100 rounded-full"
-							>
-								<FiArrowLeft size={20} />
-							</button>
-							<div className="w-10 h-10 bg-azul-primario/10 rounded-full flex items-center justify-center mr-3 text-azul-primario">
-								<FiUser size={20} />
-							</div>
-							<div>
-								<h3 className="text-sm font-bold text-gray-900">
-									{conversaciones.find(c => c.id === conversacionActiva)?.participante}
-								</h3>
-								<p className="text-[10px] text-azul-primario font-medium">
-									{conversaciones.find(c => c.id === conversacionActiva)?.caso}
-								</p>
-							</div>
+								    className="md:hidden p-2.5 bg-slate-100 text-slate-500 rounded-xl active:scale-90 transition-all"
+                                >
+                                    <FiArrowLeft size={20} />
+                                </button>
+                                <div className="w-12 h-12 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario shadow-inner">
+                                    <FiUser size={24} />
+                                </div>
+                                <div className="min-w-0">
+                                    <h3 className="text-base font-black text-slate-800 leading-tight truncate">
+                                        {conversaciones.find(c => c.id === conversacionActiva)?.participante}
+                                    </h3>
+                                    <p className="text-[10px] text-azul-primario font-black uppercase tracking-widest truncate mt-0.5">
+                                        {conversaciones.find(c => c.id === conversacionActiva)?.caso}
+                                    </p>
+                                </div>
 							</div>
 
 							{conversacionActiva && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.COMPLETADO && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.CANCELADO && (
 								<button
 									onClick={() => openConfirmModal(conversacionActiva)}
 									disabled={updateOrder.isPending}
-									title="Finalizar caso"
-									className="px-3 py-1.5 text-xs font-bold text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 whitespace-nowrap ml-2"
+									className="px-4 py-2.5 text-[10px] font-black text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-500 hover:text-white transition-all duration-300 disabled:opacity-50 uppercase tracking-widest shadow-sm active:scale-95"
 								>
-									{updateOrder.isPending ? 'Un momento...' : 'Completar Caso'}
+									{updateOrder.isPending ? 'Procesando...' : 'Finalizar Caso'}
 								</button>
 							)}
 						</div>
 
-						{/* Chat Real */}
-						<div className="flex-1 overflow-hidden">
+						{/* Chat Real (Ocupa el resto del espacio) */}
+						<div className="flex-1 overflow-hidden relative">
 							<ChatWindow orderId={conversacionActiva} />
 						</div>
 					</>
 				) : (
-					<div className="flex-1 flex items-center justify-center p-8">
-						<div className="text-center max-w-xs">
-							<div className="mx-auto w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-6 text-azul-primario/20">
-								<FiMessageSquare size={40} />
+					<div className="flex-1 flex items-center justify-center p-12 lg:p-24">
+						<div className="text-center max-w-sm">
+							<div className="mx-auto w-24 h-24 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 flex items-center justify-center mb-8 text-azul-primario group animate-float">
+								<FiMessageSquare size={48} className="group-hover:scale-110 transition-transform" />
 							</div>
-							<h3 className="text-gray-900 font-bold text-lg mb-2">
+							<h3 className="text-slate-800 font-black text-2xl mb-4 tracking-tight">
 								Tus Conversaciones
 							</h3>
-							<p className="text-gray-500 text-sm">
-								Selecciona un caso de la lista para ver los mensajes y documentos compartidos con el cliente.
+							<p className="text-slate-400 text-sm font-medium leading-relaxed">
+								Selecciona un cliente de la lista lateral para gestionar sus consultas y compartir documentos de forma segura.
 							</p>
 						</div>
 					</div>
@@ -214,9 +226,9 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 				isOpen={modalAbierto}
 				onClose={() => setModalAbierto(false)}
 				onConfirm={handleConfirmarCompletar}
-				title="Completar Caso"
-				message="¿Estás seguro de que deseas marcar este caso como completado? Esta acción es final y cerrará el chat de forma permanente."
-				confirmText="Sí, Completar Caso"
+				title="Finalizar Caso"
+				message="¿Estás seguro de que deseas completar este caso? Se cerrará el canal de comunicación permanente con el cliente."
+				confirmText="Sí, Finalizar Caso"
 				isLoading={updateOrder.isPending}
 			/>
 		</div>

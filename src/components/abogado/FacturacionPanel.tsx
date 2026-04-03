@@ -13,7 +13,9 @@ import {
 	FiPlus,
 	FiX,
 	FiFileText,
+	FiUser,
 } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -21,6 +23,7 @@ import { formatUSD } from '@/lib/finance';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useQuery } from '@tanstack/react-query';
+import PayoutHistoryList from '@/features/finance/components/PayoutHistoryList';
 
 interface FacturacionPanelProps {
 	abogadoId: string;
@@ -63,7 +66,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	// Derive invoices from ALL relevant orders
 	const facturas: Factura[] = useMemo(() => {
 		return orders
-			.filter(o => o.status !== OrderStatus.CANCELADO && o.status !== OrderStatus.FALLIDO)
+			.filter(o => ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status))
 			.map(o => ({
 				id: o.id.toString(),
 				numero: `F-${o.numericId || o.id.toString().slice(0, 8)}`,
@@ -168,293 +171,257 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 	}
 
 	return (
-		<div className="space-y-6">
-			{/* Notificación */}
-			{notificacion && (
-				<div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${
-					notificacion.tipo === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
-				}`}>
-					{notificacion.tipo === 'success' ? <FiCheck /> : <FiClock />}
-					<span>{notificacion.mensaje}</span>
-				</div>
-			)}
+		<div className="space-y-8">
+			{/* Notificación Premium */}
+			<AnimatePresence>
+				{notificacion && (
+					<motion.div 
+						initial={{ opacity: 0, y: -20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, scale: 0.95 }}
+						className={`fixed top-6 right-6 z-[100] p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 backdrop-blur-md ${
+							notificacion.tipo === 'success' ? 'bg-emerald-600 text-white' : 'bg-azul-primario text-white'
+						}`}>
+						<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center font-bold">
+							{notificacion.tipo === 'success' ? <FiCheck /> : <FiClock />}
+						</div>
+						<span className="font-bold text-sm tracking-tight">{notificacion.mensaje}</span>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
-			{/* Resumen financiero */}
-			<div className="bg-white rounded-lg shadow-sm p-6">
-				<h2 className="text-lg font-medium text-gray-900 mb-6">
-					Resumen Financiero
-				</h2>
+			{/* Cabecera y Resumen Financiero */}
+			<div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-8">
+				<div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+					<h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+						<div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center text-azul-primario">
+							<FiPieChart size={22} />
+						</div>
+						Finanzas & Facturación
+					</h2>
 
-				<div className="flex items-center justify-end mb-4">
-					<div className="flex items-center space-x-2">
-						<span className="text-sm text-gray-500">Periodo:</span>
+					<div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100 self-end md:self-auto">
+						<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Periodo:</span>
 						<div className="relative">
 							<select
-								title="Seleccionar periodo de facturación"
-								aria-label="Seleccionar periodo de facturación"
 								value={periodo}
-								onChange={(e) =>
-									setPeriodo(e.target.value as PeriodoFacturacion)
-								}
-								className="appearance-none bg-gray-100 border border-gray-200 text-gray-700 py-1 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-azul-primario text-sm">
-								<option value="mes">Este mes</option>
-								<option value="trimestre">Este trimestre</option>
-								<option value="año">Este año</option>
+								onChange={(e) => setPeriodo(e.target.value as PeriodoFacturacion)}
+								className="appearance-none bg-white border-none text-slate-700 py-1.5 px-4 pr-10 rounded-xl leading-tight focus:ring-2 focus:ring-azul-primario text-xs font-black uppercase tracking-tight shadow-sm cursor-pointer">
+								<option value="mes">Mensual</option>
+								<option value="trimestre">Trimestral</option>
+								<option value="año">Anual</option>
 							</select>
-							<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+							<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-azul-primario">
 								<FiChevronDown size={14} />
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-					<div className="bg-blue-50 rounded-lg p-4">
-						<div className="flex items-center">
-							<div className="flex-shrink-0 bg-blue-100 rounded-full p-3 mr-4">
-								<FiDollarSign
-									className="text-blue-600"
-									size={20}
-								/>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+					{[
+						{ label: 'Ingresos Totales', value: summary?.totalIncome || 0, icon: <FiDollarSign />, color: 'azul-primario', bg: 'bg-azul-primario/5' },
+						{ label: 'En Espera', value: summary?.lawyerPendingBalance || 0, icon: <FiClock />, color: 'amber-500', bg: 'bg-amber-500/5' },
+						{ label: 'Transacciones', value: summary?.transactionCount || 0, icon: <FiCheck />, color: 'emerald-500', bg: 'bg-emerald-50/5', isAmount: false },
+						{ label: 'Pago a Recibir', value: (summary?.totalIncome || 0) + (summary?.lawyerPendingBalance || 0), icon: <FiTrendingUp />, color: 'rose-500', bg: 'bg-rose-500/5' }
+					].map((stat, i) => ( stat && (
+						<div key={i} className={`${stat.bg} rounded-3xl p-6 border border-slate-50 transition-all hover:scale-[1.02]`}>
+							<div className="flex items-center gap-4 mb-4">
+								<div className={`w-10 h-10 rounded-xl flex items-center justify-center text-${stat.color} bg-white shadow-sm font-black`}>
+									{stat.icon}
+								</div>
+								<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
 							</div>
-							<div>
-								<p className="text-sm text-gray-500">
-									Ingresos{' '}
-									{periodo === 'mes'
-										? 'mensuales'
-										: periodo === 'trimestre'
-											? 'trimestrales'
-											: 'anuales'}
-								</p>
-								<p className="text-xl font-bold text-gray-900">
-									{formatearImporte(summary?.totalIncome || 0)}
-								</p>
-							</div>
+							<p className={`text-2xl font-black text-slate-800 tracking-tighter`}>
+								{stat.isAmount !== false ? formatearImporte(stat.value as number) : stat.value}
+							</p>
 						</div>
-					</div>
-
-					<div className="bg-yellow-50 rounded-lg p-4">
-						<div className="flex items-center">
-							<div className="flex-shrink-0 bg-yellow-100 rounded-full p-3 mr-4">
-								<FiClock
-									className="text-yellow-600"
-									size={20}
-								/>
-							</div>
-							<div>
-								<p className="text-sm text-gray-500">Pendiente de cobro</p>
-								<p className="text-xl font-bold text-gray-900">
-									{formatearImporte(summary?.lawyerPendingBalance || 0)}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-green-50 rounded-lg p-4">
-						<div className="flex items-center">
-							<div className="flex-shrink-0 bg-green-100 rounded-full p-3 mr-4">
-								<FiPieChart
-									className="text-green-600"
-									size={20}
-								/>
-							</div>
-							<div>
-								<p className="text-sm text-gray-500">Facturas pagadas</p>
-								<p className="text-xl font-bold text-gray-900">
-									{summary?.transactionCount || 0}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-red-50 rounded-lg p-4">
-						<div className="flex items-center">
-							<div className="flex-shrink-0 bg-red-100 rounded-full p-3 mr-4">
-								<FiTrendingUp
-									className="text-red-600"
-									size={20}
-								/>
-							</div>
-							<div>
-								<p className="text-sm text-gray-500">
-									Facturas pendientes/vencidas
-								</p>
-								<p className="text-xl font-bold text-gray-900">
-									{facturas.filter(f => f.estado !== 'pagada').length}
-								</p>
-							</div>
-						</div>
-					</div>
+					)))}
 				</div>
 			</div>
 
-			{/* Lista de facturas */}
-			<div className="bg-white rounded-lg shadow-sm overflow-hidden">
-				<div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-					<h2 className="text-lg font-medium text-gray-900">Mis Facturas</h2>
+            {/* HISTORIAL DE LIQUIDACIONES RECIBIDAS (NUEVO) */}
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-8">
+                <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                        <FiCheck size={20} />
+                    </div>
+                    Liquidaciones de Honorarios Recibidas
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <PayoutHistoryList lawyerId={abogadoId} />
+                </div>
+            </div>
+
+			{/* Listado de Facturas */}
+			<div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[400px]">
+				<div className="px-8 py-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+					<h2 className="text-xl font-black text-slate-800 tracking-tight">Historial de Cobros</h2>
 					<button 
 						onClick={() => setNotificacion({tipo: 'info', mensaje: 'Módulo de creación de facturas (Próximamente)'})}
-						className="bg-azul-primario text-white px-4 py-2 rounded-lg hover:bg-azul-primario/90 transition-colors flex items-center">
-						<FiPlus className="mr-2" />
+						className="bg-azul-primario text-white px-6 py-3 rounded-2xl hover:bg-azul-primario/90 transition-all flex items-center justify-center shadow-lg shadow-azul-primario/25 font-black text-xs uppercase tracking-widest active:scale-95">
+						<FiPlus className="mr-2" size={18} />
 						Nueva factura
 					</button>
 				</div>
 
-				{/* Filtros */}
-				<div className="flex items-center gap-4 p-4 border-b border-gray-200">
-					<div className="flex items-center">
-						<FiFilter className="text-gray-500 mr-2" />
-						<span className="text-gray-700 font-medium mr-2">Filtrar:</span>
-					</div>
-
-					<div className="flex flex-wrap gap-2">
-						<button
-							onClick={() => setFiltroEstado('todas')}
-							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'todas'
-								? 'bg-azul-primario text-white'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-								}`}>
-							Todas
-						</button>
-						<button
-							onClick={() => setFiltroEstado('pagadas')}
-							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'pagadas'
-								? 'bg-green-500 text-white'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-								}`}>
-							Pagadas
-						</button>
-						<button
-							onClick={() => setFiltroEstado('pendientes')}
-							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'pendientes'
-								? 'bg-yellow-500 text-white'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-								}`}>
-							Pendientes
-						</button>
-						<button
-							onClick={() => setFiltroEstado('vencidas')}
-							className={`px-3 py-1 rounded-full text-sm ${filtroEstado === 'vencidas'
-								? 'bg-red-500 text-white'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-								}`}>
-							Vencidas
-						</button>
+				{/* Filtros Adaptativos */}
+				<div className="flex items-center gap-3 p-6 bg-slate-50 border-b border-slate-100 overflow-x-auto scrollbar-hide">
+					<FiFilter className="text-slate-400 shrink-0" />
+					<div className="flex gap-2 min-w-max">
+						{[
+							{ id: 'todas', label: 'Todas', color: 'bg-azul-primario' },
+							{ id: 'pagadas', label: 'Pagadas', color: 'bg-emerald-500' },
+							{ id: 'pendientes', label: 'Pendientes', color: 'bg-amber-500' },
+							{ id: 'vencidas', label: 'Vencidas', color: 'bg-rose-500' }
+						].map((btn) => (
+							<button
+								key={btn.id}
+								onClick={() => setFiltroEstado(btn.id as any)}
+								className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filtroEstado === btn.id
+									? `${btn.color} text-white shadow-md`
+									: 'bg-white text-slate-500 hover:text-azul-primario'
+									}`}>
+								{btn.label}
+							</button>
+						))}
 					</div>
 				</div>
 
-				{/* Tabla de facturas */}
-				<div className="overflow-x-auto">
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
+				{/* VISTA MÓVIL (Cards) */}
+				<div className="md:hidden p-4 space-y-4 pb-12">
+					{facturasFiltradas.length === 0 ? (
+						<div className="py-16 text-center">
+							<p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Sin resultados</p>
+						</div>
+					) : (
+						facturasFiltradas.map((factura) => (
+							<div key={factura.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative group overflow-hidden">
+								<div className="flex justify-between items-start mb-4">
+									<div>
+										<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Factura</span>
+										<h4 className="font-black text-slate-800 text-sm tracking-tight">{factura.numero}</h4>
+									</div>
+									<span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter ${obtenerColorEstado(factura.estado).replace('100', '500').replace('800', 'white')}`}>
+										{factura.estado}
+									</span>
+								</div>
+								
+								<div className="space-y-3 mb-5">
+									<div className="flex items-center gap-2">
+										<div className="w-6 h-6 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+											<FiUser size={12} />
+										</div>
+										<span className="text-xs font-bold text-slate-600 truncate">{factura.cliente}</span>
+									</div>
+									<div className="flex items-center gap-2">
+										<div className="w-6 h-6 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+											<FiFileText size={12} />
+										</div>
+										<span className="text-[11px] font-medium text-slate-500 truncate">{factura.concepto}</span>
+									</div>
+								</div>
+
+								<div className="flex items-center justify-between pt-4 border-t border-slate-50">
+									<div>
+										<p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Importe</p>
+										<p className="text-lg font-black text-azul-primario leading-none mt-1">{formatearImporte(factura.importe)}</p>
+									</div>
+									<div className="flex gap-2">
+										<button 
+											onClick={() => setFacturaSeleccionada(factura)}
+											className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center transition-all active:scale-90"
+										>
+											<FiEye size={18} />
+										</button>
+										<button 
+											onClick={() => handleDescargar(factura)}
+											className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center transition-all active:scale-90"
+										>
+											<FiDownload size={18} />
+										</button>
+										{factura.estado !== 'pagada' && (
+											<button 
+												onClick={() => handleMarcarPagada(factura)}
+												className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center transition-all active:scale-90"
+											>
+												<FiCheck size={18} />
+											</button>
+										)}
+									</div>
+								</div>
+							</div>
+						))
+					)}
+				</div>
+
+				{/* VISTA DESKTOP (Tabla) */}
+				<div className="hidden md:block">
+					<table className="min-w-full divide-y divide-slate-50">
+						<thead className="bg-slate-50/30">
 							<tr>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Nº Factura
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Cliente
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Concepto
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Fecha
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Importe
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Estado
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Acciones
-								</th>
+								<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Nº Factura</th>
+								<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Concepto</th>
+								<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
+								<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Importe</th>
+								<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+								<th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
 							</tr>
 						</thead>
-						<tbody className="bg-white divide-y divide-gray-200">
+						<tbody className="bg-white divide-y divide-slate-50">
 							{facturasFiltradas.length === 0 ? (
 								<tr>
-									<td
-										colSpan={7}
-										className="px-6 py-4 text-center text-gray-500">
-										No se encontraron facturas con los criterios de búsqueda.
+									<td colSpan={7} className="px-8 py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+										No hay facturas registradas
 									</td>
 								</tr>
 							) : (
 								facturasFiltradas.map((factura) => (
-									<tr
-										key={factura.id}
-										className="hover:bg-gray-50">
-										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm font-medium text-gray-900">
-												{factura.numero}
-											</div>
+									<tr key={factura.id} className="hover:bg-slate-50/50 transition-colors group">
+										<td className="px-8 py-6 whitespace-nowrap">
+											<div className="text-sm font-black text-slate-800">{factura.numero}</div>
+											<div className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Expediente Digital</div>
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm text-gray-900">
-												{factura.cliente}
-											</div>
+										<td className="px-8 py-6">
+											<div className="text-sm font-black text-slate-700">{factura.cliente}</div>
+											<div className="text-xs text-azul-primario font-bold tracking-tight truncate max-w-[200px]">{factura.concepto}</div>
 										</td>
-										<td className="px-6 py-4">
-											<div className="text-sm text-gray-900">
-												{factura.concepto}
-											</div>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm text-gray-900">
+										<td className="px-8 py-6 whitespace-nowrap">
+											<div className="text-sm text-slate-500 font-black flex items-center">
+												<FiClock className="mr-1.5 text-slate-300" size={14} />
 												{factura.fecha}
 											</div>
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<div className="text-sm font-medium text-gray-900">
+										<td className="px-8 py-6 whitespace-nowrap">
+											<div className="text-base font-black text-slate-800">
 												{formatearImporte(factura.importe)}
 											</div>
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<span
-												className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${obtenerColorEstado(
-													factura.estado
-												)}`}>
-												{factura.estado === 'pagada' && 'Pagada'}
-												{factura.estado === 'pendiente' && 'Pendiente'}
-												{factura.estado === 'vencida' && 'Vencida'}
+										<td className="px-8 py-6 whitespace-nowrap">
+											<span className={`px-4 py-1.5 inline-flex text-[9px] font-black uppercase tracking-widest rounded-xl ${obtenerColorEstado(factura.estado).replace('100', '500').replace('800', 'white')}`}>
+												{factura.estado}
 											</span>
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-											<div className="flex justify-end space-x-2">
+										<td className="px-8 py-6 whitespace-nowrap text-right">
+											<div className="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
 												<button
 													onClick={() => setFacturaSeleccionada(factura)}
-													className="text-azul-primario hover:text-azul-primario/80"
-													title="Ver detalles">
+													className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all flex items-center justify-center"
+												>
 													<FiEye size={18} />
 												</button>
-
 												<button
 													onClick={() => handleDescargar(factura)}
-													className="text-gray-600 hover:text-gray-800"
-													title="Descargar factura">
+													className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition-all flex items-center justify-center"
+												>
 													<FiDownload size={18} />
 												</button>
-
 												{factura.estado !== 'pagada' && (
 													<button
 														onClick={() => handleMarcarPagada(factura)}
-														className="text-green-600 hover:text-green-800"
-														title="Marcar como pagada">
+														className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center"
+													>
 														<FiCheck size={18} />
 													</button>
 												)}
@@ -468,67 +435,81 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 				</div>
 			</div>
 
-			{/* Modal de Detalles */}
-			{facturaSeleccionada && !mostrarModalConfirmacion && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-					<div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
-						<div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-azul-primario text-white">
-							<h3 className="text-lg font-bold flex items-center gap-2">
-								<FiFileText /> Detalles de Factura
-							</h3>
-							<button onClick={() => setFacturaSeleccionada(null)} className="hover:rotate-90 transition-transform">
-								<FiX size={20} />
-							</button>
-						</div>
-						<div className="p-6 space-y-4">
-							<div className="grid grid-cols-2 gap-4">
+			{/* Modal de Detalles Premium */}
+			<AnimatePresence>
+				{facturaSeleccionada && !mostrarModalConfirmacion && (
+					<div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+						<motion.div 
+							initial={{ scale: 0.9, opacity: 0, y: 20 }}
+							animate={{ scale: 1, opacity: 1, y: 0 }}
+							exit={{ scale: 0.9, opacity: 0, y: 20 }}
+							className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100">
+							<div className="px-10 py-8 border-b border-slate-50 flex justify-between items-center bg-azul-primario/5">
 								<div>
-									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Número</p>
-									<p className="font-medium text-gray-900">{facturaSeleccionada.numero}</p>
+									<h3 className="text-xl font-black text-azul-primario tracking-tight flex items-center gap-2">
+										<FiFileText /> Detalles del Cobro
+									</h3>
+									<p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Documento ID: {facturaSeleccionada.numero}</p>
 								</div>
-								<div>
-									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Fecha</p>
-									<p className="font-medium text-gray-900">{facturaSeleccionada.fecha}</p>
+								<button 
+									onClick={() => setFacturaSeleccionada(null)} 
+									className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all font-black"
+								>
+									<FiX size={20} />
+								</button>
+							</div>
+							<div className="p-10 space-y-8">
+								<div className="grid grid-cols-2 gap-8">
+									<div>
+										<p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Emisión</p>
+										<p className="font-black text-slate-800 text-sm italic">{facturaSeleccionada.fecha}</p>
+									</div>
+									<div className="text-right">
+										<p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Estado</p>
+										<span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${obtenerColorEstado(facturaSeleccionada.estado).replace('100', '500').replace('800', 'white')}`}>
+											{facturaSeleccionada.estado}
+										</span>
+									</div>
+									<div className="col-span-2 p-5 bg-slate-50 rounded-3xl border border-slate-100">
+										<p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-2">Cliente Asignado</p>
+										<p className="font-black text-slate-800 text-base">{facturaSeleccionada.cliente}</p>
+										<p className="text-xs font-bold text-azul-primario mt-0.5">{facturaSeleccionada.clienteEmail}</p>
+									</div>
+									<div className="col-span-2">
+										<p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-2">Servicio Prestado</p>
+										<p className="font-bold text-slate-600 text-sm leading-relaxed">{facturaSeleccionada.concepto}</p>
+									</div>
 								</div>
-								<div className="col-span-2">
-									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Cliente</p>
-									<p className="font-medium text-gray-900">{facturaSeleccionada.cliente}</p>
-									<p className="text-xs text-gray-400">{facturaSeleccionada.clienteEmail}</p>
-								</div>
-								<div className="col-span-2">
-									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Concepto</p>
-									<p className="font-medium text-gray-900">{facturaSeleccionada.concepto}</p>
+								
+								<div className="pt-8 border-t border-slate-100 flex justify-between items-end">
+									<div>
+										<p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Monto de Liquidación</p>
+										<p className="text-4xl font-black text-azul-primario tracking-tighter leading-none">{formatearImporte(facturaSeleccionada.importe)}</p>
+									</div>
+									<FiDollarSign className="text-azul-primario/10" size={64} />
 								</div>
 							</div>
-							<div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-								<div>
-									<p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Total</p>
-									<p className="text-2xl font-bold text-azul-primario">{formatearImporte(facturaSeleccionada.importe)}</p>
-								</div>
-								<span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${obtenerColorEstado(facturaSeleccionada.estado)}`}>
-									{facturaSeleccionada.estado}
-								</span>
+							<div className="bg-slate-50 px-10 py-6 flex gap-4">
+								<button 
+									onClick={() => handleDescargar(facturaSeleccionada)}
+									className="flex-1 bg-azul-primario text-white h-14 rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-azul-primario/25 transition-all flex items-center justify-center gap-3 shadow-lg shadow-azul-primario/20 active:scale-95"
+								>
+									<FiDownload size={18} /> Descargar PDF
+								</button>
 							</div>
-						</div>
-						<div className="bg-gray-50 px-6 py-4 flex gap-3">
-							<button 
-								onClick={() => handleDescargar(facturaSeleccionada)}
-								className="flex-1 bg-azul-primario text-white py-2 rounded-lg font-medium hover:bg-azul-primario/90 transition-colors flex items-center justify-center gap-2"
-							>
-								<FiDownload /> Descargar PDF
-							</button>
-						</div>
+						</motion.div>
 					</div>
-				</div>
-			)}
+				)}
+			</AnimatePresence>
 
 			<ConfirmModal
 				isOpen={mostrarModalConfirmacion}
 				onClose={() => setMostrarModalConfirmacion(false)}
 				onConfirm={confirmarPago}
 				title="Confirmar Pago"
-				message={`¿Estás seguro de que deseas marcar la factura ${facturaSeleccionada?.numero} como pagada?`}
-				confirmText="Sí, marcar como pagada"
+				message={`¿Confirmas que has recibido el pago para la liquidación ${facturaSeleccionada?.numero}? Esta acción actualizará tu balance contable.`}
+				confirmText="Sí, Conciliar Pago"
+				isLoading={updateOrder.isPending}
 			/>
 		</div>
 	);

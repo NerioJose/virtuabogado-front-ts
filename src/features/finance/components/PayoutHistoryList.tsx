@@ -1,0 +1,112 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getPayoutHistory } from '../actions/payoutActions';
+import { formatUSD } from '@/lib/finance';
+import { 
+    FiCheckCircle, 
+    FiClock, 
+    FiCalendar, 
+    FiDollarSign,
+    FiLoader,
+    FiFileText
+} from 'react-icons/fi';
+import { motion } from 'framer-motion';
+
+interface PayoutHistoryListProps {
+    lawyerId: string;
+}
+
+export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) {
+    const [payouts, setPayouts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const data = await getPayoutHistory(lawyerId);
+                setPayouts(data);
+            } catch (error) {
+                console.error('Error fetching lawyer payouts:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (lawyerId) fetchHistory();
+    }, [lawyerId]);
+
+    if (loading) {
+        return (
+            <div className="col-span-full flex justify-center py-10">
+                <FiLoader className="animate-spin text-azul-primario" size={32} />
+            </div>
+        );
+    }
+
+    if (payouts.length === 0) {
+        return (
+            <div className="col-span-full py-16 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                <FiDollarSign className="mx-auto text-slate-300 mb-4" size={48} />
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Aún no has recibido liquidaciones</p>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            {payouts.map((payout, idx) => (
+                <motion.div 
+                    key={payout.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                        <FiCheckCircle size={60} />
+                    </div>
+
+                    <div className="flex justify-between items-start mb-6 relative z-10">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liquidación</p>
+                            <h4 className="text-xl font-black text-slate-900 tracking-tighter">
+                                {formatUSD(payout.amount)}
+                            </h4>
+                        </div>
+                        <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${
+                            payout.status === 'COMPLETADO' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
+                            {payout.status}
+                        </span>
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                        <div className="flex items-center gap-3">
+                            <FiCalendar className="text-slate-300" />
+                            <span className="text-xs font-bold text-slate-500">{new Date(payout.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <FiFileText className="text-slate-300" />
+                            <span className="text-[10px] font-black text-azul-primario uppercase tracking-widest">{payout._count.orders} Casos incluidos</span>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-50">
+                        {payout.reference ? (
+                            <div className="flex flex-col gap-1">
+                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Ref. Bancaria</p>
+                                <p className="text-xs font-black text-slate-700 truncate">{payout.reference}</p>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-amber-500">
+                                <FiClock size={14} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Pago en procesamiento</span>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            ))}
+        </>
+    );
+}

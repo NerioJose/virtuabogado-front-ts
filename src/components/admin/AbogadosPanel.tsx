@@ -1,13 +1,14 @@
 import { useState, useMemo, memo } from 'react';
-import { FiBriefcase, FiSearch, FiEdit2, FiTrash2, FiMoreVertical, FiUserCheck, FiStar, FiCheck, FiX, FiFilter, FiAward, FiMapPin } from 'react-icons/fi';
+import { FiBriefcase, FiEdit2, FiTrash2, FiUserCheck, FiStar, FiCheck, FiX, FiFilter, FiAward, FiMail, FiPhone, FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
 import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
-import { Lawyer, LawyerStatus } from '@/features/lawyers/types/lawyers.types';
+import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { ElementoSeleccionable } from '@/types/index';
 import { formatLawyerName } from '@/utils/formatters';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AbogadosPanelProps {
   terminoBusqueda: string;
@@ -15,50 +16,47 @@ interface AbogadosPanelProps {
 }
 
 function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
-  // ============ REACT QUERY ============
   const { data: lawyers = [], isLoading } = useLawyers();
   const { data: ordersResponse } = useOrders();
   const orders = ordersResponse?.data || [];
 
-  // Filtros locales
   const [especialidadFilter, setEspecialidadFilter] = useState<string>('todas');
   const [statusFilter, setStatusFilter] = useState<'ALL' | LawyerStatus>('ALL');
 
-  // Obtener especialidades únicas
   const especialidades = useMemo(() => {
     const specs = new Set<string>();
     lawyers.forEach(l => specs.add(l.especialidad));
     return Array.from(specs).sort();
   }, [lawyers]);
 
-  // Filtrar abogados
   const filteredLawyers = useMemo(() => {
     const term = terminoBusqueda.toLowerCase();
-
     return lawyers.filter(lawyer => {
       const matchesSearch =
         lawyer.nombre.toLowerCase().includes(term) ||
         lawyer.email.toLowerCase().includes(term) ||
         (lawyer.telefono && lawyer.telefono.includes(term));
-
       const matchesSpecialty = especialidadFilter === 'todas' || lawyer.especialidad === especialidadFilter;
       const matchesStatus = statusFilter === 'ALL' || lawyer.status === statusFilter;
-
       return matchesSearch && matchesSpecialty && matchesStatus;
     });
   }, [lawyers, terminoBusqueda, especialidadFilter, statusFilter]);
 
-  // Casos actualmente en proceso asignados al abogado
   const getActiveCases = (lawyerId: string) => {
-    return orders.filter(
-      o => o.lawyerId === lawyerId && o.status === OrderStatus.EN_PROGRESO
-    ).length;
+    return orders.filter(o => o.lawyerId === lawyerId && o.status === OrderStatus.EN_PROGRESO).length;
   };
 
-  // TODO: Implementar cambio de estado con mutación
   const cambiarEstadoAbogado = (id: string, status: LawyerStatus) => {
     console.log('Implement change status', id, status);
-  }
+  };
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
 
   if (isLoading && lawyers.length === 0) {
     return (
@@ -69,179 +67,207 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex items-center gap-2">
-          <FiSearch className="text-gray-400" />
-          <span className="text-sm font-medium text-gray-700">Filtros:</span>
+    <div className="space-y-8">
+      {/* Filtros Modernos */}
+      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center bg-white/50 backdrop-blur-sm p-2 md:p-3 rounded-[1.5rem] border border-slate-200/60 shadow-sm">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200/40 shadow-inner">
+          <FiFilter className="text-azul-primario" />
+          <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Filtros Avanzados</span>
         </div>
 
-        <select
-          className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario/50 text-sm"
-          value={especialidadFilter}
-          onChange={(e) => setEspecialidadFilter(e.target.value)}
-        >
-          <option value="todas">Todas las especialidades</option>
-          {especialidades.map(esp => (
-            <option key={esp} value={esp}>{esp}</option>
-          ))}
-        </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+          <select
+            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm font-bold text-slate-600 appearance-none shadow-sm transition-all"
+            value={especialidadFilter}
+            onChange={(e) => setEspecialidadFilter(e.target.value)}
+          >
+            <option value="todas">🎯 Todas las especialidades</option>
+            {especialidades.map(esp => (
+              <option key={esp} value={esp}>⚖️ {esp}</option>
+            ))}
+          </select>
 
-        <select
-          className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-primario/50 text-sm"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as any)}
-        >
-          <option value="ALL">Todos los estados</option>
-          <option value={LawyerStatus.ACTIVE}>Activos</option>
-          <option value={LawyerStatus.PENDING}>Pendientes</option>
-          <option value={LawyerStatus.INACTIVE}>Inactivos</option>
-        </select>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Abogado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Especialidad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Carga
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Calificación
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLawyers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    No se encontraron abogados con los criterios seleccionados
-                  </td>
-                </tr>
-              ) : (
-                filteredLawyers.map((lawyer) => {
-                  const casosEnProceso = getActiveCases(lawyer.id);
-
-                  return (
-                    <tr key={lawyer.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 relative">
-                            <Image
-                              src={userImage}
-                              alt={lawyer.nombre}
-                              fill
-                              className="rounded-full object-cover"
-                            />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{formatLawyerName(lawyer.nombre)}</div>
-                            <div className="text-xs text-gray-500">{lawyer.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
-                          {lawyer.especialidad}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${lawyer.status === LawyerStatus.ACTIVE ? 'bg-green-100 text-green-800' :
-                          lawyer.status === LawyerStatus.PENDING ? 'bg-purple-100 text-purple-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                          {lawyer.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            casosEnProceso === 0
-                              ? 'bg-gray-100 text-gray-500'
-                              : casosEnProceso >= 8
-                              ? 'bg-red-100 text-red-700'
-                              : casosEnProceso >= 4
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}>
-                            <FiBriefcase className="w-3 h-3" />
-                            {casosEnProceso} {casosEnProceso === 1 ? 'caso' : 'casos'} en proceso
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-amber-500">
-                          <span className="text-sm font-bold text-gray-700 mr-1">{lawyer.rating || 'N/A'}</span>
-                          <FiStar className="fill-current w-4 h-4" />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
-                          <button
-                            onClick={() => abrirModal('ver', lawyer as unknown as ElementoSeleccionable)}
-                            className="text-azul-primario hover:text-azul-primario/80"
-                            title="Ver perfil"
-                          >
-                            <FiUserCheck />
-                          </button>
-                          <button
-                            onClick={() => abrirModal('editar', lawyer as unknown as ElementoSeleccionable)}
-                            className="text-amber-500 hover:text-amber-600"
-                            title="Editar"
-                          >
-                            <FiEdit2 />
-                          </button>
-
-                          {lawyer.status === LawyerStatus.PENDING && (
-                            <>
-                              <button
-                                onClick={() => cambiarEstadoAbogado(lawyer.id, LawyerStatus.ACTIVE)}
-                                className="text-green-500 hover:text-green-600"
-                                title="Aprobar"
-                              >
-                                <FiCheck />
-                              </button>
-                              <button
-                                onClick={() => cambiarEstadoAbogado(lawyer.id, LawyerStatus.INACTIVE)}
-                                className="text-red-500 hover:text-red-600"
-                                title="Rechazar"
-                              >
-                                <FiX />
-                              </button>
-                            </>
-                          )}
-
-                          <button
-                            onClick={() => abrirModal('eliminar', lawyer as unknown as ElementoSeleccionable)}
-                            className="text-red-500 hover:text-red-600"
-                            title="Desactivar/Eliminar"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          <select
+            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm font-bold text-slate-600 appearance-none shadow-sm transition-all"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+          >
+            <option value="ALL">📋 Todos los estados</option>
+            <option value={LawyerStatus.ACTIVE}>✅ Activos</option>
+            <option value={LawyerStatus.PENDING}>⏳ Pendientes</option>
+            <option value={LawyerStatus.INACTIVE}>🚫 Inactivos</option>
+          </select>
         </div>
       </div>
+
+      {/* Vista Móvil: Tarjetas Premium */}
+      <motion.div 
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:hidden"
+      >
+        <AnimatePresence mode='popLayout'>
+          {filteredLawyers.map((lawyer) => {
+            const casosEnProceso = getActiveCases(lawyer.id);
+            return (
+              <motion.div
+                layout
+                key={lawyer.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm p-6 relative overflow-hidden"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-white">
+                      <Image src={userImage} alt={lawyer.nombre} fill className="object-cover" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-azul-primario leading-tight">{formatLawyerName(lawyer.nombre)}</h3>
+                      <div className="flex items-center gap-1 text-amber-500 mt-1">
+                        <FiStar className="fill-current w-3 h-3" />
+                        <span className="text-xs font-black">{lawyer.rating || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                    lawyer.status === LawyerStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
+                    lawyer.status === LawyerStatus.PENDING ? 'bg-amber-50 text-amber-600' :
+                    'bg-slate-50 text-slate-500'
+                  }`}>
+                    {lawyer.status}
+                  </span>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <FiAward className="text-azul-primario" />
+                    <span className="text-xs font-bold uppercase tracking-tight">{lawyer.especialidad}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <FiMail className="text-azul-primario" />
+                    <span className="text-xs font-medium truncate">{lawyer.email}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black tracking-tight ${
+                    casosEnProceso >= 8 ? 'bg-rose-50 text-rose-600' :
+                    casosEnProceso >= 4 ? 'bg-amber-50 text-amber-600' :
+                    'bg-emerald-50 text-emerald-600'
+                  }`}>
+                    <FiBriefcase /> {casosEnProceso} CARGA
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => abrirModal('editar', lawyer as any)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-azul-primario hover:text-white transition-all">
+                      <FiEdit2 size={18} />
+                    </button>
+                    <button onClick={() => abrirModal('ver', lawyer as any)} className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all">
+                      <FiUserCheck size={18} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Vista Escritorio: Tabla Refinada */}
+      <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-100">
+          <thead className="bg-slate-50/50">
+            <tr>
+              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
+              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Especialidad</th>
+              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado Operativo</th>
+              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nivel Carga</th>
+              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ranking</th>
+              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            <AnimatePresence mode='popLayout'>
+              {filteredLawyers.map((lawyer) => {
+                const casosEnProceso = getActiveCases(lawyer.id);
+                return (
+                  <motion.tr 
+                    layout
+                    key={lawyer.id} 
+                    className="group hover:bg-slate-50/50 transition-colors"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-12 w-12 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+                          <Image src={userImage} alt={lawyer.nombre} fill className="object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-azul-primario leading-tight">{formatLawyerName(lawyer.nombre)}</p>
+                          <p className="text-xs text-slate-400 font-medium">{lawyer.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className="px-3 py-1 bg-azul-primario/5 text-azul-primario rounded-xl text-[10px] font-black uppercase tracking-tight">
+                        {lawyer.especialidad}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        lawyer.status === LawyerStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
+                        lawyer.status === LawyerStatus.PENDING ? 'bg-amber-50 text-amber-600' :
+                        'bg-slate-100 text-slate-500'
+                      }`}>
+                        {lawyer.status}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
+                        casosEnProceso >= 8 ? 'bg-rose-50 text-rose-600' :
+                        casosEnProceso >= 4 ? 'bg-amber-50 text-amber-600' :
+                        'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        <FiBriefcase /> {casosEnProceso} {casosEnProceso === 1 ? 'CASO' : 'CASOS'}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-1.5 text-amber-500">
+                        <span className="text-sm font-black text-slate-700">{lawyer.rating || '--'}</span>
+                        <FiStar className="fill-current w-4 h-4" />
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('ver', lawyer as any)} className="p-2 bg-azul-primario/5 text-azul-primario rounded-lg">
+                          <FiUserCheck size={18} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('editar', lawyer as any)} className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                          <FiEdit2 size={18} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('eliminar', lawyer as any)} className="p-2 bg-rose-50 text-rose-500 rounded-lg">
+                          <FiTrash2 size={18} />
+                        </motion.button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
+
+      {filteredLawyers.length === 0 && (
+        <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-200/60 shadow-sm">
+          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiSearch className="text-slate-300" size={32} />
+          </div>
+          <h3 className="text-lg font-black text-azul-primario">Sin coincidencias</h3>
+          <p className="text-slate-400 text-sm mt-1">Intenta con otros criterios de búsqueda.</p>
+        </div>
+      )}
     </div>
   );
 }

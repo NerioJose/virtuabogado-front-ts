@@ -37,25 +37,51 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // 4. Enviar Email vía Resend
-        const resetLink = `${new URL(request.url).origin}/auth/reset-password?token=${token}`;
+        // 4. Enviar Email vía Resend Elite Design
+        const origin = new URL(request.url).origin;
+        const resetLink = `${origin}/auth/reset-password?token=${token}`;
         
         await resend.emails.send({
-            from: 'VirtuAbogado <onboarding@resend.dev>', // Cambiar a dominio verificado en prod
+            from: 'VirtuAbogado <onboarding@resend.dev>', // 🚨 NOTA: Cambiar a no-reply@tudominio.com cuando verifiques dominio
+            replyTo: 'virtuabogado.legal@gmail.com',
             to: email,
-            subject: 'Restablece tu contraseña - VirtuAbogado 🔒',
+            subject: 'Restablece tu contraseña en VirtuAbogado 🔒',
             html: `
-                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
-                    <div style="background: #1961a0; padding: 30px; text-align: center; color: white;">
-                        <h2 style="margin: 0;">VirtuAbogado</h2>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+                        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+                        .header { background-color: #1961a0; padding: 40px; text-align: center; }
+                        .logo { height: 40px; margin-bottom: 20px; }
+                        .content { padding: 48px; text-align: center; }
+                        .title { color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 16px; letter-spacing: -0.025em; }
+                        .text { color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
+                        .button { display: inline-block; background-color: #1961a0; color: #ffffff !important; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; box-shadow: 0 10px 20px -5px rgba(25, 97, 160, 0.3); transition: all 0.2s; }
+                        .footer { padding: 32px; background-color: #f1f5f9; text-align: center; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; }
+                        .footer-text { color: #94a3b8; font-size: 12px; margin: 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1 style="color: white; margin: 0; font-weight: 900; tracking-tight: -0.05em;">VirtuAbogado</h1>
+                        </div>
+                        <div class="content">
+                            <h2 class="title">Recuperación de Cuenta</h2>
+                            <p class="text">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta legal. Si no realizaste esta solicitud, puedes ignorar este mensaje de forma segura.</p>
+                            <a href="${resetLink}" class="button">Restablecer Contraseña</a>
+                            <p style="margin-top: 32px; color: #94a3b8; font-size: 13px;">Este enlace es válido por 15 minutos.</p>
+                        </div>
+                        <div class="footer">
+                            <p class="footer-text">© ${new Date().getFullYear()} VirtuAbogado. Todos los derechos reservados.</p>
+                            <p class="footer-text" style="margin-top: 8px;">Este es un mensaje automático, por favor no respondas directamente.</p>
+                        </div>
                     </div>
-                    <div style="padding: 40px; text-align: center;">
-                        <h1 style="color: #1e293b; font-size: 20px;">Restablece tu contraseña</h1>
-                        <p style="color: #64748b; line-height: 1.6;">Recibimos una solicitud para cambiar tu contraseña. Haz clic en el botón de abajo para continuar:</p>
-                        <a href="${resetLink}" style="display: inline-block; background: #1961a0; color: white; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-top: 20px;">Restablecer mi Contraseña</a>
-                        <p style="color: #94a3b8; font-size: 12px; margin-top: 30px;">Este enlace expirará en 15 minutos. Si no solicitaste este cambio, ignora este correo.</p>
-                    </div>
-                </div>
+                </body>
+                </html>
             `
         });
 

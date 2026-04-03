@@ -135,220 +135,209 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		<div className="flex min-h-screen bg-gray-100">
 			{/* Sidebar responsivo con overlay */}
 			{isSidebarOpen && (
-				<div 
-					className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+				<motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+					className="fixed inset-0 bg-slate-900/60 z-[60] lg:hidden backdrop-blur-sm"
 					onClick={() => setIsSidebarOpen(false)}
 				/>
 			)}
 
-			<div className={`
-				w-64 bg-white shadow-xl fixed h-full z-50 transition-transform duration-300 ease-in-out
-				${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-			`}>
-				<div className="p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario/5">
+			<motion.div 
+                className={`
+                    w-72 bg-white shadow-2xl fixed h-full z-[70] transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)
+                    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                `}
+            >
+				<div className="p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario/[0.02]">
 					<div>
-						<h2 className="text-xl font-bold text-azul-primario tracking-tight">
-							Dashboard
+						<h2 className="text-xl font-black text-azul-primario tracking-tight flex items-center gap-2">
+							<div className="w-8 h-8 bg-azul-primario rounded-lg flex items-center justify-center text-white">
+                                <FiBriefcase size={18} />
+                            </div>
+                            VirtuAbogado
 						</h2>
-						<p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Estatus: Abogado Verificado</p>
+						<p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Panel de Gestión</p>
 					</div>
 					<button 
 						onClick={() => setIsSidebarOpen(false)}
-						className="lg:hidden p-2 text-gray-400 hover:text-azul-primario transition-colors"
+						className="lg:hidden p-2 text-slate-400 hover:text-red-500 transition-colors"
 					>
-						<FiX size={20} />
+						<FiX size={24} />
 					</button>
 				</div>
 
-				<nav className="mt-4 overflow-y-auto max-h-[calc(100vh-120px)]">
-					<ul className="px-3 space-y-1">
-						<li>
-							<button
-								onClick={() => { handleNavClick('casos'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'casos'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiBriefcase className="mr-3" />
-								<span className="font-semibold text-sm">Mis Casos</span>
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => { handleNavClick('agenda'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'agenda'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiCalendar className="mr-3" />
-								<span className="font-semibold text-sm">Agenda</span>
-							</button>
-						</li>
-                        <li>
-							<button
-								onClick={() => { handleNavClick('mensajes'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'mensajes'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiMessageSquare className="mr-3" />
-								<span className="font-semibold text-sm">Mensajes</span>
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => { handleNavClick('clientes'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'clientes'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiUser className="mr-3" />
-								<span className="font-semibold text-sm">Mis Clientes</span>
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => { handleNavClick('facturacion'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'facturacion'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiDollarSign className="mr-3" />
-								<span className="font-semibold text-sm">Facturación</span>
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => { handleNavClick('documentos'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'documentos'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiFileText className="mr-3" />
-								<span className="font-semibold text-sm">Documentos</span>
-							</button>
-						</li>
-						<li className="pt-4 mt-4 border-t border-gray-100">
-							<button
-								onClick={() => { handleNavClick('perfil'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'perfil'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiUser className="mr-3" />
-								<span className="font-semibold text-sm">Mi Perfil</span>
-							</button>
-						</li>
-						<li>
-							<button
-								onClick={() => { handleNavClick('historial'); setIsSidebarOpen(false); }}
-								className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${seccionActiva === 'historial'
-									? 'bg-azul-primario text-white shadow-md shadow-azul-primario/20'
-									: 'text-gray-500 hover:bg-gray-100'
-									}`}>
-								<FiClock className="mr-3" />
-								<span className="font-semibold text-sm">Historial</span>
-							</button>
-						</li>
-						<li className="mt-8">
+				<nav className="mt-6 overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar">
+					<ul className="px-4 space-y-1.5">
+						{[
+							{ id: 'casos', label: 'Mis Casos', icon: <FiBriefcase /> },
+							{ id: 'agenda', label: 'Agenda', icon: <FiCalendar /> },
+							{ id: 'mensajes', label: 'Mensajes', icon: <FiMessageSquare /> },
+							{ id: 'clientes', label: 'Mis Clientes', icon: <FiUser /> },
+							{ id: 'facturacion', label: 'Facturación', icon: <FiDollarSign /> },
+							{ id: 'documentos', label: 'Documentos', icon: <FiFileText /> },
+							{ id: 'perfil', label: 'Mi Perfil', icon: <FiUser />, divider: true },
+							{ id: 'historial', label: 'Historial', icon: <FiClock /> },
+						].map((item) => (
+							<li key={item.id} className={item.divider ? 'pt-4 mt-4 border-t border-slate-100' : ''}>
+								<button
+									onClick={() => { handleNavClick(item.id); setIsSidebarOpen(false); }}
+									className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group ${seccionActiva === item.id
+										? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 translate-x-2'
+										: 'text-slate-500 hover:bg-slate-50 hover:text-azul-primario'
+										}`}>
+                                    <span className={`text-lg mr-3 transition-transform group-hover:scale-110 ${seccionActiva === item.id ? 'text-white' : 'text-slate-400'}`}>
+                                        {item.icon}
+                                    </span>
+									<span className="font-bold text-sm">{item.label}</span>
+								</button>
+							</li>
+						))}
+						
+						<li className="mt-12 mb-6">
 							<button
 								onClick={handleLogout}
-								className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all group">
-								<FiLogOut className="mr-3 group-hover:-translate-x-1 transition-transform" />
-								<span className="font-bold text-sm">Cerrar Sesión</span>
+								className="w-full flex items-center px-4 py-4 text-red-500 hover:bg-red-50 rounded-2xl transition-all group font-black text-sm">
+								<FiLogOut className="mr-3 group-hover:-translate-x-1 transition-transform text-lg" />
+								<span>Cerrar Sesión</span>
 							</button>
 						</li>
 					</ul>
 				</nav>
-			</div>
+			</motion.div>
 
 			{/* Main Content Area */}
-			<div className="lg:ml-64 flex-1 p-4 md:p-8 transition-all duration-300">
-				{/* Móvil Toggle */}
-				<button 
-					onClick={() => setIsSidebarOpen(true)}
-					className="lg:hidden mb-6 p-3 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 text-azul-primario group active:scale-95 transition-all"
-				>
-					<div className="bg-azul-primario/10 p-2 rounded-lg">
-                        <FiMenu />
+			<div className="lg:ml-72 flex-1 min-h-screen flex flex-col transition-all duration-500 bg-slate-50/50">
+				{/* Móvil Header / Top Bar */}
+				<header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 lg:hidden px-4 h-16 flex items-center justify-between">
+					<button 
+						onClick={() => setIsSidebarOpen(true)}
+						className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl active:scale-90 transition-all"
+					>
+                        <FiMenu size={24} />
+					</button>
+                    <div className="text-sm font-black text-azul-primario uppercase tracking-tighter">
+                        Dashboard
                     </div>
-					<span className="text-sm font-bold uppercase tracking-wider">Menú de Gestión</span>
-				</button>
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 overflow-hidden border-2 border-white shadow-sm">
+                        {abogado?.picture ? (
+                            <img src={abogado.picture} alt={abogado.nombre} className="w-full h-full object-cover" />
+                        ) : (
+                            <FiUser size={20} />
+                        )}
+                    </div>
+				</header>
 
-				{/* Dashboard Stats */}
-				{seccionActiva === 'casos' && (
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-						<motion.div
-							initial={{ opacity: 0, y: 15 }}
-							animate={{ opacity: 1, y: 0 }}
-							className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
-							<div className="flex justify-between items-start">
-								<div>
-									<p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Activos</p>
-									<h3 className="text-4xl font-black text-gray-800 mt-1">
-										{estadisticas.casosActivos}
-									</h3>
-								</div>
-								<div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-									<FiBriefcase size={22} />
-								</div>
-							</div>
-							<div className="mt-4 flex items-center text-amber-500 font-bold text-[11px] bg-amber-50 rounded-full px-3 py-1 w-fit">
-								<FiClock className="mr-1.5" />
-								<span>{estadisticas.casosPendientes} por revisar</span>
-							</div>
-						</motion.div>
+				<main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+					{/* Welcome Header (Desktop) */}
+					<header className="hidden lg:flex justify-between items-center mb-10">
+						<div>
+							<h1 className="text-3xl font-black text-slate-900 tracking-tight">
+								Hola, <span className="text-azul-primario">{abogado?.nombre.split(' ')[0]}</span> 👋
+							</h1>
+							<p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-widest">
+								Panel de gestión especializado
+							</p>
+						</div>
+						<div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <p className="text-sm font-black text-slate-900">{abogado?.nombre}</p>
+                                <p className="text-xs font-bold text-azul-primario">{abogado?.especialidad}</p>
+                            </div>
+                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-azul-primario overflow-hidden">
+                                {abogado?.picture ? (
+                                    <img src={abogado.picture} alt={abogado.nombre} className="w-full h-full object-cover" />
+                                ) : (
+                                    <FiUser size={24} />
+                                )}
+                            </div>
+                        </div>
+					</header>
 
-						<motion.div
-							initial={{ opacity: 0, y: 15 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.1 }}
-							className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:shadow-purple-500/5 transition-all group">
-							<div className="flex justify-between items-start">
-								<div>
-									<p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Próxima Cita</p>
-									<h3 className="text-xl font-black text-gray-800 mt-2">
-										Hoy, {new Date(estadisticas.proximaCita).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-									</h3>
+					{/* Dashboard Stats */}
+					{seccionActiva === 'casos' && (
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
+							<motion.div
+								initial={{ opacity: 0, y: 15 }}
+								animate={{ opacity: 1, y: 0 }}
+								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                    <FiBriefcase size={80} />
+                                </div>
+								<div className="flex justify-between items-start relative z-10">
+									<div>
+										<p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Casos Activos</p>
+										<h3 className="text-4xl font-black text-slate-900 mt-1">
+											{estadisticas.casosActivos}
+										</h3>
+									</div>
+									<div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform shadow-inner">
+										<FiBriefcase size={22} />
+									</div>
 								</div>
-								<div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
-									<FiCalendar size={22} />
+								<div className="mt-6 flex items-center text-amber-600 font-black text-[10px] bg-amber-50 rounded-xl px-3 py-1.5 w-fit uppercase tracking-wider">
+									<FiClock className="mr-1.5" />
+									<span>{estadisticas.casosPendientes} pendientes</span>
 								</div>
-							</div>
-							<div className="mt-4 flex items-center text-gray-500 font-bold text-[11px] bg-gray-50 rounded-full px-3 py-1 w-fit">
-								<FiUser className="mr-1.5" />
-								<span>{estadisticas.clientesActivos} Clientes</span>
-							</div>
-						</motion.div>
+							</motion.div>
 
-						<motion.div
-							initial={{ opacity: 0, y: 15 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.2 }}
-							className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:shadow-green-500/5 transition-all group">
-							<div className="flex justify-between items-start">
-								<div>
-									<p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Balance Pendiente</p>
-									<h3 className="text-3xl font-black text-gray-800 mt-1">
-										{formatCurrency(estadisticas.ingresosMes)}
-									</h3>
+							<motion.div
+								initial={{ opacity: 0, y: 15 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.1 }}
+								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-purple-500/5 transition-all group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                    <FiCalendar size={80} />
+                                </div>
+								<div className="flex justify-between items-start relative z-10">
+									<div>
+										<p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Próxima Acceso</p>
+										<h3 className="text-xl font-black text-slate-900 mt-2">
+											{new Date().toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+										</h3>
+									</div>
+									<div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform shadow-inner">
+										<FiCalendar size={22} />
+									</div>
 								</div>
-								<div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
-									<FiDollarSign size={22} />
+								<div className="mt-6 flex items-center text-purple-600 font-black text-[10px] bg-purple-50 rounded-xl px-3 py-1.5 w-fit uppercase tracking-wider">
+									<FiUser className="mr-1.5" />
+									<span>{estadisticas.clientesActivos} Clientes</span>
 								</div>
-							</div>
-							<div className="mt-4 flex items-center text-green-500 font-bold text-[11px] bg-green-50 rounded-full px-3 py-1 w-fit">
-								<FiCheckCircle className="mr-1.5" />
-								<span>{estadisticas.casosCompletados} Exitosos</span>
-							</div>
-						</motion.div>
-					</div>
-				)}
+							</motion.div>
 
-				{/* DYNAMIC CONTENT AREA */}
-				<div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-50 p-2 md:p-8 min-h-[500px]">
-					{abogado ? (
-						<Suspense fallback={<div className="flex justify-center p-20"><FiLoader className="animate-spin text-azul-primario" size={40} /></div>}>
+							<motion.div
+								initial={{ opacity: 0, y: 15 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.2 }}
+								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-green-500/5 transition-all group relative overflow-hidden sm:col-span-2 lg:col-span-1">
+                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                    <FiDollarSign size={80} />
+                                </div>
+								<div className="flex justify-between items-start relative z-10">
+									<div>
+										<p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Honorarios Pendientes</p>
+										<h3 className="text-3xl font-black text-slate-900 mt-1">
+											{formatCurrency(estadisticas.ingresosMes)}
+										</h3>
+									</div>
+									<div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform shadow-inner">
+										<FiDollarSign size={22} />
+									</div>
+								</div>
+								<div className="mt-6 flex items-center text-emerald-600 font-black text-[10px] bg-emerald-50 rounded-xl px-3 py-1.5 w-fit uppercase tracking-wider">
+									<FiCheckCircle className="mr-1.5" />
+									<span>{estadisticas.casosCompletados} finalizados</span>
+								</div>
+							</motion.div>
+						</div>
+					)}
+
+					{/* DYNAMIC CONTENT AREA */}
+					<div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-100 p-3 md:p-8 min-h-[600px] relative">
+						{abogado ? (
+							<Suspense fallback={<div className="flex justify-center p-20"><FiLoader className="animate-spin text-azul-primario" size={40} /></div>}>
 							{seccionActiva === 'casos' && (
 								<CasosAbogadoPanel 
 									abogadoId={abogado.id} 
@@ -399,7 +388,8 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</div>
 					)}
 				</div>
-			</div>
+			</main>
 		</div>
-	);
+	</div>
+);
 }

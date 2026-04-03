@@ -15,12 +15,11 @@ import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
 import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
-import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
-import { formatUSD, serializeFinance } from '@/lib/finance';
+import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { useQuery } from '@tanstack/react-query';
-import { formatCurrency } from '@/utils/formatters';
+import { formatUSD } from '@/lib/finance';
+import { motion } from 'framer-motion';
 
 // Tipos para las estadísticas
 interface Stats {
@@ -36,48 +35,24 @@ interface Stats {
 	clientesNuevosMes: number;
 	crecimientoIngresos: number;
 	gastosOperativos: number;
-	pagosAbogados: number; // NEW: Añadido
+	pagosAbogados: number;
 }
-
-// Tipo para actividades
-interface Actividad {
-	id: string;
-	tipo: 'caso' | 'abogado' | 'pago' | 'cliente';
-	accion: string;
-	detalles: string;
-	tiempo: string;
-	timestamp: Date;
-}
-
 
 // Skeleton shimmer para tarjetas en carga
 const SkeletonCard = () => (
-	<div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+	<div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-6 animate-pulse">
 		<div className="flex items-center justify-between">
-			<div>
-				<div className="h-4 bg-gray-200 rounded w-32 mb-3"></div>
-				<div className="h-8 bg-gray-200 rounded w-16"></div>
+			<div className="space-y-3">
+				<div className="h-4 bg-slate-100 rounded-full w-24"></div>
+				<div className="h-8 bg-slate-200 rounded-xl w-16"></div>
 			</div>
-			<div className="w-12 h-12 rounded-full bg-gray-200"></div>
+			<div className="w-12 h-12 rounded-2xl bg-slate-100"></div>
 		</div>
-		<div className="mt-4 h-4 bg-gray-200 rounded w-40"></div>
+		<div className="mt-6 h-4 bg-slate-100 rounded-full w-32"></div>
 	</div>
 );
 
-// Skeleton para resumen financiero
-const SkeletonFinancial = () => (
-	<div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
-		<div className="h-5 bg-gray-200 rounded w-40 mb-6"></div>
-		{[1,2,3,4].map(i => (
-			<div key={i} className="flex justify-between items-center mb-4">
-				<div className="h-4 bg-gray-200 rounded w-32"></div>
-				<div className="h-4 bg-gray-200 rounded w-20"></div>
-			</div>
-		))}
-	</div>
-);
-
-// Componente para tarjetas de estadísticas
+// Componente para tarjetas de estadísticas Premium
 interface StatCardProps {
 	title: string;
 	value: string | number;
@@ -93,90 +68,88 @@ interface StatCardProps {
 
 const StatCard = memo(
 	({ title, value, icon, bgColor, iconColor, subtitle }: StatCardProps) => (
-		<div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+		<motion.div 
+			whileHover={{ y: -5 }}
+			className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-6 hover:shadow-xl hover:shadow-azul-primario/5 transition-all duration-300 group"
+		>
 			<div className="flex items-center justify-between">
 				<div>
-					<p className="text-gray-500 text-sm font-medium">{title}</p>
-					<p className="text-3xl font-bold text-gray-800 mt-1">
-						{typeof value === 'number' &&
-							(title.toLowerCase().includes('ingreso') || title.toLowerCase().includes('ganancia'))
-							? formatUSD(value)
-							: value}
+					<p className="text-slate-400 text-xs font-black uppercase tracking-widest">{title}</p>
+					<p className="text-3xl font-black text-azul-primario mt-2 tracking-tight">
+						{value}
 					</p>
 				</div>
-				<div className={`${bgColor} p-3 rounded-full`}>
-					<div className={`text-2xl ${iconColor}`}>{icon}</div>
+				<div className={`${bgColor} w-14 h-14 rounded-[1.2rem] flex items-center justify-center text-2xl ${iconColor} shadow-inner group-hover:scale-110 transition-transform duration-500`}>
+					{icon}
 				</div>
 			</div>
 			{subtitle && (
-				<div className="mt-4 flex items-center text-sm">
-					<div className={`${subtitle.color} mr-1`}>{subtitle.icon}</div>
+				<div className="mt-6 flex items-center text-[10px] md:text-sm font-bold bg-slate-50 p-2 rounded-xl">
+					<div className={`${subtitle.color} mr-2`}>{subtitle.icon}</div>
 					<span className={subtitle.color}>{subtitle.text}</span>
 				</div>
 			)}
-		</div>
+		</motion.div>
 	)
 );
 
 StatCard.displayName = 'StatCard';
 
-// Componente para la barra de progreso de casos
-interface CaseProgressBarProps {
-	casosActivos: number;
-	casosPendientes: number;
-	casosCompletados: number;
-	totalCasos: number;
-}
-
+// Componente para la barra de progreso de casos Premium
 const CaseProgressBar = memo(
 	({
 		casosActivos,
 		casosPendientes,
 		casosCompletados,
 		totalCasos,
-	}: CaseProgressBarProps) => {
-		const percentageActivos =
-			totalCasos > 0 ? (casosActivos / totalCasos) * 100 : 0;
-		const percentagePendientes =
-			totalCasos > 0 ? (casosPendientes / totalCasos) * 100 : 0;
-		const percentageCompletados =
-			totalCasos > 0 ? (casosCompletados / totalCasos) * 100 : 0;
+	}: {
+		casosActivos: number;
+		casosPendientes: number;
+		casosCompletados: number;
+		totalCasos: number;
+	}) => {
+		const percentageActivos = totalCasos > 0 ? (casosActivos / totalCasos) * 100 : 0;
+		const percentagePendientes = totalCasos > 0 ? (casosPendientes / totalCasos) * 100 : 0;
+		const percentageCompletados = totalCasos > 0 ? (casosCompletados / totalCasos) * 100 : 0;
 
 		return (
-			<div className="mt-6">
-				<div className="flex justify-between items-center mb-2">
-					<span className="text-xs text-gray-500">Distribución de casos</span>
-					<span className="text-xs text-gray-500">{totalCasos} total</span>
+			<div className="mt-8">
+				<div className="flex justify-between items-center mb-3">
+					<span className="text-xs font-black text-slate-400 uppercase tracking-widest">Distribución del Flujo</span>
+					<span className="text-xs font-black text-azul-primario px-3 py-1 bg-azul-primario/5 rounded-full">{totalCasos} TOTAL</span>
 				</div>
-				<div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-					<div className="flex h-full">
-						<div
-							className="bg-azul-primario h-full transition-all duration-500 ease-in-out"
-							style={{ width: `${percentageActivos}%` }}
-							title={`Activos: ${casosActivos} (${percentageActivos.toFixed(
-								1
-							)}%)`}
+				<div className="h-6 bg-slate-100 rounded-2xl overflow-hidden p-1 shadow-inner">
+					<div className="flex h-full rounded-xl overflow-hidden">
+						<motion.div
+							initial={{ width: 0 }}
+							animate={{ width: `${percentageActivos}%` }}
+							className="bg-azul-primario h-full relative group cursor-help"
+							title={`Activos: ${casosActivos}`}
 						/>
-						<div
-							className="bg-amber-500 h-full transition-all duration-500 ease-in-out"
-							style={{ width: `${percentagePendientes}%` }}
-							title={`Pendientes: ${casosPendientes} (${percentagePendientes.toFixed(
-								1
-							)}%)`}
+						<motion.div
+							initial={{ width: 0 }}
+							animate={{ width: `${percentagePendientes}%` }}
+							className="bg-amber-500 h-full relative group cursor-help border-l border-white/20"
+							title={`Pendientes: ${casosPendientes}`}
 						/>
-						<div
-							className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-							style={{ width: `${percentageCompletados}%` }}
-							title={`Completados: ${casosCompletados} (${percentageCompletados.toFixed(
-								1
-							)}%)`}
+						<motion.div
+							initial={{ width: 0 }}
+							animate={{ width: `${percentageCompletados}%` }}
+							className="bg-emerald-500 h-full relative group cursor-help border-l border-white/20"
+							title={`Completados: ${casosCompletados}`}
 						/>
 					</div>
 				</div>
-				<div className="flex justify-between mt-2 text-xs text-gray-500">
-					<span>Activos</span>
-					<span>Pendientes</span>
-					<span>Completados</span>
+				<div className="flex flex-wrap gap-4 mt-4 text-[10px] font-black uppercase tracking-tighter">
+					<div className="flex items-center gap-1.5 text-azul-primario">
+						<div className="w-3 h-3 rounded-full bg-azul-primario shadow-sm" /> Activos ({casosActivos})
+					</div>
+					<div className="flex items-center gap-1.5 text-amber-500">
+						<div className="w-3 h-3 rounded-full bg-amber-500 shadow-sm" /> Pendientes ({casosPendientes})
+					</div>
+					<div className="flex items-center gap-1.5 text-emerald-500">
+						<div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm" /> Completados ({casosCompletados})
+					</div>
 				</div>
 			</div>
 		);
@@ -186,14 +159,12 @@ const CaseProgressBar = memo(
 CaseProgressBar.displayName = 'CaseProgressBar';
 
 function DashboardStats() {
-	// ============ STORES GLOBALES & HOOKS ============
 	const user = useAuthStore(state => state.user);
 	const { data: clients = [], isLoading: clientsLoading } = useClients();
 	const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
 	const { data: response, isLoading: ordersLoading } = useOrders();
 	const orders = response?.data || [];
 	
-	// GET UNIFIED FINANCIAL SUMMARY (Single Source of Truth)
 	const { data: summary, isLoading: financialLoading } = useQuery({
 		queryKey: ['FinanceSummaryDashboard', user?.id],
 		queryFn: () => getFinancialSummary({ dateRange: 'all' }, { id: user!.id, rol: user!.rol as any }),
@@ -202,22 +173,17 @@ function DashboardStats() {
 
 	const isLoading = clientsLoading || lawyersLoading || ordersLoading || financialLoading;
 
-	// ============ ESTADÍSTICAS CALCULADAS (Single Source of Truth) ============
 	const stats = useMemo((): Stats => {
-		// Basic Counts (Client-side from fetched lists)
 		const totalAbogados = lawyers.length;
 		const abogadosPendientes = lawyers.filter(l => l.status === LawyerStatus.PENDING).length;
 		const totalClientes = clients.length;
-		
 		const now = new Date();
 		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 		const clientesNuevosMes = clients.filter(c => new Date(c.createdAt) >= thisMonth).length;
-
 		const ordenesPending = orders.filter(o => o.status === OrderStatus.PENDIENTE).length;
 		const ordenesProcessing = orders.filter(o => o.status === OrderStatus.EN_PROGRESO).length;
 		const ordenesCompleted = orders.filter(o => o.status === OrderStatus.COMPLETADO).length;
 
-		// PRECISIÓN FINANCIERA: Strictly from Server Actions (getFinancialSummary)
 		return {
 			totalAbogados,
 			abogadosPendientes,
@@ -235,162 +201,168 @@ function DashboardStats() {
 		};
 	}, [clients, lawyers, orders, summary]);
 
-	// Total cases for progress bar
 	const totalCasos = stats.casosActivos + stats.casosPendientes + stats.casosCompletados;
 
+	const container = {
+		hidden: { opacity: 0 },
+		show: {
+			opacity: 1,
+			transition: { staggerChildren: 0.1 }
+		}
+	};
 
-
-return (
-	<div className="space-y-8">
-		<div className="flex justify-between items-center">
-			<h2 className="text-2xl font-bold text-gray-800">Resumen General</h2>
-			{isLoading && <span className="text-sm text-gray-400 animate-pulse">Actualizando datos...</span>}
-		</div>
-
-		{/* Tarjetas de estadísticas principales */}
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-			{isLoading ? (
-				<>
-					<SkeletonCard />
-					<SkeletonCard />
-					<SkeletonCard />
-					<SkeletonCard />
-				</>
-			) : (
-				<>
-					<StatCard
-						title="Total de Abogados"
-						value={stats.totalAbogados}
-						icon={<FiUserCheck />}
-						bgColor="bg-blue-100"
-						iconColor="text-blue-600"
-						subtitle={{
-							text: `${stats.abogadosPendientes} pendientes de aprobación`,
-							icon: <FiAlertCircle />,
-							color: 'text-amber-500',
-						}}
-					/>
-					<StatCard
-						title="Total de Clientes"
-						value={stats.totalClientes}
-						icon={<FiUsers />}
-						bgColor="bg-green-100"
-						iconColor="text-green-600"
-						subtitle={{
-							text: `+${stats.clientesNuevosMes} nuevos este mes`,
-							icon: <FiCheckCircle />,
-							color: 'text-green-500',
-						}}
-					/>
-					<StatCard
-						title="Casos Activos"
-						value={stats.casosActivos}
-						icon={<FiBriefcase />}
-						bgColor="bg-purple-100"
-						iconColor="text-purple-600"
-						subtitle={{
-							text: `${stats.casosPendientes} pendientes de asignación`,
-							icon: <FiClock />,
-							color: 'text-amber-500',
-						}}
-					/>
-					<StatCard
-						title="Ingresos del Mes"
-						value={stats.ingresosMes}
-						icon={<FiDollarSign />}
-						bgColor="bg-teal-100"
-						iconColor="text-teal-600"
-						subtitle={{
-							text: `${stats.crecimientoIngresos > 0 ? '+' : ''}${stats.crecimientoIngresos.toFixed(1)}% vs. mes anterior`,
-							icon: stats.crecimientoIngresos > 0 ? <FiTrendingUp /> : <FiTrendingDown />,
-							color: stats.crecimientoIngresos > 0 ? 'text-green-500' : 'text-red-500',
-						}}
-					/>
-				</>
-			)}
-		</div>
-
-		{/* Gráficos y estadísticas adicionales */}
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-			<div className="bg-white rounded-xl shadow-md p-6">
-				<h3 className="text-lg font-semibold text-gray-800 mb-4">
-					Resumen de Casos
-				</h3>
-				<div className="flex justify-between items-center">
-					<div className="text-center">
-						<p className="text-2xl font-bold text-azul-primario">
-							{stats.casosActivos}
-						</p>
-						<p className="text-sm text-gray-500">Activos</p>
-					</div>
-					<div className="text-center">
-						<p className="text-2xl font-bold text-amber-500">
-							{stats.casosPendientes}
-						</p>
-						<p className="text-sm text-gray-500">Pendientes</p>
-					</div>
-					<div className="text-center">
-						<p className="text-2xl font-bold text-green-500">
-							{stats.casosCompletados}
-						</p>
-						<p className="text-sm text-gray-500">Completados</p>
-					</div>
-				</div>
-				<CaseProgressBar
-					casosActivos={stats.casosActivos}
-					casosPendientes={stats.casosPendientes}
-					casosCompletados={stats.casosCompletados}
-					totalCasos={totalCasos}
-				/>
+	return (
+		<div className="space-y-10">
+			<div className="flex justify-between items-center px-1">
+				<h2 className="text-xl md:text-2xl font-black text-azul-primario uppercase tracking-tight">Métricas Críticas</h2>
+				{isLoading && <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+					<div className="w-2 h-2 rounded-full bg-azul-primario animate-ping" /> Sincronizando
+				</div>}
 			</div>
 
-			<div className="bg-white rounded-xl shadow-md p-6">
-				<h3 className="text-lg font-semibold text-gray-800 mb-4">
-					Resumen Financiero
-				</h3>
-				<div className="space-y-4">
-					<div className="flex justify-between items-center text-sm">
-						<p className="text-gray-600">Ingresos Totales</p>
-						<p className="font-semibold">
-							{formatUSD(stats.ingresosTotales)}
-						</p>
-					</div>
-					<div className="flex justify-between items-center text-sm">
-						<p className="text-gray-600">Pagos a Abogados</p>
-						<p className="font-semibold text-blue-600">
-							{formatUSD(stats.pagosAbogados)}
-						</p>
-					</div>
-					<div className="flex justify-between items-center text-sm">
-						<p className="text-gray-600">Gastos y Tax</p>
-						<p className="font-semibold text-orange-600">
-							{formatUSD(stats.gastosOperativos)}
-						</p>
-					</div>
-					<div className="pt-2 border-t border-gray-200 flex justify-between items-center">
-						<p className="font-bold text-gray-800 uppercase tracking-tighter text-xs">Ganancia Real</p>
-						<p className="font-bold text-green-600 text-xl">
-							{formatUSD(stats.gananciasNetas)}
-						</p>
-					</div>
-				</div>
-			</div>
-		</div>
+			<motion.div 
+				variants={container}
+				initial="hidden"
+				animate="show"
+				className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+			>
+				{isLoading ? (
+					[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)
+				) : (
+					<>
+						<StatCard
+							title="Cuerpo Legal"
+							value={stats.totalAbogados}
+							icon={<FiUserCheck />}
+							bgColor="bg-blue-50"
+							iconColor="text-blue-600"
+							subtitle={{
+								text: `${stats.abogadosPendientes} por aprobar`,
+								icon: <FiAlertCircle />,
+								color: 'text-amber-600',
+							}}
+						/>
+						<StatCard
+							title="Base Clientes"
+							value={stats.totalClientes}
+							icon={<FiUsers />}
+							bgColor="bg-emerald-50"
+							iconColor="text-emerald-600"
+							subtitle={{
+								text: `+${stats.clientesNuevosMes} este periodo`,
+								icon: <FiCheckCircle />,
+								color: 'text-emerald-600',
+							}}
+						/>
+						<StatCard
+							title="Operativa Activa"
+							value={stats.casosActivos}
+							icon={<FiBriefcase />}
+							bgColor="bg-indigo-50"
+							iconColor="text-indigo-600"
+							subtitle={{
+								text: `${stats.casosPendientes} sin asignar`,
+								icon: <FiClock />,
+								color: 'text-amber-600',
+							}}
+						/>
+						<StatCard
+							title="Liquidez Mensual"
+							value={formatUSD(stats.ingresosMes)}
+							icon={<FiDollarSign />}
+							bgColor="bg-rose-50"
+							iconColor="text-rose-600"
+							subtitle={{
+								text: `Flujo positivo detectado`,
+								icon: <FiTrendingUp />,
+								color: 'text-emerald-600',
+							}}
+						/>
+					</>
+				)}
+			</motion.div>
 
-		{/* Actividad reciente */}
-		<div className="bg-white rounded-xl shadow-md p-6">
-			<div className="flex justify-between items-center mb-4">
-				<h3 className="text-lg font-semibold text-gray-800">
-					Actividad Reciente
-				</h3>
-			</div>
-			<div className="text-center py-8 text-gray-500">
-				<FiClock className="w-8 h-8 mx-auto mb-2" />
-				<p>No hay actividad reciente</p>
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+				<motion.div 
+					initial={{ opacity: 0, x: -20 }}
+					animate={{ opacity: 1, x: 0 }}
+					className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 p-8 flex flex-col justify-between"
+				>
+					<div>
+						<h3 className="text-lg font-black text-azul-primario uppercase tracking-tight mb-8">
+							Monitoreo de Casos
+						</h3>
+						<div className="flex justify-between items-center px-4">
+							<div className="text-center group cursor-default">
+								<p className="text-3xl font-black text-azul-primario group-hover:scale-110 transition-transform duration-300">
+									{stats.casosActivos}
+								</p>
+								<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Activos</p>
+							</div>
+							<div className="w-px h-10 bg-slate-100 hidden sm:block" />
+							<div className="text-center group cursor-default">
+								<p className="text-3xl font-black text-amber-500 group-hover:scale-110 transition-transform duration-300">
+									{stats.casosPendientes}
+								</p>
+								<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Espera</p>
+							</div>
+							<div className="w-px h-10 bg-slate-100 hidden sm:block" />
+							<div className="text-center group cursor-default">
+								<p className="text-3xl font-black text-emerald-500 group-hover:scale-110 transition-transform duration-300">
+									{stats.casosCompletados}
+								</p>
+								<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Éxito</p>
+							</div>
+						</div>
+					</div>
+					<CaseProgressBar
+						casosActivos={stats.casosActivos}
+						casosPendientes={stats.casosPendientes}
+						casosCompletados={stats.casosCompletados}
+						totalCasos={totalCasos}
+					/>
+				</motion.div>
+
+				<motion.div 
+					initial={{ opacity: 0, x: 20 }}
+					animate={{ opacity: 1, x: 0 }}
+					className="bg-gradient-to-br from-azul-primario to-azul-primario/90 rounded-[2.5rem] shadow-2xl p-8 text-white relative overflow-hidden"
+				>
+					<div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10" />
+					<div className="relative z-10">
+						<h3 className="text-lg font-black uppercase tracking-tight mb-8">
+							Informe de Tesorería
+						</h3>
+						<div className="space-y-6">
+							<div className="flex justify-between items-center">
+								<span className="text-xs font-bold text-white/60 uppercase tracking-widest">Facturación Bruta</span>
+								<span className="text-xl font-black tracking-tight">{formatUSD(stats.ingresosTotales)}</span>
+							</div>
+							<div className="flex justify-between items-center">
+								<span className="text-xs font-bold text-white/60 uppercase tracking-widest">Compromisos Abogados</span>
+								<span className="text-lg font-black text-amber-300">-{formatUSD(stats.pagosAbogados)}</span>
+							</div>
+							<div className="flex justify-between items-center">
+								<span className="text-xs font-bold text-white/60 uppercase tracking-widest">Tributos y Operativa</span>
+								<span className="text-lg font-black text-rose-300">-{formatUSD(stats.gastosOperativos)}</span>
+							</div>
+							<div className="pt-6 border-t border-white/20 flex justify-between items-center">
+								<div className="flex flex-col">
+									<span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Utilidad Proyectada</span>
+									<span className="text-4xl font-black tracking-tighter mt-1 drop-shadow-lg">
+										{formatUSD(stats.gananciasNetas)}
+									</span>
+								</div>
+								<div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-emerald-400 backdrop-blur-md shadow-inner">
+									<FiTrendingUp size={32} />
+								</div>
+							</div>
+						</div>
+					</div>
+				</motion.div>
 			</div>
 		</div>
-	</div>
-);
+	);
 }
 
 export default memo(DashboardStats);

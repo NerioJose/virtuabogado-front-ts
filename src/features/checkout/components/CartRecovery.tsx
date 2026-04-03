@@ -93,53 +93,69 @@ export const CartRecovery = () => {
         <AnimatePresence>
             {showRecovery && (
                 <motion.div
-                    initial={{ y: -100, opacity: 0 }}
+                    initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -100, opacity: 0 }}
-                    className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 max-w-md w-full mx-4"
+                    exit={{ y: 100, opacity: 0 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-50 w-auto md:max-w-md pointer-events-none"
                 >
-                    <div className="bg-white rounded-xl shadow-2xl border-2 border-azul-primario p-4">
-                        <div className="flex items-start gap-3">
-                            {/* Icono */}
-                            <div className="flex-shrink-0 w-10 h-10 bg-azul-primario/10 rounded-full flex items-center justify-center">
-                                <FiShoppingCart className="text-azul-primario text-xl" />
-                            </div>
-
+                    <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-azul-primario/20 p-5 pointer-events-auto overflow-hidden relative group">
+                        {/* Shimmer effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        
+                        <div className="flex items-start gap-4">
+                            {/* Icono animado */}
+                            <motion.div 
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ repeat: Infinity, duration: 4 }}
+                                className="flex-shrink-0 w-12 h-12 bg-azul-primario/10 rounded-2xl flex items-center justify-center border border-azul-primario/10"
+                            >
+                                <FiShoppingCart className="text-azul-primario text-2xl" />
+                            </motion.div>
+                            
                             {/* Contenido */}
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 mb-1">
-                                    Tienes una compra sin completar
-                                </h4>
-                                <p className="text-sm text-gray-600 mb-3">
-                                    <strong>{service?.nombre}</strong>
-                                    {priceFormatted && ` - ${priceFormatted}`}
-                                </p>
-
-                                {/* Botones */}
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={handleContinue}
-                                        className="flex-1 btn-primary text-sm py-2 flex items-center justify-center gap-2"
-                                    >
-                                        <FiRefreshCw className="text-sm" />
-                                        Continuar
-                                    </button>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                    <h4 className="font-bold text-slate-900 text-base truncate">
+                                        ¿Continuar asesoría?
+                                    </h4>
                                     <button
                                         onClick={handleDiscard}
-                                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        title="Cerrar"
                                     >
-                                        Descartar
+                                        <FiX className="text-lg" />
+                                    </button>
+                                </div>
+                                <p className="text-sm text-slate-500 mb-4 line-clamp-1">
+                                    <span className="font-semibold text-azul-primario">{service?.nombre}</span>
+                                    {priceFormatted && (
+                                        <span className="ml-2 px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-black uppercase text-slate-600">
+                                            {priceFormatted}
+                                        </span>
+                                    )}
+                                </p>
+                                
+                                {/* Botones */}
+                                <div className="flex items-center gap-3">
+                                    <motion.button
+                                        onClick={handleContinue}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex-1 h-11 bg-azul-primario text-white rounded-xl font-bold text-sm shadow-lg shadow-azul-primario/20 flex items-center justify-center gap-2 hover:bg-azul-oscuro transition-colors px-4"
+                                    >
+                                        <FiRefreshCw className="text-xs" />
+                                        <span>Retomar compra</span>
+                                    </motion.button>
+                                    
+                                    <button
+                                        onClick={handleDiscard}
+                                        className="text-xs font-bold text-slate-400 hover:text-slate-600 px-2 py-1 transition-colors"
+                                    >
+                                        Luego
                                     </button>
                                 </div>
                             </div>
-
-                            {/* Botón cerrar */}
-                            <button
-                                onClick={handleDiscard}
-                                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <FiX />
-                            </button>
                         </div>
                     </div>
                 </motion.div>

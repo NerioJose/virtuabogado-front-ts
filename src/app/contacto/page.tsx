@@ -73,7 +73,7 @@ export default function ContactoPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-white">
+      <section id="faq" className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <Suspense fallback={LoadingSpinner}>
             <SeccionFAQ />

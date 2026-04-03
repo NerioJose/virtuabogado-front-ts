@@ -1,13 +1,13 @@
 import { useState, useMemo, memo } from 'react';
-import { FiUsers, FiSearch, FiEdit, FiTrash2, FiEye, FiMoreVertical, FiMail, FiPhone, FiFilter } from 'react-icons/fi';
+import { FiUsers, FiSearch, FiEdit, FiTrash2, FiEye, FiMail, FiPhone, FiFilter, FiCalendar, FiShoppingBag, FiDollarSign } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
 import { useClients } from '@/features/clients/hooks/useClients';
 import { ClientStatus } from '@/features/clients/types/clients.types';
 import { useOrdersStore } from '@/features/orders';
 import { ElementoSeleccionable } from '@/types/index';
-
 import { capitalizeName } from '@/utils/formatters';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ClientesPanelProps {
   terminoBusqueda: string;
@@ -15,13 +15,11 @@ interface ClientesPanelProps {
 }
 
 function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
-  // ============ REACT QUERY ============
-  const { data: clients = [], isLoading, error } = useClients();
-  const orders = useOrdersStore((state) => state.orders); // Keep using orders store for now until that is refactored globally or locally
+  const { data: clients = [], isLoading } = useClients();
+  const orders = useOrdersStore((state) => state.orders);
 
   const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
 
-  // Calcular si un cliente ha estado activo recientemente (últimos 30 días)
   const esClienteReciente = (createdAt: Date | string) => {
     const hoy = new Date();
     const fechaRegistro = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
@@ -29,27 +27,30 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
     return diferenciaDias <= 30;
   };
 
-  // Filtrar clientes según término de búsqueda y filtro de actividad
   const clientesFiltrados = useMemo(() => {
     const term = terminoBusqueda.toLowerCase();
-
     return clients.filter(cliente => {
       const coincideTermino =
         cliente.nombre.toLowerCase().includes(term) ||
         cliente.email.toLowerCase().includes(term) ||
         (cliente.telefono && cliente.telefono.includes(term));
-
       if (filtroActividad === 'todos') return coincideTermino;
       if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.createdAt);
       if (filtroActividad === 'inactivo') return coincideTermino && !esClienteReciente(cliente.createdAt);
-
       return coincideTermino;
     });
   }, [clients, terminoBusqueda, filtroActividad]);
 
-  // Obtener órdenes del cliente
   const getClientOrders = (clientId: string) => {
     return orders.filter(order => order.userId === clientId);
+  };
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
   };
 
   if (isLoading && clients.length === 0) {
@@ -61,178 +62,217 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex items-center">
-          <FiFilter className="text-gray-500 mr-2" />
-          <span className="text-gray-700 font-medium">Filtrar por actividad:</span>
+    <div className="space-y-8">
+      {/* Filtros de Actividad Premium */}
+      <div className="flex flex-col md:flex-row items-center gap-4 bg-white/50 backdrop-blur-sm p-3 rounded-[1.8rem] border border-slate-200/60 shadow-sm">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-slate-200/40 shadow-inner">
+          <FiFilter className="text-azul-primario" />
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Segmentación</span>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFiltroActividad('todos')}
-            className={`px-3 py-1 rounded-full text-sm ${filtroActividad === 'todos'
-              ? 'bg-azul-primario text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        <div className="flex flex-wrap gap-2 flex-1">
+          {[
+            { id: 'todos', label: 'Todos', color: 'bg-azul-primario' },
+            { id: 'reciente', label: 'Recientes', color: 'bg-emerald-500' },
+            { id: 'inactivo', label: 'Históricos', color: 'bg-slate-500' }
+          ].map((btn) => (
+            <button
+              key={btn.id}
+              onClick={() => setFiltroActividad(btn.id as any)}
+              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+                filtroActividad === btn.id
+                  ? `${btn.color} text-white shadow-lg scale-105`
+                  : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
               }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFiltroActividad('reciente')}
-            className={`px-3 py-1 rounded-full text-sm ${filtroActividad === 'reciente'
-              ? 'bg-green-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            Activos recientemente
-          </button>
-          <button
-            onClick={() => setFiltroActividad('inactivo')}
-            className={`px-3 py-1 rounded-full text-sm ${filtroActividad === 'inactivo'
-              ? 'bg-gray-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            Inactivos
-          </button>
+            >
+              {btn.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Tabla de clientes */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cliente
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contacto
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Registro
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Servicios
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Gasto Total
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {clientesFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                    {clients.length === 0
-                      ? 'No hay clientes registrados'
-                      : 'No se encontraron clientes con los criterios de búsqueda'}
-                  </td>
-                </tr>
-              ) : (
-                clientesFiltrados.map((cliente) => {
-                  const clientOrders = getClientOrders(cliente.id);
+      {/* Vista Móvil: Tarjetas Premium */}
+      <motion.div 
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:hidden"
+      >
+        <AnimatePresence mode='popLayout'>
+          {clientesFiltrados.map((cliente) => {
+            const clientOrders = getClientOrders(cliente.id);
+            return (
+              <motion.div
+                layout
+                key={cliente.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white rounded-[2.2rem] border border-slate-100 shadow-sm p-6 relative group overflow-hidden"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-14 h-14 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
+                      <Image src={userImage} alt={cliente.nombre} fill className="object-cover" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: {cliente.id.slice(-6)}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                    cliente.status === ClientStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
+                    cliente.status === ClientStatus.PENDING ? 'bg-amber-50 text-amber-600' :
+                    'bg-slate-50 text-slate-500'
+                  }`}>
+                    {cliente.status}
+                  </span>
+                </div>
 
-                  return (
-                    <tr key={cliente.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 relative">
-                            <Image
-                              src={userImage}
-                              alt={cliente.nombre}
-                              fill
-                              className="rounded-full object-cover"
-                              loading="lazy"
-                            />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{capitalizeName(cliente.nombre)}</div>
-                          </div>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase mb-1">
+                      <FiShoppingBag className="text-azul-primario" /> Servicios
+                    </div>
+                    <p className="text-sm font-black text-azul-primario">{cliente.serviciosContratados} Unidades</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase mb-1">
+                      <FiDollarSign className="text-emerald-500" /> Inversión
+                    </div>
+                    <p className="text-sm font-black text-emerald-600">${cliente.totalGastado.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-5 border-t border-slate-100">
+                  <div className="flex gap-2">
+                    <a href={`mailto:${cliente.email}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-azul-primario hover:text-white transition-all shadow-sm">
+                      <FiMail size={16} />
+                    </a>
+                    {cliente.telefono && (
+                      <a href={`tel:${cliente.telefono}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                        <FiPhone size={16} />
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => abrirModal('ver', cliente as any)} className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-azul-primario hover:text-white transition-all">
+                      <FiEye size={16} />
+                    </button>
+                    <button onClick={() => abrirModal('editar', cliente as any)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-azul-primario hover:text-white transition-all">
+                      <FiEdit size={16} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Vista Escritorio: Tabla Premium */}
+      <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-100 text-left">
+          <thead className="bg-slate-50/50">
+            <tr>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expediente Cliente</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comunicación</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Antigüedad</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actividad</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Inversión Total</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            <AnimatePresence mode='popLayout'>
+              {clientesFiltrados.map((cliente) => {
+                const clientOrders = getClientOrders(cliente.id);
+                return (
+                  <motion.tr 
+                    layout
+                    key={cliente.id} 
+                    className="group hover:bg-slate-50/30 transition-colors"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-11 w-11 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
+                          <Image src={userImage} alt={cliente.nombre} fill className="object-cover" />
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 flex items-center">
-                          <FiMail className="mr-1" /> {cliente.email}
+                        <div>
+                          <p className="text-sm font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {cliente.id.slice(-8)}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="space-y-1">
+                        <div className="flex items-center text-xs text-slate-500 font-medium">
+                          <FiMail className="mr-2 text-azul-primario" /> {cliente.email}
                         </div>
                         {cliente.telefono && (
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <FiPhone className="mr-1" /> {cliente.telefono}
+                          <div className="flex items-center text-xs text-slate-500 font-medium">
+                            <FiPhone className="mr-2 text-emerald-500" /> {cliente.telefono}
                           </div>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {new Date(cliente.createdAt).toLocaleDateString('es-ES')}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {cliente.serviciosContratados} contratados
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {clientOrders.length} órdenes
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          ${cliente.totalGastado.toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${cliente.status === ClientStatus.ACTIVE
-                          ? 'bg-green-100 text-green-800'
-                          : cliente.status === ClientStatus.PENDING
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                          }`}>
-                          {cliente.status === ClientStatus.ACTIVE ? 'Activo' :
-                            cliente.status === ClientStatus.PENDING ? 'Pendiente' :
-                              'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
-                          <button
-                            onClick={() => abrirModal('ver', cliente as unknown as ElementoSeleccionable)}
-                            className="text-azul-primario hover:text-azul-primario/80"
-                            title="Ver detalles"
-                          >
-                            <FiEye />
-                          </button>
-                          <button
-                            onClick={() => abrirModal('editar', cliente as unknown as ElementoSeleccionable)}
-                            className="text-amber-500 hover:text-amber-600"
-                            title="Editar"
-                          >
-                            <FiEdit />
-                          </button>
-                          <button
-                            onClick={() => abrirModal('eliminar', cliente as unknown as ElementoSeleccionable)}
-                            className="text-red-500 hover:text-red-600"
-                            title="Eliminar"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <FiCalendar className="text-azul-primario" />
+                        <span className="text-xs font-bold">{new Date(cliente.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-azul-primario capitalize">{cliente.serviciosContratados} Servicios</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{clientOrders.length} Órdenes totales</p>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className="text-sm font-black text-emerald-600 tracking-tight">
+                        ${cliente.totalGastado.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        cliente.status === ClientStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
+                        cliente.status === ClientStatus.PENDING ? 'bg-amber-50 text-amber-600' :
+                        'bg-slate-100 text-slate-500'
+                      }`}>
+                        {cliente.status}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('ver', cliente as any)} className="p-2 bg-azul-primario/5 text-azul-primario rounded-lg">
+                          <FiEye size={18} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('editar', cliente as any)} className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                          <FiEdit size={18} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1, y: -2 }} onClick={() => abrirModal('eliminar', cliente as any)} className="p-2 bg-rose-50 text-rose-500 rounded-lg">
+                          <FiTrash2 size={18} />
+                        </motion.button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
+          </tbody>
+        </table>
       </div>
+
+      {clientesFiltrados.length === 0 && (
+        <div className="text-center py-20 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiSearch className="text-slate-300" size={32} />
+          </div>
+          <h3 className="text-lg font-black text-azul-primario">Sin resultados</h3>
+          <p className="text-slate-400 text-sm mt-1">Ajusta los filtros o el término de búsqueda.</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -81,10 +81,11 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
             }
         });
 
-        // 🏛️ RESCUE LOGIC: Filter out canceled/failed in-memory to handle casing errors
+        // 🏛️ RESCUE LOGIC: Filter out unpaid/pending/failed orders to report ONLY real income
         const orders = allOrders.filter((o: any) => {
             const s = (o.status || '').toUpperCase();
-            return s !== 'CANCELADO' && s !== 'FALLIDO' && s !== 'CANCELLED' && s !== 'FAILED';
+            // We only count orders that have been successfully paid or are in active processing
+            return ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(s);
         });
 
         // 5. Calculate Metrics using the Fintech-grade engine (Strict DB settings)

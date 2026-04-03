@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Footer() {
   return (
     <footer className="bg-gradient-to-b from-azul-primario/95 to-azul-primario/80 text-white py-16 backdrop-blur-sm">
@@ -22,16 +24,22 @@ export default function Footer() {
           <h4 className="text-lg font-semibold pb-2 border-b border-white/10">Enlaces</h4>
           <ul className="space-y-4">
             <li>
-              <a href="#" className="group flex items-center gap-3 hover:text-azul-claro transition-colors">
+              <Link href="/terminos" className="group flex items-center gap-3 hover:text-azul-claro transition-colors">
                 <span className="w-2 h-2 bg-azul-claro rounded-full group-hover:scale-125 transition-transform"></span>
                 Términos y condiciones
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="group flex items-center gap-3 hover:text-azul-claro transition-colors">
+              <Link href="/privacidad" className="group flex items-center gap-3 hover:text-azul-claro transition-colors">
                 <span className="w-2 h-2 bg-azul-claro rounded-full group-hover:scale-125 transition-transform"></span>
                 Política de privacidad
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link href="/contacto#faq" className="group flex items-center gap-3 hover:text-azul-claro transition-colors">
+                <span className="w-2 h-2 bg-azul-claro rounded-full group-hover:scale-125 transition-transform"></span>
+                Preguntas frecuentes
+              </Link>
             </li>
           </ul>
         </div>

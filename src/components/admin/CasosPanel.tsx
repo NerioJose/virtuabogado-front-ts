@@ -179,113 +179,115 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Vista Escritorio: Tabla Operativa Premium */}
+      {/* Vista Escritorio: Tabla Operativa Premium con Scroll Lateral */}
       <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-100 text-left">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Causa #</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Servicio Jurídico</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Honorarios</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            <AnimatePresence mode='popLayout'>
-              {ordenesFiltradas.map((order) => {
-                const config = (statusConfig as any)[order.status] || { color: 'text-slate-600', bg: 'bg-slate-50', icon: <FiClock /> };
-                const isUnread = unreadOrders.includes(order.id);
-                
-                return (
-                  <motion.tr 
-                    layout
-                    key={order.id} 
-                    className="group hover:bg-slate-50/30 transition-colors"
-                  >
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-black text-azul-primario bg-azul-primario/5 px-3 py-1 rounded-xl">#{order.numericId}</span>
-                        {isUnread && (
-                          <div className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-black text-slate-700">{order.userName}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{order.userEmail}</p>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <p className="text-xs font-bold text-slate-600 truncate max-w-[200px]">
-                        {order.items.map(item => item.serviceName).join(', ')}
-                      </p>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
-                        order.lawyerId ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-amber-50 text-amber-600 border border-amber-100 animate-pulse'
-                      }`}>
-                        {order.lawyerName || 'POR ASIGNAR'}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-sm font-black text-slate-700 tracking-tight">
-                        ${order.total.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
-                        {config.icon} {order.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-end gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('asignar', order as any)} 
-                          className="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
-                          title="Asignar Abogado"
-                        >
-                          <FiUserPlus size={18} />
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('ver', order as any)} 
-                          className={`p-2 rounded-lg transition-all border shadow-sm ${isUnread ? 'bg-rose-500 text-white animate-pulse border-rose-600' : 'bg-azul-primario/10 text-azul-primario border-azul-primario/20 hover:bg-azul-primario hover:text-white'}`}
-                          title={isUnread ? 'Ver Mensaje Nuevo' : 'Ver Expediente'}
-                        >
-                          {isUnread ? <FiMessageSquare size={18} /> : <FiEye size={18} />}
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('editar', order as any)} 
-                          className="p-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200 hover:bg-azul-primario hover:text-white transition-all shadow-sm"
-                          title="Cambiar Estado"
-                        >
-                          <FiEdit size={18} />
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('eliminar', order as any)} 
-                          className="p-2 bg-rose-50 text-rose-500 rounded-lg border border-rose-100 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                          title="Eliminar Caso"
-                        >
-                          <FiTrash2 size={18} />
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </AnimatePresence>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="min-w-full lg:min-w-[1200px] divide-y divide-slate-100 text-left">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Causa #</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Servicio Jurídico</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Honorarios</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              <AnimatePresence mode='popLayout'>
+                {ordenesFiltradas.map((order) => {
+                  const config = (statusConfig as any)[order.status] || { color: 'text-slate-600', bg: 'bg-slate-50', icon: <FiClock /> };
+                  const isUnread = unreadOrders.includes(order.id);
+                  
+                  return (
+                    <motion.tr 
+                      layout
+                      key={order.id} 
+                      className="group hover:bg-slate-50/30 transition-colors"
+                    >
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-black text-azul-primario bg-azul-primario/5 px-3 py-1 rounded-xl">#{order.numericId}</span>
+                          {isUnread && (
+                            <div className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-black text-slate-700">{order.userName}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{order.userEmail}</p>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <p className="text-xs font-bold text-slate-600 truncate max-w-[200px]">
+                          {order.items.map(item => item.serviceName).join(', ')}
+                        </p>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className={`px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
+                          order.lawyerId ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-amber-50 text-amber-600 border border-amber-100 animate-pulse'
+                        }`}>
+                          {order.lawyerName || 'POR ASIGNAR'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="text-sm font-black text-slate-700 tracking-tight">
+                          ${order.total.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
+                          {config.icon} {order.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('asignar', order as any)} 
+                            className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
+                            title="Asignar Abogado"
+                          >
+                            <FiUserPlus size={18} />
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('ver', order as any)} 
+                            className={`p-2.5 rounded-xl transition-all shadow-lg ${isUnread ? 'bg-rose-500 text-white animate-pulse' : 'bg-azul-primario text-white shadow-azul-primario/20 hover:bg-azul-primario/90'}`}
+                            title={isUnread ? 'Mensaje Nuevo' : 'Ver Expediente'}
+                          >
+                            {isUnread ? <FiMessageSquare size={18} /> : <FiEye size={18} />}
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('editar', order as any)} 
+                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
+                            title="Cambiar Estado"
+                          >
+                            <FiEdit size={18} />
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('eliminar', order as any)} 
+                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all font-black"
+                            title="Eliminar Caso"
+                          >
+                            <FiTrash2 size={18} />
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {ordenesFiltradas.length === 0 && (

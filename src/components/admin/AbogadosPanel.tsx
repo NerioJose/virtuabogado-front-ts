@@ -175,103 +175,105 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Vista Escritorio: Tabla Refinada */}
+      {/* Vista Escritorio: Tabla Refinada con Scroll Lateral */}
       <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-100">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
-              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Especialidad</th>
-              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado Operativo</th>
-              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nivel Carga</th>
-              <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ranking</th>
-              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            <AnimatePresence mode='popLayout'>
-              {filteredLawyers.map((lawyer) => {
-                const casosEnProceso = getActiveCases(lawyer.id);
-                return (
-                  <motion.tr 
-                    layout
-                    key={lawyer.id} 
-                    className="group hover:bg-slate-50/50 transition-colors"
-                  >
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="relative h-12 w-12 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
-                          <Image src={userImage} alt={lawyer.nombre} fill className="object-cover" />
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="min-w-full lg:min-w-[1100px] divide-y divide-slate-100">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
+                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Especialidad</th>
+                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado Operativo</th>
+                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nivel Carga</th>
+                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ranking</th>
+                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              <AnimatePresence mode='popLayout'>
+                {filteredLawyers.map((lawyer) => {
+                  const casosEnProceso = getActiveCases(lawyer.id);
+                  return (
+                    <motion.tr 
+                      layout
+                      key={lawyer.id} 
+                      className="group hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="relative h-12 w-12 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+                            <Image src={userImage} alt={lawyer.nombre} fill className="object-cover" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-azul-primario leading-tight">{formatLawyerName(lawyer.nombre)}</p>
+                            <p className="text-xs text-slate-400 font-medium">{lawyer.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-black text-azul-primario leading-tight">{formatLawyerName(lawyer.nombre)}</p>
-                          <p className="text-xs text-slate-400 font-medium">{lawyer.email}</p>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="px-3 py-1 bg-azul-primario/5 text-azul-primario rounded-xl text-[10px] font-black uppercase tracking-tight">
+                          {lawyer.especialidad}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                          lawyer.status === LawyerStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
+                          lawyer.status === LawyerStatus.PENDING ? 'bg-amber-50 text-amber-600' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {lawyer.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
+                          casosEnProceso >= 8 ? 'bg-rose-50 text-rose-600' :
+                          casosEnProceso >= 4 ? 'bg-amber-50 text-amber-600' :
+                          'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          <FiBriefcase /> {casosEnProceso} {casosEnProceso === 1 ? 'CASO' : 'CASOS'}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="px-3 py-1 bg-azul-primario/5 text-azul-primario rounded-xl text-[10px] font-black uppercase tracking-tight">
-                        {lawyer.especialidad}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                        lawyer.status === LawyerStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
-                        lawyer.status === LawyerStatus.PENDING ? 'bg-amber-50 text-amber-600' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>
-                        {lawyer.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
-                        casosEnProceso >= 8 ? 'bg-rose-50 text-rose-600' :
-                        casosEnProceso >= 4 ? 'bg-amber-50 text-amber-600' :
-                        'bg-emerald-50 text-emerald-600'
-                      }`}>
-                        <FiBriefcase /> {casosEnProceso} {casosEnProceso === 1 ? 'CASO' : 'CASOS'}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-1.5 text-amber-500">
-                        <span className="text-sm font-black text-slate-700">{lawyer.rating || '--'}</span>
-                        <FiStar className="fill-current w-4 h-4" />
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                        <motion.button 
-                          whileHover={{ scale: 1.1 }} 
-                          onClick={() => abrirModal('ver', lawyer as any)} 
-                          className="p-2 bg-azul-primario/10 text-azul-primario rounded-lg border border-azul-primario/10 hover:bg-azul-primario hover:text-white transition-all"
-                          title="Ver Detalle"
-                        >
-                          <FiUserCheck size={18} />
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1 }} 
-                          onClick={() => abrirModal('editar', lawyer as any)} 
-                          className="p-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200/40 hover:bg-azul-primario hover:text-white transition-all"
-                          title="Editar Perfil"
-                        >
-                          <FiEdit2 size={18} />
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1 }} 
-                          onClick={() => abrirModal('eliminar', lawyer as any)} 
-                          className="p-2 bg-rose-50 text-rose-500 rounded-lg border border-rose-100/50 hover:bg-rose-500 hover:text-white transition-all"
-                          title="Eliminar"
-                        >
-                          <FiTrash2 size={18} />
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </AnimatePresence>
-          </tbody>
-        </table>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-1.5 text-amber-500">
+                          <span className="text-sm font-black text-slate-700">{lawyer.rating || '--'}</span>
+                          <FiStar className="fill-current w-4 h-4" />
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('ver', lawyer as any)} 
+                            className="p-2.5 bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all"
+                            title="Ver Detalle"
+                          >
+                            <FiUserCheck size={18} />
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('editar', lawyer as any)} 
+                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
+                            title="Editar Perfil"
+                          >
+                            <FiEdit2 size={18} />
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('eliminar', lawyer as any)} 
+                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all"
+                            title="Eliminar"
+                          >
+                            <FiTrash2 size={18} />
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {filteredLawyers.length === 0 && (

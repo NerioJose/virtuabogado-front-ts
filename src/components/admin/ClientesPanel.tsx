@@ -170,113 +170,115 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Vista Escritorio: Tabla Premium */}
+      {/* Vista Escritorio: Tabla Premium con Scroll Lateral */}
       <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-100 text-left">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expediente Cliente</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comunicación</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Antigüedad</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actividad</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Inversión Total</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            <AnimatePresence mode='popLayout'>
-              {clientesFiltrados.map((cliente) => {
-                const clientOrders = getClientOrders(cliente.id);
-                return (
-                  <motion.tr 
-                    layout
-                    key={cliente.id} 
-                    className="group hover:bg-slate-50/30 transition-colors"
-                  >
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="relative h-11 w-11 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
-                          <Image src={userImage} alt={cliente.nombre} fill className="object-cover" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {cliente.id.slice(-8)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="space-y-1">
-                        <div className="flex items-center text-xs text-slate-500 font-medium">
-                          <FiMail className="mr-2 text-azul-primario" /> {cliente.email}
-                        </div>
-                        {cliente.telefono && (
-                          <div className="flex items-center text-xs text-slate-500 font-medium">
-                            <FiPhone className="mr-2 text-emerald-500" /> {cliente.telefono}
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="min-w-full lg:min-w-[1150px] divide-y divide-slate-100 text-left">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expediente Cliente</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comunicación</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Antigüedad</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actividad</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Inversión Total</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              <AnimatePresence mode='popLayout'>
+                {clientesFiltrados.map((cliente) => {
+                  const clientOrders = getClientOrders(cliente.id);
+                  return (
+                    <motion.tr 
+                      layout
+                      key={cliente.id} 
+                      className="group hover:bg-slate-50/30 transition-colors"
+                    >
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="relative h-11 w-11 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
+                            <Image src={userImage} alt={cliente.nombre} fill className="object-cover" />
                           </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <FiCalendar className="text-azul-primario" />
-                        <span className="text-xs font-bold">{new Date(cliente.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="space-y-1">
-                        <p className="text-xs font-black text-azul-primario capitalize">{cliente.serviciosContratados} Servicios</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">{clientOrders.length} Órdenes totales</p>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-sm font-black text-emerald-600 tracking-tight">
-                        ${cliente.totalGastado.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                        cliente.status === ClientStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
-                        cliente.status === ClientStatus.PENDING ? 'bg-amber-50 text-amber-600' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>
-                        {cliente.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('ver', cliente as any)} 
-                          className="p-2 bg-azul-primario/10 text-azul-primario rounded-lg border border-azul-primario/10 hover:bg-azul-primario hover:text-white transition-all shadow-sm"
-                          title="Ver Expediente"
-                        >
-                          <FiEye size={18} />
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('editar', cliente as any)} 
-                          className="p-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200/40 hover:bg-azul-primario hover:text-white transition-all shadow-sm"
-                          title="Editar Perfil"
-                        >
-                          <FiEdit size={18} />
-                        </motion.button>
-                        <motion.button 
-                          whileHover={{ scale: 1.1, y: -2 }} 
-                          onClick={() => abrirModal('eliminar', cliente as any)} 
-                          className="p-2 bg-rose-50 text-rose-500 rounded-lg border border-rose-100/50 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                          title="Eliminar Cliente"
-                        >
-                          <FiTrash2 size={18} />
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </AnimatePresence>
-          </tbody>
-        </table>
+                          <div>
+                            <p className="text-sm font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {cliente.id.slice(-8)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="space-y-1">
+                          <div className="flex items-center text-xs text-slate-500 font-medium">
+                            <FiMail className="mr-2 text-azul-primario" /> {cliente.email}
+                          </div>
+                          {cliente.telefono && (
+                            <div className="flex items-center text-xs text-slate-500 font-medium">
+                              <FiPhone className="mr-2 text-emerald-500" /> {cliente.telefono}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <FiCalendar className="text-azul-primario" />
+                          <span className="text-xs font-bold">{new Date(cliente.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="space-y-1">
+                          <p className="text-xs font-black text-azul-primario capitalize">{cliente.serviciosContratados} Servicios</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">{clientOrders.length} Órdenes totales</p>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="text-sm font-black text-emerald-600 tracking-tight">
+                          ${cliente.totalGastado.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                          cliente.status === ClientStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
+                          cliente.status === ClientStatus.PENDING ? 'bg-amber-50 text-amber-600' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {cliente.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('ver', cliente as any)} 
+                            className="p-2.5 bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all font-black"
+                            title="Ver Expediente"
+                          >
+                            <FiEye size={18} />
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('editar', cliente as any)} 
+                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all font-black"
+                            title="Editar Perfil"
+                          >
+                            <FiEdit size={18} />
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1, y: -2 }} 
+                            onClick={() => abrirModal('eliminar', cliente as any)} 
+                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all font-black"
+                            title="Eliminar Cliente"
+                          >
+                            <FiTrash2 size={18} />
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {clientesFiltrados.length === 0 && (

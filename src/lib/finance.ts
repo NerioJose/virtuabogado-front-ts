@@ -39,11 +39,22 @@ export function serializeFinance<T>(data: T): T {
         return (data as any).toNumber();
     }
 
-    // Batch process object entries
+    // Fallback detection for Decimal-like objects that might miss .toNumber (Fintech-safe)
+    if (Object.prototype.hasOwnProperty.call(data, 'd') && 
+        Object.prototype.hasOwnProperty.call(data, 's') && 
+        Object.prototype.hasOwnProperty.call(data, 'e')) {
+        return Number(data.toString());
+    }
+
+    // Batch process object entries (ensure result is a PLAIN object)
     const result: any = {};
     for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
-            result[key] = serializeFinance((data as any)[key]);
+            const value = (data as any)[key];
+            // Filter out internal functions or symbols to keep it a "plain" object
+            if (typeof value !== 'function') {
+                result[key] = serializeFinance(value);
+            }
         }
     }
     

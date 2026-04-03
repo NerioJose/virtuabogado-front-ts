@@ -132,7 +132,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         try {
             const session = await ZenobankService.createCheckoutSession({
                 orderId: order.id,
-                amount: total,
+                amount: Number(total), // Garantía de tipo numérico
                 currency: 'USD',
                 description: `Pago por servicio: ${service.titulo}`,
                 customer: {
@@ -151,11 +151,11 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 data: { paymentId: session.id }
             });
 
-            return { 
+            return serializeFinance({ 
                 success: true, 
                 redirectUrl: session.checkoutUrl || session.url,
-                order: serializeFinance(updatedOrder)
-            };
+                order: updatedOrder
+            });
         } catch (error) {
             console.error('🛑 [Zenobank Action Error]:', error);
             throw error;
@@ -164,7 +164,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
 
     // LÓGICA MOCK y STRIPE (Simulada por ahora)
     if (paymentMethod.identifier === 'mock' || paymentMethod.identifier === 'stripe') {
-         await prisma.order.update({
+         const finalOrder = await prisma.order.update({
             where: { id: order.id },
             data: { 
                 status: 'COMPLETADO',
@@ -172,11 +172,11 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
             }
         });
 
-        return { 
+        return serializeFinance({ 
             success: true, 
             message: 'Pago completado con éxito.',
-            order: serializeFinance(order)
-        };
+            order: finalOrder
+        });
     }
 
     throw new Error('Pasarela de pago no soportada.');

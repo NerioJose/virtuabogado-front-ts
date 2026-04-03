@@ -36,7 +36,7 @@ export class ZenobankService {
             // Body exacto según requerimiento de producción
             const body = {
                 orderId: String(request.orderId),
-                priceAmount: String(request.amount), // REQUISITO: String
+                priceAmount: request.amount.toFixed(2), // REQUISITO: String de alta precisión (2 decimales)
                 priceCurrency: 'USD',
                 description: request.description,
                 customerEmail: request.customer.email,

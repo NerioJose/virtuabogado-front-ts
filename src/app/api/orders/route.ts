@@ -300,9 +300,29 @@ export async function POST(request: Request) {
 
         console.log('📦 API: Syncing user and creating order for user:', finalUserId);
 
-        // 0. SINCRONIZACIÓN DE USUARIO (ID de Prisma = ID de Supabase)
-        // Usamos el ID de Supabase como identificador único persistente.
+        // 0. SINCRONIZACIÓN DE USUARIO (Identity Merge Strategy - No Deletion)
+        // Buscamos si el email ya existe con otro ID (Conflicto de Identidad Local)
         try {
+            const existingByEmail = await prisma.user.findUnique({
+                where: { email: user.email! }
+            });
+
+            if (existingByEmail && existingByEmail.id !== finalUserId) {
+                console.log(`🔗 [API Merge] Reconciliando email ${user.email} (ID Antiguo: ${existingByEmail.id} -> Nuevo: ${finalUserId})`);
+                
+                await prisma.$transaction([
+                    prisma.order.updateMany({ where: { userId: existingByEmail.id }, data: { userId: finalUserId } }),
+                    prisma.order.updateMany({ where: { lawyerId: existingByEmail.id }, data: { lawyerId: finalUserId } }),
+                    prisma.message.updateMany({ where: { senderId: existingByEmail.id }, data: { senderId: finalUserId } }),
+                    prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: finalUserId } }),
+                    prisma.user.update({
+                        where: { id: existingByEmail.id },
+                        data: { email: `legacy_${existingByEmail.id}_${existingByEmail.email}` }
+                    })
+                ]);
+            }
+
+            // Upsert definitivo por ID estable
             await prisma.user.upsert({
                 where: { id: finalUserId },
                 update: {
@@ -317,10 +337,8 @@ export async function POST(request: Request) {
                 }
             });
         } catch (error: any) {
-            if (error.code === 'P2002' && error.message?.includes('email')) {
-                console.error('❌ API Error: Colisión de email con otro ID.');
-                return NextResponse.json({ error: 'El email ya está registrado con otra cuenta.' }, { status: 409 });
-            }
+            console.error('❌ [API Sync Error]:', error);
+            // No bloqueamos el flujo si no es crítico, pero para órdenes queremos integridad
             throw error;
         }
 

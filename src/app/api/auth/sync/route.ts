@@ -21,8 +21,31 @@ export async function POST() {
         // Extraer metadatos
         const { nombre, rol, telefono } = user.user_metadata || {};
 
-        // Sincronización con Prisma (ID de Prisma = ID de Supabase)
-        // Usamos el ID de Supabase como identificador único persistente.
+        // SINCRONIZACIÓN DE IDENTIDAD (Merge Strategy - No Deletion)
+        // Paso 0: Detectar si el email ya está reclamado por otro ID (ej. Seeders o manuales)
+        const existingByEmail = await prisma.user.findUnique({
+            where: { email: user.email! }
+        });
+
+        if (existingByEmail && existingByEmail.id !== user.id) {
+            console.log(`🔗 [Sync Merge] Unificando email ${user.email} (Local: ${existingByEmail.id} -> Supabase: ${user.id})`);
+            
+            // Migrar relaciones activas al nuevo ID maestro de Supabase
+            await prisma.$transaction([
+                prisma.order.updateMany({ where: { userId: existingByEmail.id }, data: { userId: user.id } }),
+                prisma.order.updateMany({ where: { lawyerId: existingByEmail.id }, data: { lawyerId: user.id } }),
+                prisma.message.updateMany({ where: { senderId: existingByEmail.id }, data: { senderId: user.id } }),
+                prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: user.id } }),
+                // Renombrar email antiguo para liberar el slot único sin borrar el registro
+                prisma.user.update({
+                    where: { id: existingByEmail.id },
+                    data: { email: `legacy_${existingByEmail.id}_${existingByEmail.email}` }
+                })
+            ]);
+            console.log('✅ [Sync Merge] Migración de relaciones completada.');
+        }
+
+        // Paso 1: Upsert estable por ID oficial de Supabase
         const updatedUser = await prisma.user.upsert({
             where: { id: user.id },
             update: {

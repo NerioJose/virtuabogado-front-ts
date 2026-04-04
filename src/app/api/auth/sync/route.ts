@@ -131,6 +131,7 @@ export async function POST() {
             user: {
                 id: updatedUser.id,
                 email: updatedUser.email,
+                nombre: updatedUser.nombre, // AHORA DEVOLVEMOS EL NOMBRE DE LA DB
                 rol: updatedUser.rol,
                 activo: updatedUser.activo
             }

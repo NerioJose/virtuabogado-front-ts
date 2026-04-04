@@ -148,11 +148,18 @@ export const useAuthStore = create<AuthState>()(
 
                         // 🔄 SILENT SYNC: Garantizar que el usuario exista en Prisma para el Dashboard del Admin
                         try {
-                            fetch('/api/auth/sync', { method: 'POST' })
+                                fetch('/api/auth/sync', { method: 'POST' })
                                 .then(res => res.json())
                                 .then(syncData => {
-                                    if (syncData.success) {
-                                        console.log('🔄 [Auth Sync] Perfil sincronizado con éxito');
+                                    if (syncData.success && syncData.user) {
+                                        console.log('🔄 [Auth Sync] Perfil unificado con DB:', syncData.user.nombre);
+                                        // ACTUALIZACIÓN REACTIVA: Si el nombre en la DB es mejor que el de la sesión, actualizamos el store
+                                        const currentState = get() as any;
+                                        if (syncData.user.nombre && currentState.user && currentState.user.nombre !== syncData.user.nombre) {
+                                            if (currentState.updateUser) {
+                                                currentState.updateUser({ nombre: syncData.user.nombre });
+                                            }
+                                        }
                                     }
                                 })
                                 .catch(err => console.warn('⚠️ [Auth Sync] Falló el intento de sincronización:', err));

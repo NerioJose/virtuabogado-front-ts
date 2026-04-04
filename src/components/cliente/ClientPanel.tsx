@@ -108,7 +108,7 @@ export default function ClientPanel({
         handleLogout={handleLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        userName={user?.nombre || user?.email?.split('@')[0] || 'Usuario'}
+        userName={user?.nombre && !user.nombre.includes('@') ? user.nombre : (user?.email?.split('@')[0] || 'Usuario')}
         userEmail={user?.email || ''}
         userPicture={user?.picture}
       />

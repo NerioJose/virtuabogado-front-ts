@@ -46,25 +46,36 @@ export async function POST() {
         }
 
         // Paso 1: Upsert estable por ID oficial de Supabase
-        const updatedUser = await prisma.user.upsert({
-            where: { id: user.id },
-            update: {
-                email: user.email!,
-                nombre: nombre || 'Usuario Nuevo',
-                rol: (rol as any)?.toUpperCase() || 'CLIENTE',
-                telefono: telefono || undefined,
-                updatedAt: new Date(),
-            },
-            create: {
-                id: user.id,
-                email: user.email!,
-                nombre: nombre || 'Usuario Nuevo',
-                rol: (rol as any)?.toUpperCase() || 'CLIENTE',
-                telefono: telefono || undefined,
-                activo: true,
-                createdAt: new Date(),
+        let updatedUser: any;
+        try {
+            updatedUser = await prisma.user.upsert({
+                where: { id: user.id },
+                update: {
+                    email: user.email!,
+                    nombre: nombre || 'Usuario Nuevo',
+                    rol: (rol as any)?.toUpperCase() || 'CLIENTE',
+                    telefono: telefono || undefined,
+                    updatedAt: new Date(),
+                },
+                create: {
+                    id: user.id,
+                    email: user.email!,
+                    nombre: nombre || 'Usuario Nuevo',
+                    rol: (rol as any)?.toUpperCase() || 'CLIENTE',
+                    telefono: telefono || undefined,
+                    activo: true,
+                    createdAt: new Date(),
+                }
+            });
+        } catch (error: any) {
+            if (error.code === 'P2002') {
+                console.warn('⚠️ [Sync API] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Consultando db...');
+                updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
+                if (!updatedUser) throw new Error('Usuario falló creación por P2002 pero no se encuentra referenciado.');
+            } else {
+                throw error;
             }
-        });
+        }
 
         console.log(`✅ [Sync API] User ${updatedUser.id} synchronized successfully.`);
 

@@ -323,19 +323,27 @@ export async function POST(request: Request) {
             }
 
             // Upsert definitivo por ID estable
-            await prisma.user.upsert({
-                where: { id: finalUserId },
-                update: {
-                    email: user.email!,
-                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
-                },
-                create: {
-                    id: finalUserId,
-                    email: user.email || 'correo@pendiente.com',
-                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
-                    rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
+            try {
+                await prisma.user.upsert({
+                    where: { id: finalUserId },
+                    update: {
+                        email: user.email!,
+                        nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
+                    },
+                    create: {
+                        id: finalUserId,
+                        email: user.email || 'correo@pendiente.com',
+                        nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
+                        rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
+                    }
+                });
+            } catch (error: any) {
+                if (error.code === 'P2002') {
+                    console.warn('⚠️ [API Order Sync] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Procediendo...');
+                } else {
+                    throw error;
                 }
-            });
+            }
         } catch (error: any) {
             console.error('❌ [API Sync Error]:', error);
             // No bloqueamos el flujo si no es crítico, pero para órdenes queremos integridad

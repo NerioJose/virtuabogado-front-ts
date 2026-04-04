@@ -20,9 +20,33 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         throw new Error('Debe iniciar sesión para realizar la compra.');
     }
 
-    // 0. SINCRONIZACIÓN DE USUARIO (ID de Prisma = ID de Supabase)
-    // Usamos el ID de Supabase como identificador único persistente para garantizar la integridad.
+    // 0. SINCRONIZACIÓN DE USUARIO (Identity Merge Strategy - No Deletion)
+    // Buscamos si el usuario ya existe por su email (Source of Truth por Identidad Humana)
     try {
+        const existingUserByEmail = await prisma.user.findUnique({
+            where: { email: user.email! }
+        });
+
+        if (existingUserByEmail && existingUserByEmail.id !== user.id) {
+            console.log(`🔗 [Identity Merge] Email ${user.email} colisiona (ID Local: ${existingUserByEmail.id} vs IDs Supabase: ${user.id}). Reconciliando...`);
+            
+            // Migración Quirúrgica: Actualizar todas las relaciones al nuevo ID de Supabase
+            // Esto garantiza que el historial (Orders, Messages, Docs) se mantenga intacto y visible para la nueva sesión.
+            await prisma.$transaction([
+                prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
+                prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: user.id } }),
+                prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: user.id } }),
+                prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: user.id } }),
+                // Cambiar el Email del registro antiguo para liberar el slot único y permitir la creación del nuevo ID
+                prisma.user.update({
+                    where: { id: existingUserByEmail.id },
+                    data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
+                })
+            ]);
+            console.log('✅ [Identity Merge] Relaciones migradas y email liberado.');
+        }
+
+        // Ahora el upsert por ID funcionará sin errores de Unique Constraint 'email'
         await prisma.user.upsert({
             where: { id: user.id },
             update: {
@@ -37,11 +61,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
             }
         });
     } catch (error: any) {
-        // En caso de colisión de Email con otro ID, lanzamos un error descriptivo (Edge Case)
-        if (error.code === 'P2002' && error.message?.includes('email')) {
-            console.error('❌ Error de Sincronización: El email ya existe con otro Identificador.');
-            throw new Error('Conflicto de cuenta: El email ya está asociado a otro perfil. Contacte a soporte.');
-        }
+        console.error('❌ Error Grave en Sincronización de Identidad:', error);
         throw error;
     }
 

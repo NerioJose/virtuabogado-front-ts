@@ -33,11 +33,26 @@ export function usePushNotifications() {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPermission(Notification.permission);
       
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.pushManager.getSubscription().then((subscription) => {
-          setIsSubscribed(!!subscription);
-          setIsLoading(false);
-        });
+      navigator.serviceWorker.ready.then(async (registration) => {
+        const subscription = await registration.pushManager.getSubscription();
+        setIsSubscribed(!!subscription);
+        setIsLoading(false);
+
+        // 🔄 AUTO-SYNC (Self-Healing): Si el navegador tiene suscripción pero no sabemos si el server la tiene,
+        // la re-enviamos silenciosamente para asegurar que el link DB <-> Device esté vivo.
+        if (subscription && Notification.permission === 'granted') {
+          console.log('📡 [Push] Sincronización automática de suscripción detectada...');
+          try {
+            await fetch('/api/notifications/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(subscription)
+            });
+            console.log('✅ [Push] Suscripción sincronizada con éxito.');
+          } catch (err) {
+            console.error('⚠️ [Push] Falló el auto-sync de suscripción:', err);
+          }
+        }
       });
     } else {
       setIsLoading(false);

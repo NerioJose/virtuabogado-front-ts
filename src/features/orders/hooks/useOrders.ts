@@ -45,39 +45,12 @@ export const useCreateOrder = () => {
         mutationFn: async (orderData: any) => {
             return apiClient.post<any>('/api/orders', orderData);
         },
-        onMutate: async (newOrder) => {
-            // Cancel any outgoing refetches to avoid overwriting optimistic update
-            await queryClient.cancelQueries({ queryKey: ORDER_KEYS.all });
-
-            // Snapshot the previous value
-            const previousOrders = queryClient.getQueryData(ORDER_KEYS.list({}));
-
-            // Optimistically update to show the new order immediately
-            queryClient.setQueryData(ORDER_KEYS.list({}), (old: any) => {
-                const currentData = old?.data || [];
-                return {
-                    ...old,
-                    data: [
-                        { ...newOrder, id: 'temp-' + Date.now(), createdAt: new Date() },
-                        ...currentData
-                    ]
-                };
-            });
-
-            // Return context with snapshot for rollback
-            return { previousOrders };
-        },
-        onError: (err, newOrder, context) => {
-            // Rollback to previous state on error
-            if (context?.previousOrders) {
-                queryClient.setQueryData(ORDER_KEYS.list({}), context.previousOrders);
-            }
+        onError: (err) => {
             console.error('❌ Error creating order:', err);
         },
         onSuccess: (data) => {
-            // Only invalidate related queries, not all
             queryClient.invalidateQueries({ queryKey: ORDER_KEYS.lists() });
-            console.log('✅ Orden creada y caché actualizada selectivamente');
+            console.log('✅ Orden creada (A la espera de webhook de Zenobank)');
         },
     });
 };

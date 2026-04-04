@@ -16,7 +16,7 @@ const getDisplayName = (user: any) => {
 	if (!user) return 'Usuario';
 	
 	// Intenta obtener el nombre desde diferentes posibles campos de Supabase o Prisma
-	let rawName = user.nombre || user.user_metadata?.full_name || user.user_metadata?.name || user.name;
+	let rawName = user.nombre || user.user_metadata?.nombre || user.user_metadata?.full_name || user.user_metadata?.name || user.name;
 	
 	// Si el nombre no existe, es genérico o es un email, usamos la primera parte del email
 	if (!rawName || rawName === 'Usuario Nuevo' || rawName === 'Usuario' || rawName.includes('@')) {

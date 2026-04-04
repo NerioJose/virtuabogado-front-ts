@@ -20,18 +20,30 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         throw new Error('Debe iniciar sesión para realizar la compra.');
     }
 
-    // 0. SINCRONIZACIÓN DE USUARIO (Evita error de Foreign Key 'Order_userId_fkey')
-    // Aseguramos que el usuario autenticado en Supabase Auth exista físicamente en nuestro public.User
-    await prisma.user.upsert({
-        where: { id: user.id },
-        update: {},
-        create: {
-            id: user.id,
-            email: user.email!,
-            nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
-            rol: 'CLIENTE',
+    // 0. SINCRONIZACIÓN DE USUARIO (ID de Prisma = ID de Supabase)
+    // Usamos el ID de Supabase como identificador único persistente para garantizar la integridad.
+    try {
+        await prisma.user.upsert({
+            where: { id: user.id },
+            update: {
+                email: user.email!,
+                nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
+            },
+            create: {
+                id: user.id,
+                email: user.email!,
+                nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
+                rol: 'CLIENTE',
+            }
+        });
+    } catch (error: any) {
+        // En caso de colisión de Email con otro ID, lanzamos un error descriptivo (Edge Case)
+        if (error.code === 'P2002' && error.message?.includes('email')) {
+            console.error('❌ Error de Sincronización: El email ya existe con otro Identificador.');
+            throw new Error('Conflicto de cuenta: El email ya está asociado a otro perfil. Contacte a soporte.');
         }
-    });
+        throw error;
+    }
 
     // 1. VALIDACIÓN ZERO-TRUST
     const service = await prisma.service.findUnique({

@@ -300,17 +300,29 @@ export async function POST(request: Request) {
 
         console.log('📦 API: Syncing user and creating order for user:', finalUserId);
 
-        // 0. SINCRONIZACIÓN DE USUARIO (Evita error de Foreign Key 'Order_userId_fkey')
-        await prisma.user.upsert({
-            where: { id: finalUserId },
-            update: {},
-            create: {
-                id: finalUserId,
-                email: user.email || 'correo@pendiente.com',
-                nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
-                rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
+        // 0. SINCRONIZACIÓN DE USUARIO (ID de Prisma = ID de Supabase)
+        // Usamos el ID de Supabase como identificador único persistente.
+        try {
+            await prisma.user.upsert({
+                where: { id: finalUserId },
+                update: {
+                    email: user.email!,
+                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
+                },
+                create: {
+                    id: finalUserId,
+                    email: user.email || 'correo@pendiente.com',
+                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
+                    rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
+                }
+            });
+        } catch (error: any) {
+            if (error.code === 'P2002' && error.message?.includes('email')) {
+                console.error('❌ API Error: Colisión de email con otro ID.');
+                return NextResponse.json({ error: 'El email ya está registrado con otra cuenta.' }, { status: 409 });
             }
-        });
+            throw error;
+        }
 
         // 👨‍⚖️ AUTO-ASSIGNMENT: If only one lawyer is active, assign automatically
         const activeLawyers = await prisma.user.findMany({

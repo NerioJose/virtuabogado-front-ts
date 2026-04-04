@@ -196,6 +196,17 @@ export const useCheckoutStore = create<CheckoutState>()(
             set({ isLoading: true, error: null });
             try {
                 console.log('🔐 [Checkout] Autenticando usuario en Paso 1:', userData.email);
+                
+                // PREVENCIÓN DE COLISIÓN DE SESIONES MULTI-PESTAÑA
+                const supabase = (await import('@/utils/supabase/client')).createClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session && session.user.email !== userData.email) {
+                    console.warn(`⚠️ Mismatch de sesión detectado: Taba actual logged in como ${session.user.email}, intentando proceder como ${userData.email}`);
+                    await supabase.auth.signOut();
+                    useAuthStore.getState().clearUser();
+                }
+
                 const { user: rawUser, isNewUser } = await checkoutService.registerOrLogin(userData);
                 
                 if (rawUser) {

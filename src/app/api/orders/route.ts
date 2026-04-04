@@ -322,18 +322,19 @@ export async function POST(request: Request) {
                 ]);
             }
 
+            const resolvedName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+            const updateData: any = { email: user.email! };
+            if (resolvedName) updateData.nombre = resolvedName;
+
             // Upsert definitivo por ID estable
             try {
                 await prisma.user.upsert({
                     where: { id: finalUserId },
-                    update: {
-                        email: user.email!,
-                        nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
-                    },
+                    update: updateData,
                     create: {
                         id: finalUserId,
                         email: user.email || 'correo@pendiente.com',
-                        nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Cliente Nuevo',
+                        nombre: resolvedName || 'Cliente Nuevo',
                         rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
                     }
                 });

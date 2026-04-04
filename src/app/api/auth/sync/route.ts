@@ -45,22 +45,26 @@ export async function POST() {
             console.log('✅ [Sync Merge] Migración de relaciones completada.');
         }
 
+        // Preparar datos de actualización condicionalmente
+        const updateData: any = {
+            email: user.email!,
+            updatedAt: new Date(),
+        };
+        const resolvedName = nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+        if (resolvedName) updateData.nombre = resolvedName;
+        if (rol) updateData.rol = (rol as string).toUpperCase();
+        if (telefono) updateData.telefono = telefono;
+
         // Paso 1: Upsert estable por ID oficial de Supabase
         let updatedUser: any;
         try {
             updatedUser = await prisma.user.upsert({
                 where: { id: user.id },
-                update: {
-                    email: user.email!,
-                    nombre: nombre || 'Usuario Nuevo',
-                    rol: (rol as any)?.toUpperCase() || 'CLIENTE',
-                    telefono: telefono || undefined,
-                    updatedAt: new Date(),
-                },
+                update: updateData,
                 create: {
                     id: user.id,
                     email: user.email!,
-                    nombre: nombre || 'Usuario Nuevo',
+                    nombre: resolvedName || 'Usuario Nuevo',
                     rol: (rol as any)?.toUpperCase() || 'CLIENTE',
                     telefono: telefono || undefined,
                     activo: true,

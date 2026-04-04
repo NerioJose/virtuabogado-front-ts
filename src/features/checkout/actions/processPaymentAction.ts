@@ -47,19 +47,27 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         }
 
         // Ahora el upsert por ID funcionará sin errores de Unique Constraint 'email'
-        await prisma.user.upsert({
-            where: { id: user.id },
-            update: {
-                email: user.email!,
-                nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
-            },
-            create: {
-                id: user.id,
-                email: user.email!,
-                nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
-                rol: 'CLIENTE',
+        try {
+            await prisma.user.upsert({
+                where: { id: user.id },
+                update: {
+                    email: user.email!,
+                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
+                },
+                create: {
+                    id: user.id,
+                    email: user.email!,
+                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
+                    rol: 'CLIENTE',
+                }
+            });
+        } catch (error: any) {
+            if (error.code === 'P2002') {
+                console.warn('⚠️ [Identity Sync] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Procediendo al pago...');
+            } else {
+                throw error;
             }
-        });
+        }
     } catch (error: any) {
         console.error('❌ Error Grave en Sincronización de Identidad:', error);
         throw error;

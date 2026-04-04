@@ -38,19 +38,40 @@ export function usePushNotifications() {
         setIsSubscribed(!!subscription);
         setIsLoading(false);
 
-        // 🔄 AUTO-SYNC (Self-Healing): Si el navegador tiene suscripción pero no sabemos si el server la tiene,
-        // la re-enviamos silenciosamente para asegurar que el link DB <-> Device esté vivo.
-        if (subscription && Notification.permission === 'granted') {
-          console.log('📡 [Push] Sincronización automática de suscripción detectada...');
-          try {
-            await fetch('/api/notifications/subscribe', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(subscription)
-            });
-            console.log('✅ [Push] Suscripción sincronizada con éxito.');
-          } catch (err) {
-            console.error('⚠️ [Push] Falló el auto-sync de suscripción:', err);
+        // 🔄 AUTO-REPAIR (Self-Healing): 
+        // 1. Si ya tiene suscripción, re-sincronizar con el server.
+        // 2. Si tiene PERMISO pero NO suscripción (se perdió), re-suscribir silenciosamente.
+        if (Notification.permission === 'granted') {
+          if (subscription) {
+            console.log('📡 [Push] Sincronización automática de suscripción detectada...');
+            try {
+              await fetch('/api/notifications/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(subscription)
+              });
+              console.log('✅ [Push] Suscripción sincronizada con éxito.');
+            } catch (err) {
+              console.error('⚠️ [Push] Falló el auto-sync de suscripción:', err);
+            }
+          } else {
+            console.log('📡 [Push] Permiso concedido pero sin suscripción. Re-suscribiendo automáticamente...');
+            // Llamamos a la lógica interna de subscribe sin el alert (silencioso)
+            try {
+              const newSub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: VAPID_PUBLIC_KEY ? urlBase64ToUint8Array(VAPID_PUBLIC_KEY) : undefined
+              });
+              await fetch('/api/notifications/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSub)
+              });
+              setIsSubscribed(true);
+              console.log('✅ [Push] Re-suscripción automática completada.');
+            } catch (err) {
+              console.error('❌ [Push] Error en re-suscripción automática:', err);
+            }
           }
         }
       });

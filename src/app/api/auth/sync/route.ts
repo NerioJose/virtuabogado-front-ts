@@ -21,7 +21,8 @@ export async function POST() {
         // Extraer metadatos
         const { nombre, rol, telefono } = user.user_metadata || {};
 
-        // Sincronizar con Prisma (Upsert)
+        // Sincronización con Prisma (ID de Prisma = ID de Supabase)
+        // Usamos el ID de Supabase como identificador único persistente.
         const updatedUser = await prisma.user.upsert({
             where: { id: user.id },
             update: {
@@ -30,7 +31,6 @@ export async function POST() {
                 rol: (rol as any)?.toUpperCase() || 'CLIENTE',
                 telefono: telefono || undefined,
                 updatedAt: new Date(),
-                // No tocamos el campo 'activo' aquí para no sobrescribir decisiones del Admin
             },
             create: {
                 id: user.id,
@@ -38,7 +38,7 @@ export async function POST() {
                 nombre: nombre || 'Usuario Nuevo',
                 rol: (rol as any)?.toUpperCase() || 'CLIENTE',
                 telefono: telefono || undefined,
-                activo: true, // Si es nuevo y se está logueando, lo marcamos activo por ahora
+                activo: true,
                 createdAt: new Date(),
             }
         });

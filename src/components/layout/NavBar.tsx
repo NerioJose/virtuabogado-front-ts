@@ -12,11 +12,27 @@ import { User, UserRole } from '@/shared/types/entities.types';
 
 // Las imágenes en /public se referencian directamente por su path desde la raíz / en el src del Image component.
 
-// Helper for extracting name from raw or mapped user
 const getDisplayName = (user: any) => {
 	if (!user) return 'Usuario';
-	const name = user.nombre || user.user_metadata?.nombre || user.name || user.email;
-	return name !== 'Usuario' ? name : user.email;
+	
+	// Intenta obtener el nombre desde diferentes posibles campos de Supabase o Prisma
+	let rawName = user.nombre || user.user_metadata?.full_name || user.user_metadata?.name || user.name;
+	
+	// Si el nombre no existe, es genérico o es un email, usamos la primera parte del email
+	if (!rawName || rawName === 'Usuario Nuevo' || rawName === 'Usuario' || rawName.includes('@')) {
+		if (user.email) {
+			rawName = user.email.split('@')[0];
+		} else {
+			return 'Usuario';
+		}
+	}
+
+	// Limpiar caracteres extraños (ej. números en un email como neriojose531) para un look más limpio,
+	// pero como un nombre válido puede tener números, solo lo formatearemos estéticamente.
+	const cleanName = rawName.trim();
+	
+	// Capitalizar la primera letra
+	return cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase();
 };
 
 // Componente del menú desplegable de usuario

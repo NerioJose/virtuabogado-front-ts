@@ -47,17 +47,18 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         }
 
         // Ahora el upsert por ID funcionará sin errores de Unique Constraint 'email'
+        const resolvedName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+        const updateData: any = { email: user.email! };
+        if (resolvedName) updateData.nombre = resolvedName;
+
         try {
             await prisma.user.upsert({
                 where: { id: user.id },
-                update: {
-                    email: user.email!,
-                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
-                },
+                update: updateData,
                 create: {
                     id: user.id,
                     email: user.email!,
-                    nombre: user.user_metadata?.nombre || user.user_metadata?.name || user.email!.split('@')[0],
+                    nombre: resolvedName || user.email!.split('@')[0],
                     rol: 'CLIENTE',
                 }
             });

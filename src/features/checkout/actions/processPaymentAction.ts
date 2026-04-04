@@ -28,54 +28,62 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         });
 
         let finalName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+        const updateData: any = { email: user.email!, activo: true };
 
         if (existingUserByEmail && existingUserByEmail.id !== user.id) {
             console.log(`🔗 [Identity Merge] Email ${user.email} colisiona (ID Local: ${existingUserByEmail.id} vs IDs Supabase: ${user.id}). Reconciliando...`);
             
-            // Rescate de Identidad: heredar el nombre si era válido
+            // 1. Rescate de Identidad
             if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
                 finalName = existingUserByEmail.nombre;
-                console.log(`🦸 [Identity Rescue] Nombre recuperado del historial: ${finalName}`);
             }
 
-            // Migración Quirúrgica: Actualizar todas las relaciones al nuevo ID de Supabase
-            // Esto garantiza que el historial (Orders, Messages, Docs) se mantenga intacto y visible para la nueva sesión.
-            await prisma.$transaction([
-                prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
-                prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: user.id } }),
-                prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: user.id } }),
-                prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: user.id } }),
-                // Cambiar el Email del registro antiguo para liberar el slot único y permitir la creación del nuevo ID
-                prisma.user.update({
-                    where: { id: existingUserByEmail.id },
-                    data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
-                })
-            ]);
-            console.log('✅ [Identity Merge] Relaciones migradas y email liberado.');
-        }
+            // 2. Liberar el email del registro antiguo para permitir crear el nuevo ID
+            await prisma.user.update({
+                where: { id: existingUserByEmail.id },
+                data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
+            });
 
-        // Ahora el upsert por ID funcionará sin errores de Unique Constraint 'email'
-        const resolvedName = finalName;
-        const updateData: any = { email: user.email!, activo: true };
-        if (resolvedName) updateData.nombre = resolvedName;
-
-        try {
+            // 3. Crear o actualizar el nuevo usuario AHORA para evitar el error de Foreign Key
+            if (finalName) updateData.nombre = finalName;
             await prisma.user.upsert({
                 where: { id: user.id },
                 update: updateData,
                 create: {
                     id: user.id,
                     email: user.email!,
-                    nombre: resolvedName || user.email!.split('@')[0],
+                    nombre: finalName || user.email!.split('@')[0],
                     rol: 'CLIENTE',
                     activo: true,
                 }
             });
-        } catch (error: any) {
-            if (error.code === 'P2002') {
-                console.warn('⚠️ [Identity Sync] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Procediendo al pago...');
-            } else {
-                throw error;
+
+            // 4. Migrar relaciones al nuevo ID, el cual YA EXISTE en la base de datos
+            await prisma.$transaction([
+                prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
+                prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: user.id } }),
+                prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: user.id } }),
+                prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: user.id } }),
+            ]);
+            console.log('✅ [Identity Merge] Relaciones migradas exitosamente.');
+        } else {
+            // Si no hay colisión, simplemente hacemos el upsert regular
+            if (finalName) updateData.nombre = finalName;
+            try {
+                await prisma.user.upsert({
+                    where: { id: user.id },
+                    update: updateData,
+                    create: {
+                        id: user.id,
+                        email: user.email!,
+                        nombre: finalName || user.email!.split('@')[0],
+                        rol: 'CLIENTE',
+                        activo: true,
+                    }
+                });
+            } catch (error: any) {
+                if (error.code === 'P2002') console.warn('⚠️ [Identity Sync] P2002 evitado. Otra petición paralela reconcilió.');
+                else throw error;
             }
         }
     } catch (error: any) {

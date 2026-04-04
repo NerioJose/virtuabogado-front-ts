@@ -307,49 +307,58 @@ export async function POST(request: Request) {
                 where: { email: user.email! }
             });
             let finalName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+            const updateData: any = { email: user.email!, activo: true };
 
             if (existingUserByEmail && existingUserByEmail.id !== finalUserId) {
                 console.log(`🔗 [API] Email colisiona (Local: ${existingUserByEmail.id} -> Supabase: ${finalUserId}). Recableando...`);
                 
-                // Rescate de Identidad: heredar el nombre si era válido
+                // 1. Rescate de Identidad: heredar el nombre si era válido
                 if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
                     finalName = existingUserByEmail.nombre;
                     console.log(`🦸 [Identity Rescue Orders] Nombre recuperado del historial: ${finalName}`);
                 }
                 
-                await prisma.$transaction([
-                    prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: finalUserId } }),
-                    prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: finalUserId } }),
-                    prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: finalUserId } }),
-                    prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: finalUserId } }),
-                    prisma.user.update({
-                        where: { id: existingUserByEmail.id },
-                        data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
-                    })
-                ]);
-            }
+                // 2. Liberar el email
+                await prisma.user.update({
+                    where: { id: existingUserByEmail.id },
+                    data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
+                });
 
-            const resolvedName = finalName;
-            const updateData: any = { email: user.email!, activo: true };
-            if (resolvedName) updateData.nombre = resolvedName;
-
-            // Upsert definitivo por ID estable
-            try {
+                // 3. Upsert definitivo por ID estable
+                if (finalName) updateData.nombre = finalName;
                 await prisma.user.upsert({
                     where: { id: finalUserId },
                     update: updateData,
                     create: {
                         id: finalUserId,
                         email: user.email || 'correo@pendiente.com',
-                        nombre: resolvedName || 'Cliente Nuevo',
+                        nombre: finalName || 'Cliente Nuevo',
                         rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
                     }
                 });
-            } catch (error: any) {
-                if (error.code === 'P2002') {
-                    console.warn('⚠️ [API Order Sync] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Procediendo...');
-                } else {
-                    throw error;
+
+                // 4. Migrar relaciones
+                await prisma.$transaction([
+                    prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: finalUserId } }),
+                    prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: finalUserId } }),
+                    prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: finalUserId } }),
+                    prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: finalUserId } })
+                ]);
+            } else {
+                if (finalName) updateData.nombre = finalName;
+                try {
+                    await prisma.user.upsert({
+                        where: { id: finalUserId },
+                        update: updateData,
+                        create: {
+                            id: finalUserId,
+                            email: user.email || 'correo@pendiente.com',
+                            nombre: finalName || 'Cliente Nuevo',
+                            rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
+                        }
+                    });
+                } catch (error: any) {
+                    if (error.code !== 'P2002') throw error;
                 }
             }
         } catch (error: any) {

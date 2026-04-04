@@ -29,64 +29,81 @@ export async function POST() {
 
         let finalName = nombre || user.user_metadata?.name || user.user_metadata?.full_name;
 
-        if (existingByEmail && existingByEmail.id !== user.id) {
-            console.log(`🔗 [Sync Merge] Unificando email ${user.email} (Local: ${existingByEmail.id} -> Supabase: ${user.id})`);
-            
-            // Rescate de Identidad: heredar el nombre si era válido
-            if (!finalName && existingByEmail.nombre && !existingByEmail.nombre.includes('@')) {
-                finalName = existingByEmail.nombre;
-                console.log(`🦸 [Identity Rescue API] Nombre recuperado del historial: ${finalName}`);
-            }
-
-            // Migrar relaciones activas al nuevo ID maestro de Supabase
-            await prisma.$transaction([
-                prisma.order.updateMany({ where: { userId: existingByEmail.id }, data: { userId: user.id } }),
-                prisma.order.updateMany({ where: { lawyerId: existingByEmail.id }, data: { lawyerId: user.id } }),
-                prisma.message.updateMany({ where: { senderId: existingByEmail.id }, data: { senderId: user.id } }),
-                prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: user.id } }),
-                // Renombrar email antiguo para liberar el slot único sin borrar el registro
-                prisma.user.update({
-                    where: { id: existingByEmail.id },
-                    data: { email: `legacy_${existingByEmail.id}_${existingByEmail.email}` }
-                })
-            ]);
-            console.log('✅ [Sync Merge] Migración de relaciones completada.');
-        }
-
         // Preparar datos de actualización condicionalmente
         const updateData: any = {
             email: user.email!,
             updatedAt: new Date(),
             activo: true // Asegurar reactivación
         };
-        const resolvedName = finalName;
-        if (resolvedName) updateData.nombre = resolvedName;
         if (rol) updateData.rol = (rol as string).toUpperCase();
         if (telefono) updateData.telefono = telefono;
 
-        // Paso 1: Upsert estable por ID oficial de Supabase
         let updatedUser: any;
-        try {
+
+        if (existingByEmail && existingByEmail.id !== user.id) {
+            console.log(`🔗 [Sync Merge] Unificando email ${user.email} (Local: ${existingByEmail.id} -> Supabase: ${user.id})`);
+            
+            // 1. Rescate de Identidad: heredar el nombre si era válido
+            if (!finalName && existingByEmail.nombre && !existingByEmail.nombre.includes('@')) {
+                finalName = existingByEmail.nombre;
+                console.log(`🦸 [Identity Rescue API] Nombre recuperado del historial: ${finalName}`);
+            }
+
+            // 2. Liberar el email del registro antiguo para permitir crear el nuevo ID
+            await prisma.user.update({
+                where: { id: existingByEmail.id },
+                data: { email: `legacy_${existingByEmail.id}_${existingByEmail.email}` }
+            });
+
+            // 3. Upsert estable por ID oficial de Supabase AHORA
+            if (finalName) updateData.nombre = finalName;
             updatedUser = await prisma.user.upsert({
                 where: { id: user.id },
                 update: updateData,
                 create: {
                     id: user.id,
                     email: user.email!,
-                    nombre: resolvedName || 'Usuario Nuevo',
+                    nombre: finalName || 'Usuario Nuevo',
                     rol: (rol as any)?.toUpperCase() || 'CLIENTE',
                     telefono: telefono || undefined,
                     activo: true,
                     createdAt: new Date(),
                 }
             });
-        } catch (error: any) {
-            if (error.code === 'P2002') {
-                console.warn('⚠️ [Sync API] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Consultando db...');
-                updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
-                if (!updatedUser) throw new Error('Usuario falló creación por P2002 pero no se encuentra referenciado.');
-            } else {
-                throw error;
+
+            // 4. Migrar relaciones activas al nuevo ID maestro, que YA EXISTE
+            await prisma.$transaction([
+                prisma.order.updateMany({ where: { userId: existingByEmail.id }, data: { userId: user.id } }),
+                prisma.order.updateMany({ where: { lawyerId: existingByEmail.id }, data: { lawyerId: user.id } }),
+                prisma.message.updateMany({ where: { senderId: existingByEmail.id }, data: { senderId: user.id } }),
+                prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: user.id } }),
+            ]);
+            console.log('✅ [Sync Merge] Migración de relaciones completada.');
+        } else {
+            // Sin colisión, simplemente upsert
+            if (finalName) updateData.nombre = finalName;
+            try {
+                updatedUser = await prisma.user.upsert({
+                    where: { id: user.id },
+                    update: updateData,
+                    create: {
+                        id: user.id,
+                        email: user.email!,
+                        nombre: finalName || 'Usuario Nuevo',
+                        rol: (rol as any)?.toUpperCase() || 'CLIENTE',
+                        telefono: telefono || undefined,
+                        activo: true,
+                        createdAt: new Date(),
+                    }
+                });
+            } catch (error: any) {
+                if (error.code === 'P2002') {
+                    console.warn('⚠️ [Sync API] Conflicto P2002 evitado. Otra petición paralela ya reconcilió la identidad. Consultando db...');
+                    updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
+                    if (!updatedUser) throw new Error('Usuario falló creación por P2002 pero no se encuentra referenciado.');
+                } else {
+                    throw error;
+                }
             }
         }
 

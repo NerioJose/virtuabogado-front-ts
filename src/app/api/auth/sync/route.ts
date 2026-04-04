@@ -27,9 +27,17 @@ export async function POST() {
             where: { email: user.email! }
         });
 
+        let finalName = nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+
         if (existingByEmail && existingByEmail.id !== user.id) {
             console.log(`🔗 [Sync Merge] Unificando email ${user.email} (Local: ${existingByEmail.id} -> Supabase: ${user.id})`);
             
+            // Rescate de Identidad: heredar el nombre si era válido
+            if (!finalName && existingByEmail.nombre && !existingByEmail.nombre.includes('@')) {
+                finalName = existingByEmail.nombre;
+                console.log(`🦸 [Identity Rescue API] Nombre recuperado del historial: ${finalName}`);
+            }
+
             // Migrar relaciones activas al nuevo ID maestro de Supabase
             await prisma.$transaction([
                 prisma.order.updateMany({ where: { userId: existingByEmail.id }, data: { userId: user.id } }),
@@ -49,8 +57,9 @@ export async function POST() {
         const updateData: any = {
             email: user.email!,
             updatedAt: new Date(),
+            activo: true // Asegurar reactivación
         };
-        const resolvedName = nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+        const resolvedName = finalName;
         if (resolvedName) updateData.nombre = resolvedName;
         if (rol) updateData.rol = (rol as string).toUpperCase();
         if (telefono) updateData.telefono = telefono;

@@ -27,9 +27,17 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
             where: { email: user.email! }
         });
 
+        let finalName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
+
         if (existingUserByEmail && existingUserByEmail.id !== user.id) {
             console.log(`🔗 [Identity Merge] Email ${user.email} colisiona (ID Local: ${existingUserByEmail.id} vs IDs Supabase: ${user.id}). Reconciliando...`);
             
+            // Rescate de Identidad: heredar el nombre si era válido
+            if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
+                finalName = existingUserByEmail.nombre;
+                console.log(`🦸 [Identity Rescue] Nombre recuperado del historial: ${finalName}`);
+            }
+
             // Migración Quirúrgica: Actualizar todas las relaciones al nuevo ID de Supabase
             // Esto garantiza que el historial (Orders, Messages, Docs) se mantenga intacto y visible para la nueva sesión.
             await prisma.$transaction([
@@ -47,8 +55,8 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         }
 
         // Ahora el upsert por ID funcionará sin errores de Unique Constraint 'email'
-        const resolvedName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
-        const updateData: any = { email: user.email! };
+        const resolvedName = finalName;
+        const updateData: any = { email: user.email!, activo: true };
         if (resolvedName) updateData.nombre = resolvedName;
 
         try {
@@ -60,6 +68,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                     email: user.email!,
                     nombre: resolvedName || user.email!.split('@')[0],
                     rol: 'CLIENTE',
+                    activo: true,
                 }
             });
         } catch (error: any) {

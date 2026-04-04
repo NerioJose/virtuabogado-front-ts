@@ -303,27 +303,34 @@ export async function POST(request: Request) {
         // 0. SINCRONIZACIÓN DE USUARIO (Identity Merge Strategy - No Deletion)
         // Buscamos si el email ya existe con otro ID (Conflicto de Identidad Local)
         try {
-            const existingByEmail = await prisma.user.findUnique({
+            const existingUserByEmail = await prisma.user.findUnique({
                 where: { email: user.email! }
             });
+            let finalName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
 
-            if (existingByEmail && existingByEmail.id !== finalUserId) {
-                console.log(`🔗 [API Merge] Reconciliando email ${user.email} (ID Antiguo: ${existingByEmail.id} -> Nuevo: ${finalUserId})`);
+            if (existingUserByEmail && existingUserByEmail.id !== finalUserId) {
+                console.log(`🔗 [API] Email colisiona (Local: ${existingUserByEmail.id} -> Supabase: ${finalUserId}). Recableando...`);
+                
+                // Rescate de Identidad: heredar el nombre si era válido
+                if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
+                    finalName = existingUserByEmail.nombre;
+                    console.log(`🦸 [Identity Rescue Orders] Nombre recuperado del historial: ${finalName}`);
+                }
                 
                 await prisma.$transaction([
-                    prisma.order.updateMany({ where: { userId: existingByEmail.id }, data: { userId: finalUserId } }),
-                    prisma.order.updateMany({ where: { lawyerId: existingByEmail.id }, data: { lawyerId: finalUserId } }),
-                    prisma.message.updateMany({ where: { senderId: existingByEmail.id }, data: { senderId: finalUserId } }),
-                    prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: finalUserId } }),
+                    prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: finalUserId } }),
+                    prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: finalUserId } }),
+                    prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: finalUserId } }),
+                    prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: finalUserId } }),
                     prisma.user.update({
-                        where: { id: existingByEmail.id },
-                        data: { email: `legacy_${existingByEmail.id}_${existingByEmail.email}` }
+                        where: { id: existingUserByEmail.id },
+                        data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
                     })
                 ]);
             }
 
-            const resolvedName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
-            const updateData: any = { email: user.email! };
+            const resolvedName = finalName;
+            const updateData: any = { email: user.email!, activo: true };
             if (resolvedName) updateData.nombre = resolvedName;
 
             // Upsert definitivo por ID estable

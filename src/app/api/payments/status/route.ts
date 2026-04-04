@@ -7,9 +7,11 @@ import { OrderStatus } from '@/shared/types/entities.types';
  * GET /api/payments/status?orderId=[ID]
  * Endpoint diseñado para el polling de reconciliación en tiempo real.
  */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const orderId = searchParams.get('orderId');
+    const orderId = req.nextUrl.searchParams.get('orderId') || new URL(req.url).searchParams.get('orderId');
 
     if (!orderId) {
         return NextResponse.json({ error: 'orderId is required' }, { status: 400 });

@@ -64,11 +64,28 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: user.id } }),
                 prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: user.id } }),
                 prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: user.id } }),
+                prisma.pushSubscription.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
             ]);
-            console.log('✅ [Identity Merge] Relaciones migradas exitosamente.');
+            console.log('✅ [Identity Merge] Relaciones y Suscripciones Push migradas exitosamente.');
+
+            // 5. Sincronizar metadatos con Supabase Auth para que el NavBar se actualice de inmediato
+            if (finalName) {
+                console.log(`📝 [Identity Merge] Sincronizando nombre "${finalName}" con Supabase Auth...`);
+                await supabase.auth.updateUser({
+                    data: { nombre: finalName }
+                });
+            }
         } else {
             // Si no hay colisión, simplemente hacemos el upsert regular
-            if (finalName) updateData.nombre = finalName;
+            if (finalName) {
+                updateData.nombre = finalName;
+                // Sincronizar también con Supabase Auth si el nombre local era vacío o genérico
+                if (user.user_metadata?.nombre !== finalName) {
+                    await supabase.auth.updateUser({
+                        data: { nombre: finalName }
+                    });
+                }
+            }
             try {
                 await prisma.user.upsert({
                     where: { id: user.id },

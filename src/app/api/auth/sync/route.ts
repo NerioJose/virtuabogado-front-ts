@@ -77,11 +77,28 @@ export async function POST() {
                 prisma.order.updateMany({ where: { lawyerId: existingByEmail.id }, data: { lawyerId: user.id } }),
                 prisma.message.updateMany({ where: { senderId: existingByEmail.id }, data: { senderId: user.id } }),
                 prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: user.id } }),
+                prisma.pushSubscription.updateMany({ where: { userId: existingByEmail.id }, data: { userId: user.id } }),
             ]);
-            console.log('✅ [Sync Merge] Migración de relaciones completada.');
+            console.log('✅ [Sync Merge] Migración de relaciones y Suscripciones Push completada.');
+
+            // 5. Sincronizar metadatos con Supabase Auth si se rescató un nombre
+            if (finalName && user.user_metadata?.nombre !== finalName) {
+                console.log(`📝 [Sync Merge] Actualizando nombre en Supabase Auth: ${finalName}`);
+                await supabase.auth.updateUser({
+                    data: { nombre: finalName }
+                });
+            }
         } else {
             // Sin colisión, simplemente upsert
-            if (finalName) updateData.nombre = finalName;
+            if (finalName) {
+                updateData.nombre = finalName;
+                // Sincronizar metadatos si hay discrepancia
+                if (user.user_metadata?.nombre !== finalName) {
+                    await supabase.auth.updateUser({
+                        data: { nombre: finalName }
+                    });
+                }
+            }
             try {
                 updatedUser = await prisma.user.upsert({
                     where: { id: user.id },

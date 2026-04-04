@@ -30,11 +30,11 @@ export async function sendPushNotification(userId: string, options: PushNotifica
     });
 
     if (subscriptions.length === 0) {
-      console.info(`ℹ️ [Push] Usuario ${userId} no tiene dispositivos registrados.`);
+      console.info(`ℹ️ [Push Diag] Usuario ${userId} no tiene dispositivos registrados en la tabla PushSubscription.`);
       return { success: false, sent: 0 };
     }
 
-    console.log(`📡 [Push] Enviando alerta a ${subscriptions.length} dispositivos del usuario ${userId}...`);
+    console.log(`📡 [Push Diag] Intentando enviar a ${subscriptions.length} dispositivos para el usuario ${userId}...`);
 
     const payload = JSON.stringify({
       title: options.title,
@@ -80,8 +80,10 @@ export async function notifyNewSale(orderId: string, total: string, needsAssignm
   // Buscar a todos los ADMINS
   const admins = await prisma.user.findMany({
     where: { rol: 'ADMIN', activo: true },
-    select: { id: true }
+    select: { id: true, email: true }
   });
+
+  console.log(`🕵️ [Push Diag] Buscando Admins para notificar venta. Encontrados: ${admins.length} (${admins.map(a => a.email).join(', ')})`);
 
   const body = needsAssignment 
     ? `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - ¡ATENCIÓN: REQUIERE ASIGNAR ABOGADO!`
@@ -97,7 +99,9 @@ export async function notifyNewSale(orderId: string, total: string, needsAssignm
     })
   );
 
-  await Promise.all(promises);
+  const results = await Promise.all(promises);
+  const totalSent = results.reduce((acc, res) => acc + (res.sent || 0), 0);
+  console.log(`✅ [Push Diag] Proceso de notificación de venta completado. Total de mensajes enviados a dispositivos: ${totalSent}`);
 }
 
 /**

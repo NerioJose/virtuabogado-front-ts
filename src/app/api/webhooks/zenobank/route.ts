@@ -100,17 +100,17 @@ export async function POST(req: NextRequest) {
                 eventType: 'created' // Enviamos 'created' para que al abogado le suene como nuevo caso pagado!
             });
 
-            // 🔔 NOTIFICACIONES PUSH TÁCTICAS
+            // 🔔 NOTIFICACIONES PUSH TÁCTICAS (Usamos await para evitar que Vercel mate el proceso)
             // 1. Alerta de Venta para Admin (Efecto Shopify + Alerta de Gestión)
-            console.log(`💰 [Webhook Push] Notificando venta de Orden #${orderId}`);
-            notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId).catch(err => 
+            console.log(`💰 [Webhook Push] Notificando venta de Orden #${orderId} a Admins...`);
+            await notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId).catch(err => 
                 console.error('❌ Error enviando push de venta:', err)
             );
 
             // 2. Alerta de Asignación si hay abogado
             if (targetLawyerId) {
                 console.log(`⚖️ [Webhook Push] Notificando asignación al abogado: ${targetLawyerId}`);
-                notifyNewCase(targetLawyerId, orderId).catch(err => 
+                await notifyNewCase(targetLawyerId, orderId).catch(err => 
                     console.error('❌ Error enviando push de asignación:', err)
                 );
             }

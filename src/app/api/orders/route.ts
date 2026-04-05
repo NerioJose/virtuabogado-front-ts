@@ -518,19 +518,19 @@ export async function PUT(request: Request) {
             eventType: 'updated'
         });
 
-        // 🔔 NOTIFICACIONES PUSH TÁCTICAS
+        // 🔔 NOTIFICACIONES PUSH TÁCTICAS (Aguardar para evitar cierre de worker en Vercel)
         // 1. Si el estado cambia a PAID -> Notificar a todos los ADMINS (Efecto Shopify)
         if (status === 'PAID') {
-            console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id}`);
-            notifyNewSale(updatedOrder.id, updatedOrder.total.toString()).catch(err => 
+            console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id} a Admins...`);
+            await notifyNewSale(updatedOrder.id, updatedOrder.total.toString()).catch(err => 
                 console.error('❌ Error disparando push de venta:', err)
             );
         }
-
+ 
         // 2. Si se asigna un Abogado -> Notificar al Abogado específico
         if (lawyerId) {
             console.log(`⚖️ [Push] Disparando alerta de asignación para Abogado: ${lawyerId}`);
-            notifyNewCase(lawyerId, updatedOrder.id).catch(err => 
+            await notifyNewCase(lawyerId, updatedOrder.id).catch(err => 
                 console.error('❌ Error disparando push de asignación:', err)
             );
         }

@@ -118,7 +118,12 @@ export async function notifyNewSale(orderId: string, total: string, needsAssignm
 
   const results = await Promise.all(promises);
   const totalSent = results.reduce((acc, res) => acc + (res.sent || 0), 0);
-  console.log(`✅ [Push Diag] Proceso de notificación de venta completado. Total de mensajes enviados a dispositivos: ${totalSent}`);
+  
+  if (totalSent > 0) {
+    console.log(`✅ [Push Success] Venta de Orden #${orderId} notificada exitosamente a ${totalSent} dispositivo(s) de Admins.`);
+  } else {
+    console.warn(`⚠️ [Push Warn] No se pudo enviar la notificación de venta para #${orderId}. ¿Hay admins con dispositivos registrados?`);
+  }
 }
 
 /**

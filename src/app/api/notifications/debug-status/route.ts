@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // 1. Contar Admins
     const admins = await prisma.user.findMany({
-      where: { rol: { in: ['ADMIN', 'admin'] } },
+      where: { rol: 'ADMIN' },
       select: { id: true, email: true, rol: true, activo: true }
     });
 

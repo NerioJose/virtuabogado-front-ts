@@ -137,12 +137,12 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             transition={{ delay: 0.5 }}
             onClick={async () => {
               const success = await subscribe();
-              if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
+              if (success) alert('🎉 ¡Ca-Ching! Dispositivo sincronizado exitosamente en la Base de Datos.');
               else if (lastError) alert(`⚠️ ${lastError}`);
             }}
-            disabled={isPending || isSubscribed}
+            disabled={isPending}
             className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border border-white/10
-              ${isSubscribed ? 'opacity-50 cursor-default' : 'text-amber-400 hover:bg-white/5 hover:translate-x-1'}
+              ${isPending ? 'opacity-50 cursor-wait' : 'text-amber-400 hover:bg-white/5 hover:translate-x-1'}
             `}
           >
             <div className={`text-lg transition-transform group-hover:scale-110`}>

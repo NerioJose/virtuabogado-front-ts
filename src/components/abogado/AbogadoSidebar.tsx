@@ -76,13 +76,13 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
             <button
               onClick={async () => {
                 const success = await subscribe();
-                if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
+                if (success) alert('🎉 ¡Ca-Ching! Dispositivo sincronizado exitosamente en la Base de Datos.');
                 else if (lastError) alert(`⚠️ ${lastError}`);
               }}
-              disabled={isPending || isSubscribed}
+              disabled={isPending}
               className={`w-full flex items-center px-6 py-3 text-left transition-all ${
-                isSubscribed 
-                  ? 'opacity-40 cursor-default grayscale' 
+                isPending 
+                  ? 'opacity-40 cursor-wait grayscale' 
                   : 'text-amber-600 hover:bg-amber-50'
               }`}
             >

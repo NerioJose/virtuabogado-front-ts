@@ -123,6 +123,10 @@ export default function RootLayout({
 			<head>
 				<link rel="manifest" href="/manifest.json" />
 				<meta name="theme-color" content="#0056b3" />
+				<meta name="apple-mobile-web-app-capable" content="yes" />
+				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+				<meta name="apple-mobile-web-app-title" content="VirtuAbogado" />
+				<meta name="mobile-web-app-capable" content="yes" />
 				<link rel="apple-touch-icon" href="/logo/logo_resized.png" />
 				<script
 					type="application/ld+json"

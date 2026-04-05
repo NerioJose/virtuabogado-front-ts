@@ -33,7 +33,7 @@ export function usePushNotifications() {
             const response = await fetch('/api/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(subscription),
+                body: JSON.stringify(subscription.toJSON()),
             });
             if (!response.ok) console.error('❌ [Push] Error sync:', await response.text());
         } catch (error) {

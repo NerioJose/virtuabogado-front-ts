@@ -34,7 +34,9 @@ export default function GlobalChatListener() {
         // if (bannerDismissed === 'true') return;
 
         // Mostrar banner de invitación a Push solo para Admin/Abogados que no estén suscritos
-        if ((user.rol === 'ADMIN' || user.rol === 'ABOGADO') && !isSubscribed) {
+        // Se muestra si no hay suscripción O si el permiso aún no ha sido solicitado (default)
+        const isNotGranted = permission === 'default';
+        if ((user.rol === 'ADMIN' || user.rol === 'ABOGADO') && (!isSubscribed || isNotGranted)) {
             const timer = setTimeout(() => setShowPushBanner(true), 3000); // 3s después del login
             return () => clearTimeout(timer);
         }

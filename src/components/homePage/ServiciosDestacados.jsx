@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useServices } from '@/features/services/hooks/useServices';

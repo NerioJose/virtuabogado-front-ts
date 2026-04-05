@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { servicesService } from '../services/services.service';
 import { CreateServiceRequest, UpdateServiceRequest, Service } from '../types/services.types';

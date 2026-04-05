@@ -16,16 +16,16 @@ import {
 } from 'react-icons/fi';
 import { useFinancialSettings, useUpdateFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { financialSettingsService } from '@/features/financial-settings/services/financial-settings.service';
-import { useOrders } from '@/features/orders/hooks/useOrders';
+import { useAdminServices } from '@/features/services/hooks/useServices';
 import ServiciosPanel from './ServiciosPanel';
 
 // Componente para configuración financiera (Extraído por claridad)
 function FinancialSettingsSection() {
 	const { data: financialSettings, isLoading: loadingSettings } = useFinancialSettings();
-	const { data: response } = useOrders();
-	const orders = response?.data || [];
+	const { data: services, isLoading: loadingServices } = useAdminServices();
 	const updateSettings = useUpdateFinancialSettings();
 
+	const [simulationBase, setSimulationBase] = useState<number>(0);
 	const [lawyerCommission, setLawyerCommission] = useState<number>(0);
 	const [operationalCosts, setOperationalCosts] = useState<number>(0);
 	const [taxPercentage, setTaxPercentage] = useState<number>(0);
@@ -44,6 +44,15 @@ function FinancialSettingsSection() {
 		}
 	}, [financialSettings]);
 
+    // Calcular base de simulación por defecto (Suma de precios de servicios activos)
+    useEffect(() => {
+        if (services && simulationBase === 0) {
+            const activeServices = services.filter(s => s.activo);
+            const totalBase = activeServices.reduce((sum, s) => sum + Number(s.precio), 0);
+            setSimulationBase(totalBase || 100); // 100 por defecto si no hay servicios
+        }
+    }, [services, simulationBase]);
+
 	const validation = useMemo(() => {
 		return financialSettingsService.validateSettings({
 			lawyerCommissionPercentage: lawyerCommission,
@@ -55,16 +64,14 @@ function FinancialSettingsSection() {
 	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee, whatsappPhone]);
 
 	const previewData = useMemo(() => {
-		const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total), 0);
 		return financialSettingsService.calculatePreview(
-			totalRevenue,
+			simulationBase,
 			lawyerCommission,
 			operationalCosts,
 			taxPercentage,
-			platformFee,
-			whatsappPhone
+			platformFee
 		);
-	}, [orders, lawyerCommission, operationalCosts, taxPercentage, platformFee, whatsappPhone]);
+	}, [simulationBase, lawyerCommission, operationalCosts, taxPercentage, platformFee]);
 
 	const handleSave = async () => {
 		if (!validation.isValid) return;
@@ -208,25 +215,56 @@ function FinancialSettingsSection() {
 
 					<div className="bg-gray-50 rounded-xl p-5 border border-gray-200 space-y-4">
 						<div className="flex items-center gap-2 text-azul-primario font-bold">
-							<FiTrendingUp /> <h3>Simulación (Basado en ${previewData.totalRevenue?.toLocaleString()})</h3>
+							<FiTrendingUp /> <h3>Simulación de Ganancias (USD)</h3>
 						</div>
+
+                        <div>
+                            <label className="block text-[10px] uppercase font-black text-gray-400 mb-1">Monto Base de Simulación</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                                <input 
+                                    type="number"
+                                    value={simulationBase}
+                                    onChange={(e) => setSimulationBase(Number(e.target.value))}
+                                    className="block w-full pl-7 p-2 border border-blue-100 bg-white rounded-lg focus:ring-2 focus:ring-azul-primario outline-none font-bold text-azul-primario"
+                                />
+                            </div>
+                            <p className="mt-1 text-[10px] text-gray-500 italic">
+                                *Basado en la suma de precios de tus servicios activos.
+                            </p>
+                        </div>
 						
-						<div className="space-y-2">
-							<div className="flex justify-between p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
-								<span className="text-sm text-gray-500">Para Abogados</span>
-								<span className="font-bold text-blue-600">${previewData.lawyerPayments?.toLocaleString()}</span>
+						<div className="space-y-2 pt-2">
+							<div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-blue-50/30">
+								<span className="text-sm text-gray-500">Para Abogados ({lawyerCommission}%)</span>
+								<span className="font-bold text-blue-600">${previewData.lawyerPayments?.toFixed(2)}</span>
 							</div>
-							<div className="flex justify-between p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
-								<span className="text-sm text-gray-500">Gastos Operativos</span>
-								<span className="font-bold text-orange-600">${previewData.operationalCosts?.toLocaleString()}</span>
+							<div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-orange-50/30">
+								<span className="text-sm text-gray-500">Gastos Op. ({operationalCosts}%)</span>
+								<span className="font-bold text-orange-600">${previewData.operationalCosts?.toFixed(2)}</span>
 							</div>
-							<div className="flex justify-between p-3 bg-white rounded-lg border-2 border-green-100 shadow-sm">
-								<span className="text-sm font-bold text-gray-700">Neto Plataforma</span>
-								<div className="text-right">
-									<div className="font-bold text-green-600 text-lg">${previewData.netProfit?.toLocaleString()}</div>
-									<div className="text-[10px] text-gray-400 uppercase font-black">Margen: {previewData.profitMargin?.toFixed(1)}%</div>
-								</div>
+                            <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-red-50/30">
+								<span className="text-sm text-gray-500">Impuestos ({taxPercentage}%)</span>
+								<span className="font-bold text-red-500">${previewData.taxAmount?.toFixed(2)}</span>
 							</div>
+                            <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-indigo-50/30">
+								<span className="text-sm text-gray-500">Fee Plataforma ({platformFee}%)</span>
+								<span className="font-bold text-indigo-600">${previewData.platformFee?.toFixed(2)}</span>
+							</div>
+
+                            <div className="pt-2">
+                                <div className="flex justify-between p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg border-2 border-white/20 text-white transition-transform hover:scale-[1.02]">
+                                    <div>
+                                        <span className="text-xs font-black uppercase opacity-80">Neto para la Empresa</span>
+                                        <div className="text-2xl font-black">${previewData.netProfit?.toFixed(2)} <span className="text-xs font-light">USD</span></div>
+                                    </div>
+                                    <div className="text-right flex flex-col justify-end">
+                                        <div className="text-[10px] font-black uppercase bg-white/20 px-2 py-0.5 rounded-full inline-block">
+                                            Margen: {previewData.profitMargin?.toFixed(1)}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 						</div>
 					</div>
 				</div>

@@ -23,10 +23,22 @@ VirtuAbogado usa una estrategia triple para garantizar datos siempre frescos:
 - **Postgres Changes**: Suscripción directa a tablas (Order, Message) para detectar inserts/updates.
 - **Polling Fallback**: Un "latido" cada 30 segundos que refresca las queries activas de TanStack Query como red de seguridad.
 
-### 3. Sistema de Mensajería (Chat)
-- Cada orden tiene un chat asociado.
-- Los mensajes se guardan en la tabla `Message` vinculada a un `orderId`.
-- El componente `ChatWindow` usa `useRealtimeSubscription` para recibir mensajes nuevos instantáneamente y actualizar el scroll de forma suave.
+### 3. Ajustes Financieros y Simulador de Pagos
+El sistema de repartición de ingresos es totalmente configurable desde el panel de administración.
+
+- **Componente**: `ConfiguracionPanel.tsx` (Sección `FinancialSettingsSection`).
+- **Servicio de Cálculo**: `financial-settings.service.ts`.
+- **Lógica de Simulación**: 
+    - No se basa en el histórico, sino en **precios actuales**.
+    - El simulador toma automáticamente la suma de 1 venta de cada servicio activo como base inicial.
+    - Permite al administrador cambiar el monto base para ver proyecciones en tiempo real.
+    - **Moneda**: Todos los cálculos y visualizaciones se manejan estrictamente en **USD**.
+    - **Desglose**: Separa de forma transparente:
+        - Pasarela de Pagos / Fee Plataforma.
+        - Impuestos configurados.
+        - Gastos Operativos.
+        - Pago neto al Abogado.
+        - Ganancia Neta de la Empresa (Margen).
 
 ### 4. Notificaciones Push (Efecto Shopify)
 - Implementado con la **Web Push API**.

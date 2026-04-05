@@ -96,20 +96,23 @@ class FinancialSettingsService {
         operationalCostsPercentage: number,
         taxPercentage: number,
         platformFeePercentage: number,
-        whatsappPhone?: string
     ) {
         const lawyerPayments = (totalRevenue * lawyerCommissionPercentage) / 100;
         const operationalCosts = (totalRevenue * operationalCostsPercentage) / 100;
-        const taxSurcharge = (totalRevenue * taxPercentage) / 100;
+        const taxAmount = (totalRevenue * taxPercentage) / 100;
         const platformFee = (totalRevenue * platformFeePercentage) / 100;
         
-        const netProfit = totalRevenue - lawyerPayments - operationalCosts - taxSurcharge - platformFee;
+        const totalDeductions = lawyerPayments + operationalCosts + taxAmount + platformFee;
+        const netProfit = totalRevenue - totalDeductions;
         const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
         return {
             totalRevenue,
             lawyerPayments,
-            operationalCosts: operationalCosts + taxSurcharge + platformFee,
+            operationalCosts,
+            taxAmount,
+            platformFee,
+            totalDeductions,
             netProfit,
             profitMargin,
         };

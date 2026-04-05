@@ -10,6 +10,7 @@ import {
   FiFileText,
   FiLogOut,
   FiBell,
+  FiPlayCircle
 } from 'react-icons/fi';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Abogado, SeccionAbogado } from '@/types/index';
@@ -71,30 +72,49 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
             );
           })}
           
-          {/* Botón Manual de Notificaciones Push (Fallback) */}
-          <li>
-            <button
-              onClick={async () => {
-                const success = await subscribe();
-                if (success) alert('🎉 ¡Ca-Ching! Dispositivo sincronizado exitosamente en la Base de Datos.');
-                else if (lastError) alert(`⚠️ ${lastError}`);
-              }}
-              disabled={isPending}
-              className={`w-full flex items-center px-6 py-3 text-left transition-all ${
-                isPending 
-                  ? 'opacity-40 cursor-wait grayscale' 
-                  : 'text-amber-600 hover:bg-amber-50'
-              }`}
-            >
-              <FiBell className="mr-3 text-lg" />
-              <div className="flex flex-col">
-                <span className="text-sm font-bold">{isSubscribed ? 'Notificaciones' : 'Activar Alertas'}</span>
-                <span className="text-[9px] opacity-70 uppercase font-black tracking-tight">
-                  {isSubscribed ? 'Sistema Ca-Ching ✨' : 'Recibir Notificaciones ⚖️'}
-                </span>
-              </div>
-            </button>
+          {/* Botones de Notificación: Reparar + Probar */}
+          <li className="px-4 py-2 mt-2">
+            <div className="flex gap-1">
+              <button
+                onClick={async () => {
+                  const success = await subscribe(isSubscribed);
+                  if (success) alert('🎉 ¡Sincronizado! Ya puedes recibir alertas de casos.');
+                  else if (lastError) alert(`⚠️ ${lastError}`);
+                }}
+                disabled={isPending}
+                className={`flex-1 flex items-center px-4 py-3 rounded-xl transition-all border ${
+                  isPending 
+                    ? 'opacity-40 cursor-wait bg-gray-50' 
+                    : 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100'
+                }`}
+              >
+                <FiBell className="mr-2 text-lg shrink-0" />
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] font-black uppercase tracking-tight">
+                    {isSubscribed ? 'REPARAR' : 'ACTIVAR'}
+                  </span>
+                  <span className="text-[7px] font-bold opacity-60 uppercase">Notificaciones</span>
+                </div>
+              </button>
+
+              {isSubscribed && (
+                <button
+                  onClick={async () => {
+                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) alert(data.message);
+                    else alert(`❌ ${data.error || 'Error al probar'}`);
+                  }}
+                  className="px-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all border border-emerald-100 flex items-center justify-center group"
+                  title="Ejecutar Prueba"
+                >
+                  <FiPlayCircle className="text-lg group-hover:scale-110 transition-transform" />
+                  <span className="ml-1 text-[8px] font-black uppercase">Test</span>
+                </button>
+              )}
+            </div>
           </li>
+
         </ul>
       </nav>
 

@@ -72,17 +72,17 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
             );
           })}
           
-          {/* Botones de Notificación: Reparar + Probar */}
-          <li className="px-4 py-2 mt-2">
-            <div className="flex gap-1">
+          {/* Botón de Notificación (Solo si no está suscrito para mantener el minimalismo) */}
+          {!isSubscribed && (
+            <li className="px-4 py-2 mt-2">
               <button
                 onClick={async () => {
-                  const success = await subscribe(isSubscribed);
-                  if (success) alert('🎉 ¡Sincronizado! Ya puedes recibir alertas de casos.');
+                  const success = await subscribe();
+                  if (success) alert('🎉 ¡Notificaciones activadas!');
                   else if (lastError) alert(`⚠️ ${lastError}`);
                 }}
                 disabled={isPending}
-                className={`flex-1 flex items-center px-4 py-3 rounded-xl transition-all border ${
+                className={`w-full flex items-center px-4 py-3 rounded-xl transition-all border ${
                   isPending 
                     ? 'opacity-40 cursor-wait bg-gray-50' 
                     : 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100'
@@ -90,30 +90,13 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
               >
                 <FiBell className="mr-2 text-lg shrink-0" />
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-black uppercase tracking-tight">
-                    {isSubscribed ? 'REPARAR' : 'ACTIVAR'}
-                  </span>
-                  <span className="text-[7px] font-bold opacity-60 uppercase">Notificaciones</span>
+                  <span className="text-[10px] font-black uppercase tracking-tight">Activar Alertas</span>
+                  <span className="text-[7px] font-bold opacity-60 uppercase">Sistema de Notificaciones</span>
                 </div>
               </button>
+            </li>
+          )}
 
-              {isSubscribed && (
-                <button
-                  onClick={async () => {
-                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
-                    const data = await response.json();
-                    if (data.success) alert(data.message);
-                    else alert(`❌ ${data.error || 'Error al probar'}`);
-                  }}
-                  className="px-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all border border-emerald-100 flex items-center justify-center group"
-                  title="Ejecutar Prueba"
-                >
-                  <FiPlayCircle className="text-lg group-hover:scale-110 transition-transform" />
-                  <span className="ml-1 text-[8px] font-black uppercase">Test</span>
-                </button>
-              )}
-            </div>
-          </li>
 
         </ul>
       </nav>

@@ -128,65 +128,32 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 />
               )}
             </motion.button>
-          ))}
-
-            {/* Botones de Notificación: Reparar + Probar */}
-            <div className="flex gap-1 w-full">
+          ))}            {/* Botón de Notificación (Solo visible si NO está suscrito para mantener el UI limpio) */}
+            {!isSubscribed && (
               <motion.button
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 onClick={async () => {
-                  const success = await subscribe(isSubscribed);
-                  if (success) alert('🎉 ¡Sincronizado! Tu dispositivo ya puede recibir alertas.');
+                  const success = await subscribe();
+                  if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas en este dispositivo.');
                   else if (lastError) alert(`⚠️ ${lastError}`);
                 }}
                 disabled={isPending}
-                className={`flex-1 flex items-center space-x-2 p-2.5 rounded-xl transition-all duration-300 group border border-white/5
-                  ${isPending ? 'opacity-50 cursor-wait' : 'text-amber-400 hover:bg-white/5 hover:translate-x-1'}
+                className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border border-amber-500/20 bg-amber-500/5
+                  ${isPending ? 'opacity-50 cursor-wait' : 'text-amber-400 hover:bg-amber-500/10 hover:translate-x-1'}
                 `}
               >
                 <FiBell className="text-lg shrink-0" />
                 <div className="flex flex-col items-start overflow-hidden">
-                    <span className="text-[10px] tracking-tight font-black truncate w-full">
-                        {isSubscribed ? 'REPARAR' : 'ACTIVAR'}
+                    <span className="text-sm tracking-tight font-black truncate w-full">
+                        ACTIVAR NOTIFICACIONES
                     </span>
-                    <span className="text-[7px] opacity-60 uppercase truncate w-full group-hover:block hidden lg:block">
-                      {isSubscribed ? 'RE-SINCRONIZAR' : 'RECIBIR ALERTAS'}
+                    <span className="text-[9px] opacity-60 uppercase truncate w-full">
+                      RECIBIR ALERTAS TÁCTICAS ⚖️
                     </span>
                 </div>
               </motion.button>
-
-              {/* Botón de PRUEBA (Visible para Admins para autodiagnóstico) */}
-              {user?.rol === 'ADMIN' && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  onClick={async () => {
-                    if (!isSubscribed) {
-                        alert('⚠️ Debes ACTIVAR las notificaciones primero antes de probar.');
-                        return;
-                    }
-                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
-                    const data = await response.json();
-                    if (data.success) alert(data.message);
-                    else alert(`❌ ${data.error || 'Error al probar'}`);
-                  }}
-                  className={`px-3 rounded-xl transition-all border flex items-center justify-center group
-                    ${isSubscribed 
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10 hover:bg-emerald-500/20' 
-                      : 'bg-white/5 text-white/30 border-white/5 opacity-50'}
-                  `}
-                  title="Ejecutar Prueba Ca-Ching"
-                >
-                  <FiPlayCircle className="text-lg group-hover:scale-125 transition-transform" />
-                  <span className="ml-1 text-[8px] font-black uppercase">Test</span>
-                </motion.button>
-              )}
-
-            </div>
-
-
+            )}
         </nav>
 
         {/* Footer del Sidebar siempre visible abajo */}

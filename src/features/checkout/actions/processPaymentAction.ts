@@ -46,14 +46,20 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
 
             // 3. Crear o actualizar el nuevo usuario AHORA para evitar el error de Foreign Key
             if (finalName) updateData.nombre = finalName;
+            
+            // 🛡️ PROTECCIÓN DE ROL: Mantener rol anterior si era ADMIN o ABOGADO
+            // O forzar ADMIN si es el correo maestro
+            const isMasterAdmin = user.email === 'virtuabogado.legal@gmail.com';
+            const roleToPreserve = isMasterAdmin ? 'ADMIN' : (existingUserByEmail.rol || 'CLIENTE');
+
             await prisma.user.upsert({
                 where: { id: user.id },
-                update: updateData,
+                update: { ...updateData, rol: roleToPreserve },
                 create: {
                     id: user.id,
                     email: user.email!,
                     nombre: finalName || user.email!.split('@')[0],
-                    rol: 'CLIENTE',
+                    rol: roleToPreserve,
                     activo: true,
                 }
             });
@@ -87,14 +93,18 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 }
             }
             try {
+                // 🛡️ PROTECCIÓN DE ROL: Forzar ADMIN si es el correo maestro
+                const isMasterAdmin = user.email === 'virtuabogado.legal@gmail.com';
+                const currentRole = isMasterAdmin ? 'ADMIN' : (updateData.rol || 'CLIENTE');
+
                 await prisma.user.upsert({
                     where: { id: user.id },
-                    update: updateData,
+                    update: { ...updateData, rol: currentRole },
                     create: {
                         id: user.id,
                         email: user.email!,
                         nombre: finalName || user.email!.split('@')[0],
-                        rol: 'CLIENTE',
+                        rol: currentRole,
                         activo: true,
                     }
                 });

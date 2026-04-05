@@ -19,7 +19,7 @@ export default function GlobalChatListener() {
     const { user } = useAuthStore();
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { isSubscribed, subscribe, permission } = usePushNotifications();
+    const { isSubscribed, subscribe, permission, lastError } = usePushNotifications();
     const [showPushBanner, setShowPushBanner] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [toastMessage, setToastMessage] = useState<any>(null);
@@ -55,10 +55,8 @@ export default function GlobalChatListener() {
 
         const supabase = createClient();
 
-        // 0. SOLICITAR PERMISOS DE NOTIFICACIÓN (Browser Native)
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission().catch(console.error);
-        }
+        // 0. NO SOLICITAR PERMISOS AUTOMÁTICAMENTE (Evita bloqueos de navegador)
+        // La solicitud se hará SOLO mediante gesto del usuario (clic en botón)
         
         // Nos suscribimos al canal global de este usuario específico
         const channel = supabase.channel(`global_${user.id}`);
@@ -237,11 +235,16 @@ export default function GlobalChatListener() {
                                 </button>
                             </div>
                             <div>
-                                <h4 className="font-bold text-lg mb-1">¡Activa el "Ca-Ching!" 💰</h4>
+                                <h4 className="font-bold text-lg mb-1">
+                                    {permission === 'denied' ? '🚨 Notificaciones Bloqueadas' : '¡Activa el "Ca-Ching!" 💰'}
+                                </h4>
                                 <p className="text-sm opacity-90 leading-relaxed">
-                                    Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.
+                                    {permission === 'denied' 
+                                        ? 'Has bloqueado las notificaciones. Haz clic en el candado junto a la URL arriba para permitir el acceso.' 
+                                        : 'Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.'}
                                 </p>
                             </div>
+                            {permission !== 'denied' ? (
                                 <button
                                     onClick={async () => {
                                         if (isSubscribing) return;
@@ -250,9 +253,10 @@ export default function GlobalChatListener() {
                                             const success = await subscribe();
                                             if (success) {
                                                 setShowPushBanner(false);
+                                                // Alert simple pero efectivo
                                                 alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
                                             } else {
-                                                alert('⚠️ No se pudo completar la suscripción. Revisa los permisos de tu navegador.');
+                                                alert(`⚠️ No se pudo completar la suscripción.\n\nDetalle: ${lastError || 'Error desconocido'}\n\nSi usas Brave, asegúrate de permitir "Google Services for Push" en los ajustes.`);
                                             }
                                         } catch (err) {
                                             alert('❌ Error crítico: ' + (err instanceof Error ? err.message : String(err)));
@@ -267,6 +271,11 @@ export default function GlobalChatListener() {
                                 >
                                     {isSubscribing ? 'Configurando...' : 'Activar Notificaciones'}
                                 </button>
+                            ) : (
+                                <div className="bg-white/20 p-2 rounded-lg text-[10px] uppercase font-bold text-center border border-white/10">
+                                    Desbloquea en la barra de URL para continuar
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

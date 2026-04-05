@@ -57,14 +57,20 @@ export async function POST() {
 
             // 3. Upsert estable por ID oficial de Supabase AHORA
             if (finalName) updateData.nombre = finalName;
+
+            // 🛡️ PROTECCIÓN DE ROL: Mantener rol anterior si era ADMIN o ABOGADO
+            // O forzar ADMIN si es el correo maestro
+            const isMasterAdmin = user.email === 'virtuabogado.legal@gmail.com';
+            const roleToPreserve = isMasterAdmin ? 'ADMIN' : (existingByEmail.rol || 'CLIENTE');
+
             updatedUser = await prisma.user.upsert({
                 where: { id: user.id },
-                update: updateData,
+                update: { ...updateData, rol: roleToPreserve },
                 create: {
                     id: user.id,
                     email: user.email!,
                     nombre: finalName || 'Usuario Nuevo',
-                    rol: (rol as any)?.toUpperCase() || 'CLIENTE',
+                    rol: roleToPreserve,
                     telefono: telefono || undefined,
                     activo: true,
                     createdAt: new Date(),
@@ -81,33 +87,51 @@ export async function POST() {
             ]);
             console.log('✅ [Sync Merge] Migración de relaciones y Suscripciones Push completada.');
 
-            // 5. Sincronizar metadatos con Supabase Auth si se rescató un nombre
-            if (finalName && user.user_metadata?.nombre !== finalName) {
-                console.log(`📝 [Sync Merge] Actualizando nombre en Supabase Auth: ${finalName}`);
+            // 5. Sincronizar metadatos con Supabase Auth si se rescató un nombre o cambió el rol
+            const currentRoleInMetadata = (user.user_metadata?.rol || 'CLIENTE').toUpperCase();
+            const needsMetadataSync = (finalName && user.user_metadata?.nombre !== finalName) || 
+                                     (roleToPreserve && currentRoleInMetadata !== roleToPreserve);
+
+            if (needsMetadataSync) {
+                console.log(`📝 [Sync Merge] Actualizando metadatos en Supabase Auth: ${finalName || 'Mismo nombre'}, Rol: ${roleToPreserve}`);
                 await supabase.auth.updateUser({
-                    data: { nombre: finalName }
+                    data: { 
+                        ...(finalName && { nombre: finalName }),
+                        ...(roleToPreserve && { rol: roleToPreserve })
+                    }
                 });
             }
         } else {
             // Sin colisión, simplemente upsert
-            if (finalName) {
-                updateData.nombre = finalName;
+            // 🛡️ PROTECCIÓN DE ROL: Forzar ADMIN si es el correo maestro
+            const isMasterAdmin = user.email === 'virtuabogado.legal@gmail.com';
+            const currentRole = isMasterAdmin ? 'ADMIN' : ((rol as any)?.toUpperCase() || updateData.rol || 'CLIENTE');
+
+            if (finalName || currentRole) {
                 // Sincronizar metadatos si hay discrepancia
-                if (user.user_metadata?.nombre !== finalName) {
+                const currentRoleInMetadata = (user.user_metadata?.rol || 'CLIENTE').toUpperCase();
+                const needsMetadataSync = (finalName && user.user_metadata?.nombre !== finalName) || 
+                                         (currentRole && currentRoleInMetadata !== currentRole);
+
+                if (needsMetadataSync) {
                     await supabase.auth.updateUser({
-                        data: { nombre: finalName }
+                        data: { 
+                            ...(finalName && { nombre: finalName }),
+                            ...(currentRole && { rol: currentRole })
+                        }
                     });
                 }
             }
+
             try {
                 updatedUser = await prisma.user.upsert({
                     where: { id: user.id },
-                    update: updateData,
+                    update: { ...updateData, rol: currentRole },
                     create: {
                         id: user.id,
                         email: user.email!,
                         nombre: finalName || 'Usuario Nuevo',
-                        rol: (rol as any)?.toUpperCase() || 'CLIENTE',
+                        rol: currentRole,
                         telefono: telefono || undefined,
                         activo: true,
                         createdAt: new Date(),

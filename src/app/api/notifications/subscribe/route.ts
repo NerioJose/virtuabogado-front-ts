@@ -25,11 +25,15 @@ export async function POST(request: Request) {
 
     console.log(`📡 [Push Subscribe] Registrando dispositivo para usuario: ${user.email}`);
 
-    // Guardar en DB con upsert (evita duplicados por dispositivo)
+    // Guardar en DB con upsert (evita duplicados por usuario en el mismo dispositivo)
     await prisma.pushSubscription.upsert({
-      where: { endpoint: subscription.endpoint },
+      where: { 
+        userId_endpoint: {
+          userId: user.id,
+          endpoint: subscription.endpoint
+        }
+      },
       update: {
-        userId: user.id,
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth
       },

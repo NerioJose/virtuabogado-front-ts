@@ -1,6 +1,6 @@
 'use client';
 
-import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard, FiBell } from 'react-icons/fi';
+import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard, FiBell, FiPlayCircle } from 'react-icons/fi';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -130,44 +130,53 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             </motion.button>
           ))}
 
-          {/* Botón Manual de Notificaciones Push (Fallback / Reparar) */}
-          <div className="space-y-2">
-            <motion.button
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-              onClick={async () => {
-                const success = await subscribe(isSubscribed); // Si ya está suscrito, fuerza reparación
-                if (success) alert('🎉 ¡Ca-Ching! Dispositivo sincronizado exitosamente.');
-                else if (lastError) alert(`⚠️ ${lastError}`);
-              }}
-              disabled={isPending}
-              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border border-white/10
-                ${isPending ? 'opacity-50 cursor-wait' : 'text-amber-400 hover:bg-white/5 hover:translate-x-1'}
-              `}
-            >
-              <div className={`text-lg transition-transform group-hover:scale-110`}>
-                <FiBell />
-              </div>
-              <div className="flex flex-col items-start">
-                  <span className="text-sm tracking-tight font-bold">
-                      {isSubscribed ? 'Reparar Notificaciones' : 'Activar Notificaciones'}
-                  </span>
-                  <span className="text-[9px] opacity-60 uppercase">
-                    {isSubscribed ? '¿No recibes alertas? Re-sincronizar' : 'Recibir Alertas ⚖️'}
-                  </span>
-              </div>
-            </motion.button>
-            
-            {/* Link de Diagnóstico (Solo visible si hay problemas) */}
-            <Link 
-              href="/api/notifications/debug-status" 
-              target="_blank"
-              className="text-[10px] text-white/30 hover:text-white/60 flex items-center justify-center gap-1 transition-colors py-1"
-            >
-              🔍 Ver estado de conexión (Debug)
-            </Link>
-          </div>
+            {/* Botones de Notificación: Reparar + Probar */}
+            <div className="flex gap-1 w-full">
+              <motion.button
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                onClick={async () => {
+                  const success = await subscribe(isSubscribed);
+                  if (success) alert('🎉 ¡Sincronizado! Tu dispositivo ya puede recibir alertas.');
+                  else if (lastError) alert(`⚠️ ${lastError}`);
+                }}
+                disabled={isPending}
+                className={`flex-1 flex items-center space-x-2 p-2.5 rounded-xl transition-all duration-300 group border border-white/5
+                  ${isPending ? 'opacity-50 cursor-wait' : 'text-amber-400 hover:bg-white/5 hover:translate-x-1'}
+                `}
+              >
+                <FiBell className="text-lg shrink-0" />
+                <div className="flex flex-col items-start overflow-hidden">
+                    <span className="text-[10px] tracking-tight font-black truncate w-full">
+                        {isSubscribed ? 'REPARAR' : 'ACTIVAR'}
+                    </span>
+                    <span className="text-[7px] opacity-60 uppercase truncate w-full group-hover:block hidden lg:block">
+                      {isSubscribed ? 'RE-SINCRONIZAR' : 'RECIBIR ALERTAS'}
+                    </span>
+                </div>
+              </motion.button>
+
+              {/* Botón de PRUEBA (Solo visible si está suscrito y es Admin) */}
+              {isSubscribed && user.rol === 'ADMIN' && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={async () => {
+                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) alert(data.message);
+                    else alert(`❌ ${data.error || 'Error al probar'}`);
+                  }}
+                  className="px-3 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/10 flex items-center justify-center group"
+                  title="Ejecutar Prueba Ca-Ching"
+                >
+                  <FiPlayCircle className="text-lg group-hover:scale-125 transition-transform" />
+                  <span className="ml-1 text-[8px] font-black uppercase">Test</span>
+                </motion.button>
+              )}
+            </div>
+
 
         </nav>
 

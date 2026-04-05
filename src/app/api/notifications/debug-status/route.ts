@@ -1,48 +1,54 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/utils/supabase/server';
 
-export const dynamic = 'force-dynamic';
-
+/**
+ * Endpoint de diagnóstico: /api/notifications/debug-status
+ * Verifica el estado de las suscripciones push del usuario actual.
+ */
 export async function GET() {
   try {
-    // 1. Contar Admins
-    const admins = await prisma.user.findMany({
-      where: { rol: 'ADMIN' },
-      select: { id: true, email: true, rol: true, activo: true }
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    // 1. Buscar suscripciones en la DB
+    const subscriptions = await prisma.pushSubscription.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
     });
 
-    // 2. Contar Suscripciones
-    const pushCount = await prisma.pushSubscription.count();
-    
-    // 3. Ver quién tiene suscripciones
-    const subsWithUsers = await prisma.pushSubscription.findMany({
-      include: {
-        user: {
-          select: { email: true, rol: true }
-        }
-      }
-    });
+    // 2. Verificar configuración VAPID (sin mostrar la privada)
+    const hasVapidPublic = !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    const hasVapidPrivate = !!process.env.VAPID_PRIVATE_KEY;
+    const vapidStart = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.substring(0, 10) + '...';
 
     return NextResponse.json({
-      status: '✅ Sistema de Notificaciones Conectado',
+      timestamp: new Date().toISOString(),
+      user: {
+        id: user.id,
+        email: user.email,
+        rol: user.user_metadata?.rol || 'unknown'
+      },
       diagnostics: {
-        totalAdmins: admins.length,
-        adminsList: admins.map(a => ({ email: a.email, rol: a.rol, activo: a.activo })),
-        totalPushSubscriptions: pushCount,
-        activeSubscriptions: subsWithUsers.map(s => ({ 
-          user: s.user.email, 
-          rol: s.user.rol,
-          endpointSnippet: s.endpoint.substring(0, 30) + '...'
-        }))
+        activeSubscriptionsCount: subscriptions.length,
+        hasVapidPublic,
+        hasVapidPrivate, // IMPORTANTE: Solo confirmamos que existe, no la mostramos
+        vapidPublicKeyPreview: vapidStart,
+        lastSubscriptionDate: subscriptions[0]?.createdAt || null,
+        endpoints: subscriptions.map(s => s.endpoint.substring(0, 30) + '...')
       },
-      envVarsCheck: {
-        vapidPublic: !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        vapidPrivate: !!process.env.VAPID_PRIVATE_KEY,
-        vapidEmail: !!process.env.VAPID_EMAIL
-      },
-      instruction: "Si 'totalPushSubscriptions' es 0, o si tu email de Admin no aparece en 'activeSubscriptions', debes volver a presionar el botón de 'Activar Notificaciones' en el Sidebar del Admin."
+      subscriptions: subscriptions.map(s => ({
+        id: s.id,
+        createdAt: s.createdAt,
+        endpointPrefix: s.endpoint.substring(0, 50) + '...'
+      }))
     });
   } catch (error: any) {
+    console.error('❌ Error en debug-status:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

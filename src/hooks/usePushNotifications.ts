@@ -42,10 +42,21 @@ export function usePushNotifications() {
     }, [user]);
 
     const checkSubscription = useCallback(async () => {
-        if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+        if (typeof window === 'undefined') return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn('⚠️ [Push] Notificaciones no soportadas en este navegador.');
+            return;
+        }
         try {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.getSubscription();
+            
+            console.log('📡 [Push Diag] Estado actual:', {
+                subscribed: !!subscription,
+                permission: Notification.permission,
+                swReady: !!registration
+            });
+
             setIsSubscribed(!!subscription);
             setPermission(Notification.permission);
         } catch (error) {
@@ -57,7 +68,7 @@ export function usePushNotifications() {
         checkSubscription();
     }, [checkSubscription]);
 
-    const subscribe = async () => {
+    const subscribe = async (force: boolean = false) => {
         setLastError(null);
         if (!VAPID_PUBLIC_KEY) {
             setLastError('VAPID_PUBLIC_KEY no configurado');
@@ -65,23 +76,25 @@ export function usePushNotifications() {
         }
 
         setIsPending(true);
+        console.log(`🚀 [Push] Iniciando ${force ? 'reparación' : 'suscripción'}...`);
+
         try {
             const perm = await Notification.requestPermission();
             setPermission(perm);
 
             if (perm !== 'granted') {
-                setLastError('Permiso denegado por el usuario');
+                setLastError('Permiso denegado. Por favor activa las notificaciones en los ajustes de Chrome.');
                 setIsPending(false);
                 return false;
             }
 
-            // IMPORTANTE: Asegurar que el Service Worker esté activo
             const registration = await navigator.serviceWorker.ready;
             
-            // Limpiar suscripciones previas si existen (hace que Brave sea más estable)
-            const existingSub = await registration.pushManager.getSubscription();
-            if (existingSub) {
-                await existingSub.unsubscribe();
+            // Si es forzado, limpiamos TODO antes de volver a empezar
+            if (force) {
+                const existingSub = await registration.pushManager.getSubscription();
+                if (existingSub) await existingSub.unsubscribe();
+                console.log('🗑️ [Push] Suscripción anterior eliminada.');
             }
 
             const subscription = await registration.pushManager.subscribe({
@@ -89,13 +102,14 @@ export function usePushNotifications() {
                 applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
             });
 
+            console.log('✅ [Push] Nueva suscripción generada:', subscription.endpoint.substring(0, 30) + '...');
             await syncSubscription(subscription);
+            
             setIsSubscribed(true);
             setIsPending(false);
             return true;
         } catch (error: any) {
             console.error('❌ [Push Hook] Error fatal:', error);
-            // Capturamos el mensaje de error específico para mostrárselo al usuario
             setLastError(error.message || String(error));
             setIsPending(false);
             return false;
@@ -106,8 +120,9 @@ export function usePushNotifications() {
         isSubscribed,
         permission,
         isPending,
-        lastError, // Exportamos el error para el alert
+        lastError,
         subscribe,
         checkSubscription
     };
 }
+

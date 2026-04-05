@@ -16,13 +16,14 @@ export async function POST(request: NextRequest) {
 
         console.log('📨 [Password Reset] Solicitando vía Gmail para:', normalizedEmail);
 
-        // 1. Verificar si el usuario existe (Case-Insensitive)
+        // 1. Verificar si el usuario existe y está ACTIVO (Case-Insensitive)
         const user = await prisma.user.findFirst({
             where: { 
                 email: {
                     equals: normalizedEmail,
                     mode: 'insensitive'
-                }
+                },
+                activo: true // Solo permitir recuperación a cuentas activas
             }
         });
 

@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VirtuAbogado ⚖️🚀
 
-## Getting Started
+VirtuAbogado es una plataforma integral de servicios legales digitales, diseñada para conectar a clientes con abogados calificados a través de una experiencia fluida, segura y reactiva.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📖 Documentación Completa
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para una comprensión profunda del proyecto, hemos desglosado la documentación en secciones específicas:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1.  **[Arquitectura del Sistema](docs/architecture.md)**: Stack tecnológico, estructura de carpetas y flujos de datos.
+2.  **[Guía del Código (Deep-Dive)](docs/codebase-guide.md)**: Explicación detallada de la lógica de pagos, tiempo real y patrones de diseño. **(Lectura recomendada para desarrolladores)**.
+3.  **[Base de Datos](docs/database.md)**: Esquema de Prisma, relaciones y modelos de datos.
+4.  **[Funcionalidades por Rol](docs/features.md)**: Capacidades para Administradores, Abogados y Clientes.
+5.  **[Guía de Despliegue](docs/deployment.md)**: Configuración de variables de entorno, base de datos y publicación en Vercel.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🛠️ Inicio Rápido (Desarrollo)
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Instalar dependencias**:
+    ```bash
+    npm install # o pnpm install
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2.  **Configurar variables de entorno**:
+    Crea un archivo `.env` basado en la [Guía de Despliegue](docs/deployment.md).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3.  **Preparar la Base de Datos**:
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
 
-## Deploy on Vercel
+4.  **Correr el servidor de desarrollo**:
+    ```bash
+    npm run dev
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5.  **Abrir en el navegador**:
+    [http://localhost:3000](http://localhost:3000)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## ✨ Características Principales
+
+-   **Pagos en Tiempo Real**: Integración con Zenobank y reconciliación via Webhooks.
+-   **Chat Integrado**: Comunicación directa entre abogado y cliente por cada caso.
+-   **Notificaciones Push**: Alertas instantáneas de ventas y mensajes (VAPID).
+-   **Dashboard Multi-Rol**: Vistas optimizadas para Admin, Abogado y Cliente.
+-   **Gestión Documental**: Subida y descarga segura de archivos legales.
+
+---
+
+Desarrollado con ❤️ para transformar la asesoría legal.

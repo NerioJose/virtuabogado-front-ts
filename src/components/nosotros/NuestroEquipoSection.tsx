@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import { FiBriefcase, FiUsers, FiHome, FiFileText, FiAward } from 'react-icons/fi';
 

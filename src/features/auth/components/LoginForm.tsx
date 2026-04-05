@@ -39,8 +39,17 @@ export function LoginForm() {
         localStorage.setItem('remember_me', remember.toString());
         if (!remember) {
             localStorage.removeItem('remember_email');
+        } else if (email) {
+            localStorage.setItem('remember_email', email);
         }
     }, [remember]);
+
+    // Guardar email en tiempo real si "Recordarme" está activo
+    useEffect(() => {
+        if (remember && email) {
+            localStorage.setItem('remember_email', email);
+        }
+    }, [email, remember]);
 
     // Usar useAuth hook para lógica de negocio (API + redirección)
     const { login, isLoading, error } = useAuth();

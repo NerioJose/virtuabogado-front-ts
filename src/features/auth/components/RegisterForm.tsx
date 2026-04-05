@@ -22,18 +22,46 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
     });
     const [remember, setRemember] = useState(true);
 
-    // Cargar preferencia al montar
+    // Cargar preferencia y datos al montar
     useEffect(() => {
         const savedRemember = localStorage.getItem('remember_me');
         if (savedRemember !== null) {
-            setRemember(savedRemember === 'true');
+            const isRemembered = savedRemember === 'true';
+            setRemember(isRemembered);
+            
+            if (isRemembered) {
+                const savedEmail = localStorage.getItem('remember_email');
+                const savedNombre = localStorage.getItem('remember_nombre');
+                const savedTelefono = localStorage.getItem('remember_telefono');
+                
+                setFormData(prev => ({
+                    ...prev,
+                    email: savedEmail || prev.email,
+                    nombre: savedNombre || prev.nombre,
+                    telefono: savedTelefono || prev.telefono
+                }));
+            }
         }
     }, []);
 
-    // Guardar preferencia al cambiar
+    // Guardar preferencia y limpiar si es necesario
     useEffect(() => {
         localStorage.setItem('remember_me', remember.toString());
+        if (!remember) {
+            localStorage.removeItem('remember_email');
+            localStorage.removeItem('remember_nombre');
+            localStorage.removeItem('remember_telefono');
+        }
     }, [remember]);
+
+    // Guardar datos en tiempo real
+    useEffect(() => {
+        if (remember) {
+            if (formData.email) localStorage.setItem('remember_email', formData.email);
+            if (formData.nombre) localStorage.setItem('remember_nombre', formData.nombre);
+            if (formData.telefono) localStorage.setItem('remember_telefono', formData.telefono);
+        }
+    }, [formData.email, formData.nombre, formData.telefono, remember]);
 
     const { register, isLoading, error } = useAuth();
     const [passwordError, setPasswordError] = useState('');

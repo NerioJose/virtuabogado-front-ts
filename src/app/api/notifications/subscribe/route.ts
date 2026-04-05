@@ -25,19 +25,17 @@ export async function POST(request: Request) {
 
     console.log(`📡 [Push Subscribe] Registrando dispositivo para usuario: ${user.email}`);
 
-    // Guardar en DB con upsert (evita duplicados por usuario en el mismo dispositivo)
-    await prisma.pushSubscription.upsert({
-      where: { 
-        userId_endpoint: {
-          userId: user.id,
-          endpoint: subscription.endpoint
-        }
-      },
-      update: {
-        p256dh: subscription.keys.p256dh,
-        auth: subscription.keys.auth
-      },
-      create: {
+    // Limpiar dispositivos anteriores con el mismo endpoint para este usuario (evita basura)
+    // Usamos deleteMany + create como alternativa segura al upsert con índices compuestos.
+    await prisma.pushSubscription.deleteMany({
+      where: {
+        userId: user.id,
+        endpoint: subscription.endpoint
+      }
+    });
+
+    await prisma.pushSubscription.create({
+      data: {
         userId: user.id,
         endpoint: subscription.endpoint,
         p256dh: subscription.keys.p256dh,

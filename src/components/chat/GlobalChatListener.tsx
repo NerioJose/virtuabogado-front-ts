@@ -251,7 +251,23 @@ export default function GlobalChatListener() {
                             </div>
                             {permission !== 'denied' ? (
                                 <div className="flex flex-col gap-2 relative z-10">
-                                    {!isSubscribed ? (
+                                    {permission === 'granted' ? (
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
+                                                    const result = await response.json();
+                                                    if (result.success) alert(result.message);
+                                                    else alert('❌ ' + result.message);
+                                                } catch (err) {
+                                                    alert('❌ Error en la prueba: ' + (err instanceof Error ? err.message : String(err)));
+                                                }
+                                            }}
+                                            className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg border border-white/20 hover:bg-emerald-600"
+                                        >
+                                            🛠️ Enviar Notificación de Prueba
+                                        </button>
+                                    ) : (
                                         <button
                                             onClick={async () => {
                                                 if (isSubscribing) return;
@@ -259,7 +275,6 @@ export default function GlobalChatListener() {
                                                 try {
                                                     const success = await subscribe();
                                                     if (success) {
-                                                        // No cerramos el banner de inmediato para que pueda probar
                                                         alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
                                                     } else {
                                                         alert(`⚠️ No se pudo completar la suscripción.\n\nDetalle: ${lastError || 'Error desconocido'}\n\nSi usas Brave, asegúrate de permitir "Google Services for Push" en los ajustes.`);
@@ -276,22 +291,6 @@ export default function GlobalChatListener() {
                                             }`}
                                         >
                                             {isSubscribing ? 'Configurando...' : 'Activar Notificaciones'}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={async () => {
-                                                try {
-                                                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
-                                                    const result = await response.json();
-                                                    if (result.success) alert(result.message);
-                                                    else alert('❌ ' + result.message);
-                                                } catch (err) {
-                                                    alert('❌ Error en la prueba: ' + (err instanceof Error ? err.message : String(err)));
-                                                }
-                                            }}
-                                            className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg border border-white/20 hover:bg-emerald-600"
-                                        >
-                                            🛠️ Enviar Notificación de Prueba
                                         </button>
                                     )}
                                 </div>

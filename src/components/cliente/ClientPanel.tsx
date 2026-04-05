@@ -114,7 +114,7 @@ export default function ClientPanel({
       />
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-72 min-h-screen flex flex-col transition-all duration-500">
+      <div className="flex-1 lg:ml-72 min-h-screen flex flex-col transition-all duration-500 min-w-0 overflow-x-hidden">
         
         {/* Top Header responsivo */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60 transition-all">
@@ -219,7 +219,7 @@ export default function ClientPanel({
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-6"
+                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 px-1"
                   >
                     {serviciosFiltrados.map((servicio: any) => {
                       const isUnread = unreadOrders.includes(servicio.id);
@@ -262,8 +262,8 @@ export default function ClientPanel({
                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm border border-indigo-100">
                                   <FiCalendar size={18} />
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Cita Programada</p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest truncate">Cita Programada</p>
                                   <p className="text-xs font-black text-indigo-700 truncate">{servicio.fechaCita}</p>
                                 </div>
                               </div>
@@ -275,9 +275,9 @@ export default function ClientPanel({
                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-500 shadow-sm border border-amber-100">
                                   <FiClock size={18} className="animate-pulse" />
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Estado Pendiente</p>
-                                  <p className="text-xs font-bold text-amber-700">Asignando abogado experto próximamente</p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest truncate">Estado Pendiente</p>
+                                  <p className="text-xs font-bold text-amber-700 line-clamp-1">Asignando abogado experto próximamente</p>
                                 </div>
                               </div>
                             )}
@@ -326,7 +326,7 @@ export default function ClientPanel({
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="bg-white rounded-[3rem] border border-slate-200/60 shadow-sm p-10 max-w-2xl mx-auto"
+                className="bg-white rounded-[2rem] sm:rounded-[3rem] border border-slate-200/60 shadow-sm p-6 sm:p-10 max-w-2xl mx-auto w-full"
               >
                 <div className="flex flex-col items-center text-center">
                   <div className="relative mb-6">

@@ -48,7 +48,7 @@ export default function ClientStats({ stats, isLoading }: ClientStatsProps) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"
+      className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 md:gap-6 mb-10 px-1"
     >
       {cards.map((card, idx) => (
         <motion.div

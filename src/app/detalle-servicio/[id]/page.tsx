@@ -197,17 +197,17 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalles del Pedido</h3>
                             <div className="bg-gray-50 rounded-lg p-4">
                                 {order.items.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{item.serviceName}</p>
+                                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-2 border-b border-gray-100 last:border-0">
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-gray-900 truncate">{item.serviceName}</p>
                                             <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                                         </div>
-                                        <p className="font-semibold text-azul-primario">${item.price.toFixed(2)}</p>
+                                        <p className="font-black text-azul-primario text-lg sm:text-base">${item.price.toFixed(2)}</p>
                                     </div>
                                 ))}
-                                <div className="border-t border-gray-200 mt-4 pt-4 flex justify-between items-center">
-                                    <p className="font-semibold text-gray-900">Total</p>
-                                    <p className="text-xl font-bold text-azul-primario">${order.total.toFixed(2)}</p>
+                                <div className="mt-4 pt-4 flex justify-between items-center border-t border-gray-200">
+                                    <p className="font-black text-gray-900 uppercase tracking-widest text-xs">Total del Pedido</p>
+                                    <p className="text-2xl font-black text-azul-primario tracking-tighter">${order.total.toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>

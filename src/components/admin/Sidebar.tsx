@@ -1,6 +1,7 @@
 'use client';
 
-import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard } from 'react-icons/fi';
+import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard, FiBell } from 'react-icons/fi';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SeccionAdmin } from '@/types/index';
@@ -19,6 +20,7 @@ interface SidebarProps {
 
 export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout, isOpen, onClose }: SidebarProps) {
   const { user } = useAuthStore();
+  const { subscribe, isSubscribed, isPending, lastError } = usePushNotifications();
   
   const formattedName = user?.rol === UserRole.CLIENTE 
     ? capitalizeName(user.nombre) 
@@ -127,6 +129,32 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
               )}
             </motion.button>
           ))}
+
+          {/* Botón Manual de Notificaciones Push (Fallback) */}
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+            onClick={async () => {
+              const success = await subscribe();
+              if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
+              else if (lastError) alert(`⚠️ ${lastError}`);
+            }}
+            disabled={isPending || isSubscribed}
+            className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border border-white/10
+              ${isSubscribed ? 'opacity-50 cursor-default' : 'text-amber-400 hover:bg-white/5 hover:translate-x-1'}
+            `}
+          >
+            <div className={`text-lg transition-transform group-hover:scale-110`}>
+              <FiBell />
+            </div>
+            <div className="flex flex-col items-start">
+                <span className="text-sm tracking-tight font-bold">
+                    {isSubscribed ? 'Notificaciones Activas' : 'Activar Notificaciones'}
+                </span>
+                {!isSubscribed && <span className="text-[9px] opacity-60 uppercase">Manual Ca-Ching 💰</span>}
+            </div>
+          </motion.button>
         </nav>
 
         {/* Footer del Sidebar siempre visible abajo */}

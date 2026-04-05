@@ -33,14 +33,15 @@ export default function GlobalChatListener() {
         // const bannerDismissed = localStorage.getItem('push_banner_dismissed');
         // if (bannerDismissed === 'true') return;
 
-        // Mostrar banner de invitación a Push solo para Admin/Abogados que no estén suscritos
-        // Se muestra si no hay suscripción O si el permiso aún no ha sido solicitado (default)
-        const isNotGranted = permission === 'default';
-        if ((user.rol === 'ADMIN' || user.rol === 'ABOGADO') && (!isSubscribed || isNotGranted)) {
+        // Mostrar banner de invitación a Push solo para Admin/Abogados que no tengan permiso concedido
+        // Si ya está suscrito Y tiene el permiso, no mostramos nada
+        if (isSubscribed && permission === 'granted') return;
+
+        if (user.rol === 'ADMIN' || user.rol === 'ABOGADO') {
             const timer = setTimeout(() => setShowPushBanner(true), 3000); // 3s después del login
             return () => clearTimeout(timer);
         }
-    }, [user, isSubscribed]);
+    }, [user, isSubscribed, permission]);
 
     const handleDismissBanner = () => {
         setShowPushBanner(false);
@@ -242,8 +243,10 @@ export default function GlobalChatListener() {
                                 </h4>
                                 <p className="text-sm opacity-90 leading-relaxed">
                                     {permission === 'denied' 
-                                        ? 'Has bloqueado las notificaciones. Haz clic en el candado junto a la URL arriba para permitir el acceso.' 
-                                        : 'Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.'}
+                                        ? 'Has bloqueado las notificaciones. Haz clic en el candado en la barra de URL para permitir el acceso.' 
+                                        : typeof window !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent) && !(window.navigator as any).standalone
+                                            ? '📲 En iPhone, primero debes "Añadir a Inicio" (botón compartir) para poder activar las notificaciones.'
+                                            : 'Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.'}
                                 </p>
                             </div>
                             {permission !== 'denied' ? (

@@ -9,7 +9,9 @@ import {
   FiDollarSign,
   FiFileText,
   FiLogOut,
+  FiBell,
 } from 'react-icons/fi';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Abogado, SeccionAbogado } from '@/types/index';
 
 interface AbogadoSidebarProps {
@@ -30,6 +32,7 @@ const menuItems = [
 
 export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange }: AbogadoSidebarProps) {
   const router = useRouter();
+  const { subscribe, isSubscribed, isPending, lastError } = usePushNotifications();
 
   const handleLogout = async () => {
     try {
@@ -67,6 +70,31 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
               </li>
             );
           })}
+          
+          {/* Botón Manual de Notificaciones Push (Fallback) */}
+          <li>
+            <button
+              onClick={async () => {
+                const success = await subscribe();
+                if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
+                else if (lastError) alert(`⚠️ ${lastError}`);
+              }}
+              disabled={isPending || isSubscribed}
+              className={`w-full flex items-center px-6 py-3 text-left transition-all ${
+                isSubscribed 
+                  ? 'opacity-40 cursor-default grayscale' 
+                  : 'text-amber-600 hover:bg-amber-50'
+              }`}
+            >
+              <FiBell className="mr-3 text-lg" />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold">
+                    {isSubscribed ? 'Notificaciones Activas' : 'Activar Notificaciones'}
+                </span>
+                {!isSubscribed && <span className="text-[9px] opacity-70 uppercase font-black tracking-tight">Manual Ca-Ching 💰</span>}
+              </div>
+            </button>
+          </li>
         </ul>
       </nav>
 

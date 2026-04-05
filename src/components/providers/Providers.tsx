@@ -25,12 +25,27 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         initializeAuth();
 
         // 📡 REGISTRO DE SERVICE WORKER (Para Notificaciones Push)
-        const registerSW = () => {
+        const registerSW = async () => {
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker
-                    .register('/sw.js')
-                    .then((reg) => console.log('✅ Service Worker registrado:', reg.scope))
-                    .catch((err) => console.warn('⚠️ Error registrando Service Worker:', err));
+                try {
+                    const reg = await navigator.serviceWorker.register('/sw.js');
+                    console.log('✅ Service Worker registrado:', reg.scope);
+                    
+                    // Asegurar que si hay una versión nueva, se active de inmediato
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        if (installingWorker) {
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('🔄 Nueva versión de Notificaciones lista. Actualizando...');
+                                    window.location.reload();
+                                }
+                            };
+                        }
+                    };
+                } catch (err) {
+                    console.warn('⚠️ Error registrando Service Worker:', err);
+                }
             }
         };
 

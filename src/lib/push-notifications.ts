@@ -58,7 +58,7 @@ export async function sendPushNotification(userId: string, options: PushNotifica
       body: options.body,
       url: options.url || '/',
       icon: options.icon || '/logo/logo_sf_1.png',
-      tag: options.tag || 'general-alert'
+      tag: (options.tag || 'alert') + '-' + Date.now() // Forzamos unicidad para que el Toast siempre se muestre
     });
 
     // 2. Enviar a cada dispositivo

@@ -96,7 +96,10 @@ export async function sendPushNotification(userId: string, options: PushNotifica
 export async function notifyNewSale(orderId: string, total: string, needsAssignment: boolean = false) {
   // Buscar a todos los ADMINS
   const admins = await prisma.user.findMany({
-    where: { rol: 'ADMIN', activo: true },
+    where: { 
+      rol: { in: ['ADMIN', 'admin'] as any }, 
+      activo: true 
+    },
     select: { id: true, email: true }
   });
 

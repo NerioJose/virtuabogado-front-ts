@@ -1,5 +1,13 @@
 @import 'tailwindcss';
 
+@utility no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
 @layer components {
 	.glass-card {
 		@apply bg-glass-white backdrop-blur-md border border-white/10 rounded-xl shadow-lg;
@@ -13,18 +21,10 @@
 		@apply text-[rgb(120_29_43)];
 	}
 
-	/* Scrollbar utilities */
-	.no-scrollbar::-webkit-scrollbar {
-		display: none;
-	}
-	.no-scrollbar {
-		-ms-overflow-style: none;
-		scrollbar-width: none;
-	}
-
 	.table-container {
-		@apply overflow-x-auto no-scrollbar;
+		@apply overflow-x-auto;
 		-webkit-overflow-scrolling: touch;
+		@apply no-scrollbar;
 	}
 }
 

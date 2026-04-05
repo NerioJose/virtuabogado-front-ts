@@ -250,32 +250,51 @@ export default function GlobalChatListener() {
                                 </p>
                             </div>
                             {permission !== 'denied' ? (
-                                <button
-                                    onClick={async () => {
-                                        if (isSubscribing) return;
-                                        setIsSubscribing(true);
-                                        try {
-                                            const success = await subscribe();
-                                            if (success) {
-                                                setShowPushBanner(false);
-                                                // Alert simple pero efectivo
-                                                alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
-                                            } else {
-                                                alert(`⚠️ No se pudo completar la suscripción.\n\nDetalle: ${lastError || 'Error desconocido'}\n\nSi usas Brave, asegúrate de permitir "Google Services for Push" en los ajustes.`);
-                                            }
-                                        } catch (err) {
-                                            alert('❌ Error crítico: ' + (err instanceof Error ? err.message : String(err)));
-                                        } finally {
-                                            setIsSubscribing(false);
-                                        }
-                                    }}
-                                    disabled={isSubscribing}
-                                    className={`w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg relative z-10 border border-vinotinto/20 ${
-                                        isSubscribing ? 'opacity-50 cursor-wait' : 'hover:bg-gray-100'
-                                    }`}
-                                >
-                                    {isSubscribing ? 'Configurando...' : 'Activar Notificaciones'}
-                                </button>
+                                <div className="flex flex-col gap-2 relative z-10">
+                                    {!isSubscribed ? (
+                                        <button
+                                            onClick={async () => {
+                                                if (isSubscribing) return;
+                                                setIsSubscribing(true);
+                                                try {
+                                                    const success = await subscribe();
+                                                    if (success) {
+                                                        // No cerramos el banner de inmediato para que pueda probar
+                                                        alert('🎉 ¡Ca-Ching! Notificaciones activadas exitosamente.');
+                                                    } else {
+                                                        alert(`⚠️ No se pudo completar la suscripción.\n\nDetalle: ${lastError || 'Error desconocido'}\n\nSi usas Brave, asegúrate de permitir "Google Services for Push" en los ajustes.`);
+                                                    }
+                                                } catch (err) {
+                                                    alert('❌ Error crítico: ' + (err instanceof Error ? err.message : String(err)));
+                                                } finally {
+                                                    setIsSubscribing(false);
+                                                }
+                                            }}
+                                            disabled={isSubscribing}
+                                            className={`w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg border border-vinotinto/20 ${
+                                                isSubscribing ? 'opacity-50 cursor-wait' : 'hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {isSubscribing ? 'Configurando...' : 'Activar Notificaciones'}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch('/api/notifications/test-push', { method: 'POST' });
+                                                    const result = await response.json();
+                                                    if (result.success) alert(result.message);
+                                                    else alert('❌ ' + result.message);
+                                                } catch (err) {
+                                                    alert('❌ Error en la prueba: ' + (err instanceof Error ? err.message : String(err)));
+                                                }
+                                            }}
+                                            className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg border border-white/20 hover:bg-emerald-600"
+                                        >
+                                            🛠️ Enviar Notificación de Prueba
+                                        </button>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="bg-white/20 p-2 rounded-lg text-[10px] uppercase font-bold text-center border border-white/10">
                                     Desbloquea en la barra de URL para continuar

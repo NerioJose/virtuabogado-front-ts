@@ -7,7 +7,12 @@ const privateKey = process.env.VAPID_PRIVATE_KEY;
 const email = process.env.VAPID_EMAIL || 'mailto:virtuabogado.legal@gmail.com';
 
 if (publicKey && privateKey) {
+  console.log('✅ [Push Config] VAPID configurado en el servidor.');
   webpush.setVapidDetails(email, publicKey, privateKey);
+} else {
+  console.error('🚨 [Push Config] VAPID NO CONFIGURADO CORRECTAMENTE.');
+  if (!publicKey) console.error('   ❌ Falta: NEXT_PUBLIC_VAPID_PUBLIC_KEY');
+  if (!privateKey) console.error('   ❌ Falta: VAPID_PRIVATE_KEY');
 }
 
 interface PushNotificationOptions {
@@ -54,11 +59,11 @@ export async function sendPushNotification(userId: string, options: PushNotifica
         }
       };
 
-      return webpush.sendNotification(pushConfig, payload).catch(async (error) => {
+      return webpush.sendNotification(pushConfig, payload).catch(async (error: any) => {
         // Si la suscripción ya no es válida (410 Gone o 404), la borramos para mantener la DB limpia
         if (error.statusCode === 410 || error.statusCode === 404) {
           console.warn(`🗑️ [Push] Suscripción expirada para ${userId}, eliminando de DB...`);
-          await prisma.pushSubscription.delete({ where: { id: sub.id } });
+          await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch((err) => console.error(`❌ [Push] Error al eliminar suscripción:`, err));
         } else {
           console.error(`❌ [Push] Error enviando a dispositivo:`, error);
         }

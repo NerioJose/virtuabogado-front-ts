@@ -7,6 +7,7 @@ import { User, UserRole } from '@/shared/types/entities.types';
 export interface LoginCredentials {
     email: string;
     password: string;
+    remember?: boolean;
     rol?: UserRole; // Para desarrollo
 }
 
@@ -16,6 +17,7 @@ export interface RegisterData {
     password: string;
     telefono?: string;
     rol: UserRole;
+    remember?: boolean;
     // Campos específicos para abogado
     especialidad?: string;
     numeroColegiado?: string;

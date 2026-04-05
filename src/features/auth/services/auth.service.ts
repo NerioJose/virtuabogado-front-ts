@@ -11,7 +11,9 @@ export class AuthService {
      * Iniciar sesión con Supabase
      */
     async login(credentials: LoginCredentials): Promise<User> {
-        const supabase = createClient();
+        // Opción 1: Si no recordamos, usamos un cliente que no persista indefinidamente en localStorage
+        // o simplemente ajustamos las cookies si estamos en SSR.
+        const supabase = createClient(credentials.remember !== false);
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email: credentials.email,
@@ -35,7 +37,7 @@ export class AuthService {
      * Registrar nuevo usuario en Supabase
      */
     async register(data: RegisterData): Promise<User> {
-        const supabase = createClient();
+        const supabase = createClient(data.remember !== false);
 
         const { data: authData, error } = await supabase.auth.signUp({
             email: data.email,

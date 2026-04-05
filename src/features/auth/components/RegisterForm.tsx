@@ -25,7 +25,9 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
         confirmPassword: '',
         telefono: '',
         rol: defaultRole,
+        remember: false,
     });
+    const [remember, setRemember] = useState(false);
 
     const { register, isLoading, error } = useAuth();
     const [passwordError, setPasswordError] = useState('');
@@ -47,6 +49,7 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                 password: formData.password,
                 telefono: formData.telefono,
                 rol: formData.rol,
+                remember: remember,
             });
         } catch (err) {
             // El error ya se maneja en el hook useAuth
@@ -138,6 +141,19 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                         error={passwordError}
                         required
                     />
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="remember"
+                            checked={remember}
+                            onChange={(e) => setRemember(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-azul-primario focus:ring-azul-primario cursor-pointer"
+                        />
+                        <label htmlFor="remember" className="text-sm text-gray-700 cursor-pointer">
+                            Recordarme
+                        </label>
+                    </div>
 
                     <Button type="submit" isLoading={isLoading} className="w-full">
                         Registrarse

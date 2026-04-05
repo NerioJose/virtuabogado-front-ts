@@ -17,6 +17,7 @@ export function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [remember, setRemember] = useState(false);
 
     // Usar useAuth hook para lógica de negocio (API + redirección)
     const { login, isLoading, error } = useAuth();
@@ -32,6 +33,7 @@ export function LoginForm() {
             await login({
                 email,
                 password,
+                remember,
             });
         } catch (err) {
             console.error('Login error:', err);
@@ -139,6 +141,8 @@ export function LoginForm() {
                             <input
                                 type="checkbox"
                                 name="remember"
+                                checked={remember}
+                                onChange={(e) => setRemember(e.target.checked)}
                                 className="h-4 w-4 rounded border-gray-300 text-azul-primario focus:ring-azul-primario cursor-pointer"
                             />
                             <span className="text-sm text-gray-700">Recordarme</span>

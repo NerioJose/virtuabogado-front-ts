@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { FiBell, FiMessageCircle, FiX } from 'react-icons/fi';
+import { FiBell, FiBriefcase, FiDollarSign, FiMessageCircle, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -48,6 +48,34 @@ export default function GlobalChatListener() {
         // localStorage.setItem('push_banner_dismissed', 'true');
     };
 
+    // 0. FUNCIONES DE UTILIDAD PARA ALERTAS
+    const playNotificationSound = () => {
+        try {
+            const audio = new Audio('/virtuabogado-chat.mp3');
+            audio.volume = 1.0;
+            audio.play().catch(e => console.warn('🔇 Audio bloqueado por el navegador:', e));
+        } catch (err) {
+            console.error("Error al reproducir audio:", err);
+        }
+    };
+
+    const triggerTabBlink = (text: string) => {
+        if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
+        let isBlinking = true;
+        blinkIntervalRef.current = setInterval(() => {
+            document.title = isBlinking ? `(1) ${text}` : originalTitleRef.current;
+            isBlinking = !isBlinking;
+        }, 1000);
+
+        // Auto-limpiar después de 10 segundos
+        setTimeout(() => {
+            if (blinkIntervalRef.current) {
+                clearInterval(blinkIntervalRef.current);
+                document.title = originalTitleRef.current;
+            }
+        }, 10000);
+    };
+
     useEffect(() => {
         if (!user) return;
         
@@ -57,113 +85,112 @@ export default function GlobalChatListener() {
         }
 
         const supabase = createClient();
-
-        // 0. NO SOLICITAR PERMISOS AUTOMÁTICAMENTE (Evita bloqueos de navegador)
-        // La solicitud se hará SOLO mediante gesto del usuario (clic en botón)
         
-        // Nos suscribimos al canal global de este usuario específico
-        const channel = supabase.channel(`global_${user.id}`);
+        // 1. Canal Personal (Mensajes y actualizaciones dirigidas)
+        const personalChannel = supabase.channel(`global_${user.id}`);
         
-        const subscription = channel.on(
-            'broadcast',
-            { event: 'new_message' },
-            (payload) => {
-                const data = payload.payload;
+        // 2. Canal Global (Solo para Admins para ver todas las ventas/alertas)
+        const globalChannel = user.rol === 'ADMIN' ? supabase.channel('app-updates') : null;
 
-                // 1. MANEJAR MENSAJE NUEVO
-                if (data.new) {
-                    const newMessage = data.new;
-                    const queryKey = ['chat', 'messages', newMessage.orderId];
-                    
-                    // Actualizar caché de TanStack Query instantáneamente
-                    queryClient.setQueryData<any[]>(queryKey, (old) => {
-                        const current = Array.isArray(old) ? old : [];
-                        if (current.some(m => m.id === newMessage.id)) return current;
-                        return [...current, newMessage];
-                    });
+        const handleOrderUpdate = (payload: any) => {
+            const data = payload.payload;
+            console.log('📦 [Global Listener] Order Update detectado:', data);
 
-                    // Si el mensaje es de otra persona, lanzar notificaciones
-                    if (newMessage.senderId !== user.id) {
-                        // Omitir notificaciones (Sonido/Toast) si ya estamos en ese chat abierto
-                        const activeOrder = useChatStore.getState().activeOrderId;
-                        if (activeOrder === newMessage.orderId) {
-                            console.log("🤫 Silenciando notificación global porque el chat está activo.");
-                        } else {
-                            // A. Reproducir sonido de notificación
-                            try {
-                                const audio = new Audio('/virtuabogado-chat.mp3');
-                                audio.volume = 1.0;
-                                audio.play().catch(e => console.warn('🔇 Audio bloqueado por el navegador:', e));
-                            } catch (err) {
-                                console.error("Error al reproducir audio:", err);
+            const isRelevantForAdmin = user.rol === 'ADMIN';
+            const isRelevantForLawyer = user.rol === 'ABOGADO' && data.lawyerId === user.id;
+
+            // REGLA: Notificar Nueva Venta a Admins y Abogados (si es su caso o general)
+            if (data.eventType === 'created' && (isRelevantForAdmin || user.rol === 'ABOGADO')) {
+                playNotificationSound();
+                setToastMessage({
+                    id: `sale-${data.orderId}-${Date.now()}`,
+                    type: 'sale',
+                    title: '💰 Nueva Venta Confirmada',
+                    content: `Se ha registrado una nueva orden (#${data.orderId.substring(0,8)}).`,
+                    orderId: data.orderId
+                });
+                triggerTabBlink('💰 ¡NUEVA VENTA!');
+            } 
+            // REGLA: Notificar Asignación Directa a Abogados
+            else if (data.lawyerId === user.id && isRelevantForLawyer) {
+                playNotificationSound();
+                setToastMessage({
+                    id: `case-${data.orderId}-${Date.now()}`,
+                    type: 'case',
+                    title: '⚖️ Nuevo Caso Asignado',
+                    content: `Se te ha asignado el caso #${data.orderId.substring(0,8)}. ¡Empieza ahora!`,
+                    orderId: data.orderId
+                });
+                triggerTabBlink('⚖️ NUEVO CASO');
+            }
+        };
+
+        const personalSub = personalChannel
+            .on(
+                'broadcast',
+                { event: 'new_message' },
+                (payload) => {
+                    const data = payload.payload;
+
+                    // 1. MANEJAR MENSAJE NUEVO
+                    if (data.new) {
+                        const newMessage = data.new;
+                        const queryKey = ['chat', 'messages', newMessage.orderId];
+                        
+                        // Actualizar caché de TanStack Query instantáneamente
+                        queryClient.setQueryData<any[]>(queryKey, (old) => {
+                            const current = Array.isArray(old) ? old : [];
+                            if (current.some(m => m.id === newMessage.id)) return current;
+                            return [...current, newMessage];
+                        });
+
+                        // Si el mensaje es de otra persona, lanzar notificaciones
+                        if (newMessage.senderId !== user.id) {
+                            // Omitir notificaciones (Sonido/Toast) si ya estamos en ese chat abierto
+                            const activeOrder = useChatStore.getState().activeOrderId;
+                            if (activeOrder === newMessage.orderId) {
+                                console.log("🤫 Silenciando notificación global porque el chat está activo.");
+                            } else {
+                                // A. Reproducir sonido de notificación
+                                playNotificationSound();
+
+                                // B. Mostrar Toast Notification
+                                setToastMessage({ ...newMessage, type: 'chat' });
+
+                                // C. Parpadeo en la Pestaña
+                                triggerTabBlink('💬 Nuevo Mensaje');
                             }
 
-                            // B. Mostrar Toast Notification (Barra flotante inferior)
-                            setToastMessage(newMessage);
-
-                            // C. Parpadeo en la Pestaña (Tab Notification)
-                            if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
-                            let isBlinking = true;
-                            blinkIntervalRef.current = setInterval(() => {
-                                document.title = isBlinking ? '(1) 💬 Nuevo Mensaje' : originalTitleRef.current;
-                                isBlinking = !isBlinking;
-                            }, 1000);
-
-                            // D. Notificación Nativa del Navegador (Estilo WhatsApp/Facebook)
-                            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-                                try {
-                                    const n = new Notification(`${newMessage.sender?.nombre || 'Alguien'} te escribió`, {
-                                        body: newMessage.content.startsWith('http') ? '📷 Imagen o archivo enviado' : newMessage.content,
-                                        icon: '/logo/logo_resized.png',
-                                        tag: newMessage.orderId,
-                                        requireInteraction: false
-                                    });
-
-                                    n.onclick = () => {
-                                        window.focus();
-                                        if (user?.rol === 'CLIENTE') router.push('/mis-servicios');
-                                        else if (user?.rol === 'ABOGADO') router.push('/abogado');
-                                        else router.push('/admin');
-                                        n.close();
-                                    };
-                                } catch (err) {
-                                    console.error("Error al lanzar notificación nativa:", err);
-                                }
-                            }
+                            // E. Marcar como No Leído en el Store Global
+                            useChatStore.getState().markAsUnread(newMessage.orderId);
                         }
+                    }
 
-                        // E. Marcar como No Leído en el Store Global (siempre, el store ya filtra si está activo)
-                        useChatStore.getState().markAsUnread(newMessage.orderId);
-
-                        // Auto-cerrar notificaciones después de 10 segundos
-                        setTimeout(() => {
-                            setToastMessage(null);
-                            if (blinkIntervalRef.current) {
-                                clearInterval(blinkIntervalRef.current);
-                                document.title = originalTitleRef.current;
-                            }
-                        }, 10000);
+                    // 2. MANEJAR ELIMINACIÓN DE MENSAJE
+                    if (data.deleted) {
+                        const { id, orderId } = data.deleted;
+                        const queryKey = ['chat', 'messages', orderId];
+                        queryClient.setQueryData<any[]>(queryKey, (old) => {
+                            const current = Array.isArray(old) ? old : [];
+                            return current.filter(m => m.id !== id);
+                        });
                     }
                 }
+            )
+            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .subscribe();
 
-                // 2. MANEJAR ELIMINACIÓN DE MENSAJE (Sincronización en Tiempo Real)
-                if (data.deleted) {
-                    const { id, orderId } = data.deleted;
-                    const queryKey = ['chat', 'messages', orderId];
-                    queryClient.setQueryData<any[]>(queryKey, (old) => {
-                        const current = Array.isArray(old) ? old : [];
-                        return current.filter(m => m.id !== id);
-                    });
-                }
-            }
-        ).subscribe();
+        if (globalChannel) {
+            globalChannel.on('broadcast', { event: 'order-updated' }, handleOrderUpdate).subscribe();
+        }
 
         return () => {
             if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
             document.title = originalTitleRef.current || 'VirtuAbogado';
-            subscription.unsubscribe();
+            personalSub.unsubscribe();
+            if (globalChannel) globalChannel.unsubscribe();
         };
-    }, [user, queryClient]);
+    }, [user, queryClient, router]);
 
     return (
         <>
@@ -176,7 +203,10 @@ export default function GlobalChatListener() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9, x: 100 }}
                             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                            className="pointer-events-auto w-80 bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/60 overflow-hidden flex flex-col cursor-pointer hover:bg-white transition-all active:scale-95"
+                            className={`pointer-events-auto w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/60 overflow-hidden flex flex-col cursor-pointer hover:bg-white transition-all active:scale-95
+                                ${toastMessage.type === 'sale' ? 'ring-2 ring-amber-400' : 
+                                  toastMessage.type === 'case' ? 'ring-2 ring-emerald-400' : ''}
+                            `}
                             onClick={() => {
                                 setToastMessage(null);
                                 if (user?.rol === 'CLIENTE') router.push('/mis-servicios');
@@ -184,10 +214,20 @@ export default function GlobalChatListener() {
                                 else router.push('/admin');
                             }}
                         >
-                            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-vinotinto/10 to-transparent border-b border-gray-100">
-                                <div className="flex items-center gap-2 text-vinotinto font-bold text-xs uppercase tracking-widest">
-                                    <FiMessageCircle className="animate-bounce" />
-                                    <span>Notificación</span>
+                            <div className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r
+                                ${toastMessage.type === 'sale' ? 'from-amber-400/20 to-transparent' : 
+                                  toastMessage.type === 'case' ? 'from-emerald-400/20 to-transparent' : 
+                                  'from-vinotinto/10 to-transparent'}
+                            `}>
+                                <div className={`flex items-center gap-2 font-bold text-xs uppercase tracking-widest
+                                    ${toastMessage.type === 'sale' ? 'text-amber-600' : 
+                                      toastMessage.type === 'case' ? 'text-emerald-600' : 
+                                      'text-vinotinto'}
+                                `}>
+                                    {toastMessage.type === 'sale' ? <FiDollarSign className="animate-pulse" /> : 
+                                     toastMessage.type === 'case' ? <FiBriefcase className="animate-pulse" /> : 
+                                     <FiMessageCircle className="animate-bounce" />}
+                                    <span>{toastMessage.title || 'Notificación'}</span>
                                 </div>
                                 <button 
                                     onClick={(e) => {
@@ -200,18 +240,31 @@ export default function GlobalChatListener() {
                                 </button>
                             </div>
                             <div className="px-4 py-4 text-sm text-gray-700">
-                                <p className="font-bold text-gray-900 mb-1">
-                                    {toastMessage.sender?.nombre || 'Alguien'} te escribió:
-                                </p>
-                                <p className="line-clamp-2 leading-relaxed opacity-80 italic">
-                                    "{toastMessage.content.startsWith('http') ? '📷 Imagen o archivo enviado' : toastMessage.content}"
-                                </p>
-                                <p className="text-[10px] text-vinotinto mt-3 font-semibold text-right uppercase tracking-tighter">
-                                    Haz clic para responder →
+                                {toastMessage.type === 'chat' ? (
+                                    <>
+                                        <p className="font-bold text-gray-900 mb-1">
+                                            {toastMessage.sender?.nombre || 'Alguien'} te escribió:
+                                        </p>
+                                        <p className="line-clamp-2 leading-relaxed opacity-80 italic">
+                                            "{toastMessage.content?.startsWith('http') ? '📷 Imagen o archivo enviado' : toastMessage.content}"
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="opacity-90 leading-relaxed font-medium">
+                                        {toastMessage.content}
+                                    </p>
+                                )}
+                                <p className={`text-[10px] mt-3 font-semibold text-right uppercase tracking-tighter
+                                    ${toastMessage.type === 'sale' ? 'text-amber-600' : 
+                                      toastMessage.type === 'case' ? 'text-emerald-600' : 
+                                      'text-vinotinto'}
+                                `}>
+                                    Haz clic para gestionar →
                                 </p>
                             </div>
                         </motion.div>
                     )}
+
                 </AnimatePresence>
 
                 {/* 🔔 BANNER DE INVITACIÓN A NOTIFICACIONES PUSH (Estilo Shopify) */}

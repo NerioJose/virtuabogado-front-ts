@@ -91,29 +91,29 @@ export async function sendPushNotification(userId: string, options: PushNotifica
 }
 
 /**
- * Notificación Especial: ¡Nueva Venta Confirmada! (Solo para Admin) 💰🔔
+ * Notificación Especial: ¡Nueva Venta Confirmada! (Admins y Abogados) 💰🔔
  */
 export async function notifyNewSale(orderId: string, total: string, needsAssignment: boolean = false) {
-  // Buscar a todos los ADMINS
-  const admins = await prisma.user.findMany({
+  // Buscar a todos los destinatarios operativos (ADMINS y ABOGADOS activos)
+  const recipients = await prisma.user.findMany({
     where: { 
-      rol: 'ADMIN', 
+      rol: { in: ['ADMIN' as any, 'ABOGADO' as any] }, 
       activo: true 
     },
-    select: { id: true, email: true }
+    select: { id: true, email: true, rol: true }
   });
 
-  console.log(`🕵️ [Push Diag] Buscando Admins para notificar venta. Encontrados: ${admins.length} (${admins.map(a => a.email).join(', ')})`);
+  console.log(`🕵️ [Push Diag] Buscando receptores para notificar venta. Encontrados: ${recipients.length} (${recipients.map(r => r.email).join(', ')})`);
 
   const body = needsAssignment 
     ? `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - ¡ATENCIÓN: REQUIERE ASIGNAR ABOGADO!`
     : `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - La tarea ya ha sido asignada.`;
 
-  const promises = admins.map(admin => 
-    sendPushNotification(admin.id, {
+  const promises = recipients.map(recipient => 
+    sendPushNotification(recipient.id, {
       title: needsAssignment ? '🚨 ASIGNACIÓN PENDIENTE ⚖️' : '💰 ¡Nueva Venta en VirtuAbogado!',
       body: body,
-      url: '/admin',
+      url: recipient.rol === 'ADMIN' ? '/admin' : '/abogado',
       tag: `sale-${orderId}`,
       icon: '/logo/logo_sf_1.png'
     })
@@ -123,11 +123,12 @@ export async function notifyNewSale(orderId: string, total: string, needsAssignm
   const totalSent = results.reduce((acc, res) => acc + (res.sent || 0), 0);
   
   if (totalSent > 0) {
-    console.log(`✅ [Push Success] Venta de Orden #${orderId} notificada exitosamente a ${totalSent} dispositivo(s) de Admins.`);
+    console.log(`✅ [Push Success] Venta de Orden #${orderId} notificada exitosamente a ${totalSent} dispositivo(s).`);
   } else {
-    console.warn(`⚠️ [Push Warn] No se pudo enviar la notificación de venta para #${orderId}. ¿Hay admins con dispositivos registrados?`);
+    console.warn(`⚠️ [Push Warn] No se pudo enviar la notificación de venta para #${orderId}. ¿Hay usuarios activos con dispositivos registrados?`);
   }
 }
+
 
 /**
  * Notificación Especial: Nuevo Caso Asignado (Solo para Abogado) ⚖️

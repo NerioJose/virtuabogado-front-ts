@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       tag: 'test-' + Date.now()
     });
 
-    if (result.success && result.sent > 0) {
+    if (result.success && result.sent && result.sent > 0) {
       return NextResponse.json({ 
         success: true, 
         message: `Prueba enviada a ${result.sent} dispositivo(s). Revisa tu teléfono/PC ahora.` 
@@ -38,8 +38,7 @@ export async function POST(request: Request) {
     } else {
       return NextResponse.json({ 
         success: false, 
-        message: 'Error al enviar la notificación. Revisa los logs del servidor.',
-        error: result.error
+        message: result.error || 'Error desconocido al enviar la notificación.'
       }, { status: 500 });
     }
   } catch (error: any) {

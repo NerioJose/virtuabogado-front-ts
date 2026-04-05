@@ -28,15 +28,27 @@ interface PushNotificationOptions {
  * Envía una alerta de sistema al Admin o Abogado a través de sus suscripciones guardadas.
  */
 export async function sendPushNotification(userId: string, options: PushNotificationOptions) {
+  // 0. Verificar y Configurar VAPID en cada envío (Resiliencia para Vercel)
+  if (!publicKey || !privateKey) {
+    const missing = !publicKey ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : 'VAPID_PRIVATE_KEY';
+    console.error(`🚨 [Push] Abortando envío. Falta variable de entorno: ${missing}`);
+    return { 
+      success: false, 
+      error: `Configuración incompleta en el servidor: Falta ${missing}` 
+    };
+  }
+
   try {
+    webpush.setVapidDetails(email, publicKey, privateKey);
+    
     // 1. Obtener todas las suscripciones push de este usuario (todos sus dispositivos)
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { userId }
     });
 
     if (subscriptions.length === 0) {
-      console.info(`ℹ️ [Push Diag] Usuario ${userId} no tiene dispositivos registrados en la tabla PushSubscription.`);
-      return { success: false, sent: 0 };
+      console.info(`ℹ️ [Push Diag] Usuario ${userId} no tiene dispositivos registrados.`);
+      return { success: false, sent: 0, error: 'No hay dispositivos registrados para este usuario.' };
     }
 
     console.log(`📡 [Push Diag] Intentando enviar a ${subscriptions.length} dispositivos para el usuario ${userId}...`);

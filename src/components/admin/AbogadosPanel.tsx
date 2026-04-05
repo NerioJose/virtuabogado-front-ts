@@ -175,10 +175,9 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Vista Escritorio: Tabla Refinada con Scroll Lateral */}
-      <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
-        <div className="overflow-x-auto no-scrollbar">
-          <table className="min-w-full lg:min-w-[1100px] divide-y divide-slate-100">
+      <div className="hidden lg:block bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden">
+        <div className="table-container p-1">
+          <table className="min-w-[1100px] divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
                 <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>

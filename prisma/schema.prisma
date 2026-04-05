@@ -29,6 +29,9 @@ model User {
   orders       Order[]    @relation("ClientOrders")
   payouts      LawyerPayout[] @relation("LawyerPayouts")
   pushSubscriptions PushSubscription[] @relation("UserPushSubscriptions")
+
+  @@index([activo, createdAt(sort: Desc)])
+  @@index([rol])
 }
 
 model Service {
@@ -75,6 +78,8 @@ model Order {
   @@index([createdAt(sort: Desc)])
   @@index([userId])
   @@index([serviceId])
+  @@index([status])
+  @@index([paymentId])
   @@index([status, createdAt(sort: Desc)])
 }
 

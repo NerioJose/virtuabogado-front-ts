@@ -242,7 +242,8 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 
 				{/* Vista Escritorio: Tabla Contable */}
 				<div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
-					<table className="min-w-full divide-y divide-slate-100 text-left">
+					<div className="table-container p-1">
+						<table className="min-w-[1100px] divide-y divide-slate-100 text-left">
 						<thead className="bg-slate-50/50">
 							<tr>
 								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia</th>
@@ -307,6 +308,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 						</tbody>
 					</table>
 				</div>
+			</div>
 
 				{ordenesFiltradas.length === 0 && !isLoading && (
 					<div className="text-center py-24 bg-white rounded-[3rem] border border-slate-200/60 shadow-sm">

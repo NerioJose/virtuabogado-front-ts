@@ -12,6 +12,20 @@
 	.text-vinotinto {
 		@apply text-[rgb(120_29_43)];
 	}
+
+	/* Scrollbar utilities */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	.table-container {
+		@apply overflow-x-auto no-scrollbar;
+		-webkit-overflow-scrolling: touch;
+	}
 }
 
 @theme {

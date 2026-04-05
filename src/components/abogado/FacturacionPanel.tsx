@@ -290,7 +290,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 				</div>
 
 				{/* VISTA MÓVIL (Cards) */}
-				<div className="md:hidden p-4 space-y-4 pb-12">
+				<div className="lg:hidden p-4 space-y-4 pb-12">
 					{facturasFiltradas.length === 0 ? (
 						<div className="py-16 text-center">
 							<p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Sin resultados</p>
@@ -357,8 +357,9 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 				</div>
 
 				{/* VISTA DESKTOP (Tabla) */}
-				<div className="hidden md:block">
-					<table className="min-w-full divide-y divide-slate-50">
+				<div className="hidden lg:block">
+					<div className="table-container p-1">
+						<table className="min-w-[1000px] divide-y divide-slate-50">
 						<thead className="bg-slate-50/30">
 							<tr>
 								<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Nº Factura</th>
@@ -431,7 +432,8 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 								))
 							)}
 						</tbody>
-					</table>
+						</table>
+					</div>
 				</div>
 			</div>
 

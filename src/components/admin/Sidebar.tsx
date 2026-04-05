@@ -155,6 +155,27 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 {!isSubscribed && <span className="text-[9px] opacity-60 uppercase">Manual Ca-Ching 💰</span>}
             </div>
           </motion.button>
+
+          {/* Botón de Diagnóstico Directo (Temporal para Pruebas) */}
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/notifications/test-push', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) alert('🧪 Servidor dice: ' + result.message);
+                else alert('❌ Error en el servidor: ' + (result.message || result.error));
+              } catch (err) {
+                alert('🚨 Error de red: ' + (err instanceof Error ? err.message : String(err)));
+              }
+            }}
+            className="flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:translate-x-1 mt-2"
+          >
+            <div className="text-lg">🛠️</div>
+            <span className="text-xs font-bold uppercase tracking-tighter">PRUEBA PUSH</span>
+          </motion.button>
         </nav>
 
         {/* Footer del Sidebar siempre visible abajo */}

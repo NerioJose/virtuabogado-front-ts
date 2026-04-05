@@ -1,10 +1,4 @@
-'use client';
-
-/**
- * Formulario de registro - Refactorizado con nueva arquitectura
- */
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
@@ -25,9 +19,21 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
         confirmPassword: '',
         telefono: '',
         rol: defaultRole,
-        remember: false,
     });
-    const [remember, setRemember] = useState(false);
+    const [remember, setRemember] = useState(true);
+
+    // Cargar preferencia al montar
+    useEffect(() => {
+        const savedRemember = localStorage.getItem('remember_me');
+        if (savedRemember !== null) {
+            setRemember(savedRemember === 'true');
+        }
+    }, []);
+
+    // Guardar preferencia al cambiar
+    useEffect(() => {
+        localStorage.setItem('remember_me', remember.toString());
+    }, [remember]);
 
     const { register, isLoading, error } = useAuth();
     const [passwordError, setPasswordError] = useState('');

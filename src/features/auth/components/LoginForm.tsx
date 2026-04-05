@@ -5,7 +5,7 @@
  * El rol se detecta automáticamente según las credenciales del usuario
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
@@ -17,7 +17,30 @@ export function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [remember, setRemember] = useState(false);
+    const [remember, setRemember] = useState(true);
+
+    // Cargar preferencias guardadas al montar el componente
+    useEffect(() => {
+        const savedRemember = localStorage.getItem('remember_me');
+        if (savedRemember !== null) {
+            const isRemembered = savedRemember === 'true';
+            setRemember(isRemembered);
+            
+            // Si recordamos, intentar cargar el email guardado
+            if (isRemembered) {
+                const savedEmail = localStorage.getItem('remember_email');
+                if (savedEmail) setEmail(savedEmail);
+            }
+        }
+    }, []);
+
+    // Guardar preferencia de "Recordarme" cada vez que cambie
+    useEffect(() => {
+        localStorage.setItem('remember_me', remember.toString());
+        if (!remember) {
+            localStorage.removeItem('remember_email');
+        }
+    }, [remember]);
 
     // Usar useAuth hook para lógica de negocio (API + redirección)
     const { login, isLoading, error } = useAuth();
@@ -35,6 +58,11 @@ export function LoginForm() {
                 password,
                 remember,
             });
+
+            // Si el login fue exitoso y "Recordarme" está activo, guardar email
+            if (remember) {
+                localStorage.setItem('remember_email', email);
+            }
         } catch (err) {
             console.error('Login error:', err);
         }

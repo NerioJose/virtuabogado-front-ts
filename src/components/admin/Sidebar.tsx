@@ -157,24 +157,33 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 </div>
               </motion.button>
 
-              {/* Botón de PRUEBA (Solo visible si está suscrito y es Admin) */}
-              {isSubscribed && user.rol === 'ADMIN' && (
+              {/* Botón de PRUEBA (Visible para Admins para autodiagnóstico) */}
+              {user?.rol === 'ADMIN' && (
                 <motion.button
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   onClick={async () => {
+                    if (!isSubscribed) {
+                        alert('⚠️ Debes ACTIVAR las notificaciones primero antes de probar.');
+                        return;
+                    }
                     const response = await fetch('/api/notifications/test-push', { method: 'POST' });
                     const data = await response.json();
                     if (data.success) alert(data.message);
                     else alert(`❌ ${data.error || 'Error al probar'}`);
                   }}
-                  className="px-3 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all border border-emerald-500/10 flex items-center justify-center group"
+                  className={`px-3 rounded-xl transition-all border flex items-center justify-center group
+                    ${isSubscribed 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10 hover:bg-emerald-500/20' 
+                      : 'bg-white/5 text-white/30 border-white/5 opacity-50'}
+                  `}
                   title="Ejecutar Prueba Ca-Ching"
                 >
                   <FiPlayCircle className="text-lg group-hover:scale-125 transition-transform" />
                   <span className="ml-1 text-[8px] font-black uppercase">Test</span>
                 </motion.button>
               )}
+
             </div>
 
 

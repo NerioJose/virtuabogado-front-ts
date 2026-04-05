@@ -88,31 +88,11 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
             >
               <FiBell className="mr-3 text-lg" />
               <div className="flex flex-col">
-                <span className="text-sm font-bold">
-                    {isSubscribed ? 'Notificaciones Activas' : 'Activar Notificaciones'}
+                <span className="text-sm font-bold">{isSubscribed ? 'Notificaciones' : 'Activar Alertas'}</span>
+                <span className="text-[9px] opacity-70 uppercase font-black tracking-tight">
+                  {isSubscribed ? 'Sistema Ca-Ching ✨' : 'Recibir Notificaciones ⚖️'}
                 </span>
-                {!isSubscribed && <span className="text-[9px] opacity-70 uppercase font-black tracking-tight">Manual Ca-Ching 💰</span>}
               </div>
-            </button>
-          </li>
-
-          {/* Botón de Diagnóstico Directo (Temporal para Pruebas) */}
-          <li>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/notifications/test-push', { method: 'POST' });
-                  const result = await response.json();
-                  if (result.success) alert('🧪 Servidor dice: ' + result.message);
-                  else alert('❌ Error en el servidor: ' + (result.message || result.error));
-                } catch (err) {
-                  alert('🚨 Error de red: ' + (err instanceof Error ? err.message : String(err)));
-                }
-              }}
-              className="w-full flex items-center px-6 py-3 text-left transition-all text-emerald-600 hover:bg-emerald-50 border-t border-gray-100"
-            >
-              <span className="mr-3">🛠️</span>
-              <span className="text-xs font-bold uppercase">PRUEBA PUSH</span>
             </button>
           </li>
         </ul>

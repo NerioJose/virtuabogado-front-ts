@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialSettingsService } from '../services/financial-settings.service';
 import { UpdateFinancialSettingsRequest } from '../types/financial-settings.types';

@@ -1,3 +1,5 @@
+'use client';
+
 import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';

@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lawyersService } from '../services/lawyers.service';
 import { Lawyer, LawyersFilters } from '../types/lawyers.types';

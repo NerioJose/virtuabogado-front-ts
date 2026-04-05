@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Panel de Estadísticas - Conectado a stores reales
  * Muestra gráficos y métricas calculadas desde Zustand

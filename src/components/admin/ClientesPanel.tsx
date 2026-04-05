@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo, memo } from 'react';
 import { FiUsers, FiSearch, FiEdit, FiTrash2, FiEye, FiMail, FiPhone, FiFilter, FiCalendar, FiShoppingBag, FiDollarSign } from 'react-icons/fi';
 import Image from 'next/image';

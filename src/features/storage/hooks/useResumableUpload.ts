@@ -1,3 +1,5 @@
+'use client';
+
 import { createClient } from '@/utils/supabase/client';
 import { useUploadStore } from '../store/uploadStore';
 import { useCallback, useRef } from 'react';

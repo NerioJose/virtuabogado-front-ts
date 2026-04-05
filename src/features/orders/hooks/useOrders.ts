@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ordersService } from '../services/orders.service';
 import { OrdersFilters, OrderStatus } from '../types/orders.types';

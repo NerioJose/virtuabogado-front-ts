@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { FiFile, FiFileText, FiDownload, FiUpload, FiTrash2, FiFolder, FiSearch, FiCheck, FiClock, FiX } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';

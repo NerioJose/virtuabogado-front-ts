@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, memo, useMemo } from 'react';
 import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft, FiBriefcase } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';

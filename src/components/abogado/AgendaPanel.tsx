@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import { FiCalendar, FiClock, FiUser, FiChevronLeft, FiChevronRight, FiBriefcase, FiArrowRight } from 'react-icons/fi';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';

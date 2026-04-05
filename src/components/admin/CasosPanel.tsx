@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo, memo, useState } from 'react';
 import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserPlus, FiMessageSquare, FiBriefcase, FiClock, FiCheckCircle, FiXCircle, FiDollarSign } from 'react-icons/fi';
 import { ElementoSeleccionable } from '@/types/index';

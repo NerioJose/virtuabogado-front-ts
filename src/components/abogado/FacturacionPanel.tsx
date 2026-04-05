@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useMemo } from 'react';
 import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import {

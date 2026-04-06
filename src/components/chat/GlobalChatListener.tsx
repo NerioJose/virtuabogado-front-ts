@@ -96,6 +96,10 @@ export default function GlobalChatListener() {
             const data = payload.payload;
             console.log('📦 [Global Listener] Order Update detectado:', data);
 
+            // 🔄 INVALIDAR CACHÉ: Esto forzará que FacturacionPanel y todas las tablas se refresquen en tiempo real
+            queryClient.invalidateQueries({ queryKey: ['orders'] });
+            queryClient.invalidateQueries({ queryKey: ['Finance'] });
+
             const isRelevantForAdmin = user.rol === 'ADMIN';
             const isRelevantForLawyer = user.rol === 'ABOGADO' && data.lawyerId === user.id;
 

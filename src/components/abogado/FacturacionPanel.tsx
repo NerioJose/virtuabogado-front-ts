@@ -222,10 +222,10 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 					{[
-						{ label: 'Volumen Bruto (Plataforma)', value: summary?.totalIncome || 0, icon: <FiDollarSign />, color: 'slate-500', bg: 'bg-slate-50' },
-						{ label: 'Tu Margen (%)', value: `${summary?.settings?.lawyerPercentage || 0}%`, icon: <FiTrendingUp />, color: 'amber-500', bg: 'bg-amber-500/5', isAmount: false },
+						{ label: 'Facturación Bruta (Mis Casos)', value: summary?.totalIncome || 0, icon: <FiDollarSign />, color: 'slate-500', bg: 'bg-slate-50' },
+						{ label: 'Comisión Pactada (%)', value: `${summary?.settings?.lawyerPercentage || 0}%`, icon: <FiTrendingUp />, color: 'amber-500', bg: 'bg-amber-500/5', isAmount: false },
 						{ label: 'Casos Procesados', value: summary?.transactionCount || 0, icon: <FiCheck />, color: 'emerald-500', bg: 'bg-emerald-50/5', isAmount: false },
-						{ label: 'Tus Honorarios (Neto)', value: summary?.lawyerPendingBalance || 0, icon: <FiDollarSign />, color: 'azul-primario', bg: 'bg-azul-primario/5' }
+						{ label: 'Tus Honorarios (Netos)', value: summary?.lawyerPendingBalance || 0, icon: <FiDollarSign />, color: 'azul-primario', bg: 'bg-azul-primario/5' }
 					].map((stat, i) => ( stat && (
 						<div key={i} className={`${stat.bg} rounded-3xl p-6 border border-slate-50 transition-all hover:scale-[1.02]`}>
 							<div className="flex items-center gap-4 mb-4">

@@ -98,7 +98,7 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
             realProfit: stats.realProfit, // Neto_Plataforma (Total - all deductions)
             operationalCostsAndTaxes: stats.totalExpenses,
             transactionCount: stats.count,
-            lawyerPendingBalance: user.rol === 'ABOGADO' ? stats.totalCommissions : undefined,
+            lawyerPendingBalance: role === 'ABOGADO' ? stats.totalCommissions : undefined,
             settings: {
                 lawyerPercentage: Number(settings.lawyer_commission_percentage || 0),
                 opsPercentage: Number(settings.operational_costs_percentage || 0),

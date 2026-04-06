@@ -522,13 +522,19 @@ export async function PUT(request: Request) {
             data: dataToUpdate,
         });
 
+        // 📡 Evaluar si es un abogado nuevo para la notificación visual (toast)
+        const isMewSale = status === 'PAID' && existingOrder.status !== 'PAID';
+        const isLawyerManuallyAssigned = lawyerId && lawyerId !== existingOrder.lawyerId;
+        const isNewAssignment = isLawyerManuallyAssigned || (isMewSale && !!updatedOrder.lawyerId);
+
         // 📡 Broadcast a todos los dashboards para reactividad instantánea
         broadcastOrderUpdate({
             orderId: updatedOrder.id,
             userId: updatedOrder.userId,
             lawyerId: updatedOrder.lawyerId,
             status: updatedOrder.status,
-            eventType: 'updated'
+            eventType: 'updated',
+            isNewAssignment // FLAG PARA EL FRONTEND (Toast)
         });
 
         // 🔔 NOTIFICACIONES PUSH TÁCTICAS 

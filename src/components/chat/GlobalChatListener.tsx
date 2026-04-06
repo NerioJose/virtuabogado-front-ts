@@ -115,8 +115,8 @@ export default function GlobalChatListener() {
                 });
                 triggerTabBlink('💰 ¡NUEVA VENTA!');
             } 
-            // REGLA: Notificar Asignación Directa a Abogados
-            else if (data.lawyerId === user.id && isRelevantForLawyer) {
+            // REGLA: Notificar Asignación Directa a Abogados (SOLO si es una asignación nueva, no una actualización)
+            else if (data.isNewAssignment && data.lawyerId === user.id && isRelevantForLawyer) {
                 playNotificationSound();
                 setToastMessage({
                     id: `case-${data.orderId}-${Date.now()}`,

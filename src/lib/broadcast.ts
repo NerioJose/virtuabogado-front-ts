@@ -76,8 +76,9 @@ export async function broadcastOrderUpdate(params: {
     userId?: string | null;
     status?: string | null;
     eventType?: 'created' | 'updated' | 'deleted';
+    isNewAssignment?: boolean;
 }): Promise<void> {
-    const { orderId, lawyerId, userId, status, eventType = 'updated' } = params;
+    const { orderId, lawyerId, userId, status, eventType = 'updated', isNewAssignment } = params;
     
     // 🛡️ FIREWALL: No notificar sobre órdenes que aún no han sido pagadas o han sido rechazadas
     // Esto evita el "ruido" y las órdenes fantasma en los Dashboards de Admin/Abogado.
@@ -91,6 +92,7 @@ export async function broadcastOrderUpdate(params: {
         userId,
         status,
         eventType,
+        isNewAssignment,
         timestamp: new Date().toISOString(),
     };
 

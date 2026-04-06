@@ -29,27 +29,43 @@ export async function POST(request: Request) {
 
     // 2. ALINEACIÓN DE IDENTIDAD (Supabase -> Prisma):
     // El error 500 ocurría porque el ID de Supabase no existía en Prisma.
-    // Realizamos un upsert rápido del usuario para asegurar la integridad referencial.
+    // Realizamos un upsert robusto del usuario, resolviendo colisiones de email si existen.
     const { nombre, rol, telefono } = user.user_metadata || {};
-    // Sincronización robusta: El rol debe ser de tipo UserRole
     const finalRole = (rol as string || 'CLIENTE').toUpperCase() as UserRole;
 
-    await prisma.user.upsert({
-      where: { id: user.id },
-      update: { 
-        email: user.email!,
-        rol: finalRole,
-        activo: true
-      },
-      create: {
-        id: user.id,
-        email: user.email!,
-        nombre: nombre || user.email?.split('@')[0] || 'Usuario Push',
-        rol: finalRole,
-        telefono: telefono || undefined,
-        activo: true
+    try {
+      const existingUserByEmail = await prisma.user.findUnique({
+        where: { email: user.email! }
+      });
+
+      if (existingUserByEmail && existingUserByEmail.id !== user.id) {
+        console.log(`🔗 [Push Subscribe] Email colisiona con ID antiguo: ${existingUserByEmail.id}. Liberando...`);
+        await prisma.user.update({
+          where: { id: existingUserByEmail.id },
+          data: { email: `legacy_${existingUserByEmail.id}_${user.email}` }
+        });
       }
-    });
+
+      await prisma.user.upsert({
+        where: { id: user.id },
+        update: { 
+          email: user.email!,
+          rol: finalRole,
+          activo: true
+        },
+        create: {
+          id: user.id,
+          email: user.email!,
+          nombre: nombre || user.email?.split('@')[0] || 'Usuario Push',
+          rol: finalRole,
+          telefono: telefono || undefined,
+          activo: true
+        }
+      });
+    } catch (upsertUserError) {
+      console.warn('⚠️ [Push Subscribe] Error al sincronizar usuario (colisión ignorada):', upsertUserError);
+      // No bloqueamos la suscripción si falla esto, el fallback en push intentará de todos modos
+    }
 
     // 3. LÓGICA DE UPSERT: Vinculamos la suscripción al usuario y al endpoint único.
     // Usamos el id de Supabase (user.id) como userId en Prisma.

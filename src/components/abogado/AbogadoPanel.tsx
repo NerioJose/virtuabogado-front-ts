@@ -62,7 +62,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 	useEffect(() => {
 		if (currentAbogadoId) {
-			console.log(`[LawyerDashboard] Abogado ID verificado: ${currentAbogadoId}`);
+			// console.log(`[LawyerDashboard] Abogado ID verificado: ${currentAbogadoId}`);
 		}
 	}, [currentAbogadoId]);
 

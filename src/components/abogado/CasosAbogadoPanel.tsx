@@ -22,7 +22,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
 
   useEffect(() => {
     if (!isLoading) {
-      console.log(`[LawyerDashboard] Casos encontrados en frontend: ${misCasos.length}`);
+      // console.log(`[LawyerDashboard] Casos encontrados en frontend: ${misCasos.length}`);
     }
   }, [misCasos.length, isLoading]);
 

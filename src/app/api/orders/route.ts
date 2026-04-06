@@ -531,20 +531,31 @@ export async function PUT(request: Request) {
             eventType: 'updated'
         });
 
-        // 🔔 NOTIFICACIONES PUSH TÁCTICAS (Aguardar para evitar cierre de worker en Vercel)
-        // 1. Si el estado cambia a PAID -> Notificar a todos los ADMINS (Efecto Shopify)
-        if (status === 'PAID') {
+        // 🔔 NOTIFICACIONES PUSH TÁCTICAS 
+        // 1. Si el estado cambia a PAID -> Notificar a los ADMINS de la nueva venta (Efecto Shopify)
+        const isMewSale = status === 'PAID' && existingOrder.status !== 'PAID';
+        if (isMewSale) {
             console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id} a Admins...`);
             await notifyNewSale(updatedOrder.id, updatedOrder.total.toString()).catch(err => 
                 console.error('❌ Error disparando push de venta:', err)
             );
+
+            // Si el sistema había auto-asignado al único abogado disponible, le avisamos AHORA que el pago se completó
+            if (updatedOrder.lawyerId) {
+                console.log(`⚖️ [Push] Orden pagada. Alertando de auto-asignación al Abogado: ${updatedOrder.lawyerId}`);
+                await notifyNewCase(updatedOrder.lawyerId, updatedOrder.id).catch(err => 
+                    console.error('❌ Error disparando push de auto-asignación:', err)
+                );
+            }
         }
  
-        // 2. Si se asigna un Abogado -> Notificar al Abogado específico
-        if (lawyerId) {
-            console.log(`⚖️ [Push] Disparando alerta de asignación para Abogado: ${lawyerId}`);
+        // 2. Si se asigna un Abogado manualmente desde el panel de admin (Cambio explícito de lawyerId)
+        const isLawyerManuallyAssigned = lawyerId && lawyerId !== existingOrder.lawyerId;
+        // Evitamos mandar doble push si justo acaba de pagarse (lo maneja el bloque de arriba)
+        if (isLawyerManuallyAssigned && !isMewSale) {
+            console.log(`⚖️ [Push] Disparando alerta de asignación manual para Abogado: ${lawyerId}`);
             await notifyNewCase(lawyerId, updatedOrder.id).catch(err => 
-                console.error('❌ Error disparando push de asignación:', err)
+                console.error('❌ Error disparando push de asignación manual:', err)
             );
         }
 

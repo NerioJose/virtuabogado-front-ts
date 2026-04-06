@@ -523,9 +523,9 @@ export async function PUT(request: Request) {
         });
 
         // 📡 Evaluar si es un abogado nuevo para la notificación visual (toast)
-        const isMewSale = status === 'PAID' && existingOrder.status !== 'PAID';
+        const isNewSale = status === 'PAID' && existingOrder.status !== 'PAID';
         const isLawyerManuallyAssigned = lawyerId && lawyerId !== existingOrder.lawyerId;
-        const isNewAssignment = isLawyerManuallyAssigned || (isMewSale && !!updatedOrder.lawyerId);
+        const isNewAssignment = isLawyerManuallyAssigned || (isNewSale && !!updatedOrder.lawyerId);
 
         // 📡 Broadcast a todos los dashboards para reactividad instantánea
         broadcastOrderUpdate({
@@ -539,8 +539,7 @@ export async function PUT(request: Request) {
 
         // 🔔 NOTIFICACIONES PUSH TÁCTICAS 
         // 1. Si el estado cambia a PAID -> Notificar a los ADMINS de la nueva venta (Efecto Shopify)
-        const isMewSale = status === 'PAID' && existingOrder.status !== 'PAID';
-        if (isMewSale) {
+        if (isNewSale) {
             console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id} a Admins...`);
             await notifyNewSale(updatedOrder.id, updatedOrder.total.toString()).catch(err => 
                 console.error('❌ Error disparando push de venta:', err)
@@ -556,9 +555,8 @@ export async function PUT(request: Request) {
         }
  
         // 2. Si se asigna un Abogado manualmente desde el panel de admin (Cambio explícito de lawyerId)
-        const isLawyerManuallyAssigned = lawyerId && lawyerId !== existingOrder.lawyerId;
         // Evitamos mandar doble push si justo acaba de pagarse (lo maneja el bloque de arriba)
-        if (isLawyerManuallyAssigned && !isMewSale) {
+        if (isLawyerManuallyAssigned && !isNewSale) {
             console.log(`⚖️ [Push] Disparando alerta de asignación manual para Abogado: ${lawyerId}`);
             await notifyNewCase(lawyerId, updatedOrder.id).catch(err => 
                 console.error('❌ Error disparando push de asignación manual:', err)

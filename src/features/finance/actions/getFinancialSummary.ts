@@ -18,14 +18,14 @@ export interface FinancialSummaryFilters {
 export async function getFinancialSummary(filters: FinancialSummaryFilters, user: { id: string, rol: UserRole }) {
     const { lawyerId, dateRange } = filters;
     
-    // 1. Fetch Dynamic Platform Settings (Blindaje: Default 70/10/15/5 if row missing)
+    // 1. Fetch Dynamic Platform Settings (Blindaje: Default 0 if row missing, Admin strictly controls this)
     const settings = await prisma.financialSettings.findUnique({
         where: { id: FINANCIAL_SETTINGS_ID }
     }) || {
-        lawyer_commission_percentage: 70,
-        operational_costs_percentage: 10,
-        tax_percentage: 15,
-        platform_fee_percentage: 5
+        lawyer_commission_percentage: 0,
+        operational_costs_percentage: 0,
+        tax_percentage: 0,
+        platform_fee_percentage: 0
     };
 
     // 2. Build Date Filter

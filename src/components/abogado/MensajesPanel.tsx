@@ -7,6 +7,8 @@ import {
 	FiClock,
 	FiMessageSquare,
 	FiArrowLeft,
+	FiLock,
+	FiCheckCircle
 } from 'react-icons/fi';
 import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
@@ -68,6 +70,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 				ultimoMensaje: 'Ver conversación', // Podríamos traer el último mensaje si la API lo incluyera
 				fechaUltimoMensaje: order.updatedAt || order.createdAt,
 				caso: order.items?.[0]?.serviceName || 'Servicio Legal',
+				status: order.status
 			}));
 	}, [orders, busqueda]);
 
@@ -140,7 +143,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 								className={`p-5 mx-2 my-1 rounded-2xl cursor-pointer transition-all duration-200 group ${conversacionActiva === conv.id 
                                     ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25' 
                                     : 'hover:bg-slate-50'
-									}`}>
+									} ${conv.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}>
 								<div className="flex justify-between items-start mb-1.5">
 									<h3 className={`text-sm font-black truncate pr-2 ${conversacionActiva === conv.id ? 'text-white' : 'text-slate-800'}`}>
 										{conv.participante}
@@ -149,7 +152,8 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 										{formatearFecha(conv.fechaUltimoMensaje)}
 									</span>
 								</div>
-								<p className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${conversacionActiva === conv.id ? 'text-white/90' : 'text-azul-primario'}`}>
+								<p className={`text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${conversacionActiva === conv.id ? 'text-white/90' : 'text-azul-primario'}`}>
+									{conv.status === OrderStatus.COMPLETADO && <FiLock size={10} className={conversacionActiva === conv.id ? 'text-white' : 'text-slate-400'} />}
 									{conv.caso}
 								</p>
 								<div className="flex items-center gap-1.5">

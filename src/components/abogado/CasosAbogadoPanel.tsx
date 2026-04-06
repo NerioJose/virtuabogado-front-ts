@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, memo, useMemo } from 'react';
-import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft, FiBriefcase } from 'react-icons/fi';
+import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft, FiBriefcase, FiCheckCircle } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { useChatStore } from '@/features/chat/store/chatStore';
@@ -225,7 +225,10 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                   caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                   'bg-rose-50 text-rose-600 border-rose-100'
                 }`}>
-                  {caso.status}
+                  <div className="flex items-center gap-1.5">
+                    {caso.status === OrderStatus.COMPLETADO && <FiCheckCircle size={12} />}
+                    {caso.status}
+                  </div>
                 </span>
               </div>
 
@@ -320,7 +323,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                 </tr>
               ) : (
                 casosFiltrados.map((caso) => (
-                  <tr key={caso.id} className="hover:bg-slate-50/80 transition-colors group">
+                  <tr key={caso.id} className={`hover:bg-slate-50/80 transition-colors group ${caso.status === OrderStatus.COMPLETADO ? 'opacity-60 grayscale-[0.2]' : ''}`}>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-4">
                          <div className="w-11 h-11 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition-all duration-300 shadow-sm">
@@ -360,10 +363,13 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                       <span className={`px-3 py-1.5 text-[10px] font-black rounded-xl uppercase tracking-tighter shadow-sm border ${
                         caso.status === OrderStatus.PENDIENTE ? 'bg-amber-50 text-amber-600 border-amber-100' :
                         caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                        caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                         caso.status === OrderStatus.COMPLETADO ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         'bg-rose-50 text-rose-600 border-rose-100'
                       }`}>
-                        {caso.status}
+                        <div className="flex items-center gap-1.5">
+                          {caso.status === OrderStatus.COMPLETADO && <FiCheckCircle size={12} />}
+                          {caso.status}
+                        </div>
                       </span>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-right text-sm">

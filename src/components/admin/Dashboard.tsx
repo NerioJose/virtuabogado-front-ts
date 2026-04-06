@@ -10,7 +10,8 @@ import {
   FiAlertCircle,
   FiTrendingUp,
   FiCalendar,
-  FiClock
+  FiClock,
+  FiCheckCircle
 } from 'react-icons/fi';
 import { formatCurrency } from '@/utils/formatters';
 
@@ -256,7 +257,7 @@ export default function Dashboard() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {casosRecientes.map((caso) => (
-                <tr key={caso.id} className="hover:bg-gray-50">
+                <tr key={caso.id} className={`hover:bg-gray-50 ${caso.estado === 'completado' ? 'opacity-60 grayscale-[0.2]' : ''}`}>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-azul-primario">{caso.titulo}</div>
                   </td>
@@ -277,13 +278,14 @@ export default function Dashboard() {
                     <div className="text-sm text-gray-700">{new Date(caso.fecha).toLocaleDateString('es-ES')}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    <span className={`px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full ${
                       caso.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
                       caso.estado === 'asignado' ? 'bg-blue-100 text-blue-800' :
                       caso.estado === 'en_proceso' ? 'bg-indigo-100 text-indigo-800' :
                       caso.estado === 'completado' ? 'bg-green-100 text-green-800' :
                       'bg-red-100 text-red-800'
                     }`}>
+                      {caso.estado === 'completado' && <FiCheckCircle size={10} />}
                       {caso.estado === 'pendiente' ? 'Pendiente' :
                        caso.estado === 'asignado' ? 'Asignado' :
                        caso.estado === 'en_proceso' ? 'En proceso' :

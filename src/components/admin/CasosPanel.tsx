@@ -124,7 +124,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm p-6 relative overflow-hidden group"
+                className={`bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm p-6 relative overflow-hidden group ${order.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}
               >
                 {isUnread && (
                   <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-16 -mt-16 animate-pulse" />
@@ -215,7 +215,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                     <motion.tr 
                       layout
                       key={order.id} 
-                      className="group hover:bg-slate-50/30 transition-colors"
+                      className={`group hover:bg-slate-50/30 transition-colors ${order.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}
                     >
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-3">

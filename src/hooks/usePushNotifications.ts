@@ -129,12 +129,41 @@ export function usePushNotifications() {
         }
     };
 
+    const unsubscribe = async () => {
+        setIsPending(true);
+        setLastError(null);
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const existingSub = await registration.pushManager.getSubscription();
+            if (existingSub) {
+                await existingSub.unsubscribe();
+                if (user) {
+                   await fetch('/api/notifications/unsubscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint: existingSub.endpoint }),
+                    });
+                }
+            }
+            setIsSubscribed(false);
+            console.log('🗑️ [Push] Notificaciones desactivadas.');
+            return true;
+        } catch (error: any) {
+            console.error('❌ [Push] Error al desactivar:', error);
+            setLastError(error.message || String(error));
+            return false;
+        } finally {
+            setIsPending(false);
+        }
+    };
+
     return {
         isSubscribed,
         permission,
         isPending,
         lastError,
         subscribe,
+        unsubscribe,
         checkSubscription
     };
 }

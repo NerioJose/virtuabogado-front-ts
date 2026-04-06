@@ -33,7 +33,7 @@ const menuItems = [
 
 export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange }: AbogadoSidebarProps) {
   const router = useRouter();
-  const { subscribe, isSubscribed, isPending, lastError } = usePushNotifications();
+  const { subscribe, unsubscribe, isSubscribed, isPending, lastError } = usePushNotifications();
 
   const handleLogout = async () => {
     try {
@@ -72,30 +72,40 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
             );
           })}
           
-          {/* Botón de Notificación (Solo si no está suscrito para mantener el minimalismo) */}
-          {!isSubscribed && (
-            <li className="px-4 py-2 mt-2">
-              <button
-                onClick={async () => {
-                  const success = await subscribe();
-                  if (success) alert('🎉 ¡Notificaciones activadas!');
-                  else if (lastError) alert(`⚠️ ${lastError}`);
-                }}
-                disabled={isPending}
-                className={`w-full flex items-center px-4 py-3 rounded-xl transition-all border ${
-                  isPending 
-                    ? 'opacity-40 cursor-wait bg-gray-50' 
-                    : 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100'
-                }`}
-              >
-                <FiBell className="mr-2 text-lg shrink-0" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-black uppercase tracking-tight">Activar Alertas</span>
-                  <span className="text-[7px] font-bold opacity-60 uppercase">Sistema de Notificaciones</span>
-                </div>
-              </button>
-            </li>
-          )}
+          {/* Botón de Notificación / Toggle Constante */}
+          <li className="px-4 py-2 mt-2">
+            <button
+              onClick={async () => {
+                if (isSubscribed) {
+                   const success = await unsubscribe();
+                   if (success) alert('🔕 Notificaciones desactivadas.');
+                   else if (lastError) alert(`⚠️ ${lastError}`);
+                } else {
+                   const success = await subscribe();
+                   if (success) alert('🎉 ¡Notificaciones activadas!');
+                   else if (lastError) alert(`⚠️ ${lastError}`);
+                }
+              }}
+              disabled={isPending}
+              className={`w-full flex items-center px-4 py-3 rounded-xl transition-all border
+                ${isPending ? 'opacity-40 cursor-wait bg-gray-50' : 'hover:scale-[1.02] active:scale-[0.98]'}
+                ${isSubscribed 
+                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+                  : 'text-amber-600 bg-amber-50 border-amber-100 hover:bg-amber-100'
+                }
+              `}
+            >
+              <FiBell className={`mr-2 text-lg shrink-0 ${isSubscribed ? 'animate-pulse text-emerald-500' : ''}`} />
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] font-black uppercase tracking-tight">
+                  {isSubscribed ? 'Alertas Activas' : 'Activar Alertas'}
+                </span>
+                <span className="text-[7px] font-bold opacity-60 uppercase">
+                  {isSubscribed ? 'Click para silenciar' : 'Sistema de Notificaciones'}
+                </span>
+              </div>
+            </button>
+          </li>
 
 
         </ul>

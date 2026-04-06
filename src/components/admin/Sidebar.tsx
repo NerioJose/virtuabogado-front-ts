@@ -20,7 +20,7 @@ interface SidebarProps {
 
 export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout, isOpen, onClose }: SidebarProps) {
   const { user } = useAuthStore();
-  const { subscribe, isSubscribed, isPending, lastError } = usePushNotifications();
+  const { subscribe, unsubscribe, isSubscribed, isPending, lastError } = usePushNotifications();
   
   const formattedName = user?.rol === UserRole.CLIENTE 
     ? capitalizeName(user.nombre) 
@@ -128,32 +128,47 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 />
               )}
             </motion.button>
-          ))}            {/* Botón de Notificación (Solo visible si NO está suscrito para mantener el UI limpio) */}
-            {!isSubscribed && (
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={async () => {
-                  const success = await subscribe();
-                  if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas en este dispositivo.');
-                  else if (lastError) alert(`⚠️ ${lastError}`);
-                }}
-                disabled={isPending}
-                className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border border-amber-500/20 bg-amber-500/5
-                  ${isPending ? 'opacity-50 cursor-wait' : 'text-amber-400 hover:bg-amber-500/10 hover:translate-x-1'}
-                `}
-              >
-                <FiBell className="text-lg shrink-0" />
-                <div className="flex flex-col items-start overflow-hidden">
-                    <span className="text-sm tracking-tight font-black truncate w-full">
-                        ACTIVAR NOTIFICACIONES
-                    </span>
-                    <span className="text-[9px] opacity-60 uppercase truncate w-full">
-                      RECIBIR ALERTAS TÁCTICAS ⚖️
-                    </span>
-                </div>
-              </motion.button>
-            )}
+          ))}            {/* Botón de Notificación / Toggle Inteligente */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={async () => {
+                if (isSubscribed) {
+                   const success = await unsubscribe();
+                   if (success) alert('🔕 Notificaciones desactivadas.');
+                   else if (lastError) alert(`⚠️ ${lastError}`);
+                } else {
+                   const success = await subscribe();
+                   if (success) alert('🎉 ¡Ca-Ching! Notificaciones activadas en este dispositivo.');
+                   else if (lastError) alert(`⚠️ ${lastError}`);
+                }
+              }}
+              disabled={isPending}
+              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border
+                ${isPending ? 'opacity-50 cursor-wait' : 'hover:translate-x-1'}
+                ${isSubscribed 
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' 
+                  : 'border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10'
+                }
+              `}
+            >
+              <div className="relative">
+                 <FiBell className={`text-lg shrink-0 ${isSubscribed ? 'animate-pulse text-emerald-400' : ''}`} />
+                 {isSubscribed && <span className="absolute -top-1 -right-1 flex h-2 w-2 shadow-[0_0_8px_#10b981]">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                 }
+              </div>
+              <div className="flex flex-col items-start overflow-hidden">
+                  <span className="text-sm tracking-tight font-black truncate w-full">
+                      {isSubscribed ? 'NOTIFICACIONES ACTIVAS' : 'ACTIVAR NOTIFICACIONES'}
+                  </span>
+                  <span className="text-[9px] opacity-60 uppercase truncate w-full">
+                    {isSubscribed ? 'PRESIONA PARA DESACTIVAR' : 'RECIBIR ALERTAS TÁCTICAS ⚖️'}
+                  </span>
+              </div>
+            </motion.button>
         </nav>
 
         {/* Footer del Sidebar siempre visible abajo */}

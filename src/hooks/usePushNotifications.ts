@@ -28,16 +28,23 @@ export function usePushNotifications() {
     const [lastError, setLastError] = useState<string | null>(null);
 
     const syncSubscription = useCallback(async (subscription: PushSubscription) => {
-        if (!user) return;
+        if (!user) return false;
         try {
             const response = await fetch('/api/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(subscription.toJSON()),
             });
-            if (!response.ok) console.error('❌ [Push] Error sync:', await response.text());
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ [Push] Error sync:', errorText);
+                return false;
+            }
+            console.log('✅ [Push] Suscripción sincronizada con el servidor.');
+            return true;
         } catch (error) {
             console.error('❌ [Push] Error red sync:', error);
+            return false;
         }
     }, [user]);
 
@@ -103,11 +110,17 @@ export function usePushNotifications() {
             });
 
             console.log('✅ [Push] Nueva suscripción generada:', subscription.endpoint.substring(0, 30) + '...');
-            await syncSubscription(subscription);
+            const syncSuccess = await syncSubscription(subscription);
             
-            setIsSubscribed(true);
+            if (syncSuccess) {
+                setIsSubscribed(true);
+            } else {
+                setLastError('No se pudo sincronizar la suscripción con el servidor.');
+                setIsSubscribed(false);
+            }
+            
             setIsPending(false);
-            return true;
+            return syncSuccess;
         } catch (error: any) {
             console.error('❌ [Push Hook] Error fatal:', error);
             setLastError(error.message || String(error));

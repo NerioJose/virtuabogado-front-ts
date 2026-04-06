@@ -53,11 +53,18 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 	const { user: userAuth, logout: storeLogout } = useAuthStore();
+	// VALIDACIÓN DE IDENTIDAD (ID Consistency): Priorizar prop abogadoId del servidor
 	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
 
-	// Fetch de datos optimizado con TanStack Query (Caché global configurado en Providers)
+	// Fetch de datos optimizado con TanStack Query
 	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
 	const orders = response?.data || [];
+
+	useEffect(() => {
+		if (currentAbogadoId) {
+			console.log(`[LawyerDashboard] Abogado ID verificado: ${currentAbogadoId}`);
+		}
+	}, [currentAbogadoId]);
 
 	const { data: summary } = useQuery({
 		queryKey: ['FinancialSummary', currentAbogadoId],

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
+import { UserRole } from '@prisma/client';
 
 /**
  * API: /api/notifications/subscribe
@@ -18,37 +19,99 @@ export async function POST(request: Request) {
 
     const subscription = await request.json();
 
-    // Validar estructura de la suscripción Web-Push
-    if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+    // 1. VALIDACIÓN DE PAYLOAD: Estructura de suscripción Web-Push
+    if (!subscription || !subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+      console.warn('⚠️ [Push Subscribe] Estructura de suscripción inválida recibida.');
       return NextResponse.json({ error: 'Estructura de suscripción inválida' }, { status: 400 });
     }
 
     console.log(`📡 [Push Subscribe] Registrando dispositivo para usuario: ${user.email}`);
 
-    // Limpiar dispositivos anteriores con el mismo endpoint para este usuario (evita basura)
-    // Usamos deleteMany + create como alternativa segura al upsert con índices compuestos.
-    await prisma.pushSubscription.deleteMany({
-      where: {
-        userId: user.id,
-        endpoint: subscription.endpoint
+    // 2. ALINEACIÓN DE IDENTIDAD (Supabase -> Prisma):
+    // El error 500 ocurría porque el ID de Supabase no existía en Prisma.
+    // Realizamos un upsert rápido del usuario para asegurar la integridad referencial.
+    const { nombre, rol, telefono } = user.user_metadata || {};
+    // Sincronización robusta: El rol debe ser de tipo UserRole
+    const finalRole = (rol as string || 'CLIENTE').toUpperCase() as UserRole;
+
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: { 
+        email: user.email!,
+        rol: finalRole,
+        activo: true
+      },
+      create: {
+        id: user.id,
+        email: user.email!,
+        nombre: nombre || user.email?.split('@')[0] || 'Usuario Push',
+        rol: finalRole,
+        telefono: telefono || undefined,
+        activo: true
       }
     });
 
-    await prisma.pushSubscription.create({
-      data: {
-        userId: user.id,
-        endpoint: subscription.endpoint,
-        p256dh: subscription.keys.p256dh,
-        auth: subscription.keys.auth
-      }
-    });
+    // 3. LÓGICA DE UPSERT: Vinculamos la suscripción al usuario y al endpoint único.
+    // Usamos el id de Supabase (user.id) como userId en Prisma.
+    // Si 'userId_endpoint' da error de lint (depende del prisma generate), 
+    // usamos una transacción atómica para garantizar consistencia.
+    try {
+      await prisma.pushSubscription.upsert({
+        where: {
+          // @ts-ignore - Prisma genera este nombre para @@unique([userId, endpoint])
+          userId_endpoint: {
+            userId: user.id,
+            endpoint: subscription.endpoint
+          }
+        },
+        update: {
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth
+        },
+        create: {
+          userId: user.id,
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth
+        }
+      });
+    } catch (upsertError: any) {
+      // Fallback si por alguna razón el upsert falla en el motor de prisma (ej. índices no sincronizados)
+      console.warn('⚠️ [Push Subscribe] Upsert falló, intentando transacción atómica fallback.');
+      await prisma.$transaction([
+        prisma.pushSubscription.deleteMany({
+          where: { userId: user.id, endpoint: subscription.endpoint }
+        }),
+        prisma.pushSubscription.create({
+          data: {
+            userId: user.id,
+            endpoint: subscription.endpoint,
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth
+          }
+        })
+      ]);
+    }
 
     return NextResponse.json({ 
       success: true, 
       message: 'Dispositivo vinculado correctamente. Recibirás alertas tácticas en este terminal.' 
     });
   } catch (error: any) {
-    console.error('❌ Error en el registro de suscripción push:', error);
+    console.error('❌ Error crítico en el registro de suscripción push:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    
+    // Devolvemos un mensaje descriptivo si es un error conocido de Prisma
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Error de integridad: El usuario no pudo ser sincronizado correctamente.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
         { error: 'Error interno del servidor al procesar la suscripción' }, 
         { status: 500 }

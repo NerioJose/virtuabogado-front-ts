@@ -19,6 +19,13 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
   // ============ REACT QUERY ============
   const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
   const misCasos = response?.data || [];
+
+  useEffect(() => {
+    if (!isLoading) {
+      console.log(`[LawyerDashboard] Casos encontrados en frontend: ${misCasos.length}`);
+    }
+  }, [misCasos.length, isLoading]);
+
   const unreadOrders = useChatStore((state) => state.unreadOrders);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
   const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
@@ -204,7 +211,8 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 border border-slate-100">
               <FiBriefcase size={32} />
             </div>
-            <p className="text-slate-400 font-bold italic">No hay casos en esta sección</p>
+            <p className="text-slate-900 font-black text-lg mb-2">No tienes casos asignados actualmente</p>
+            <p className="text-slate-400 font-bold text-sm">Tan pronto como se te asigne un nuevo caso, aparecerá en esta sección.</p>
           </div>
         ) : (
           casosFiltrados.map((caso) => (
@@ -298,8 +306,16 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
             <tbody className="bg-white divide-y divide-slate-50">
               {casosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold italic">
-                    No se encontraron casos asignados.
+                  <td colSpan={5} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-200 mb-4 border border-slate-100">
+                        <FiBriefcase size={32} />
+                      </div>
+                      <h3 className="text-xl font-black text-slate-800 mb-2">No tienes casos asignados actualmente</h3>
+                      <p className="text-slate-400 font-bold max-w-sm mx-auto">
+                        Tu panel de gestión está listo. Tan pronto como recibas una nueva asignación validada como PAGADA, la verás aquí.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (

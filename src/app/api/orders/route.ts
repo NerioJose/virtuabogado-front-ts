@@ -77,6 +77,7 @@ export async function GET(request: Request) {
         if (!isAdmin) {
             if (role === 'ABOGADO') {
                 where.lawyerId = user.id;
+                console.log(`[LawyerDashboard] Buscando casos para ID: ${user.id}`);
             } else {
                 where.userId = user.id;
             }
@@ -88,10 +89,18 @@ export async function GET(request: Request) {
         // 🛡️ REGLA DE VISIBILIDAD: El ADMIN y el ABOGADO ven todo lo que les corresponde sin filtros restrictivos de pago.
         // Solo el CLIENTE tiene el filtro restrictivo por defecto.
         if (!requestedStatus) {
-            if (!isAdmin && role !== 'ABOGADO') {
-                where.status = {
-                    notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
-                };
+            if (!isAdmin) {
+                // 🛡️ REGLA ESTRICTA DE PRIVACIDAD Y VISIBILIDAD PARA ABOGADOS
+                if (role === 'ABOGADO') {
+                    // Un abogado SOLO puede ver órdenes explícitamente asignadas a su ID exacto
+                    where.lawyerId = user.id;
+                    // No debe ver carritos abandonados o pagos fallidos
+                    where.status = { notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO'] };
+                } else {
+                    where.status = {
+                        notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
+                    };
+                }
             }
         } else {
             where.status = requestedStatus; // Filtro exacto por Prisma
@@ -189,7 +198,11 @@ export async function GET(request: Request) {
             };
         });
 
-        console.log(`📊 [API Orders] Backend returning ${formattedOrders.length} orders of ${totalCount} total.`);
+        if (role === 'ABOGADO') {
+            console.log(`[LawyerDashboard] ID: ${user.id} | Casos para este ID: ${formattedOrders.length}`);
+        } else {
+            console.log(`📊 [API Orders] Backend returning ${formattedOrders.length} orders of ${totalCount} total.`);
+        }
 
         return NextResponse.json(serializeFinance({
             data: formattedOrders,

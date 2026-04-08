@@ -66,47 +66,59 @@ export async function POST(req: NextRequest) {
         }
 
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
-            // 👨‍⚖️ AUTO-ASSIGNMENT (Post-Pago): Solo asignar casos que ya están pagos
-            const activeLawyers = await prisma.user.findMany({
-                where: { rol: 'ABOGADO', activo: true },
-                select: { id: true }
-            });
+            // ⚛️ TRANSACCIÓN ATÓMICA DE APROBACIÓN
+            const result = await (prisma as any).$transaction(async (tx: any) => {
+                // 1. Buscar abogados activos
+                const activeLawyers = await tx.user.findMany({
+                    where: { rol: 'ABOGADO' as any, activo: true },
+                    select: { id: true }
+                });
 
-            // Si la orden ya venía con un abogado pre-asignado lo respetamos, si no y solo hay 1 abogado, se lo damos.
-            let targetLawyerId = currentOrder.lawyerId;
-            let assignedAt = currentOrder.assignedAt;
+                // 2. Determinar asignación (Si hay 1 solo abogado, es el elegido)
+                let targetLawyerId = currentOrder.lawyerId;
+                let assignedAt = currentOrder.assignedAt;
+                let isAutoAssigned = false;
 
-            if (!targetLawyerId && activeLawyers.length === 1) {
-                targetLawyerId = activeLawyers[0].id;
-                assignedAt = new Date();
-                console.log(`⚖️ [Webhook] Auto-asignando orden ${orderId} al abogado único:`, targetLawyerId);
-            }
-
-            // Lógica de Negocio: Si hay abogado (manual o auto), empezamos a trabajar. Si no, queda PENDIENTE de que el Admin asigne.
-            const resolvedStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PENDIENTE; 
-
-            await prisma.order.update({
-                where: { id: orderId },
-                data: { 
-                    status: resolvedStatus, 
-                    paymentId: paymentId,
-                    lawyerId: targetLawyerId,
-                    assignedAt: assignedAt
+                if (!targetLawyerId && activeLawyers.length === 1) {
+                    targetLawyerId = activeLawyers[0].id;
+                    assignedAt = new Date();
+                    isAutoAssigned = true;
                 }
+
+                // 3. Resolver estado: Si hay abogado (auto o manual), EN_PROGRESO. Si no, PAID.
+                const resolvedStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PAID;
+
+                const updatedOrder = await tx.order.update({
+                    where: { id: orderId },
+                    data: {
+                        status: resolvedStatus,
+                        paymentId: paymentId,
+                        lawyerId: targetLawyerId,
+                        assignedAt: assignedAt
+                    }
+                });
+
+                if (isAutoAssigned) {
+                    console.log(`[CheckoutFlow] Pago aprobado y Abogado Único asignado: ${orderId}`);
+                }
+
+                return { updatedOrder, targetLawyerId, resolvedStatus };
             });
 
-            // 📡 Notificamos al sistema reactivo con el abogado ya asignado
+            const { updatedOrder, targetLawyerId, resolvedStatus } = result;
+
+            // 📡 Notificamos al sistema reactivo de forma FORZADA
             broadcastOrderUpdate({
                 orderId: orderId,
                 userId: currentOrder.userId,
                 lawyerId: targetLawyerId,
                 status: resolvedStatus,
-                eventType: 'created' // Enviamos 'created' para que al abogado le suene como nuevo caso pagado!
+                eventType: 'updated' 
             });
 
             // Extraer datos contextuales para notificaciones enriquecidas
-            const clientName = currentOrder.user?.nombre;
-            const serviceName = currentOrder.service?.titulo;
+            const clientName = (currentOrder as any).user?.nombre;
+            const serviceName = (currentOrder as any).service?.titulo;
 
             console.log(`💰 [Webhook Push] Notificando venta de Orden #${orderId} a Admins...`);
             await notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName).catch(err =>

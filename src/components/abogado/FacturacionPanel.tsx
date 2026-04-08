@@ -12,7 +12,7 @@ import {
 	FiTrendingUp,
 	FiEye,
 	FiCheck,
-	FiPlus,
+
 	FiX,
 	FiFileText,
 	FiUser,
@@ -305,12 +305,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 			<div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[400px]">
 				<div className="px-8 py-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<h2 className="text-xl font-black text-slate-800 tracking-tight">Honorarios por Servicios</h2>
-					<button
-						onClick={() => setNotificacion({ tipo: 'info', mensaje: 'Módulo de creación de facturas (Próximamente)' })}
-						className="bg-azul-primario text-white px-6 py-3 rounded-2xl hover:bg-azul-primario/90 transition-all flex items-center justify-center shadow-lg shadow-azul-primario/25 font-black text-xs uppercase tracking-widest active:scale-95">
-						<FiPlus className="mr-2" size={18} />
-						Nueva factura
-					</button>
+
 				</div>
 
 				{/* Filtros Adaptativos */}

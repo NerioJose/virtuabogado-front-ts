@@ -73,9 +73,7 @@ export default function ServiciosClientPage() {
     });
     const orders = ordersResponse?.data || [];
     
-    const { isLoading: servicesLoading } = useServices({
-        enabled: !!user // Gated API call
-    });
+    const { isLoading: servicesLoading } = useServices(); // Public catalog
     
     // Limpieza de Realtime: solo si está autenticado
     useServicesRealtime(!!user);
@@ -146,16 +144,7 @@ export default function ServiciosClientPage() {
         return <CasiListo orderId={pendingOrder.id} />;
     }
 
-    // ESTADO DE SEGURIDAD: Si no hay usuario después de cargar (opcional según preferencia)
-    if (!user && !authLoading) {
-        // Podríamos redirigir o mostrar mensaje. 
-        // Según "La lógica de 'si no hay usuario, mostrar loading' debe ir después de hooks"
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-gray-500 font-medium">Por favor inicia sesión para ver los servicios.</p>
-            </div>
-        );
-    }
+    // ESTADO DE SEGURIDAD: Invitados pueden ver el catálogo (no bloqueamos)
 
     // ESTADO 3: ÉXITO (Listado de servicios)
 

@@ -62,13 +62,15 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
   // Ya no necesitamos useEffect para fetchOrders porque useQuery lo maneja automáticamente
   // ni useMemo para filtrar por abogado porque el hook ya lo hace en el servidor
 
-  // Filtrar casos según filtro de estado
+  // Filtrar y ordenar casos (Nuevos primero)
   const casosFiltrados = useMemo(() => {
-    return misCasos.filter(caso => {
-      const matchEstado = filtroEstado === 'todos' || caso.status === filtroEstado;
-      const matchCliente = initialClienteId ? caso.userId === initialClienteId : true;
-      return matchEstado && matchCliente;
-    });
+    return misCasos
+      .filter(caso => {
+        const matchEstado = filtroEstado === 'todos' || caso.status === filtroEstado;
+        const matchCliente = initialClienteId ? caso.userId === initialClienteId : true;
+        return matchEstado && matchCliente;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [misCasos, filtroEstado, initialClienteId]);
 
   if (isLoading && misCasos.length === 0) {

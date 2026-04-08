@@ -29,7 +29,7 @@ export const useOrdersStore = create<OrdersState>()(
                 console.log('🔥 Estado actual antes de agregar:', get().orders.length, 'orders');
 
                 set((state) => ({
-                    orders: [...state.orders, order],
+                    orders: [order, ...state.orders],
                     error: null,
                 }));
 
@@ -50,7 +50,7 @@ export const useOrdersStore = create<OrdersState>()(
                         };
                     }
                     return {
-                        orders: [...state.orders, order],
+                        orders: [order, ...state.orders],
                     };
                 });
             },

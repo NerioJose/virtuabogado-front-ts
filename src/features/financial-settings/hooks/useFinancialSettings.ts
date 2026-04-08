@@ -12,12 +12,13 @@ export const FINANCIAL_SETTINGS_KEYS = {
 /**
  * Hook para obtener la configuración financiera
  */
-export const useFinancialSettings = () => {
+export const useFinancialSettings = (options?: any) => {
     return useQuery({
         queryKey: FINANCIAL_SETTINGS_KEYS.detail(),
         queryFn: () => financialSettingsService.get(),
         staleTime: 1000 * 60 * 10, // 10 minutos - los settings cambian muy raramente
         gcTime: 1000 * 60 * 30, // 30 minutos en cache
+        ...options
     });
 };
 

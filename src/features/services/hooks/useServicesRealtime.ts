@@ -24,10 +24,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
 import { servicesKeys } from './useServices';
 
-export const useServicesRealtime = () => {
+export const useServicesRealtime = (enabled: boolean = true) => {
     const queryClient = useQueryClient();
 
     useEffect(() => {
+        if (!enabled) return;
+
         const supabase = createClient(); // Cliente público (anon key) — sin auth requerida
 
         const channel = supabase
@@ -59,5 +61,5 @@ export const useServicesRealtime = () => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [queryClient]);
+    }, [queryClient, enabled]);
 };

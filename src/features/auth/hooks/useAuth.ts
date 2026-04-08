@@ -14,7 +14,7 @@ import { UserRole } from '@/shared/types/entities.types';
 
 export function useAuth() {
     const router = useRouter();
-    const { user, isAuthenticated, login: setLogin, logout: setLogout } = useAuthStore();
+    const { user, isAuthenticated, login: setLogin, logout: setLogout, checkAuth } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -137,5 +137,6 @@ export function useAuth() {
         register,
         logout,
         changePassword,
+        checkAuth,
     };
 }

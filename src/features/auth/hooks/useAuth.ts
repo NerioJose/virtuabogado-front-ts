@@ -37,8 +37,12 @@ export function useAuth() {
                         ? ROUTES.ABOGADO
                         : ROUTES.MIS_SERVICIOS;
 
+            // En Next.js 15, refresh() sincroniza la sesión con el servidor (cookies)
+            // antes de realizar la redirección final.
             router.refresh();
-            router.push(redirectPath);
+            
+            // Usamos replace en lugar de push para que el usuario no pueda "volver" al login
+            router.replace(redirectPath);
             return user;
         } catch (err) {
             const errorMessage =

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import AbogadoPanel from '@/components/abogado/AbogadoPanel';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@/shared/types/entities.types';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Componente Skeleton para el Dashboard (PPR Shell)
@@ -34,9 +35,21 @@ export default async function AbogadoPage() {
         redirect('/login');
     }
 
-    // 2. Verificación de Rol
-    const role = user.user_metadata?.rol?.toUpperCase();
+    // 2. Verificación de Rol con Fallback autoritativo (DB)
+    // Esto es crucial para prevenir bucles de redirección si los metadatos de Supabase fallan
+    let role = user.user_metadata?.rol?.toUpperCase();
+    
+    if (!role) {
+        console.log(`🔍 [Auth Guard] Rol ausente en metadatos para ${user.email}. Consultando DB...`);
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { rol: true }
+        });
+        role = dbUser?.rol?.toUpperCase();
+    }
+
     if (role !== UserRole.ABOGADO) {
+        console.warn(`🚫 [Auth Guard] Acceso denegado a ${user.email}. Rol detectado: ${role}`);
         redirect('/login');
     }
 

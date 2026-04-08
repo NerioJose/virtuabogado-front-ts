@@ -8,6 +8,7 @@ export interface FinancialSettings {
     operationalCostsPercentage: number;
     taxPercentage: number;
     platformFeePercentage: number;
+    simulationBase: number;
     whatsappPhone?: string;
     updatedAt: string;
     updatedBy?: string;
@@ -18,6 +19,7 @@ export interface UpdateFinancialSettingsRequest {
     operationalCostsPercentage?: number;
     taxPercentage?: number;
     platformFeePercentage?: number;
+    simulationBase?: number;
     whatsappPhone?: string;
 }
 

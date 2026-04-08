@@ -40,18 +40,10 @@ function FinancialSettingsSection() {
 			setOperationalCosts(financialSettings.operationalCostsPercentage || 0);
 			setTaxPercentage(financialSettings.taxPercentage || 0);
 			setPlatformFee(financialSettings.platformFeePercentage || 0);
+			setSimulationBase(financialSettings.simulationBase || 0);
 			setWhatsappPhone(financialSettings.whatsappPhone || '');
 		}
 	}, [financialSettings]);
-
-    // Calcular base de simulación por defecto (Suma de precios de servicios activos)
-    useEffect(() => {
-        if (services && simulationBase === 0) {
-            const activeServices = services.filter(s => s.activo);
-            const totalBase = activeServices.reduce((sum, s) => sum + Number(s.precio), 0);
-            setSimulationBase(totalBase || 100); // 100 por defecto si no hay servicios
-        }
-    }, [services, simulationBase]);
 
 	const validation = useMemo(() => {
 		return financialSettingsService.validateSettings({
@@ -59,9 +51,10 @@ function FinancialSettingsSection() {
 			operationalCostsPercentage: operationalCosts,
 			taxPercentage: taxPercentage,
 			platformFeePercentage: platformFee,
+			simulationBase: simulationBase,
 			whatsappPhone: whatsappPhone
 		});
-	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee, whatsappPhone]);
+	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee, simulationBase, whatsappPhone]);
 
 	const previewData = useMemo(() => {
 		return financialSettingsService.calculatePreview(
@@ -84,6 +77,7 @@ function FinancialSettingsSection() {
 				operationalCostsPercentage: operationalCosts,
 				taxPercentage: taxPercentage,
 				platformFeePercentage: platformFee,
+				simulationBase: simulationBase,
 				whatsappPhone: whatsappPhone
 			});
 			setSaveMessage('Configuración financiera guardada correctamente');

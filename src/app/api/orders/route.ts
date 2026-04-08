@@ -147,6 +147,11 @@ export async function GET(request: Request) {
                         select: {
                             name: true
                         }
+                    },
+                    payout: {
+                        select: {
+                            status: true
+                        }
                     }
                 },
                 orderBy: {
@@ -195,6 +200,7 @@ export async function GET(request: Request) {
                 // Inyectar datos financieros precisos
                 commissionAmount: split.comisionAbogado,
                 netProfitAmount: split.netoPlataforma, 
+                payoutStatus: order.payout?.status || null
             };
         });
 

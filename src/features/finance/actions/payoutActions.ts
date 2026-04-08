@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma';
 import { PayoutStatus } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { notifyPayoutCompleted } from '@/lib/push-notifications';
+import { formatUSD, serializeFinance } from '@/lib/finance';
 
 /**
  * Gets a summary of pending amounts to be paid to each lawyer.
@@ -49,7 +51,7 @@ export async function getPendingPayoutsSummary() {
             summaryMap[order.lawyerId].orderIds.push(order.id);
         });
 
-        return Object.values(summaryMap);
+        return serializeFinance(Object.values(summaryMap));
     } catch (error) {
         console.error('Error fetching pending payouts summary:', error);
         throw new Error('No se pudo obtener el resumen de pagos pendientes.');
@@ -68,14 +70,15 @@ export async function createPayout(data: {
 }) {
     try {
         const payout = await prisma.$transaction(async (tx) => {
-            // 1. Create the Payout record
+            // 1. Create the Payout record - COMPLETADO directly (single-step flow)
             const newPayout = await (tx as any).lawyerPayout.create({
                 data: {
                     lawyerId: data.lawyerId,
                     amount: data.amount,
-                    status: 'PENDIENTE',
+                    status: 'COMPLETADO',
                     method: data.method || 'Transferencia Bancaria',
-                    notes: data.notes
+                    notes: data.notes,
+                    paidAt: new Date()
                 }
             });
 
@@ -94,8 +97,16 @@ export async function createPayout(data: {
             return newPayout;
         });
 
+        // 3. Push notification to lawyer immediately
+        await notifyPayoutCompleted(
+            data.lawyerId,
+            payout.id,
+            formatUSD(data.amount)
+        ).catch(err => console.error('Error enviando push de liquidación:', err));
+
         revalidatePath('/admin/finanzas');
-        return { success: true, payout };
+        revalidatePath('/abogado/finanzas');
+        return serializeFinance({ success: true, payout });
     } catch (error) {
         console.error('Error creating payout:', error);
         return { success: false, error: 'Error al crear la liquidación.' };
@@ -113,11 +124,32 @@ export async function finalizePayout(payoutId: string, reference: string) {
                 status: 'COMPLETADO',
                 reference,
                 paidAt: new Date()
+            },
+            include: {
+                lawyer: {
+                    select: {
+                        id: true,
+                        nombre: true
+                    }
+                },
+                orders: true
             }
         });
 
+        // Notificar al abogado
+        if (updatedPayout.lawyerId) {
+            await notifyPayoutCompleted(
+                updatedPayout.lawyerId, 
+                updatedPayout.id, 
+                formatUSD(Number(updatedPayout.amount))
+            ).catch(err => console.error('Error enviando push de liquidación:', err));
+        }
+
         revalidatePath('/admin/finanzas');
-        return { success: true, payout: updatedPayout };
+        revalidatePath('/abogado/finanzas');
+        revalidatePath('/api/orders', 'page');
+        
+        return serializeFinance({ success: true, payout: updatedPayout });
     } catch (error) {
         console.error('Error finalizing payout:', error);
         return { success: false, error: 'Error al finalizar la liquidación.' };
@@ -132,7 +164,7 @@ export async function getPayoutHistory(lawyerId?: string) {
         const where: any = {};
         if (lawyerId) where.lawyerId = lawyerId;
 
-        return await (prisma as any).lawyerPayout.findMany({
+        const history = await (prisma as any).lawyerPayout.findMany({
             where,
             include: {
                 lawyer: {
@@ -143,10 +175,22 @@ export async function getPayoutHistory(lawyerId?: string) {
                 },
                 _count: {
                     select: { orders: true }
+                },
+                orders: {
+                    select: {
+                        id: true,
+                        total: true,
+                        commissionAmount: true,
+                        service: {
+                            select: { titulo: true }
+                        }
+                    }
                 }
             },
             orderBy: { createdAt: 'desc' }
         });
+        
+        return serializeFinance(history);
     } catch (error) {
         console.error('Error fetching payout history:', error);
         throw new Error('No se pudo obtener el historial de liquidaciones.');

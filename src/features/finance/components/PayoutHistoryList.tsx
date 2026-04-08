@@ -12,29 +12,18 @@ import {
     FiFileText
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 
 interface PayoutHistoryListProps {
     lawyerId: string;
 }
 
 export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) {
-    const [payouts, setPayouts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const data = await getPayoutHistory(lawyerId);
-                setPayouts(data);
-            } catch (error) {
-                console.error('Error fetching lawyer payouts:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (lawyerId) fetchHistory();
-    }, [lawyerId]);
+    const { data: payouts = [], isLoading: loading } = useQuery({
+        queryKey: ['PayoutHistory', lawyerId],
+        queryFn: () => getPayoutHistory(lawyerId),
+        enabled: !!lawyerId
+    });
 
     if (loading) {
         return (
@@ -75,9 +64,11 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
                             </h4>
                         </div>
                         <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${
-                            payout.status === 'COMPLETADO' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                            payout.status === 'COMPLETADO' 
+                                ? 'bg-emerald-50 text-emerald-600' 
+                                : 'bg-emerald-50 text-emerald-500'
                         }`}>
-                            {payout.status}
+                            {payout.status === 'COMPLETADO' ? 'Liquidada' : 'Autorizada'}
                         </span>
                     </div>
 
@@ -86,9 +77,17 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
                             <FiCalendar className="text-slate-300" />
                             <span className="text-xs font-bold text-slate-500">{new Date(payout.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <FiFileText className="text-slate-300" />
-                            <span className="text-[10px] font-black text-azul-primario uppercase tracking-widest">{payout._count.orders} Casos incluidos</span>
+                        <div className="flex flex-col gap-1.5 pl-7 border-l border-slate-100 ml-2 mt-1 mb-4">
+                            {payout.orders?.map((order: any) => (
+                                <div key={order.id} className="flex justify-between items-center">
+                                    <span className="text-[10px] font-medium text-slate-400 truncate max-w-[150px]">
+                                        {order.service?.titulo}
+                                    </span>
+                                    <span className="text-[9px] font-black text-slate-300">
+                                        {formatUSD(Number(order.commissionAmount))}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -99,9 +98,9 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
                                 <p className="text-xs font-black text-slate-700 truncate">{payout.reference}</p>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 text-amber-500">
-                                <FiClock size={14} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Pago en procesamiento</span>
+                            <div className="flex items-center gap-2 text-emerald-500">
+                                <FiCheckCircle size={14} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Pago Autorizado</span>
                             </div>
                         )}
                     </div>

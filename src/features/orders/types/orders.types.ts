@@ -43,6 +43,7 @@ export interface Order {
     completedAt?: string | Date;
     assignedAt?: string | Date;
     notes?: string;
+    payoutStatus?: 'PENDIENTE' | 'COMPLETADO' | 'RECHAZADO' | null;
     // Campos anidados de Prisma
     user?: {
         id: string;

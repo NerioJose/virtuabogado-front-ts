@@ -155,3 +155,16 @@ export async function notifyNewMessage(recipientId: string, senderName: string, 
     icon: '/logo/logo_resized.png'
   });
 }
+/**
+ * Notificación Especial: Liquidación de Honorarios Realizada 💸
+ * Indica al abogado que su transferencia ya fue procesada.
+ */
+export async function notifyPayoutCompleted(lawyerId: string, payoutId: string, amount: string) {
+  await sendPushNotification(lawyerId, {
+    title: '💸 Honorarios Transferidos',
+    body: `¡Buenas noticias! Se ha procesado tu liquidación #${payoutId.slice(0, 8)} por un monto de ${amount}. Revisa tu cuenta bancaria.`,
+    url: '/abogado',
+    tag: `payout-${payoutId}`,
+    icon: '/logo/logo_sf_1.png'
+  });
+}

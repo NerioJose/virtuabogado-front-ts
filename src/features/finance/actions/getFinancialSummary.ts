@@ -71,34 +71,46 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
     console.log(`📊 [getFinancialSummary] Where clause: ${JSON.stringify(where)}`);
 
     try {
-        // 4. Fetch Order Data (Broad fetch, filtering status in JS)
+        // 4. Fetch Order Data (Including payout status for balance calculation)
         const allOrders = await prisma.order.findMany({
             where,
             select: {
                 total: true,
                 status: true,
-                createdAt: true
+                createdAt: true,
+                payout: {
+                    select: {
+                        status: true
+                    }
+                }
             }
         });
 
-        // 🏛️ RESCUE LOGIC: Filter out unpaid/pending/failed orders to report ONLY real income
+        // 🏛️ Filter orders for income reporting
         const orders = allOrders.filter((o: any) => {
             const s = (o.status || '').toUpperCase();
-            // We only count orders that have been successfully paid or are in active processing
             return ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(s);
         });
 
-        // 5. Calculate Metrics using the Fintech-grade engine (Strict DB settings)
+        // Orders that are COMPLETED but NOT yet paid out to the lawyer
+        const pendingPayoutOrders = orders.filter((o: any) => {
+            return o.status === 'COMPLETADO' && o.payout?.status !== 'COMPLETADO';
+        });
+
+        // 5. Calculate Metrics using the Fintech-grade engine
         const stats = await aggregateFinancials(orders, settings);
+        const pendingStats = await aggregateFinancials(pendingPayoutOrders, settings);
         
-        // 6. Structure Final KPIs based on Admin vs Lawyer needs
+        // 6. Structure Final KPIs
         const summary = {
             totalIncome: stats.totalIncome,
-            pendingLawyerPayments: stats.totalCommissions, // Admin Liability
-            realProfit: stats.realProfit, // Neto_Plataforma (Total - all deductions)
+            totalNetEarned: stats.totalCommissions, // Total historical net for the period
+            pendingLawyerPayments: pendingStats.totalCommissions, // REAL Balance owed to lawyer
+            realProfit: stats.realProfit,
             operationalCostsAndTaxes: stats.totalExpenses,
             transactionCount: stats.count,
-            lawyerPendingBalance: role === 'ABOGADO' ? stats.totalCommissions : undefined,
+            lawyerPendingBalance: role === 'ABOGADO' ? pendingStats.totalCommissions : undefined,
+            lawyerTotalEarned: role === 'ABOGADO' ? stats.totalCommissions : undefined,
             settings: {
                 lawyerPercentage: Number(settings.lawyer_commission_percentage || 0),
                 opsPercentage: Number(settings.operational_costs_percentage || 0),

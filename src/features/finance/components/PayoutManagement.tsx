@@ -22,38 +22,27 @@ import {
     FiArrowRight
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function PayoutManagement() {
-    const [pending, setPending] = useState<any[]>([]);
-    const [history, setHistory] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedLawyer, setSelectedLawyer] = useState<any | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [reference, setReference] = useState('');
     const [actionType, setActionType] = useState<'create' | 'finalize'>('create');
     const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
+    const [selectedLawyer, setSelectedLawyer] = useState<any | null>(null);
+    const queryClient = useQueryClient();
 
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const [pendingData, historyData] = await Promise.all([
-                getPendingPayoutsSummary(),
-                getPayoutHistory()
-            ]);
-            setPending(pendingData);
-            setHistory(historyData);
-        } catch (error) {
-            console.error('Error fetching payout data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: pending = [], isLoading: loadingPending, refetch: refetchPending } = useQuery({
+        queryKey: ['PendingPayouts'],
+        queryFn: getPendingPayoutsSummary
+    });
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const { data: history = [] as any[], isLoading: loadingHistory, refetch: refetchHistory } = useQuery({
+        queryKey: ['PayoutHistory'],
+        queryFn: () => getPayoutHistory()
+    });
 
     const handleCreatePayout = async (lawyer: any) => {
         setIsProcessing(true);
@@ -66,8 +55,14 @@ export default function PayoutManagement() {
                 notes: `Pago por ${lawyer.orderCount} casos completados.`
             });
             if (res.success) {
-                await fetchData();
-                // Opcional: Podríamos dejarlo en pendiente para que el admin luego ponga la referencia
+                // 🚀 Sync: Invalidate all financial and history queries
+                queryClient.invalidateQueries({ queryKey: ['Order'] });
+                queryClient.invalidateQueries({ queryKey: ['Finance'] });
+                queryClient.invalidateQueries({ queryKey: ['PayoutHistory'] });
+                
+                // Refresh local data
+                refetchPending();
+                refetchHistory();
             }
         } catch (error) {
             console.error('Error creating payout:', error);
@@ -92,7 +87,15 @@ export default function PayoutManagement() {
                 setReference('');
                 setShowModal(false);
                 setSelectedLawyer(null);
-                await fetchData();
+                
+                // 🚀 Sync: Invalidate all financial and history queries
+                queryClient.invalidateQueries({ queryKey: ['Order'] });
+                queryClient.invalidateQueries({ queryKey: ['Finance'] });
+                queryClient.invalidateQueries({ queryKey: ['PayoutHistory'] });
+                
+                // Refresh local data
+                refetchPending();
+                refetchHistory();
             }
         } catch (error) {
             console.error('Error finalizing payout:', error);
@@ -101,7 +104,7 @@ export default function PayoutManagement() {
         }
     };
 
-    if (loading) {
+    if (loadingPending || loadingHistory) {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <FiLoader className="animate-spin text-azul-primario" size={40} />
@@ -143,7 +146,7 @@ export default function PayoutManagement() {
                                         <FiUser size={24} />
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total a Pagar</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total de Honorarios</p>
                                         <p className="text-2xl font-black text-slate-900 tracking-tighter">{formatUSD(item.totalPending)}</p>
                                     </div>
                                 </div>
@@ -163,7 +166,7 @@ export default function PayoutManagement() {
                                     className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all shadow-lg shadow-azul-primario/25 flex items-center justify-center gap-2"
                                 >
                                     {isProcessing ? <FiLoader className="animate-spin" /> : <FiPlus />}
-                                    Generar Liquidación
+                                    Autorizar Liquidación
                                 </button>
                             </motion.div>
                         ))
@@ -201,7 +204,13 @@ export default function PayoutManagement() {
                                     <tr key={payout.id} className="group hover:bg-slate-50/30 transition-colors">
                                         <td className="px-8 py-6">
                                             <p className="text-sm font-black text-slate-700">{payout.lawyer.nombre}</p>
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">{payout._count.orders} Casos liquidados</p>
+                                            <div className="flex flex-col gap-1 mt-1">
+                                                {payout.orders?.map((o: any) => (
+                                                    <span key={o.id} className="text-[9px] text-slate-400 font-bold tracking-tight">
+                                                        • {o.service?.titulo} ({formatUSD(Number(o.commissionAmount))})
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td className="px-8 py-6">
                                             <p className="text-lg font-black text-slate-900 tracking-tighter">{formatUSD(payout.amount)}</p>
@@ -215,7 +224,7 @@ export default function PayoutManagement() {
                                                 <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
                                                     payout.status === 'COMPLETADO' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                                                 }`}>
-                                                    {payout.status}
+                                                    {payout.status === 'PENDIENTE' ? 'EN PROCESO' : payout.status}
                                                 </span>
                                             </div>
                                         </td>
@@ -226,7 +235,7 @@ export default function PayoutManagement() {
                                                     <span className="text-[10px] font-black text-slate-600 tracking-tight">{payout.reference}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Esperando transferencia</span>
+                                                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Pendiente Transferencia</span>
                                             )}
                                         </td>
                                         <td className="px-8 py-6 text-right">
@@ -235,7 +244,7 @@ export default function PayoutManagement() {
                                                     onClick={() => handleFinalize(payout)}
                                                     className="px-4 py-2 bg-azul-primario text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario/90 transition-all shadow-md shadow-azul-primario/10"
                                                 >
-                                                    Conciliar Pago
+                                                    Confirmar Pago
                                                 </button>
                                             )}
                                         </td>

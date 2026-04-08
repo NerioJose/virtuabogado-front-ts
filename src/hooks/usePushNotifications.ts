@@ -57,19 +57,41 @@ export function usePushNotifications() {
         try {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.getSubscription();
-            
+            const currentPermission = Notification.permission;
+
             console.log('📡 [Push Diag] Estado actual:', {
                 subscribed: !!subscription,
-                permission: Notification.permission,
-                swReady: !!registration
+                permission: currentPermission,
+                swReady: !!registration,
             });
 
             setIsSubscribed(!!subscription);
-            setPermission(Notification.permission);
+            setPermission(currentPermission);
+
+            // 🔁 AUTO-RESUBSCRIPCIÓN SILENCIOSA:
+            // Si el usuario ya había dado permiso pero la suscripción desapareció
+            // (instaló el navegador de nuevo, limpió datos, cambió de PC), re-registramos
+            // automáticamente sin volver a pedir permisos. Esto garantiza que nunca queden "sordos".
+            if (!subscription && currentPermission === 'granted' && user && VAPID_PUBLIC_KEY) {
+                console.log('🔄 [Push] Permiso concedido pero sin suscripción activa. Re-registrando silenciosamente...');
+                try {
+                    const newSubscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                    });
+                    const synced = await syncSubscription(newSubscription);
+                    if (synced) {
+                        setIsSubscribed(true);
+                        console.log('✅ [Push] Re-suscripción silenciosa exitosa.');
+                    }
+                } catch (resubError) {
+                    console.warn('⚠️ [Push] Re-suscripción silenciosa falló (permiso puede haber sido revocado):', resubError);
+                }
+            }
         } catch (error) {
             console.warn('ℹ️ [Push] SW no listo aún:', error);
         }
-    }, []);
+    }, [user, syncSubscription]);
 
     useEffect(() => {
         checkSubscription();

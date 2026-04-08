@@ -47,7 +47,11 @@ export async function POST(req: NextRequest) {
 
     try {
         const currentOrder = await prisma.order.findUnique({
-            where: { id: orderId }
+            where: { id: orderId },
+            include: {
+                user: { select: { nombre: true } },
+                service: { select: { titulo: true } },
+            }
         });
 
         if (!currentOrder) {
@@ -100,17 +104,19 @@ export async function POST(req: NextRequest) {
                 eventType: 'created' // Enviamos 'created' para que al abogado le suene como nuevo caso pagado!
             });
 
-            // 🔔 NOTIFICACIONES PUSH TÁCTICAS (Usamos await para evitar que Vercel mate el proceso)
-            // 1. Alerta de Venta para Admin (Efecto Shopify + Alerta de Gestión)
+            // Extraer datos contextuales para notificaciones enriquecidas
+            const clientName = currentOrder.user?.nombre;
+            const serviceName = currentOrder.service?.titulo;
+
             console.log(`💰 [Webhook Push] Notificando venta de Orden #${orderId} a Admins...`);
-            await notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId).catch(err => 
+            await notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName).catch(err =>
                 console.error('❌ Error enviando push de venta:', err)
             );
 
             // 2. Alerta de Asignación si hay abogado
             if (targetLawyerId) {
                 console.log(`⚖️ [Webhook Push] Notificando asignación al abogado: ${targetLawyerId}`);
-                await notifyNewCase(targetLawyerId, orderId).catch(err => 
+                await notifyNewCase(targetLawyerId, orderId, serviceName).catch(err =>
                     console.error('❌ Error enviando push de asignación:', err)
                 );
             }

@@ -481,7 +481,13 @@ export async function PUT(request: Request) {
         }
 
         // Verificar propiedad o rol
-        const existingOrder = await prisma.order.findUnique({ where: { id } });
+        const existingOrder = await prisma.order.findUnique({
+            where: { id },
+            include: {
+                user: { select: { nombre: true } },
+                service: { select: { titulo: true } },
+            }
+        });
         if (!existingOrder) {
             return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
         }
@@ -528,6 +534,10 @@ export async function PUT(request: Request) {
             data: dataToUpdate,
         });
 
+        // Datos enriquecidos para las notificaciones push contextuales
+        const clientName = (existingOrder as any)?.user?.nombre;
+        const serviceName = (existingOrder as any)?.service?.titulo;
+
         // 📡 Evaluar si es un abogado nuevo para la notificación visual (toast)
         const isNewSale = status === 'PAID' && existingOrder.status !== 'PAID';
         const isLawyerManuallyAssigned = lawyerId && lawyerId !== existingOrder.lawyerId;
@@ -547,14 +557,18 @@ export async function PUT(request: Request) {
         // 1. Si el estado cambia a PAID -> Notificar a los ADMINS de la nueva venta (Efecto Shopify)
         if (isNewSale) {
             console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id} a Admins...`);
-            await notifyNewSale(updatedOrder.id, updatedOrder.total.toString()).catch(err => 
-                console.error('❌ Error disparando push de venta:', err)
-            );
+            await notifyNewSale(
+                updatedOrder.id,
+                updatedOrder.total.toString(),
+                !updatedOrder.lawyerId,  // needsAssignment
+                clientName,
+                serviceName
+            ).catch(err => console.error('❌ Error disparando push de venta:', err));
 
-            // Si el sistema había auto-asignado al único abogado disponible, le avisamos AHORA que el pago se completó
+            // Si el sistema había auto-asignado al único abogado disponible, le avisamos AHORA
             if (updatedOrder.lawyerId) {
                 console.log(`⚖️ [Push] Orden pagada. Alertando de auto-asignación al Abogado: ${updatedOrder.lawyerId}`);
-                await notifyNewCase(updatedOrder.lawyerId, updatedOrder.id).catch(err => 
+                await notifyNewCase(updatedOrder.lawyerId, updatedOrder.id, serviceName).catch(err =>
                     console.error('❌ Error disparando push de auto-asignación:', err)
                 );
             }
@@ -564,7 +578,7 @@ export async function PUT(request: Request) {
         // Evitamos mandar doble push si justo acaba de pagarse (lo maneja el bloque de arriba)
         if (isLawyerManuallyAssigned && !isNewSale) {
             console.log(`⚖️ [Push] Disparando alerta de asignación manual para Abogado: ${lawyerId}`);
-            await notifyNewCase(lawyerId, updatedOrder.id).catch(err => 
+            await notifyNewCase(lawyerId, updatedOrder.id, serviceName).catch(err =>
                 console.error('❌ Error disparando push de asignación manual:', err)
             );
         }

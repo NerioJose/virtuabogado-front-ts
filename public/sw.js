@@ -1,74 +1,117 @@
-// Service Worker para VirtuAbogado - Manejo de Notificaciones Push 📱⚖️
-// v2.1.0 - Reinforce Visual Toasts & Auto-Update
+// ===================================================================
+// VirtuAbogado — Service Worker v3.0.0 — Battle-Hardened ⚔️
+// Funciona en segundo plano, con el navegador cerrado y sin sesión.
+// ===================================================================
 
-self.addEventListener('push', function(event) {
-  console.log('📡 [SW] Evento Push recibido:', event);
-  
+const SW_VERSION = 'v3.0.0';
+
+// ─── PUSH: Escucha eventos del servidor VAPID ─────────────────────
+self.addEventListener('push', function (event) {
+  console.log(`📡 [SW ${SW_VERSION}] Evento Push recibido.`);
+
   let data = {
-    title: 'Nueva Alerta ⚖️',
-    body: 'Tienes una actualización en VirtuAbogado.',
+    title: 'VirtuAbogado ⚖️',
+    body: 'Tienes una actualización importante.',
     icon: '/logo/logo_sf_1.png',
-    url: '/'
+    badge: '/logo/logo_sf_1.png',
+    url: '/',
+    tag: 'general-' + Date.now(),
   };
 
   if (event.data) {
     try {
-      data = event.data.json();
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
       console.log('📦 [SW] Payload decodificado:', data);
     } catch (e) {
-      console.warn('⚠️ [SW] No se pudo decodificar el JSON del push. Usando texto plano.');
+      console.warn('⚠️ [SW] JSON inválido, usando texto plano.');
       data.body = event.data.text();
     }
   }
 
-  const options = {
-    body: data.body || 'Tienes una nueva actualización en VirtuAbogado.',
+  const notificationOptions = {
+    body: data.body,
     icon: data.icon || '/logo/logo_sf_1.png',
     badge: '/logo/logo_sf_1.png',
-    vibrate: [200, 100, 200],
-    tag: data.tag || 'general-alert-' + Date.now(), // Tag dinámico evita colapsar notificaciones
-    renotify: true,
+    vibrate: [200, 100, 200, 100, 200],
+    tag: data.tag,
+    renotify: true,         // Siempre vibrar/sonar aunque tenga el mismo tag
+    requireInteraction: true, // Mantener visible hasta que el usuario la cierre
+    silent: false,
     data: {
-      url: data.url || '/'
+      url: data.url || '/',
+      openedAt: Date.now(),
     },
     actions: [
-      { action: 'open', title: 'Ver Detalles 📂' }
-    ]
+      { action: 'open', title: '📂 Ver Detalles' },
+      { action: 'dismiss', title: '✖ Cerrar' },
+    ],
   };
 
+  // event.waitUntil garantiza que el SW no muera hasta mostrar la notificación
   event.waitUntil(
-    self.registration.showNotification(data.title || 'VirtuAbogado Alerta', options)
+    self.registration.showNotification(data.title, notificationOptions)
   );
 });
 
-self.addEventListener('notificationclick', function(event) {
-  console.log('🖱️ [SW] Clic en notificación detectado:', event.notification);
+// ─── NOTIFICATIONCLICK: Acción inteligente al tocar la notificación ──
+self.addEventListener('notificationclick', function (event) {
+  console.log(`🖱️ [SW ${SW_VERSION}] Clic en notificación. Acción: "${event.action}"`);
+
+  // Cerrar la notificación siempre primero
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  // Si el usuario pulsó "Cerrar", no abrimos nada
+  if (event.action === 'dismiss') return;
 
+  const targetUrl = event.notification.data?.url || '/';
+  const origin = self.location.origin;
+  const absoluteUrl = targetUrl.startsWith('http')
+    ? targetUrl
+    : `${origin}${targetUrl}`;
+
+  // event.waitUntil garantiza que el SW no muera antes de abrir/navegar
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
-          return client.focus();
+    clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then(function (clientList) {
+        // 1. Buscar una pestaña ya abierta de VirtuAbogado
+        for (const client of clientList) {
+          if (client.url.startsWith(origin) && 'focus' in client) {
+            // Navegar la pestaña existente a la URL específica
+            client.focus();
+            if ('navigate' in client) {
+              return client.navigate(absoluteUrl);
+            }
+            return client;
+          }
         }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
+        // 2. Si no hay pestaña abierta, abrir una nueva
+        if (clients.openWindow) {
+          return clients.openWindow(absoluteUrl);
+        }
+      })
   );
 });
 
-// Forzar actualización inmediata al detectar nueva versión del SW
-self.addEventListener('install', (event) => {
-  console.log('📥 [SW] Instalando nueva versión...');
-  self.skipWaiting();
+// ─── NOTIFICATIONCLOSE: Tracking de notificaciones descartadas ───────
+self.addEventListener('notificationclose', function (event) {
+  const url = event.notification.data?.url || 'unknown';
+  const tag = event.notification.tag || 'unknown';
+  console.log(`📊 [SW ${SW_VERSION}] Notificación descartada. Tag: ${tag} | URL: ${url}`);
+  // Aquí se puede integrar analytics en el futuro (ej. Amplitude, Sentry)
 });
 
-self.addEventListener('activate', (event) => {
-  console.log('🚀 [SW] Activando nueva versión...');
+// ─── INSTALL: Activación inmediata sin esperar a cerrar pestañas ─────
+self.addEventListener('install', function (event) {
+  console.log(`📥 [SW ${SW_VERSION}] Instalando nueva versión...`);
+  // Activar inmediatamente sin esperar que las pestañas existentes cierren
+  event.waitUntil(self.skipWaiting());
+});
+
+// ─── ACTIVATE: Toma el control de todos los clientes al instante ─────
+self.addEventListener('activate', function (event) {
+  console.log(`🚀 [SW ${SW_VERSION}] Activo y en control total.`);
+  // clients.claim(): El SW controla inmediatamente sin necesidad de recarga
   event.waitUntil(clients.claim());
 });

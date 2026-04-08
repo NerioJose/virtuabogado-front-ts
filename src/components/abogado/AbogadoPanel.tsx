@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Abogado } from '@/types/index';
@@ -47,6 +47,7 @@ interface AbogadoPanelProps {
 
 export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [seccionActiva, setSeccionActiva] = useState('casos');
 	const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
 	const [selectedCasoId, setSelectedCasoId] = useState<string | null>(null);
@@ -55,6 +56,25 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const { user: userAuth, logout: storeLogout } = useAuthStore();
 	// VALIDACIÓN DE IDENTIDAD (ID Consistency): Priorizar prop abogadoId del servidor
 	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
+
+	// 🔔 DEEP-LINK DESDE NOTIFICACIÓN PUSH:
+	// Si la URL contiene ?caso=ORDERID (enviado por el SW al hacer clic en la notificación),
+	// navegar automáticamente a la sección de casos y pre-seleccionar ese expediente.
+	useEffect(() => {
+		const casoParam = searchParams.get('caso');
+		const seccionParam = searchParams.get('seccion');
+
+		if (casoParam) {
+			setSelectedCasoId(casoParam);
+			setSeccionActiva('casos');
+			console.log(`🔔 [AbogadoPanel] Deep-link desde notificación: caso=${casoParam}`);
+		}
+
+		if (seccionParam && !casoParam) {
+			setSeccionActiva(seccionParam);
+			console.log(`🔔 [AbogadoPanel] Deep-link desde notificación: seccion=${seccionParam}`);
+		}
+	}, [searchParams]);
 
 	// Fetch de datos optimizado con TanStack Query
 	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);

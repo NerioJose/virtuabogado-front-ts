@@ -10,13 +10,18 @@ import { createClient } from '@/utils/supabase/client';
 export const apiClient = {
     async get<T>(url: string, options?: RequestInit): Promise<T> {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-            console.warn(`🕵️ apiClient: No hay sesión activa al llamar a ${url}`);
+            console.log('🔄 apiClient: No hay sesión activa, intentando refrescar...');
+            const { data: refreshData } = await supabase.auth.refreshSession();
+            session = refreshData.session;
+        }
+
+        if (!session) {
+            console.warn(`🕵️ apiClient: Persiste falta de sesión al llamar a ${url}`);
         } else {
-            console.log(`🔑 apiClient: Enviando Bearer Token a ${url}`);
+            console.log(`🔑 apiClient: Sesión activa/recuperada para ${url}`);
         }
 
         const response = await fetch(url, {

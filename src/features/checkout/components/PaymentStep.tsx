@@ -123,6 +123,19 @@ export const PaymentStep: React.FC = () => {
     if (isWaitingForWebhook) {
         const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
 
+        // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO
+        useEffect(() => {
+            if (isPaid) {
+                console.log('✅ [PaymentStep] Pago confirmado. Redirigiendo en 2s...');
+                const timer = setTimeout(() => {
+                    // Limpiar estado de checkout antes de irse
+                    reset();
+                    router.push('/mis-servicios');
+                }, 2000);
+                return () => clearTimeout(timer);
+            }
+        }, [isPaid, router, reset]);
+
         return (
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -136,7 +149,7 @@ export const PaymentStep: React.FC = () => {
                            animate={{ scale: 1 }}
                            className="absolute inset-0 bg-green-50 rounded-full flex items-center justify-center border-4 border-green-500"
                         >
-                            <FiShield className="text-green-600" size={32} />
+                            <FiCheckCircle className="text-green-600" size={32} />
                         </motion.div>
                     ) : (
                         <>

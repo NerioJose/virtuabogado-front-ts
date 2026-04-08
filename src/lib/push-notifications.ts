@@ -24,147 +24,201 @@ interface PushNotificationOptions {
 }
 
 /**
- * Despachador de Notificaciones Push 🚀
- * Envía una alerta de sistema al Admin o Abogado a través de sus suscripciones guardadas.
+ * Despachador de Notificaciones Push 🚀 (Battle-Hardened v3.0)
+ * 
+ * - Envía a TODOS los dispositivos registrados del usuario (multidispositivo)
+ * - urgency: 'high' fuerza entrega inmediata en Google/Mozilla incluso en modo ahorro de batería
+ * - TTL: 86400 (24h) — el servidor de push reintentará si el dispositivo está offline
+ * - Auto-limpieza de suscripciones expiradas (410/404)
  */
 export async function sendPushNotification(userId: string, options: PushNotificationOptions) {
-  // 0. Verificar y Configurar VAPID en cada envío (Resiliencia para Vercel)
   if (!publicKey || !privateKey) {
     const missing = !publicKey ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : 'VAPID_PRIVATE_KEY';
     console.error(`🚨 [Push] Abortando envío. Falta variable de entorno: ${missing}`);
-    return { 
-      success: false, 
-      error: `Configuración incompleta en el servidor: Falta ${missing}` 
+    return {
+      success: false,
+      error: `Configuración incompleta en el servidor: Falta ${missing}`,
     };
   }
 
   try {
     webpush.setVapidDetails(email, publicKey, privateKey);
-    
-    // 1. Obtener todas las suscripciones push de este usuario (todos sus dispositivos)
+
+    // 1. Obtener todas las suscripciones push del usuario (todos sus dispositivos)
     const subscriptions = await prisma.pushSubscription.findMany({
-      where: { userId }
+      where: { userId },
     });
 
     if (subscriptions.length === 0) {
-      console.info(`ℹ️ [Push Diag] Usuario ${userId} no tiene dispositivos registrados.`);
-      return { success: false, sent: 0, error: 'No hay dispositivos registrados para este usuario.' };
+      console.info(`ℹ️ [Push] Usuario ${userId} no tiene dispositivos registrados.`);
+      return { success: false, sent: 0, error: 'No hay dispositivos registrados.' };
     }
 
-    console.log(`📡 [Push Diag] Intentando enviar a ${subscriptions.length} dispositivos para el usuario ${userId}...`);
+    console.log(`📡 [Push] Enviando a ${subscriptions.length} dispositivo(s) para usuario ${userId}...`);
 
     const payload = JSON.stringify({
       title: options.title,
       body: options.body,
       url: options.url || '/',
       icon: options.icon || '/logo/logo_sf_1.png',
-      tag: (options.tag || 'alert') + '-' + Date.now() // Forzamos unicidad para que el Toast siempre se muestre
+      // Tag único para que cada notificación sea independiente y no colapse otras
+      tag: (options.tag || 'alert') + '-' + Date.now(),
     });
 
-    // 2. Enviar a cada dispositivo
+    // Opciones de entrega: prioridad máxima, reintento de 24h
+    const webPushOptions = {
+      urgency: 'high' as const,  // Fuerza entrega inmediata (bypasa modo ahorro de energía)
+      TTL: 86400,                  // Reintenta durante 24 horas si el dispositivo está offline
+    };
+
+    // 2. Disparar a todos los dispositivos en paralelo
     const sendPromises = subscriptions.map((sub) => {
       const pushConfig = {
         endpoint: sub.endpoint,
         keys: {
           p256dh: sub.p256dh,
-          auth: sub.auth
-        }
+          auth: sub.auth,
+        },
       };
 
-      return webpush.sendNotification(pushConfig, payload).catch(async (error: any) => {
-        // Si la suscripción ya no es válida (410 Gone o 404), la borramos para mantener la DB limpia
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          console.warn(`🗑️ [Push] Suscripción expirada para ${userId}, eliminando de DB...`);
-          await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch((err) => console.error(`❌ [Push] Error al eliminar suscripción:`, err));
-        } else {
-          console.error(`❌ [Push] Error enviando a dispositivo:`, error);
-        }
-      });
+      return webpush
+        .sendNotification(pushConfig, payload, webPushOptions)
+        .then(() => {
+          console.log(`✅ [Push] Entregado a endpoint: ...${sub.endpoint.slice(-20)}`);
+        })
+        .catch(async (error: any) => {
+          // Suscripción expirada (navegador desinstalado, permisos revocados) → limpiar DB
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            console.warn(`🗑️ [Push] Suscripción expirada (${error.statusCode}). Eliminando...`);
+            await prisma.pushSubscription
+              .delete({ where: { id: sub.id } })
+              .catch((err) => console.error('❌ [Push] Error al eliminar suscripción:', err));
+          } else {
+            console.error(`❌ [Push] Error enviando a ${sub.endpoint.slice(-20)}:`, error.message);
+          }
+        });
     });
 
     await Promise.all(sendPromises);
     return { success: true, sent: subscriptions.length };
   } catch (error) {
-    console.error('❌ Error catastrófico en el despachador de Push:', error);
+    console.error('❌ [Push] Error catastrófico en el despachador:', error);
     return { success: false, error };
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// NOTIFICACIONES ESPECÍFICAS POR EVENTO
+// ─────────────────────────────────────────────────────────────────
+
 /**
- * Notificación Especial: ¡Nueva Venta Confirmada! (Admins y Abogados) 💰🔔
+ * 💰 Nueva Venta Confirmada (solo para Admins)
+ * Payload enriquecido: nombre del cliente y servicio contratado
  */
-export async function notifyNewSale(orderId: string, total: string, needsAssignment: boolean = false) {
-  // Buscar a todos los destinatarios operativos (ADMINS y ABOGADOS activos)
-  const recipients = await prisma.user.findMany({
-    where: { 
-      rol: { in: ['ADMIN' as any, 'ABOGADO' as any] }, 
-      activo: true 
-    },
-    select: { id: true, email: true, rol: true }
+export async function notifyNewSale(
+  orderId: string,
+  total: string,
+  needsAssignment: boolean = false,
+  clientName?: string,
+  serviceName?: string
+) {
+  // Buscar solo admins activos
+  const admins = await prisma.user.findMany({
+    where: { rol: 'ADMIN' as any, activo: true },
+    select: { id: true, email: true },
   });
 
-  console.log(`🕵️ [Push Diag] Buscando receptores para notificar venta. Encontrados: ${recipients.length} (${recipients.map(r => r.email).join(', ')})`);
+  console.log(`🕵️ [Push] Notificando venta a ${admins.length} admin(s)...`);
 
-  const body = needsAssignment 
-    ? `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - ¡ATENCIÓN: REQUIERE ASIGNAR ABOGADO!`
-    : `💰 ¡Nueva Venta de $${total}! (Orden #${orderId}) - La tarea ya ha sido asignada.`;
+  const clientDisplay = clientName || 'un cliente';
+  const serviceDisplay = serviceName || 'servicios legales';
 
-  const promises = recipients.map(recipient => 
-    sendPushNotification(recipient.id, {
-      title: needsAssignment ? '🚨 ASIGNACIÓN PENDIENTE ⚖️' : '💰 ¡Nueva Venta en VirtuAbogado!',
-      body: body,
-      url: recipient.rol === 'ADMIN' ? '/admin' : '/abogado',
+  const title = needsAssignment
+    ? '🚨 Pago Confirmado — Asignación Pendiente'
+    : '💰 Pago Confirmado';
+
+  const body = `Se ha recibido un pago de ${clientDisplay} por ${serviceDisplay} ($${total})${needsAssignment ? ' — ¡REQUIERE ASIGNAR ABOGADO!' : ''}`;
+
+  const promises = admins.map((admin) =>
+    sendPushNotification(admin.id, {
+      title,
+      body,
+      // URL específica: panel de admin con el pago en foco
+      url: `/admin?orden=${orderId}`,
       tag: `sale-${orderId}`,
-      icon: '/logo/logo_sf_1.png'
+      icon: '/logo/logo_sf_1.png',
     })
   );
 
   const results = await Promise.all(promises);
   const totalSent = results.reduce((acc, res) => acc + (res.sent || 0), 0);
-  
+
   if (totalSent > 0) {
-    console.log(`✅ [Push Success] Venta de Orden #${orderId} notificada exitosamente a ${totalSent} dispositivo(s).`);
+    console.log(`✅ [Push] Venta #${orderId} notificada a ${totalSent} dispositivo(s).`);
   } else {
-    console.warn(`⚠️ [Push Warn] No se pudo enviar la notificación de venta para #${orderId}. ¿Hay usuarios activos con dispositivos registrados?`);
+    console.warn(`⚠️ [Push] Nadie recibió la notificación de venta para #${orderId}.`);
   }
 }
 
-
 /**
- * Notificación Especial: Nuevo Caso Asignado (Solo para Abogado) ⚖️
+ * ⚖️ Nuevo Caso Asignado (solo para el Abogado específico)
+ * URL específica: `/abogado?caso=ORDERID` para que el panel auto-seleccione el caso
  */
-export async function notifyNewCase(lawyerId: string, orderId: string) {
+export async function notifyNewCase(lawyerId: string, orderId: string, serviceName?: string) {
+  const serviceDisplay = serviceName || `Expediente #${orderId.slice(0, 8)}`;
+
   await sendPushNotification(lawyerId, {
     title: '⚖️ Nuevo Caso Asignado',
-    body: `Se te ha asignado el caso #${orderId}. ¡Entra para ver los detalles y comenzar a trabajar!`,
-    url: '/abogado',
+    body: `Tienes un nuevo expediente asignado: ${serviceDisplay}. Entra para ver los detalles.`,
+    // Opción B: URL específica para auto-abrir el caso en el panel del abogado
+    url: `/abogado?caso=${orderId}`,
     tag: `case-${orderId}`,
-    icon: '/logo/logo_sf_1.png'
+    icon: '/logo/logo_sf_1.png',
   });
 }
+
 /**
- * Notificación Especial: Nuevo Mensaje de Chat 💬
- * Notifica al destinatario (Cliente o Abogado) sobre un nuevo mensaje.
+ * 💬 Nuevo Mensaje de Chat
+ * URL diferenciada según el rol del destinatario
  */
-export async function notifyNewMessage(recipientId: string, senderName: string, content: string, orderId: string) {
+export async function notifyNewMessage(
+  recipientId: string,
+  senderName: string,
+  content: string,
+  orderId: string
+) {
+  // Determinar rol del destinatario para construir la URL correcta
+  const recipient = await prisma.user.findUnique({
+    where: { id: recipientId },
+    select: { rol: true },
+  });
+
+  // URL específica según rol: abogado va a su panel con el caso seleccionado
+  const url =
+    recipient?.rol === 'ABOGADO'
+      ? `/abogado?caso=${orderId}`
+      : recipient?.rol === 'ADMIN'
+        ? `/admin?orden=${orderId}`
+        : `/detalle-servicio/${orderId}`;
+
   await sendPushNotification(recipientId, {
     title: `💬 Mensaje de ${senderName}`,
     body: content.length > 100 ? `${content.substring(0, 97)}...` : content,
-    url: `/detalle-servicio/${orderId}`, // O la ruta correspondiente según el rol
+    url,
     tag: `chat-${orderId}`,
-    icon: '/logo/logo_resized.png'
+    icon: '/logo/logo_resized.png',
   });
 }
+
 /**
- * Notificación Especial: Liquidación de Honorarios Realizada 💸
- * Indica al abogado que su transferencia ya fue procesada.
+ * 💸 Liquidación de Honorarios Procesada
  */
 export async function notifyPayoutCompleted(lawyerId: string, payoutId: string, amount: string) {
   await sendPushNotification(lawyerId, {
     title: '💸 Honorarios Transferidos',
-    body: `¡Buenas noticias! Se ha procesado tu liquidación #${payoutId.slice(0, 8)} por un monto de ${amount}. Revisa tu cuenta bancaria.`,
-    url: '/abogado',
+    body: `¡Buenas noticias! Tu liquidación #${payoutId.slice(0, 8)} por ${amount} ha sido procesada. Revisa tu cuenta bancaria.`,
+    url: '/abogado?seccion=facturacion',
     tag: `payout-${payoutId}`,
-    icon: '/logo/logo_sf_1.png'
+    icon: '/logo/logo_sf_1.png',
   });
 }

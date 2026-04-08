@@ -43,18 +43,19 @@ export const PaymentStep: React.FC = () => {
     }, [orderId, isWaitingForWebhook, setOrderId]);
 
     const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
+    const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
 
+    // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO (Fuera del condicional para cumplir Rules of Hooks)
     useEffect(() => {
-        if (!statusData) return;
-        const currentStatus = statusData?.status?.trim().toUpperCase();
-        
-        if (currentStatus === 'PAID') {
-            console.log('✨ [PaymentStep] Pago detectado via polling. Sincronizando UI...');
-        } else if (currentStatus === 'ERROR') {
-            toast.error('El pago no pudo ser completado. Por favor, intenta de nuevo.');
-            setIsWaitingForWebhook(false);
+        if (isWaitingForWebhook && isPaid) {
+            console.log('✅ [PaymentStep] Pago confirmado. Redirigiendo en 2s...');
+            const timer = setTimeout(() => {
+                reset();
+                router.push('/mis-servicios');
+            }, 2000);
+            return () => clearTimeout(timer);
         }
-    }, [statusData?.status, setIsWaitingForWebhook]);
+    }, [isPaid, isWaitingForWebhook, router, reset]);
 
     const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
 
@@ -121,21 +122,6 @@ export const PaymentStep: React.FC = () => {
     }
 
     if (isWaitingForWebhook) {
-        const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
-
-        // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO
-        useEffect(() => {
-            if (isPaid) {
-                console.log('✅ [PaymentStep] Pago confirmado. Redirigiendo en 2s...');
-                const timer = setTimeout(() => {
-                    // Limpiar estado de checkout antes de irse
-                    reset();
-                    router.push('/mis-servicios');
-                }, 2000);
-                return () => clearTimeout(timer);
-            }
-        }, [isPaid, router, reset]);
-
         return (
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}

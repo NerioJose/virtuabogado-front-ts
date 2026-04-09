@@ -407,13 +407,10 @@ export async function POST(request: Request) {
             autoAssignedLawyerId = activeLawyers[0].id;
             assignedAt = new Date();
             console.log('⚖️ API: Auto-asignando a abogado activo único:', activeLawyers[0].nombre);
-        } else if (activeLawyers.length === 0 && allPotentialLawyers.length === 1) {
-            // FALLBACK: Si hay uno solo pero no está marcado como activo, lo asignamos igual para no romper el flujo
-            autoAssignedLawyerId = allPotentialLawyers[0].id;
-            assignedAt = new Date();
-            console.warn('⚖️ API: Auto-asignando a abogado único (ADVERTENCIA: No marcado como activo):', allPotentialLawyers[0].nombre);
-        } else if (allPotentialLawyers.length > 1) {
-            console.log(`⚖️ API: Hay ${allPotentialLawyers.length} abogados, se requiere asignación manual.`);
+        } else if (activeLawyers.length > 1) {
+            console.log(`⚖️ API: Hay ${activeLawyers.length} abogados activos, se requiere asignación manual.`);
+        } else {
+            console.log('⚖️ API: No hay abogados activos disponibles para auto-asignación.');
         }
 
         // Crear la orden en base de datos con el desglose financiero

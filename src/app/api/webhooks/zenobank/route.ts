@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const svixId = req.headers.get('svix-id');
     const svixTimestamp = req.headers.get('svix-timestamp');
     const svixSignature = req.headers.get('svix-signature');
-    
+
     if (!svixId || !svixTimestamp || !svixSignature) {
         return NextResponse.json({ error: 'Missing Svix headers' }, { status: 401 });
     }
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    const { type, data } = evt; 
+    const { type, data } = evt;
     const orderId = data?.orderId || evt.orderId;
     const paymentId = data?.id || evt.id;
 
@@ -59,130 +59,74 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        // Si ya está pagada o completada, ignoramos para evitar loops
-        if (currentOrder.status === OrderStatus.PAID || currentOrder.status === OrderStatus.COMPLETADO) {
-            console.log(`⏭️ [Webhook] Orden ${orderId} ya procesada. Ignorando.`);
+        if (currentOrder.status === 'PAID' || currentOrder.status === 'EN_PROGRESO') {
             return NextResponse.json({ received: true, status: 'already_processed' });
         }
 
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
-            console.log(`[CheckoutFlow] 💳 Procesando pago exitoso para Orden: ${orderId}`);
 
-            // ⚛️ TRANSACCIÓN ATÓMICA: Dos fases separadas para máxima resiliencia
-            const result = await (prisma as any).$transaction(async (tx: any) => {
-                // ── FASE 1 (CRÍTICA): Confirmar el pago. NUNCA puede fallar. ──
-                const order = await tx.order.update({
+            // ── PASO 1: Búsqueda de Abogado Único ANTES de la transacción ──
+            const activeLawyers = await prisma.user.findMany({
+                where: { rol: 'ABOGADO', activo: true },
+                select: { id: true, nombre: true }
+            });
+
+            const isAutoAssign = activeLawyers.length === 1;
+            const targetLawyerId = isAutoAssign ? activeLawyers[0].id : currentOrder.lawyerId;
+            const finalStatus = targetLawyerId ? 'EN_PROGRESO' : 'PAID';
+
+            console.log(`[CheckoutFlow] ⚖️ Abogados: ${activeLawyers.length}. Auto-asignar: ${isAutoAssign}`);
+
+            // ── PASO 2: Transacción Atómica de Única Escritura ──
+            await prisma.$transaction(async (tx: any) => {
+                await tx.order.update({
                     where: { id: orderId },
                     data: {
-                        status: 'PAID',
+                        status: finalStatus,
                         paymentId: paymentId,
+                        lawyerId: targetLawyerId,
+                        assignedAt: isAutoAssign ? new Date() : currentOrder.assignedAt
                     }
                 });
+            });
 
-                let targetLawyerId = order.lawyerId;
-                let finalStatus = 'PAID';
-                let isAutoAssigned = false;
+            // ── PASO 3: Reactividad y Notificaciones ──
 
-                // ── FASE 2 (RESILIENTE): Auto-asignación. Si falla, el pago sigue confirmado. ──
-                if (!targetLawyerId) {
-                    try {
-                        // Buscar abogados activos (case-insensitive para robustez)
-                        const activeLawyers = await tx.user.findMany({
-                            where: { rol: 'ABOGADO', activo: true },
-                            select: { id: true, nombre: true }
-                        });
-
-                        // Fallback: si 0 activos, buscar cualquier abogado registrado
-                        const allLawyers = activeLawyers.length > 0 ? activeLawyers : await tx.user.findMany({
-                            where: { rol: 'ABOGADO' },
-                            select: { id: true, nombre: true }
-                        });
-
-                        console.log(`[CheckoutFlow] ⚖️ Abogados disponibles: activos=${activeLawyers.length}, total=${allLawyers.length}`);
-
-                        if (allLawyers.length === 1) {
-                            // Exactamente un abogado → auto-asignación automática
-                            targetLawyerId = allLawyers[0].id;
-                            isAutoAssigned = true;
-                            finalStatus = 'EN_PROGRESO';
-                            console.log(`[CheckoutFlow] ✅ Auto-asignación: ${allLawyers[0].nombre}`);
-
-                            await tx.order.update({
-                                where: { id: orderId },
-                                data: {
-                                    status: finalStatus,
-                                    lawyerId: targetLawyerId,
-                                    assignedAt: new Date()
-                                }
-                            });
-                        } else if (allLawyers.length > 1) {
-                            // Más de uno → queda en PAID, asignación manual requerida
-                            console.log(`[CheckoutFlow] ⚖️ ${allLawyers.length} abogados. Asignación manual requerida.`);
-                        }
-                    } catch (assignErr: any) {
-                        // ⚠️ PROTECCIÓN: La asignación falla, pero el PAGO ya está confirmado.
-                        // El admin verá la orden en estado PAID para asignar manualmente.
-                        console.error(`[CheckoutFlow] ⚠️ Auto-asignación falló (pago ya confirmado):`, assignErr.message);
-                    }
-                } else {
-                    // Ya tenía abogado asignado → pasar a EN_PROGRESO
-                    finalStatus = 'EN_PROGRESO';
-                    await tx.order.update({
-                        where: { id: orderId },
-                        data: { status: finalStatus }
-                    });
-                }
-
-                return { targetLawyerId, resolvedStatus: finalStatus, isAutoAssigned };
-            }, { timeout: 15000 });
-
-            const { targetLawyerId, resolvedStatus } = result;
-
-            // 📡 BROADCAST REACTIVO: await garantiza que el serverless no muera antes de enviar
-            // Esto activa la transición de "Casi listo" → "/mis-servicios" en el cliente
-            console.log(`[CheckoutFlow] 📡 Emitiendo broadcast await: status=${resolvedStatus}`);
+            // Broadcast para mover al cliente de la pantalla de "Casi listo"
             await broadcastOrderUpdate({
                 orderId: orderId,
                 userId: currentOrder.userId,
                 lawyerId: targetLawyerId,
-                status: resolvedStatus,
+                status: finalStatus,
                 eventType: 'updated'
             });
 
-            // Extraer datos contextuales para notificaciones enriquecidas
-            const clientName = (currentOrder as any).user?.nombre;
-            const serviceName = (currentOrder as any).service?.titulo;
+            const clientName = currentOrder.user?.nombre || 'Cliente';
+            const serviceName = currentOrder.service?.titulo || 'Servicio Legal';
 
-            // 🔔 NOTIFICACIONES PUSH: Canal Admin (siempre)
-            console.log(`💰 [Webhook Push] Notificando pago a Admins...`);
-            await notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName).catch(err =>
-                console.error('❌ Error enviando push de venta:', err)
-            );
+            // Notificación al Admin
+            notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName)
+                .catch(e => console.error('Error push venta:', e));
 
-            // 🔔 NOTIFICACIONES PUSH: Canal Abogado (si hubo asignación)
+            // Notificación al Abogado (si hay uno)
             if (targetLawyerId) {
-                console.log(`⚖️ [Webhook Push] Notificando asignación al Abogado: ${targetLawyerId}`);
-                await notifyNewCase(targetLawyerId, orderId, serviceName).catch(err =>
-                    console.error('❌ Error enviando push de asignación:', err)
-                );
+                notifyNewCase(targetLawyerId, orderId, serviceName)
+                    .catch(e => console.error('Error push asignación:', e));
             }
 
-            // 🚀 LIMPIEZA DE CACHÉ NEXT.JS
             revalidatePath('/', 'layout');
-
-            console.log(`✅ [Webhook] Finalizado con éxito para Orden ${orderId}`);
+            console.log(`✅ [Webhook] Orden ${orderId} procesada como ${finalStatus}`);
 
         } else if (['payment.failed', 'checkout.expired', 'checkout.canceled'].includes(type)) {
             await prisma.order.update({
                 where: { id: orderId },
-                data: { status: OrderStatus.PAGO_RECHAZADO }
+                data: { status: 'PAGO_RECHAZADO' }
             });
-            console.warn(`❌ [Webhook] Orden ${orderId} rechazada.`);
         }
 
-        return NextResponse.json({ received: true, status: 'processed' });
+        return NextResponse.json({ received: true });
     } catch (error) {
-        console.error('❌ [Webhook] Error interno:', error);
+        console.error('❌ [Webhook] Error:', error);
         return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
 }

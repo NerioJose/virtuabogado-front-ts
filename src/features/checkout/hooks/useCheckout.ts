@@ -7,42 +7,71 @@ import { useCheckoutStore } from '../store/checkoutStore';
  * Proporciona todas las acciones y estado del checkout
  */
 export const useCheckout = () => {
-    const store = useCheckoutStore();
+    const isOpen = useCheckoutStore((state) => state.isOpen);
+    const step = useCheckoutStore((state) => state.step);
+    const service = useCheckoutStore((state) => state.service);
+    const userData = useCheckoutStore((state) => state.userData);
+    const paymentData = useCheckoutStore((state) => state.paymentData);
+    const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
+    const orderId = useCheckoutStore((state) => state.orderId);
+    const total = useCheckoutStore((state) => state.total);
+    const isLoading = useCheckoutStore((state) => state.isLoading);
+    const error = useCheckoutStore((state) => state.error);
+    const isExistingUser = useCheckoutStore((state) => state.isExistingUser);
+    const tempPassword = useCheckoutStore((state) => state.tempPassword);
+    const completedAt = useCheckoutStore((state) => state.completedAt);
+    const isProcessingPayment = useCheckoutStore((state) => state.isProcessingPayment);
+    const isWaitingForWebhook = useCheckoutStore((state) => state.isWaitingForWebhook);
+
+    const openCheckout = useCheckoutStore((state) => state.openCheckout);
+    const closeCheckout = useCheckoutStore((state) => state.closeCheckout);
+    const setStep = useCheckoutStore((state) => state.setStep);
+    const setUserData = useCheckoutStore((state) => state.setUserData);
+    const setPaymentData = useCheckoutStore((state) => state.setPaymentData);
+    const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod);
+    const setIsProcessingPayment = useCheckoutStore((state) => state.setIsProcessingPayment);
+    const setIsWaitingForWebhook = useCheckoutStore((state) => state.setIsWaitingForWebhook);
+    const setOrderId = useCheckoutStore((state) => state.setOrderId);
+    const checkUserExists = useCheckoutStore((state) => state.checkUserExists);
+    const sendOtp = useCheckoutStore((state) => state.sendOtp);
+    const verifyOtp = useCheckoutStore((state) => state.verifyOtp);
+    const authenticateUser = useCheckoutStore((state) => state.authenticateUser);
+    const submitOrder = useCheckoutStore((state) => state.submitOrder);
+    const markAsCompleted = useCheckoutStore((state) => state.markAsCompleted);
+    const reset = useCheckoutStore((state) => state.reset);
 
     return {
-        // Estado
-        isOpen: store.isOpen,
-        step: store.step,
-        service: store.service,
-        userData: store.userData,
-        paymentData: store.paymentData,
-        paymentMethod: store.paymentMethod,
-        orderId: store.orderId,
-        total: store.total,
-        isLoading: store.isLoading,
-        error: store.error,
-        isExistingUser: store.isExistingUser,
-        tempPassword: store.tempPassword,
-        completedAt: store.completedAt,
-        isProcessingPayment: store.isProcessingPayment,
-        isWaitingForWebhook: store.isWaitingForWebhook,
+        isOpen,
+        step,
+        service,
+        userData: userData || undefined,
+        paymentData: paymentData || undefined,
+        paymentMethod,
+        orderId,
+        total,
+        isLoading,
+        error,
+        isExistingUser,
+        tempPassword,
+        completedAt,
+        isProcessingPayment,
+        isWaitingForWebhook,
 
-        // Acciones
-        openCheckout: store.openCheckout,
-        closeCheckout: store.closeCheckout,
-        setStep: store.setStep,
-        setUserData: store.setUserData,
-        setPaymentData: store.setPaymentData,
-        setPaymentMethod: store.setPaymentMethod,
-        setIsProcessingPayment: store.setIsProcessingPayment,
-        setIsWaitingForWebhook: store.setIsWaitingForWebhook,
-        setOrderId: store.setOrderId,
-        checkUserExists: store.checkUserExists,
-        sendOtp: store.sendOtp,
-        verifyOtp: store.verifyOtp,
-        authenticateUser: store.authenticateUser,
-        submitOrder: store.submitOrder,
-        markAsCompleted: store.markAsCompleted,
-        reset: store.reset,
+        openCheckout,
+        closeCheckout,
+        setStep,
+        setUserData,
+        setPaymentData,
+        setPaymentMethod,
+        setIsProcessingPayment,
+        setIsWaitingForWebhook,
+        setOrderId,
+        checkUserExists,
+        sendOtp,
+        verifyOtp,
+        authenticateUser,
+        submitOrder,
+        markAsCompleted,
+        reset,
     };
 };

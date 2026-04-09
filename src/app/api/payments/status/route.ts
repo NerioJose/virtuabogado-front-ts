@@ -6,6 +6,7 @@ import { OrderStatus } from '@/shared/types/entities.types';
 /**
  * GET /api/payments/status?orderId=[ID]
  * Endpoint diseñado para el polling de reconciliación en tiempo real.
+ * IMPORTANTE: Forzar no-cache para garantizar datos frescos en cada ciclo de polling.
  */
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -44,10 +45,18 @@ export async function GET(req: NextRequest) {
             statusResponse = 'ERROR';
         }
 
+        const NO_CACHE_HEADERS = {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+        };
+
+        console.log(`[Status API] Orden ${orderId}: rawStatus=${order.status}, mappedStatus=${statusResponse}`);
+
         return NextResponse.json({ 
             status: statusResponse,
+            rawStatus: order.status, // Útil para debugging en el navegador
             orderId 
-        });
+        }, { headers: NO_CACHE_HEADERS });
     } catch (error) {
         console.error('❌ [Payment Status API] Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

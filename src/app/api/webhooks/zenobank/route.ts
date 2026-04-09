@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
     const orderId = data?.orderId || evt.orderId;
     const paymentId = data?.id || evt.id;
 
-    console.log(`✅ [Webhook SVIX] Evento verificado: ${type} para orden ${orderId}`);
+    console.log(`✅ [Webhook SVIX] Evento verificado: type=${type} | orderId=${orderId} | paymentId=${paymentId}`);
+    console.log(`🔍 [Webhook] Data completa:`, JSON.stringify(data));
 
     try {
         const currentOrder = await prisma.order.findUnique({

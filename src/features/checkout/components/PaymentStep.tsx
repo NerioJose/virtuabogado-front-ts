@@ -32,6 +32,9 @@ export const PaymentStep: React.FC = () => {
         reset
     } = useCheckout();
 
+    // Estado del botón de rescate (se activa tras 10 segundos de espera)
+    const [showFallbackButton, setShowFallbackButton] = useState(false);
+
     // Requisito Fintech: Persistencia de Sesión
     useEffect(() => {
         if (orderId) {
@@ -43,19 +46,44 @@ export const PaymentStep: React.FC = () => {
     }, [orderId, isWaitingForWebhook, setOrderId]);
 
     const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
-    const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
+    const currentRawStatus = statusData?.status?.trim().toUpperCase();
+    const rawStatusFromServer = (statusData as any)?.rawStatus;
+    const isPaid = currentRawStatus === 'PAID' || currentRawStatus === 'EN_PROGRESO';
 
-    // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO (Fuera del condicional para cumplir Rules of Hooks)
+    // Log de diagnóstico en tiempo real para el navegador
+    useEffect(() => {
+        if (statusData) {
+            console.log(`📡 [PaymentStep Polling] Respuesta del servidor:`, statusData);
+        }
+    }, [statusData]);
+
+    // Temporizador de Rescate: activa el botón manual después de 10 segundos
+    useEffect(() => {
+        if (!isWaitingForWebhook || isPaid) {
+            setShowFallbackButton(false);
+            return;
+        }
+        const timer = setTimeout(() => setShowFallbackButton(true), 10_000);
+        return () => clearTimeout(timer);
+    }, [isWaitingForWebhook, isPaid]);
+
+    // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO
     useEffect(() => {
         if (isWaitingForWebhook && isPaid) {
-            console.log('✅ [PaymentStep] Pago confirmado. Redirigiendo en 2s...');
+            console.log(`✅ [PaymentStep] Pago confirmado (${currentRawStatus}). Redirigiendo en 2s...`);
             const timer = setTimeout(() => {
+                // Limpieza de estados antes de redirigir
+                setIsWaitingForWebhook(false);
+                if (typeof window !== 'undefined') {
+                    window.localStorage.removeItem('virtuabogado_pending_order');
+                    window.localStorage.removeItem('activeOrderId');
+                }
                 reset();
                 router.push('/mis-servicios');
             }, 2000);
             return () => clearTimeout(timer);
         }
-    }, [isPaid, isWaitingForWebhook, router, reset]);
+    }, [isPaid, isWaitingForWebhook, router, reset, setIsWaitingForWebhook, currentRawStatus]);
 
     const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
 
@@ -156,6 +184,27 @@ export const PaymentStep: React.FC = () => {
                             : 'He abierto la pasarela en una nueva pestaña. Por favor, completa allí el pago para continuar.'}
                     </p>
                 </div>
+
+                {/* Botón de Rescate: aparece si el polling tarda más de 10 segundos */}
+                {showFallbackButton && !isPaid && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="pt-2 space-y-2"
+                    >
+                        <p className="text-xs text-gray-400">Si ya completaste el pago en Zenobank:</p>
+                        <button
+                            onClick={() => {
+                                reset();
+                                router.push('/mis-servicios');
+                            }}
+                            className="w-full py-3 px-4 bg-azul-primario text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-azul-primario/90 transition-all"
+                        >
+                            <FiArrowRight size={16} />
+                            Ver mis servicios
+                        </button>
+                    </motion.div>
+                )}
             </motion.div>
         );
     }

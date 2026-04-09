@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { data: lawyers, isLoading: isLoadingLawyers } = useLawyers();
 
   // useOrders returns { data: Order[], ... }
-  const orders: Order[] = ordersResponse?.data || [];
+  const orders: Order[] = (ordersResponse as any)?.data || [];
   // useClients and useLawyers return the array directly
   const clientList = Array.isArray(clients) ? clients : [];
   const lawyerList = Array.isArray(lawyers) ? lawyers : [];

@@ -182,16 +182,17 @@ function DashboardStats() {
 		const now = new Date();
 		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 		const clientesNuevosMes = clients.filter(c => new Date(c.createdAt) >= thisMonth).length;
-		const ordenesPending = orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length;
-		const ordenesProcessing = orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length;
+		const ordenesPaidUnassigned = orders.filter((o: any) => o.status === OrderStatus.PAID && !o.lawyerId).length;
+		const ordenesActive = orders.filter((o: any) => [OrderStatus.EN_PROGRESO, OrderStatus.REVISION].includes(o.status)).length;
 		const ordenesCompleted = orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length;
+		const ordenesPagoPendiente = orders.filter((o: any) => o.status === OrderStatus.PAGO_PENDIENTE).length;
 
 		return {
 			totalAbogados,
 			abogadosPendientes,
 			totalClientes,
-			casosActivos: ordenesProcessing,
-			casosPendientes: ordenesPending,
+			casosActivos: ordenesActive,
+			casosPendientes: ordenesPaidUnassigned,
 			casosCompletados: ordenesCompleted,
 			ingresosMes: summary?.totalIncome || 0,
 			ingresosTotales: summary?.totalIncome || 0,

@@ -7,9 +7,9 @@
 
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiShoppingBag, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiShoppingBag, FiClock, FiCheckCircle, FiAlertCircle, FiUserPlus, FiEye } from 'react-icons/fi';
 import { useOrders } from '@/features/orders/hooks/useOrders';
-import { OrderStatus } from '@/features/orders/types/orders.types';
+import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 import { capitalizeName } from '@/utils/formatters';
 
 const statusConfig = {
@@ -62,21 +62,27 @@ const statusConfig = {
         bg: 'bg-red-100',
     },
     [OrderStatus.PAID]: {
-        label: 'Pago Exitóso',
+        label: 'Pagado - Por Asignar',
         icon: FiCheckCircle,
         color: 'text-emerald-600',
-        bg: 'bg-emerald-100',
+        bg: 'bg-emerald-50 border border-emerald-100',
     },
 };
 
-export default function RecentOrders() {
+interface RecentOrdersProps {
+    abrirModal?: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: any) => void;
+}
+
+export default function RecentOrders({ abrirModal }: RecentOrdersProps) {
     const { data: response, isLoading } = useOrders({ limit: 5 });
-    const orders = response?.data || [];
-    const pagination = response?.pagination;
+
+    // useOrders returns { data: Order[], pagination: any }
+    const orders: Order[] = (response as any)?.data || [];
+    const pagination = (response as any)?.pagination;
 
     // Derived state
     const ordersCount = pagination?.total || orders.length;
-    const totalRevenue = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    const totalRevenue = orders.reduce((sum: number, order: Order) => sum + (Number(order.total) || 0), 0);
 
     const recentOrders = orders; // Ya vienen limitados y ordenados por el servidor
 
@@ -115,7 +121,7 @@ export default function RecentOrders() {
                 </div>
             ) : (
                 <div className="space-y-3">
-                    {recentOrders.map((order, index) => {
+                    {recentOrders.map((order: Order, index: number) => {
                         const config = statusConfig[order.status as OrderStatus] || {
                             label: order.status || 'Desconocido',
                             icon: FiAlertCircle,
@@ -150,7 +156,7 @@ export default function RecentOrders() {
                                             {order.userEmail}
                                         </p>
                                         <div className="mt-2 flex flex-wrap gap-2">
-                                            {order.items.map((item, i) => (
+                                            {order.items.map((item: any, i: number) => (
                                                 <span key={i} className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md border border-gray-200">
                                                     {item.serviceName}
                                                 </span>
@@ -162,18 +168,40 @@ export default function RecentOrders() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-lg font-bold text-vinotinto">
-                                            ${order.total.toFixed(2)}
-                                        </p>
-                                        <p className="text-xs text-gray-500" title={`Creado: ${new Date(order.createdAt).toLocaleString('es-ES')}`}>
-                                            {new Date(order.updatedAt).toLocaleDateString('es-ES', {
-                                                day: 'numeric',
-                                                month: 'short',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
-                                        </p>
+                                    <div className="text-right flex flex-col items-end gap-3">
+                                        <div>
+                                            <p className="text-lg font-bold text-vinotinto">
+                                                ${order.total.toFixed(2)}
+                                            </p>
+                                            <p className="text-[10px] text-gray-500" title={`Creado: ${new Date(order.createdAt).toLocaleString('es-ES')}`}>
+                                                {new Date(order.updatedAt).toLocaleDateString('es-ES', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                })}
+                                            </p>
+                                        </div>
+
+                                        {/* Botones de Acción Dashboard */}
+                                        <div className="flex gap-2">
+                                            {order.status === OrderStatus.PAID && !order.lawyerId && abrirModal && (
+                                                <button
+                                                    onClick={() => abrirModal('asignar', order)}
+                                                    className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
+                                                    title="Asignar Abogado Ahora"
+                                                >
+                                                    <FiUserPlus size={16} />
+                                                </button>
+                                            )}
+                                            {abrirModal && (
+                                                <button
+                                                    onClick={() => abrirModal('ver', order)}
+                                                    className="p-2 bg-azul-primario text-white rounded-lg shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all"
+                                                    title="Ver Expediente"
+                                                >
+                                                    <FiEye size={16} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>

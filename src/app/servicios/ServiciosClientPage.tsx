@@ -17,8 +17,7 @@ import { useOrdersByUser } from '@/features/orders/hooks/useOrders';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { CasiListo } from '@/components/orders/CasiListo';
 
-// Blindaje contra errores de referencia en Vercel
-import React from 'react';
+// Blindaje contra errores de referencia en Vercel - Ya importado arriba
 
 // Mapeo de iconos para mantener el estilo visual con datos dinámicos
 const ICON_MAP: Record<string, React.ReactNode> = {

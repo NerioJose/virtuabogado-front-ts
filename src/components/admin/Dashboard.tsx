@@ -8,7 +8,7 @@ import {
   FiBriefcase, 
   FiDollarSign, 
   FiAlertCircle,
-  FiTrendingUp,
+  FiTrendingUp, 
   FiCalendar,
   FiClock,
   FiCheckCircle
@@ -17,67 +17,59 @@ import { formatCurrency } from '@/utils/formatters';
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { useClients } from '@/features/clients/hooks/useClients';
 import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
-
-// Tipos de datos
-interface EstadisticasGenerales {
-  total_abogados: number;
-  total_clientes: number;
-  total_casos: number;
-  casos_activos: number;
-  casos_completados: number;
-  ingresos_totales: number;
-  ingresos_mes_actual: number;
-  crecimiento_mensual: number;
-}
-
-interface CasoReciente {
-  id: number;
-  titulo: string;
-  cliente_nombre: string;
-  abogado_nombre?: string;
-  fecha: string;
-  estado: 'pendiente' | 'asignado' | 'en_proceso' | 'completado' | 'cancelado';
-  prioridad: 'baja' | 'media' | 'alta';
-}
+import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 
 export default function Dashboard() {
   const { data: ordersResponse, isLoading: isLoadingOrders } = useOrders({ limit: 200 });
-  const { data: clientsResponse, isLoading: isLoadingClients } = useClients();
-  const { data: lawyersResponse, isLoading: isLoadingLawyers } = useLawyers();
+  const { data: clients, isLoading: isLoadingClients } = useClients();
+  const { data: lawyers, isLoading: isLoadingLawyers } = useLawyers();
 
-  const orders = ordersResponse?.data || [];
-  const clients = clientsResponse?.data || [];
-  const lawyers = lawyersResponse?.data || [];
+  // useOrders returns { data: Order[], ... }
+  const orders: Order[] = ordersResponse?.data || [];
+  // useClients and useLawyers return the array directly
+  const clientList = Array.isArray(clients) ? clients : [];
+  const lawyerList = Array.isArray(lawyers) ? lawyers : [];
 
   const stats = useMemo(() => {
-    const activosStates = ['PAID', 'EN_PROGRESO', 'REVISION', 'PENDIENTE'];
-    const casosActivos = orders.filter(o => activosStates.includes(o.status)).length;
-    const casosCompletados = orders.filter(o => o.status === 'COMPLETADO').length;
+    const activosStates = [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.PENDIENTE];
+    const casosActivos = orders.filter((o: Order) => activosStates.includes(o.status)).length;
+    const casosCompletados = orders.filter((o: Order) => o.status === OrderStatus.COMPLETADO).length;
+    
     // Pagos rechazados: órdenes con status PAGO_RECHAZADO
-    const pagosRechazados = orders.filter(o => o.status === 'PAGO_RECHAZADO' || o.status === 'FALLIDO' || o.status === 'CANCELADO').length;
+    const pagosRechazados = orders.filter((o: Order) => 
+      o.status === OrderStatus.PAGO_RECHAZADO || 
+      o.status === OrderStatus.FALLIDO || 
+      o.status === OrderStatus.CANCELADO
+    ).length;
+
     // Casos sin abogado asignado (PAID = pago aprobado pero sin abogado aún)
-    const sinAsignar = orders.filter(o => o.status === 'PAID' && !o.lawyerId).length;
+    const sinAsignar = orders.filter((o: Order) => o.status === OrderStatus.PAID && !o.lawyerId).length;
+    
     const ingresosTotales = orders
-      .filter(o => ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status))
-      .reduce((sum, o) => sum + (o.total || 0), 0);
+      .filter((o: Order) => [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.COMPLETADO].includes(o.status))
+      .reduce((sum: number, o: Order) => sum + (o.total || 0), 0);
+    
     const mesActual = new Date().getMonth();
     const anioActual = new Date().getFullYear();
     const ingresosMes = orders
-      .filter(o => {
+      .filter((o: Order) => {
         const fecha = new Date(o.createdAt);
         return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual
-          && ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status);
+          && [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.COMPLETADO].includes(o.status);
       })
-      .reduce((sum, o) => sum + (o.total || 0), 0);
+      .reduce((sum: number, o: Order) => sum + (o.total || 0), 0);
 
     return { casosActivos, casosCompletados, pagosRechazados, sinAsignar, ingresosTotales, ingresosMes };
   }, [orders]);
+
+  // Casos recientes para la tabla
+  const casosRecientes = useMemo(() => orders.slice(0, 5), [orders]);
 
   const isLoading = isLoadingOrders || isLoadingClients || isLoadingLawyers;
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -104,7 +96,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm">Total Clientes</p>
-              <h3 className="text-3xl font-bold text-azul-primario mt-2">{clients.length}</h3>
+              <h3 className="text-3xl font-bold text-azul-primario mt-2">{clientList.length}</h3>
             </div>
             <div className="w-12 h-12 bg-azul-claro/20 rounded-lg flex items-center justify-center text-azul-primario">
               <FiUsers size={24} />
@@ -125,7 +117,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm">Total Abogados</p>
-              <h3 className="text-3xl font-bold text-azul-primario mt-2">{lawyers.length}</h3>
+              <h3 className="text-3xl font-bold text-azul-primario mt-2">{lawyerList.length}</h3>
             </div>
             <div className="w-12 h-12 bg-azul-claro/20 rounded-lg flex items-center justify-center text-azul-primario">
               <FiUserCheck size={24} />
@@ -200,21 +192,21 @@ export default function Dashboard() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Abogado</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridad</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {casosRecientes.map((caso) => (
-                <tr key={caso.id} className={`hover:bg-gray-50 ${caso.estado === 'completado' ? 'opacity-60 grayscale-[0.2]' : ''}`}>
+              {casosRecientes.map((caso: Order) => (
+                <tr key={caso.id} className={`hover:bg-gray-50 ${caso.status === OrderStatus.COMPLETADO ? 'opacity-60 grayscale-[0.2]' : ''}`}>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-azul-primario">{caso.titulo}</div>
+                    <div className="text-sm font-medium text-azul-primario">#{caso.numericId}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-700">{caso.cliente_nombre}</div>
+                    <div className="text-sm text-gray-700">{caso.userName}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-700">
-                      {caso.abogado_nombre || (
+                      {caso.lawyerName || (
                         <span className="text-amber-500 flex items-center">
                           <FiClock className="mr-1" size={14} />
                           Sin asignar
@@ -223,39 +215,28 @@ export default function Dashboard() {
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-700">{new Date(caso.fecha).toLocaleDateString('es-ES')}</div>
+                    <div className="text-sm text-gray-700">{new Date(caso.createdAt).toLocaleDateString('es-ES')}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full ${
-                      caso.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                      caso.estado === 'asignado' ? 'bg-blue-100 text-blue-800' :
-                      caso.estado === 'en_proceso' ? 'bg-indigo-100 text-indigo-800' :
-                      caso.estado === 'completado' ? 'bg-green-100 text-green-800' :
+                      caso.status === OrderStatus.PENDIENTE || caso.status === OrderStatus.PAGO_PENDIENTE ? 'bg-yellow-100 text-yellow-800' :
+                      caso.status === OrderStatus.EN_PROGRESO || caso.status === OrderStatus.PAID ? 'bg-blue-100 text-blue-800' :
+                      caso.status === OrderStatus.REVISION ? 'bg-indigo-100 text-indigo-800' :
+                      caso.status === OrderStatus.COMPLETADO ? 'bg-green-100 text-green-800' :
                       'bg-red-100 text-red-800'
                     }`}>
-                      {caso.estado === 'completado' && <FiCheckCircle size={10} />}
-                      {caso.estado === 'pendiente' ? 'Pendiente' :
-                       caso.estado === 'asignado' ? 'Asignado' :
-                       caso.estado === 'en_proceso' ? 'En proceso' :
-                       caso.estado === 'completado' ? 'Completado' :
-                       'Cancelado'}
+                      {caso.status === OrderStatus.COMPLETADO && <FiCheckCircle size={10} />}
+                      {caso.status}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      caso.prioridad === 'baja' ? 'bg-green-100 text-green-800' :
-                      caso.prioridad === 'media' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {caso.prioridad === 'baja' ? 'Baja' :
-                       caso.prioridad === 'media' ? 'Media' :
-                       'Alta'}
-                    </span>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                    {formatCurrency(caso.total)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
       </motion.div>
       
       {/* Alertas y notificaciones REALES */}

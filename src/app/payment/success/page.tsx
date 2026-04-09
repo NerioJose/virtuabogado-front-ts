@@ -25,13 +25,15 @@ export default function PaymentSuccessPage({
 
     // Estados de control de flujo estricto
     const [timeoutReached, setTimeoutReached] = useState(false);
-    const [counter, setCounter] = useState(5);
 
     // Evaluar Status basándonos en nombres actuales de virtuAbogado
-    const isPendingApproval = order?.status === 'PAGO_PENDIENTE';
-    const isFailed = ['PAGO_RECHAZADO', 'FALLIDO', 'CANCELADO'].includes(order?.status || '');
-    const isApproved = order && !isPendingApproval && !isFailed; 
-
+    const currentStatus = order?.status;
+    const isPendingApproval = currentStatus === 'PAGO_PENDIENTE';
+    
+    // ÉXITO: El pago fue validado. Ya sea que esté en PAID o EN_PROGRESO (auto-asignado)
+    const isApproved = currentStatus && ['PAID', 'EN_PROGRESO', 'COMPLETADO'].includes(currentStatus);
+    
+    const isFailed = ['PAGO_RECHAZADO', 'FALLIDO', 'CANCELADO'].includes(currentStatus || '');
     // Cláusula de Salida (Cleanup / Timeout)
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;

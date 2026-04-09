@@ -41,6 +41,7 @@ model Service {
   imagenUrl   String?
   activo      Boolean @default(true)
   orders      Order[]
+  createdAt   DateTime @default(now())
 }
 
 model Order {

@@ -123,7 +123,8 @@ export async function POST(req: NextRequest) {
             })();
 
             revalidatePath('/', 'layout');
-            console.log(`✅ [Webhook] Orden ${orderId} procesada como ${finalStatus}`);
+            console.log(`[Webhook] Estado final determinado: ${finalStatus}`);
+            console.log(`✅ [Webhook] Orden ${orderId} procesada con éxito.`);
 
         } else if (['payment.failed', 'checkout.expired', 'checkout.canceled'].includes(type)) {
             await prisma.order.update({

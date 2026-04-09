@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { initializeAuth } from '@/features/auth/store/authStore';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import UploadManager from '@/features/storage/components/UploadManager';
 
 // Componente "dummy" para usar el hook de suscripción dentro del contexto de QueryClient

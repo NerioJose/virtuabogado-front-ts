@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrders } from '@/features/orders/hooks/useOrders';
@@ -28,7 +28,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
     } = useChat(orderId);
 	// ============ REACT QUERY ============
 	const { data: response, isLoading } = useOrders();
-	const orders = response?.data || [];
+	const orders = (response as any)?.data || [];
 	const { user } = useAuthStore();
     const [newMessage, setNewMessage] = useState('');
     const [soundEnabled, setSoundEnabled] = useState(true);
@@ -41,7 +41,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
     const audioRef = useRef<HTMLAudioElement>(null);
     const prevMessagesLengthRef = useRef(0);
 
-    const order = orders.find(o => o.id === orderId);
+    const order = orders.find((o: any) => o.id === orderId);
     const isChatDisabled = order?.status === OrderStatus.COMPLETADO || order?.status === OrderStatus.CANCELADO;
 
     useEffect(() => {

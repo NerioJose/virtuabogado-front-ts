@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import {
 	FiUsers,
 	FiUserCheck,
@@ -165,7 +165,7 @@ function DashboardStats() {
 	const { data: clients = [], isLoading: clientsLoading } = useClients();
 	const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
 	const { data: response, isLoading: ordersLoading } = useOrders();
-	const orders = response?.data || [];
+	const orders = (response as any)?.data || [];
 	
 	const { data: summary, isLoading: financialLoading } = useQuery({
 		queryKey: ['FinanceSummaryDashboard', user?.id],
@@ -182,9 +182,9 @@ function DashboardStats() {
 		const now = new Date();
 		const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 		const clientesNuevosMes = clients.filter(c => new Date(c.createdAt) >= thisMonth).length;
-		const ordenesPending = orders.filter(o => o.status === OrderStatus.PENDIENTE).length;
-		const ordenesProcessing = orders.filter(o => o.status === OrderStatus.EN_PROGRESO).length;
-		const ordenesCompleted = orders.filter(o => o.status === OrderStatus.COMPLETADO).length;
+		const ordenesPending = orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length;
+		const ordenesProcessing = orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length;
+		const ordenesCompleted = orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length;
 
 		return {
 			totalAbogados,

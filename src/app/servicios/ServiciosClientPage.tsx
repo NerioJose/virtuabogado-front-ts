@@ -73,7 +73,7 @@ export default function ServiciosClientPage() {
     const { data: ordersResponse, isLoading: ordersLoading } = useOrdersByUser(user?.id || '', { 
         enabled: !!user?.id 
     });
-    const orders = ordersResponse?.data || [];
+    const orders = (ordersResponse as any)?.data || [];
     
     const { isLoading: servicesLoading } = useServices(); // Public catalog
     

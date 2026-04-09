@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useCheckout } from '../hooks/useCheckout';
 import { useAuthStore } from '@/features/auth/store/authStore';

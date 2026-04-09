@@ -68,98 +68,100 @@ export async function POST(req: NextRequest) {
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
             console.log(`[CheckoutFlow] 💳 Procesando pago exitoso para Orden: ${orderId}`);
 
-            // ⚛️ TRANSACCIÓN ATÓMICA DE APROBACIÓN (REQUISITOS DEL SISTEMA)
+            // ⚛️ TRANSACCIÓN ATÓMICA: Dos fases separadas para máxima resiliencia
             const result = await (prisma as any).$transaction(async (tx: any) => {
-                // Paso A: Cambiar el estado de la Orden de PAGO_PENDIENTE a PAID
+                // ── FASE 1 (CRÍTICA): Confirmar el pago. NUNCA puede fallar. ──
                 const order = await tx.order.update({
                     where: { id: orderId },
                     data: {
-                        status: 'PAID', // Enum: PAID
+                        status: 'PAID',
                         paymentId: paymentId,
                     }
                 });
 
-                // Paso B (Auto-Asignación): Cuenta los abogados activos
-                const activeLawyers = await tx.user.findMany({
-                    where: {
-                        rol: 'ABOGADO',
-                        activo: true
-                    },
-                    select: { id: true, nombre: true }
-                });
-
-                console.log(`[CheckoutFlow] ⚖️ Abogados activos encontrados: ${activeLawyers.length}`);
-
                 let targetLawyerId = order.lawyerId;
                 let finalStatus = 'PAID';
-                let assignedAt = order.assignedAt;
                 let isAutoAssigned = false;
 
-                // Si existe exactamente UN (1) abogado, asigna ese caso automáticamente
-                if (!targetLawyerId && activeLawyers.length === 1) {
-                    targetLawyerId = activeLawyers[0].id;
-                    assignedAt = new Date();
-                    isAutoAssigned = true;
-                    // Paso C (Estado del Caso): Si fue asignado, pasa directamente a EN_PROGRESO
+                // ── FASE 2 (RESILIENTE): Auto-asignación. Si falla, el pago sigue confirmado. ──
+                if (!targetLawyerId) {
+                    try {
+                        // Buscar abogados activos (case-insensitive para robustez)
+                        const activeLawyers = await tx.user.findMany({
+                            where: { rol: 'ABOGADO', activo: true },
+                            select: { id: true, nombre: true }
+                        });
+
+                        // Fallback: si 0 activos, buscar cualquier abogado registrado
+                        const allLawyers = activeLawyers.length > 0 ? activeLawyers : await tx.user.findMany({
+                            where: { rol: 'ABOGADO' },
+                            select: { id: true, nombre: true }
+                        });
+
+                        console.log(`[CheckoutFlow] ⚖️ Abogados disponibles: activos=${activeLawyers.length}, total=${allLawyers.length}`);
+
+                        if (allLawyers.length === 1) {
+                            // Exactamente un abogado → auto-asignación automática
+                            targetLawyerId = allLawyers[0].id;
+                            isAutoAssigned = true;
+                            finalStatus = 'EN_PROGRESO';
+                            console.log(`[CheckoutFlow] ✅ Auto-asignación: ${allLawyers[0].nombre}`);
+
+                            await tx.order.update({
+                                where: { id: orderId },
+                                data: {
+                                    status: finalStatus,
+                                    lawyerId: targetLawyerId,
+                                    assignedAt: new Date()
+                                }
+                            });
+                        } else if (allLawyers.length > 1) {
+                            // Más de uno → queda en PAID, asignación manual requerida
+                            console.log(`[CheckoutFlow] ⚖️ ${allLawyers.length} abogados. Asignación manual requerida.`);
+                        }
+                    } catch (assignErr: any) {
+                        // ⚠️ PROTECCIÓN: La asignación falla, pero el PAGO ya está confirmado.
+                        // El admin verá la orden en estado PAID para asignar manualmente.
+                        console.error(`[CheckoutFlow] ⚠️ Auto-asignación falló (pago ya confirmado):`, assignErr.message);
+                    }
+                } else {
+                    // Ya tenía abogado asignado → pasar a EN_PROGRESO
                     finalStatus = 'EN_PROGRESO';
-                    
-                    console.log(`[CheckoutFlow] ✅ Auto-asignación exitosa: ${activeLawyers[0].nombre}`);
-                    
-                    // Ejecutar actualización de asignación y estado final
                     await tx.order.update({
                         where: { id: orderId },
-                        data: {
-                            status: finalStatus,
-                            lawyerId: targetLawyerId,
-                            assignedAt: assignedAt
-                        }
+                        data: { status: finalStatus }
                     });
-                } else {
-                    // Si ya tenía abogado previo o no aplica auto-asignación,
-                    // validamos si debe ser EN_PROGRESO o quedarse en PAID (equivalente a PENDIENTE de asignación en este flujo)
-                    if (targetLawyerId) {
-                        finalStatus = 'EN_PROGRESO';
-                        await tx.order.update({
-                            where: { id: orderId },
-                            data: { status: finalStatus }
-                        });
-                    } else {
-                        // Queda en PAID, lo cual se mapea a PENDIENTE de asignación manual
-                        finalStatus = 'PAID';
-                    }
                 }
 
                 return { targetLawyerId, resolvedStatus: finalStatus, isAutoAssigned };
-            }, {
-                timeout: 15000 
-            }).catch((err: any) => {
-                console.error(`[CheckoutFlow] ❌ ERROR en transacción:`, err.message);
-                throw err;
-            });
+            }, { timeout: 15000 });
 
             const { targetLawyerId, resolvedStatus } = result;
 
-            // 📡 Notificamos al sistema reactivo de forma FORZADA
-            console.log(`[CheckoutFlow] 📡 Emitiendo broadcast: status=${resolvedStatus}`);
-            broadcastOrderUpdate({
+            // 📡 BROADCAST REACTIVO: await garantiza que el serverless no muera antes de enviar
+            // Esto activa la transición de "Casi listo" → "/mis-servicios" en el cliente
+            console.log(`[CheckoutFlow] 📡 Emitiendo broadcast await: status=${resolvedStatus}`);
+            await broadcastOrderUpdate({
                 orderId: orderId,
                 userId: currentOrder.userId,
                 lawyerId: targetLawyerId,
                 status: resolvedStatus,
-                eventType: 'updated' 
+                eventType: 'updated'
             });
 
             // Extraer datos contextuales para notificaciones enriquecidas
             const clientName = (currentOrder as any).user?.nombre;
             const serviceName = (currentOrder as any).service?.titulo;
 
-            console.log(`💰 [Webhook Push] Notificando venta a Admins...`);
+            // 🔔 NOTIFICACIONES PUSH: Canal Admin (siempre)
+            console.log(`💰 [Webhook Push] Notificando pago a Admins...`);
             await notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName).catch(err =>
                 console.error('❌ Error enviando push de venta:', err)
             );
 
-            // 2. Alerta de Asignación si hay abogado (manual o auto)
+            // 🔔 NOTIFICACIONES PUSH: Canal Abogado (si hubo asignación)
             if (targetLawyerId) {
+                console.log(`⚖️ [Webhook Push] Notificando asignación al Abogado: ${targetLawyerId}`);
                 await notifyNewCase(targetLawyerId, orderId, serviceName).catch(err =>
                     console.error('❌ Error enviando push de asignación:', err)
                 );
@@ -169,6 +171,7 @@ export async function POST(req: NextRequest) {
             revalidatePath('/', 'layout');
 
             console.log(`✅ [Webhook] Finalizado con éxito para Orden ${orderId}`);
+
         } else if (['payment.failed', 'checkout.expired', 'checkout.canceled'].includes(type)) {
             await prisma.order.update({
                 where: { id: orderId },

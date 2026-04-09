@@ -50,6 +50,10 @@ export const useCheckoutStorage = () => {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (!savedData) return;
 
+        // Si ya cerramos manualmente en esta sesión, no auto-abrir
+        const wasClosed = sessionStorage.getItem('checkout_manually_closed');
+        if (wasClosed) return;
+
         try {
             const data: CheckoutStorageData = JSON.parse(savedData);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useCheckoutStore } from '../store/checkoutStore';
 
 /**
@@ -40,12 +41,12 @@ export const useCheckout = () => {
     const markAsCompleted = useCheckoutStore((state) => state.markAsCompleted);
     const reset = useCheckoutStore((state) => state.reset);
 
-    return {
+    return useMemo(() => ({
         isOpen,
         step,
         service,
-        userData: userData || undefined,
-        paymentData: paymentData || undefined,
+        userData,
+        paymentData,
         paymentMethod,
         orderId,
         total,
@@ -73,5 +74,13 @@ export const useCheckout = () => {
         submitOrder,
         markAsCompleted,
         reset,
-    };
+    }), [
+        isOpen, step, service, userData, paymentData, paymentMethod, orderId, total, 
+        isLoading, error, isExistingUser, tempPassword, completedAt, 
+        isProcessingPayment, isWaitingForWebhook, openCheckout, closeCheckout, 
+        setStep, setUserData, setPaymentData, setPaymentMethod, 
+        setIsProcessingPayment, setIsWaitingForWebhook, setOrderId, 
+        checkUserExists, sendOtp, verifyOtp, authenticateUser, submitOrder, 
+        markAsCompleted, reset
+    ]);
 };

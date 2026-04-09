@@ -92,6 +92,9 @@ export const CheckoutModal: React.FC = () => {
             reset();
             clearStorage();
         }
+        
+        // Marcar como cerrado manualmente para evitar bucles de persistencia
+        sessionStorage.setItem('checkout_manually_closed', 'true');
         closeCheckout();
     }, [step, reset, clearStorage, closeCheckout]);
 

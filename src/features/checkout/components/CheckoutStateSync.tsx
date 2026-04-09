@@ -15,17 +15,23 @@ function StateSyncHandler() {
     const pathname = usePathname();
     const { openCheckout, setUserData, isOpen } = useCheckout();
     const { isAuthenticated, user, checkAuth } = useAuthStore();
+    
+    // Evitar bucles de re-apertura infinitos
+    const hasSyncAttempted = React.useRef(false);
 
     useEffect(() => {
         const authSuccess = searchParams.get('auth_success') === '1';
         
-        if (authSuccess) {
+        if (authSuccess && !hasSyncAttempted.current) {
             // Si aún no estamos autenticados en el store, forzar verificación
             if (!isAuthenticated) {
                 console.log('🔐 Detectado auth_success pero store no autenticado. Verificando sesión...');
                 checkAuth();
                 return; // Esperar al próximo render cuando isAuthenticated sea true
             }
+
+            // Marcar como intentado para evitar bucles si isOpen cambia
+            hasSyncAttempted.current = true;
 
             console.log('🔄 Sesión confirmada. Recuperando estado de compra...');
             

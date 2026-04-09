@@ -143,7 +143,18 @@ export const useCheckoutStore = create<CheckoutState>()(
         checkUserExists: async (email: string) => {
             const { checkUserExistsAction } = await import('../actions/checkUserAction');
             const result = await checkUserExistsAction(email);
-            set({ isExistingUser: result.exists });
+            
+            set((state) => ({ 
+                isExistingUser: result.exists,
+                userData: result.exists && result.nombre ? {
+                    ...state.userData,
+                    email,
+                    nombre: result.nombre,
+                    name: result.nombre,
+                    createAccount: false
+                } : state.userData
+            }));
+            
             return result.exists;
         },
 

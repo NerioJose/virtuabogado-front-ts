@@ -30,9 +30,20 @@ export const UserDataStep: React.FC = () => {
 
     const [formData, setFormData] = useState({
         password: '',
-        name: storeUserData?.nombre || '',
+        name: storeUserData?.nombre || storeUserData?.name || '',
         phone: storeUserData?.phone || '',
     });
+
+    // Sincronizar formData local con el store cuando el store cambie (tras checkUserExists)
+    useEffect(() => {
+        if (storeUserData) {
+            setFormData(prev => ({
+                ...prev,
+                name: storeUserData.nombre || storeUserData.name || prev.name,
+                phone: storeUserData.phone || prev.phone,
+            }));
+        }
+    }, [storeUserData]);
 
     // 2. Debounce para verificación de Email
     useEffect(() => {

@@ -20,6 +20,7 @@ export default function PaymentSuccessPage({
     // por el Global Reactivity Provider (useRealtimeSubscription) al recibir el signal.
     const { data: order, isLoading } = useOrder(orderId);
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     // Estados de control de flujo estricto
     const [timeoutReached, setTimeoutReached] = useState(false);
@@ -43,15 +44,13 @@ export default function PaymentSuccessPage({
         };
     }, [isPendingApproval]);
 
-    // Redirección post-aprobación
+    // Redirección inmediata post-aprobación
     useEffect(() => {
         if (isApproved) {
-            const redirectTimer = setInterval(() => {
-                setCounter((prev) => (prev > 0 ? prev - 1 : 0));
-            }, 1000);
-            return () => clearInterval(redirectTimer);
+            console.log('🚀 [PaymentSuccess] Pago aprobado. Redirigiendo inmediatamente...');
+            router.push('/mis-servicios');
         }
-    }, [isApproved]);
+    }, [isApproved, router]);
 
     // Función de reintento
     const handleRetry = () => {
@@ -226,8 +225,8 @@ export default function PaymentSuccessPage({
                                 </div>
                             </div>
 
-                            <p className="mt-8 text-xs text-gray-400">
-                                Serás redirigido automáticamente en {counter} segundos...
+                            <p className="mt-8 text-xs text-gray-400 font-bold animate-pulse">
+                                Redirigiendo al panel de servicios...
                             </p>
                         </motion.div>
                     )}

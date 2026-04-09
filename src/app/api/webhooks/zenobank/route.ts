@@ -68,68 +68,73 @@ export async function POST(req: NextRequest) {
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
             console.log(`[CheckoutFlow] 💳 Procesando pago exitoso para Orden: ${orderId}`);
 
-            // ⚛️ TRANSACCIÓN ATÓMICA DE APROBACIÓN CON DIAGNÓSTICO ROBUSTO
+            // ⚛️ TRANSACCIÓN ATÓMICA DE APROBACIÓN (REQUISITOS DEL SISTEMA)
             const result = await (prisma as any).$transaction(async (tx: any) => {
-                // 1. Buscar abogados sin ser tan estrictos con Prisma
-                const allPotentialLawyers = await tx.user.findMany({
-                    where: {
-                        OR: [
-                            { rol: 'ABOGADO' as any },
-                            { rol: { equals: 'abogado' as any } }
-                        ]
-                    },
-                    select: { id: true, activo: true, nombre: true }
-                });
-
-                // Filtrar activos prioritariamente
-                const activeLawyers = allPotentialLawyers.filter((l: any) => l.activo);
-                console.log(`[CheckoutFlow] ⚖️ Abogados encontrados: Totales=${allPotentialLawyers.length}, Activos=${activeLawyers.length}`);
-
-                // 2. Determinar asignación
-                let targetLawyerId = currentOrder.lawyerId;
-                let assignedAt = currentOrder.assignedAt;
-                let isAutoAssigned = false;
-
-                // Solo auto-asignar si NO tiene abogado previo
-                if (!targetLawyerId) {
-                    if (activeLawyers.length === 1) {
-                        targetLawyerId = activeLawyers[0].id;
-                        assignedAt = new Date();
-                        isAutoAssigned = true;
-                        console.log(`[CheckoutFlow] ✅ Auto-asignación (Activo único): ${activeLawyers[0].nombre}`);
-                    } else if (activeLawyers.length === 0 && allPotentialLawyers.length === 1) {
-                        targetLawyerId = allPotentialLawyers[0].id;
-                        assignedAt = new Date();
-                        isAutoAssigned = true;
-                        console.warn(`[CheckoutFlow] ⚠️ Auto-asignación (Único INACTIVO): ${allPotentialLawyers[0].nombre}`);
-                    }
-                }
-
-                // 3. Resolver estado (Requisito: PENDIENTE si hay >1 o 0 abogados, EN_PROGRESO si hay 1)
-                const resolvedStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PENDIENTE;
-                
-                console.log(`[CheckoutFlow] 🔄 Estado Final: ${resolvedStatus} | Abogado: ${targetLawyerId || 'NINGUNO'}`);
-
-                await tx.order.update({
+                // Paso A: Cambiar el estado de la Orden de PAGO_PENDIENTE a PAID
+                const order = await tx.order.update({
                     where: { id: orderId },
                     data: {
-                        status: resolvedStatus,
+                        status: 'PAID', // Enum: PAID
                         paymentId: paymentId,
-                        lawyerId: targetLawyerId,
-                        assignedAt: assignedAt
                     }
                 });
 
-                if (isAutoAssigned) {
-                    console.log(`[CheckoutFlow] ✨ ÉXITO: Orden ${orderId} asignada automáticamente.`);
+                // Paso B (Auto-Asignación): Cuenta los abogados activos
+                const activeLawyers = await tx.user.findMany({
+                    where: {
+                        rol: 'ABOGADO',
+                        activo: true
+                    },
+                    select: { id: true, nombre: true }
+                });
+
+                console.log(`[CheckoutFlow] ⚖️ Abogados activos encontrados: ${activeLawyers.length}`);
+
+                let targetLawyerId = order.lawyerId;
+                let finalStatus = 'PAID';
+                let assignedAt = order.assignedAt;
+                let isAutoAssigned = false;
+
+                // Si existe exactamente UN (1) abogado, asigna ese caso automáticamente
+                if (!targetLawyerId && activeLawyers.length === 1) {
+                    targetLawyerId = activeLawyers[0].id;
+                    assignedAt = new Date();
+                    isAutoAssigned = true;
+                    // Paso C (Estado del Caso): Si fue asignado, pasa directamente a EN_PROGRESO
+                    finalStatus = 'EN_PROGRESO';
+                    
+                    console.log(`[CheckoutFlow] ✅ Auto-asignación exitosa: ${activeLawyers[0].nombre}`);
+                    
+                    // Ejecutar actualización de asignación y estado final
+                    await tx.order.update({
+                        where: { id: orderId },
+                        data: {
+                            status: finalStatus,
+                            lawyerId: targetLawyerId,
+                            assignedAt: assignedAt
+                        }
+                    });
+                } else {
+                    // Si ya tenía abogado previo o no aplica auto-asignación,
+                    // validamos si debe ser EN_PROGRESO o quedarse en PAID (equivalente a PENDIENTE de asignación en este flujo)
+                    if (targetLawyerId) {
+                        finalStatus = 'EN_PROGRESO';
+                        await tx.order.update({
+                            where: { id: orderId },
+                            data: { status: finalStatus }
+                        });
+                    } else {
+                        // Queda en PAID, lo cual se mapea a PENDIENTE de asignación manual
+                        finalStatus = 'PAID';
+                    }
                 }
 
-                return { targetLawyerId, resolvedStatus };
+                return { targetLawyerId, resolvedStatus: finalStatus, isAutoAssigned };
             }, {
-                timeout: 10000 // Aumentar timeout para evitar fallos por latencia de DB
+                timeout: 15000 
             }).catch((err: any) => {
                 console.error(`[CheckoutFlow] ❌ ERROR en transacción:`, err.message);
-                throw err; // Re-lanzar para que el catch externo maneje el 500
+                throw err;
             });
 
             const { targetLawyerId, resolvedStatus } = result;

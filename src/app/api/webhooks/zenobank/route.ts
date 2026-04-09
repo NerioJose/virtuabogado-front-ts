@@ -67,15 +67,22 @@ export async function POST(req: NextRequest) {
 
             // ── PASO 1: Búsqueda de Abogado Único ANTES de la transacción ──
             const activeLawyers = await prisma.user.findMany({
-                where: { rol: 'ABOGADO', activo: true },
+                where: { 
+                    rol: { equals: 'ABOGADO', mode: 'insensitive' }, 
+                    activo: true 
+                },
                 select: { id: true, nombre: true }
             });
 
+            console.log('DEBUG: Abogados encontrados:', activeLawyers.map((l: any) => l.nombre));
+
             const isAutoAssign = activeLawyers.length === 1;
             const targetLawyerId = isAutoAssign ? activeLawyers[0].id : currentOrder.lawyerId;
+            
+            // Forzado de Estado: Si hay abogado (manual o auto), SIEMPRE es EN_PROGRESO
             const finalStatus = targetLawyerId ? 'EN_PROGRESO' : 'PAID';
 
-            console.log(`[CheckoutFlow] ⚖️ Abogados: ${activeLawyers.length}. Auto-asignar: ${isAutoAssign}`);
+            console.log(`[CheckoutFlow] ⚖️ Abogados: ${activeLawyers.length}. Auto-asignar: ${isAutoAssign}. Status Final: ${finalStatus}`);
 
             // ── PASO 2: Transacción Atómica de Única Escritura ──
             await prisma.$transaction(async (tx: any) => {
@@ -90,29 +97,30 @@ export async function POST(req: NextRequest) {
                 });
             });
 
-            // ── PASO 3: Reactividad y Notificaciones ──
+            // ── PASO 3: Reactividad y Notificaciones (Non-blocking) ──
+            (async () => {
+                // Broadcast para mover al cliente de la pantalla de "Casi listo"
+                await broadcastOrderUpdate({
+                    orderId: orderId,
+                    userId: currentOrder.userId,
+                    lawyerId: targetLawyerId,
+                    status: finalStatus,
+                    eventType: 'updated'
+                });
 
-            // Broadcast para mover al cliente de la pantalla de "Casi listo"
-            await broadcastOrderUpdate({
-                orderId: orderId,
-                userId: currentOrder.userId,
-                lawyerId: targetLawyerId,
-                status: finalStatus,
-                eventType: 'updated'
-            });
+                const clientName = currentOrder.user?.nombre || 'Cliente';
+                const serviceName = currentOrder.service?.titulo || 'Servicio Legal';
 
-            const clientName = currentOrder.user?.nombre || 'Cliente';
-            const serviceName = currentOrder.service?.titulo || 'Servicio Legal';
+                // Notificación al Admin
+                notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName)
+                    .catch(e => console.error('Error push venta:', e));
 
-            // Notificación al Admin
-            notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName)
-                .catch(e => console.error('Error push venta:', e));
-
-            // Notificación al Abogado (si hay uno)
-            if (targetLawyerId) {
-                notifyNewCase(targetLawyerId, orderId, serviceName)
-                    .catch(e => console.error('Error push asignación:', e));
-            }
+                // Notificación al Abogado (si hay uno)
+                if (targetLawyerId) {
+                    notifyNewCase(targetLawyerId, orderId, serviceName)
+                        .catch(e => console.error('Error push asignación:', e));
+                }
+            })();
 
             revalidatePath('/', 'layout');
             console.log(`✅ [Webhook] Orden ${orderId} procesada como ${finalStatus}`);

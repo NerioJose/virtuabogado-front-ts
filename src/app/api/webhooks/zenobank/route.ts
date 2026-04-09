@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
             // ── PASO 1: Búsqueda de Abogado Único ANTES de la transacción ──
             const activeLawyers = await prisma.user.findMany({
                 where: { 
-                    rol: { equals: 'ABOGADO', mode: 'insensitive' }, 
+                    rol: 'ABOGADO',
                     activo: true 
                 },
                 select: { id: true, nombre: true }

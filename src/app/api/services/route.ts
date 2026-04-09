@@ -13,7 +13,7 @@ export async function GET(req: Request) {
 
         const services = await prisma.service.findMany({
             where: showAll ? {} : { activo: true },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' } as any
         });
         return NextResponse.json(serializeFinance(services));
     } catch (error) {

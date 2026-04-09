@@ -19,10 +19,12 @@ export const apiClient = {
         }
 
         if (!session) {
-            console.warn(`🕵️ apiClient: Persiste falta de sesión al llamar a ${url}`);
-        } else {
-            console.log(`🔑 apiClient: Sesión activa/recuperada para ${url}`);
+            console.warn(`🕵️ apiClient: Petición cancelada (Falta de sesión) para ${url}`);
+            // Devolver error controlado en lugar de dejar que sea 401 por el middleware/API
+            throw new ApiError(401, 'No hay una sesión activa para realizar esta petición.');
         }
+
+        console.log(`🔑 apiClient: Sesión activa/recuperada para ${url}`);
 
         const response = await fetch(url, {
             ...options,

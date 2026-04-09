@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
 import { CLIENT_KEYS } from '@/features/clients/hooks/useClients';
@@ -47,9 +47,10 @@ export const useRealtimeSubscription = () => {
     // los usuarios conectados (abogado, cliente, admin).
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (!user?.id) return;
+        if (!user?.id || connectionStatus === 'DISCONNECTED') return;
 
         const supabase = createClient();
+        console.log('📡 [Realtime] Inicializando listeners de Broadcast...');
 
         const handleUpdate = (payload: any) => {
             // Unificar extracción del evento y el contenido
@@ -133,8 +134,11 @@ export const useRealtimeSubscription = () => {
     // REALTIME - sincronización instantánea
     // ═══════════════════════════════════════════════
     useEffect(() => {
+        // Blindaje estricto: no iniciar si no hay usuario o si estamos cargando auth
         if (!user?.id) {
-            setConnectionStatus('DISCONNECTED');
+            if (connectionStatus !== 'DISCONNECTED') {
+                setConnectionStatus('DISCONNECTED');
+            }
             return;
         }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheckCircle, FiArrowRight, FiFileText, FiMessageSquare, FiLoader, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 import Link from 'next/link';

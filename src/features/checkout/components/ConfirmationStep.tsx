@@ -12,6 +12,19 @@ export const ConfirmationStep: React.FC = () => {
     // Determinamos si es un pago que requiere confirmación externa (Zenobank/Cripto)
     const isPendingConfirmation = (paymentMethod as string) === 'zenobank' || (paymentMethod as string) === 'crypto';
 
+    const router = useRouter();
+
+    // Redirección automática tras 6 segundos de éxito final
+    React.useEffect(() => {
+        if (!isPendingConfirmation) {
+            const timer = setTimeout(() => {
+                closeCheckout();
+                router.push('/mis-servicios');
+            }, 6000);
+            return () => clearTimeout(timer);
+        }
+    }, [isPendingConfirmation, closeCheckout, router]);
+
     const handleClose = () => {
         closeCheckout();
     };

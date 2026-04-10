@@ -40,11 +40,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { type, data } = evt;
-    const orderId = data?.orderId || evt.orderId;
+    
+    // Robustez: Extraer orderId de múltiples fuentes posibles (Svix metadata, data root, order_id snake_case)
+    const orderId = data?.orderId || data?.order_id || evt.orderId || evt.order_id || data?.metadata?.orderId;
     const paymentId = data?.id || evt.id;
 
-    console.log(`✅ [Webhook SVIX] Evento verificado: type=${type} | orderId=${orderId} | paymentId=${paymentId}`);
-    console.log(`🔍 [Webhook] Data completa:`, JSON.stringify(data));
+    console.log(`✅ [Webhook SVIX] Evento: ${type} | Final orderId: ${orderId} | paymentId: ${paymentId}`);
+    
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 [Webhook Debug Data]:`, JSON.stringify(evt, null, 2));
+    }
 
     try {
         const currentOrder = await prisma.order.findUnique({

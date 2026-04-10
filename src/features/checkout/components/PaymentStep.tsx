@@ -96,7 +96,7 @@ export const PaymentStep: React.FC = () => {
         }
 
         setIsProcessingPayment(true);
-        const loadingToast = toast.loading('Preparando conexión segura...');
+        const loadingToast = toast.loading('Conectando con la pasarela financiera segura...');
 
         try {
             const result = await processPaymentAction({
@@ -110,17 +110,20 @@ export const PaymentStep: React.FC = () => {
                 }
 
                 if (result.redirectUrl) {
-                    toast.success('Abriendo pasarela...', { id: loadingToast });
+                    toast.success('Sesión de pago iniciada. Redirigiendo...', { id: loadingToast });
+                    
+                    // IMPORTANTE: Aseguramos el estado de espera ANTES de cualquier redirección
+                    setIsWaitingForWebhook(true);
                     
                     if (checkoutWindow) {
                         checkoutWindow.location.href = result.redirectUrl;
-                        setIsWaitingForWebhook(true);
                     } else {
                         window.location.href = result.redirectUrl;
                     }
                 } else {
                     if (checkoutWindow) checkoutWindow.close();
                     toast.success('Solicitud procesada con éxito', { id: loadingToast });
+                    setIsProcessingPayment(false);
                     setStep(3);
                 }
             } else {

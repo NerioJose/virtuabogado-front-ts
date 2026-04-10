@@ -13,27 +13,21 @@ const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 horas
  * Auto-guarda cambios y recupera al volver
  */
 export const useCheckoutStorage = () => {
-    const { service, userData, step, isOpen } = useCheckoutStore();
-
-    // Guardar en localStorage cada vez que cambia el estado
-    useEffect(() => {
-        if (service && isOpen) {
-            // Excluir propiedades no serializables como icono (ReactNode)
-            const serializableService = service ? {
-                id: service.id,
-                nombre: service.nombre,
-                titulo: service.titulo,
-                descripcion: service.descripcion,
-                precio: service.precio,
-                duracion: service.duracion,
-                imagen: service.imagen,
-                // icono se excluye porque es un ReactNode
-            } : null;
-
+    const { 
+        service, 
+        userData, 
+        step, 
+        isOpen, 
+        orderId, 
+        isWaitingForWebhook 
+    } = useCheckoutStore();
+...
             const data: CheckoutStorageData = {
                 service: serializableService,
                 userData,
                 step,
+                orderId,
+                isWaitingForWebhook,
                 timestamp: Date.now(),
             };
 
@@ -77,6 +71,14 @@ export const useCheckoutStorage = () => {
 
                 if (data.userData) {
                     store.setUserData(data.userData);
+                }
+
+                if (data.orderId) {
+                    store.setOrderId(data.orderId);
+                }
+
+                if (data.isWaitingForWebhook) {
+                    store.setIsWaitingForWebhook(true);
                 }
 
                 // Si está autenticado, NUNCA forzar paso 1 si ya teníamos un paso superior

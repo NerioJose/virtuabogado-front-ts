@@ -18,7 +18,7 @@ interface CasosAbogadoPanelProps {
 function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: CasosAbogadoPanelProps) {
   // ============ REACT QUERY ============
   const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-  const misCasos = response?.data || [];
+  const misCasos = (response as any)?.data || [];
 
   useEffect(() => {
     if (!isLoading) {
@@ -62,15 +62,32 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
   // Ya no necesitamos useEffect para fetchOrders porque useQuery lo maneja automáticamente
   // ni useMemo para filtrar por abogado porque el hook ya lo hace en el servidor
 
-  // Filtrar y ordenar casos (Nuevos primero)
+  // Filtrar y ordenar casos (Activos primero, luego por fecha)
   const casosFiltrados = useMemo(() => {
+    // Definir prioridades de estado: Estados activos primero (0), Finalizados después (1)
+    const getStatusPriority = (status: string) => {
+      const activeStates = [OrderStatus.PENDIENTE, OrderStatus.EN_PROGRESO, OrderStatus.REVISION];
+      return activeStates.includes(status as OrderStatus) ? 0 : 1;
+    };
+
     return misCasos
-      .filter(caso => {
+      .filter((caso: any) => {
         const matchEstado = filtroEstado === 'todos' || caso.status === filtroEstado;
         const matchCliente = initialClienteId ? caso.userId === initialClienteId : true;
         return matchEstado && matchCliente;
       })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a: any, b: any) => {
+        const priorityA = getStatusPriority(a.status);
+        const priorityB = getStatusPriority(b.status);
+        
+        // 1. Si tienen distinta prioridad, el activo (0) va arriba
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        
+        // 2. Si tienen la misma prioridad, ordenar por fecha descendente (más nuevos arriba)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
   }, [misCasos, filtroEstado, initialClienteId]);
 
   if (isLoading && misCasos.length === 0) {
@@ -83,7 +100,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
 
   // Vista de Chat/Detalle
   if (casoSeleccionado) {
-    const caso = misCasos.find(c => c.id === casoSeleccionado);
+    const caso = misCasos.find((c: any) => c.id === casoSeleccionado);
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -217,7 +234,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
             <p className="text-slate-400 font-bold text-sm">Tan pronto como se te asigne un nuevo caso, aparecerá en esta sección.</p>
           </div>
         ) : (
-          casosFiltrados.map((caso) => (
+          casosFiltrados.map((caso: any) => (
             <div key={caso.id} className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98] relative overflow-hidden group">
               {/* Status Badge - Top Right */}
               <div className="absolute top-5 right-5">
@@ -324,7 +341,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                   </td>
                 </tr>
               ) : (
-                casosFiltrados.map((caso) => (
+                casosFiltrados.map((caso: any) => (
                   <tr key={caso.id} className={`hover:bg-slate-50/80 transition-colors group ${caso.status === OrderStatus.COMPLETADO ? 'opacity-60 grayscale-[0.2]' : ''}`}>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-4">

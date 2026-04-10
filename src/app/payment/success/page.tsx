@@ -1,9 +1,10 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheckCircle, FiArrowRight, FiFileText, FiMessageSquare, FiLoader, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,16 +21,19 @@ export default function PaymentSuccessPage({
     // por el Global Reactivity Provider (useRealtimeSubscription) al recibir el signal.
     const { data: order, isLoading } = useOrder(orderId);
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     // Estados de control de flujo estricto
     const [timeoutReached, setTimeoutReached] = useState(false);
-    const [counter, setCounter] = useState(5);
 
     // Evaluar Status basándonos en nombres actuales de virtuAbogado
-    const isPendingApproval = order?.status === 'PAGO_PENDIENTE';
-    const isFailed = ['PAGO_RECHAZADO', 'FALLIDO', 'CANCELADO'].includes(order?.status || '');
-    const isApproved = order && !isPendingApproval && !isFailed; 
-
+    const currentStatus = order?.status;
+    const isPendingApproval = currentStatus === 'PAGO_PENDIENTE';
+    
+    // ÉXITO: El pago fue validado. Ya sea que esté en PAID o EN_PROGRESO (auto-asignado)
+    const isApproved = currentStatus && ['PAID', 'EN_PROGRESO', 'COMPLETADO'].includes(currentStatus);
+    
+    const isFailed = ['PAGO_RECHAZADO', 'FALLIDO', 'CANCELADO'].includes(currentStatus || '');
     // Cláusula de Salida (Cleanup / Timeout)
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
@@ -43,15 +47,13 @@ export default function PaymentSuccessPage({
         };
     }, [isPendingApproval]);
 
-    // Redirección post-aprobación
+    // Redirección inmediata post-aprobación
     useEffect(() => {
         if (isApproved) {
-            const redirectTimer = setInterval(() => {
-                setCounter((prev) => (prev > 0 ? prev - 1 : 0));
-            }, 1000);
-            return () => clearInterval(redirectTimer);
+            console.log('🚀 [PaymentSuccess] Pago aprobado. Redirigiendo inmediatamente...');
+            router.push('/mis-servicios');
         }
-    }, [isApproved]);
+    }, [isApproved, router]);
 
     // Función de reintento
     const handleRetry = () => {
@@ -226,8 +228,8 @@ export default function PaymentSuccessPage({
                                 </div>
                             </div>
 
-                            <p className="mt-8 text-xs text-gray-400">
-                                Serás redirigido automáticamente en {counter} segundos...
+                            <p className="mt-8 text-xs text-gray-400 font-bold animate-pulse">
+                                Redirigiendo al panel de servicios...
                             </p>
                         </motion.div>
                     )}

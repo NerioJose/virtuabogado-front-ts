@@ -30,9 +30,20 @@ export const UserDataStep: React.FC = () => {
 
     const [formData, setFormData] = useState({
         password: '',
-        name: storeUserData?.nombre || '',
+        name: storeUserData?.nombre || storeUserData?.name || '',
         phone: storeUserData?.phone || '',
     });
+
+    // Sincronizar formData local con el store cuando el store cambie (tras checkUserExists)
+    useEffect(() => {
+        if (storeUserData) {
+            setFormData(prev => ({
+                ...prev,
+                name: storeUserData.nombre || storeUserData.name || prev.name,
+                phone: storeUserData.phone || prev.phone,
+            }));
+        }
+    }, [storeUserData]);
 
     // 2. Debounce para verificación de Email
     useEffect(() => {
@@ -44,6 +55,9 @@ export const UserDataStep: React.FC = () => {
         }
 
         const timer = setTimeout(async () => {
+            // Si ya chequeamos este email y el resultado está en el store, no repetir.
+            if (hasChecked && storeUserData?.email === email) return;
+
             setIsCheckingEmail(true);
             setLocalError(null);
             try {
@@ -54,10 +68,10 @@ export const UserDataStep: React.FC = () => {
             } finally {
                 setIsCheckingEmail(false);
             }
-        }, 800); // Debounce de 800ms para no saturar
+        }, 800);
 
         return () => clearTimeout(timer);
-    }, [email, checkUserExists]);
+    }, [email, checkUserExists, hasChecked, storeUserData?.email]);
 
     // 3. Manejadores
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiSearch, 
@@ -41,6 +41,7 @@ export default function ClientPanel({
   handleLogout
 }: ClientPanelProps) {
   const [seccionActiva, setSeccionActiva] = useState('servicios');
+  const [tabActivo, setTabActivo] = useState<'activos' | 'historial'>('activos');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'>('todos');
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
@@ -60,15 +61,21 @@ export default function ClientPanel({
     cancelados: servicios.filter(s => s.estado === 'cancelado').length,
   }), [servicios]);
 
-  // Filtrado de servicios
-  const serviciosFiltrados = useMemo(() => {
-    return servicios.filter(s => {
-      const coincideEstado = filtroEstado === 'todos' || s.estado === filtroEstado;
-      const coincideBusqueda = s.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase()) || 
-                              s.numeroOrden.toLowerCase().includes(terminoBusqueda.toLowerCase());
-    return coincideEstado && coincideBusqueda;
-    });
-  }, [servicios, filtroEstado, terminoBusqueda]);
+  // Filtrado de servicios por pestaña y búsqueda
+  const { activos, historial } = useMemo(() => {
+    const term = terminoBusqueda.toLowerCase();
+    const filtrados = servicios.filter(s => 
+      s.nombre.toLowerCase().includes(term) || 
+      s.numeroOrden.toLowerCase().includes(term)
+    );
+
+    return {
+      activos: filtrados.filter(s => ['pendiente', 'programado', 'revision'].includes(s.estado)),
+      historial: filtrados.filter(s => ['completado', 'cancelado'].includes(s.estado))
+    };
+  }, [servicios, terminoBusqueda]);
+
+  const serviciosAMostrar = tabActivo === 'activos' ? activos : historial;
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,15 +143,16 @@ export default function ClientPanel({
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:relative sm:group">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Buscador Desplegable en Móvil / Estático en Desktop */}
+              <div className="relative group">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input 
                   type="text" 
-                  placeholder="Buscar orden..." 
+                  placeholder="Buscar..." 
                   value={terminoBusqueda}
                   onChange={(e) => setTerminoBusqueda(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 bg-slate-100/50 border-transparent border focus:border-azul-primario focus:bg-white rounded-2xl focus:outline-none transition-all w-48 md:w-64 font-medium text-sm"
+                  className="pl-10 pr-4 py-2 bg-slate-100/50 border-transparent border focus:border-azul-primario focus:bg-white rounded-2xl focus:outline-none transition-all w-32 sm:w-48 md:w-64 font-medium text-xs md:text-sm shadow-sm md:shadow-none"
                 />
               </div>
               <Link href="/servicios">
@@ -176,26 +184,57 @@ export default function ClientPanel({
                 {/* Dashboard Stats */}
                 <ClientStats stats={statsData} isLoading={isLoading} />
 
-                {/* Filtros de Estado Premium */}
-                <div className="mb-8 overflow-x-auto no-scrollbar py-2">
-                  <div className="flex items-center gap-2 min-w-max">
-                    <span className="px-4 py-2 bg-slate-100 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">Filtros</span>
-                    {(['todos', 'pendiente', 'programado', 'revision', 'completado'] as const).map((estado) => (
+                {/* Selector de Pestañas Premium */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                  <div className="bg-white/50 backdrop-blur-sm p-1.5 rounded-[2rem] border border-slate-200/60 shadow-sm flex gap-1 w-fit">
+                    <button
+                      onClick={() => setTabActivo('activos')}
+                      className={`px-8 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${
+                        tabActivo === 'activos'
+                          ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 scale-[1.02]'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      Mis Expedientes Activos
+                      {activos.length > 0 && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-[9px] ${tabActivo === 'activos' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                          {activos.length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setTabActivo('historial')}
+                      className={`px-8 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${
+                        tabActivo === 'historial'
+                          ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 scale-[1.02]'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      Historial de Servicios
+                      {historial.length > 0 && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-[9px] ${tabActivo === 'historial' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                          {historial.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Filtro de estado secundario (Opcional, solo si el usuario quiere filtrar por un estado específico dentro de la pestaña) */}
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                    {(tabActivo === 'activos' 
+                      ? (['todos', 'pendiente', 'programado', 'revision'] as const)
+                      : (['todos', 'completado', 'cancelado'] as const)
+                    ).map((estado) => (
                       <button
                         key={estado}
-                        onClick={() => setFiltroEstado(estado)}
-                        className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                        onClick={() => setFiltroEstado(estado as any)}
+                        className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                           filtroEstado === estado
-                            ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20 scale-105'
-                            : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
+                            ? 'bg-slate-800 text-white'
+                            : 'bg-white text-slate-400 border border-slate-100'
                         }`}
                       >
-                        {estado === 'programado' ? 'En Proceso' : estado === 'revision' ? 'En Revisión' : estado}
-                        <span className={`px-2 py-0.5 rounded-md ml-2 text-[10px] ${
-                          filtroEstado === estado ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {estado === 'todos' ? statsData.total : (statsData as any)[estado === 'programado' ? 'programados' : estado === 'revision' ? 'revisiones' : estado + 's']}
-                        </span>
+                        {estado === 'programado' ? 'En Proceso' : estado === 'revision' ? 'Revisión' : estado}
                       </button>
                     ))}
                   </div>
@@ -206,23 +245,32 @@ export default function ClientPanel({
                   <div className="flex justify-center items-center h-64">
                     <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin" />
                   </div>
-                ) : serviciosFiltrados.length === 0 ? (
+                ) : (tabActivo === 'activos' ? activos : historial).length === 0 ? (
                   <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-200/60 shadow-sm">
                     <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                       <FiFileText className="text-slate-300" size={40} />
                     </div>
-                    <h3 className="text-xl font-black text-azul-primario uppercase tracking-tight">Sin servicios activos</h3>
-                    <p className="text-slate-400 text-sm mt-1">No se encontraron servicios contratados bajo estos criterios.</p>
+                    <h3 className="text-xl font-black text-azul-primario uppercase tracking-tight">
+                      {tabActivo === 'activos' ? 'Sin expedientes en curso' : 'Historial vacío'}
+                    </h3>
+                    <p className="text-slate-400 text-sm mt-1">
+                      {tabActivo === 'activos' 
+                        ? 'Actualmente no tienes procesos legales activos. ¡Contrata uno nuevo!' 
+                        : 'Aún no tienes servicios finalizados en tu historial.'}
+                    </p>
                   </div>
-                ) : (
+                ) : tabActivo === 'activos' ? (
                   <motion.div 
                     variants={container}
                     initial="hidden"
                     animate="show"
                     className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 px-1"
                   >
-                    {serviciosFiltrados.map((servicio: any) => {
+                    {activos.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => {
                       const isUnread = unreadOrders.includes(servicio.id);
+                      // Determinar si es "Reciente" (creado en las últimas 48 horas)
+                      const isRecent = servicio.createdAt && (Date.now() - new Date(servicio.createdAt).getTime()) < 48 * 60 * 60 * 1000;
+                      
                       return (
                         <motion.div
                           layout
@@ -233,6 +281,12 @@ export default function ClientPanel({
                         >
                           {isUnread && (
                             <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-16 -mt-16 animate-pulse" />
+                          )}
+
+                          {isRecent && (
+                            <div className="absolute top-0 left-0 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-br-2xl shadow-sm z-10">
+                              Nuevo
+                            </div>
                           )}
 
                           <div className="flex justify-between items-start mb-6">
@@ -316,6 +370,87 @@ export default function ClientPanel({
                       );
                     })}
                   </motion.div>
+                ) : (
+                  /* VISTA DE HISTORIAL: Híbrida (Tabla en Desktop, Mini-Cards en Mobile) */
+                  <div className="space-y-4">
+                    {/* 🖥️ Tabla para Tablets, PCs y Televisores */}
+                    <div className="hidden md:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
+                          <thead className="bg-slate-50/50">
+                            <tr>
+                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Expediente</th>
+                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Causa Legal</th>
+                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest capitalize">Fecha</th>
+                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</th>
+                              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {historial.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => (
+                              <motion.tr 
+                                key={servicio.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="group hover:bg-slate-50/50 transition-colors"
+                              >
+                                <td className="px-8 py-5 text-sm font-black text-azul-primario tracking-tighter">#{servicio.numeroOrden.slice(0, 8)}</td>
+                                <td className="px-8 py-5">
+                                  <p className="text-sm font-black text-slate-700">{servicio.nombre}</p>
+                                </td>
+                                <td className="px-8 py-5 text-xs font-bold text-slate-400">{servicio.fecha}</td>
+                                <td className="px-8 py-5">
+                                  <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusColor(servicio.estado)}`}>
+                                    {getStatusText(servicio.estado)}
+                                  </span>
+                                </td>
+                                <td className="px-8 py-5 text-sm font-black text-slate-700">${servicio.precio.toLocaleString()}</td>
+                                <td className="px-8 py-5 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Link href={`/detalle-servicio/${servicio.id}`}>
+                                      <button className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-azul-primario hover:text-white transition-all shadow-sm">
+                                        <FiEye size={18} />
+                                      </button>
+                                    </Link>
+                                  </div>
+                                </td>
+                              </motion.tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 📱 Mini-Cards para Móviles (Evita scroll horizontal) */}
+                    <div className="grid grid-cols-1 gap-4 md:hidden">
+                      {historial.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => (
+                        <motion.div 
+                          key={servicio.id}
+                          className="bg-white p-5 rounded-[2rem] border border-slate-200/60 shadow-sm flex items-center justify-between gap-4"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[10px] font-black text-azul-primario bg-azul-primario/5 px-2 py-0.5 rounded-lg">#{servicio.numeroOrden.slice(0, 8)}</span>
+                              <span className="text-[10px] font-bold text-slate-400">{servicio.fecha}</span>
+                            </div>
+                            <h4 className="text-sm font-black text-slate-800 truncate">{servicio.nombre}</h4>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${getStatusColor(servicio.estado)}`}>
+                                {getStatusText(servicio.estado)}
+                              </span>
+                              <span className="text-xs font-black text-slate-700">${servicio.precio.toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <Link href={`/detalle-servicio/${servicio.id}`}>
+                            <button className="w-12 h-12 bg-slate-100 text-slate-500 rounded-2xl flex items-center justify-center active:bg-azul-primario active:text-white transition-all">
+                              <FiEye size={20} />
+                            </button>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </motion.div>
             )}

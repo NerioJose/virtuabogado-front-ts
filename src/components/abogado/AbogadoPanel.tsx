@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import PushNotificationToggle from '@/components/notifications/PushNotificationToggle';
 import { Abogado } from '@/types/index';
 import {
 	FiBriefcase,
@@ -27,6 +28,7 @@ import { UserRole } from '@/shared/types/entities.types';
 import { formatCurrency } from '@/utils/formatters';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 // OPTIMIZACIÓN (Dynamic Imports): Cargamos solo lo crítico (Casos) y el resto bajo demanda
 const CasosAbogadoPanel = dynamic(() => import('./CasosAbogadoPanel'), { 
@@ -53,6 +55,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const [selectedCasoId, setSelectedCasoId] = useState<string | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+	// 🔥 REALTIME REACTIVITY: Escuchar cambios en órdenes y mensajes
+	// Esto invalida la caché de TanStack Query instantáneamente
+	useRealtimeSubscription();
+
 	const { user: userAuth, logout: storeLogout } = useAuthStore();
 	// VALIDACIÓN DE IDENTIDAD (ID Consistency): Priorizar prop abogadoId del servidor
 	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
@@ -78,7 +84,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 	// Fetch de datos optimizado con TanStack Query
 	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
-	const orders = response?.data || [];
+	const orders = (response as any)?.data || [];
 
 	useEffect(() => {
 		if (currentAbogadoId) {
@@ -223,7 +229,11 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							</li>
 						))}
 						
-						<li className="mt-12 mb-6">
+						<li className="mt-8 px-4">
+							<PushNotificationToggle />
+						</li>
+						
+						<li className="mt-4 mb-6">
 							<button
 								onClick={handleLogout}
 								className="w-full flex items-center px-4 py-4 text-red-500 hover:bg-red-50 rounded-2xl transition-all group font-black text-sm">

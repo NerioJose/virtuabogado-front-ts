@@ -49,7 +49,7 @@ export async function GET(request: Request) {
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol;
+            userRole = userData?.rol?.toUpperCase();
         }
 
         if (!userRole) {
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
         }
         
         // Final role normalization ensuring it's a string for comparisons
-        const role: string = userRole;
+        const role: string = userRole.toUpperCase();
         console.log(`🔍 [API Orders] Role identified: ${role} for user: ${user.id}`);
 
         const { searchParams } = new URL(request.url);
@@ -97,6 +97,7 @@ export async function GET(request: Request) {
                     // No debe ver carritos abandonados o pagos fallidos
                     where.status = { notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO'] };
                 } else {
+                    // El CLIENTE solo ve lo que ya disparó el webhook de éxito
                     where.status = {
                         notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
                     };
@@ -303,13 +304,13 @@ export async function POST(request: Request) {
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol;
+            userRole = userData?.rol?.toUpperCase();
         }
         if (!userRole) {
             return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
         }
         
-        const role: string = userRole;
+        const role: string = userRole.toUpperCase();
         const isAdmin = role === 'ADMIN';
         
         let finalUserId = user.id; 
@@ -407,13 +408,10 @@ export async function POST(request: Request) {
             autoAssignedLawyerId = activeLawyers[0].id;
             assignedAt = new Date();
             console.log('⚖️ API: Auto-asignando a abogado activo único:', activeLawyers[0].nombre);
-        } else if (activeLawyers.length === 0 && allPotentialLawyers.length === 1) {
-            // FALLBACK: Si hay uno solo pero no está marcado como activo, lo asignamos igual para no romper el flujo
-            autoAssignedLawyerId = allPotentialLawyers[0].id;
-            assignedAt = new Date();
-            console.warn('⚖️ API: Auto-asignando a abogado único (ADVERTENCIA: No marcado como activo):', allPotentialLawyers[0].nombre);
-        } else if (allPotentialLawyers.length > 1) {
-            console.log(`⚖️ API: Hay ${allPotentialLawyers.length} abogados, se requiere asignación manual.`);
+        } else if (activeLawyers.length > 1) {
+            console.log(`⚖️ API: Hay ${activeLawyers.length} abogados activos, se requiere asignación manual.`);
+        } else {
+            console.log('⚖️ API: No hay abogados activos disponibles para auto-asignación.');
         }
 
         // Crear la orden en base de datos con el desglose financiero
@@ -517,7 +515,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
         }
 
-        const role: string = userRole;
+        const role: string = userRole.toUpperCase();
         const isAdmin = role === 'ADMIN';
         const isLawyer = userRole === 'ABOGADO';
         const isOwner = existingOrder.userId === user.id;

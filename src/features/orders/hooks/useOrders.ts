@@ -14,21 +14,22 @@ export const ORDER_KEYS = {
     status: (id: string) => [...ORDER_KEYS.detail(id), 'status'] as const,
 };
 
-export function useOrders(filters?: OrdersFilters & { page?: number; limit?: number }) {
+export function useOrders(filters?: OrdersFilters & { page?: number; limit?: number }, options?: any) {
     return useQuery({
         queryKey: ORDER_KEYS.list(filters || {}),
         queryFn: () => ordersService.getAll(filters),
         staleTime: 1000 * 60 * 2, // 2 minutes - orders change frequently
-        select: (response) => response // Default select
+        select: (response) => response, // Default select
+        ...options
     });
 }
 
-export function useOrdersByLawyer(lawyerId: string) {
-    return useOrders({ lawyerId });
+export function useOrdersByLawyer(lawyerId: string, options?: any) {
+    return useOrders({ lawyerId }, options);
 }
 
-export function useOrdersByUser(userId: string) {
-    return useOrders({ userId });
+export function useOrdersByUser(userId: string, options?: any) {
+    return useOrders({ userId }, options);
 }
 
 export function useOrder(id: string) {

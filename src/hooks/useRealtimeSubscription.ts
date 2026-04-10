@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
 import { CLIENT_KEYS } from '@/features/clients/hooks/useClients';
@@ -47,57 +47,19 @@ export const useRealtimeSubscription = () => {
     // los usuarios conectados (abogado, cliente, admin).
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (!user?.id) return;
+        if (!user?.id || connectionStatus === 'DISCONNECTED') return;
 
         const supabase = createClient();
+        console.log('📡 [Realtime] Inicializando listeners de Broadcast...');
 
         const handleUpdate = (payload: any) => {
-            // Unificar extracción del evento y el contenido
-            // A veces viene en payload.event, otras directamente.
+            // Este handler ahora solo se encarga de actualizaciones de servicios
+            // ya que las órdenes las maneja el GlobalChatListener
             const eventName = payload?.event || (payload?.payload as any)?.event;
             const eventPayload = payload?.payload || payload;
             
-            console.log(`📡 [Broadcast] ${eventName} recibido:`, eventPayload);
-            
-            // Re-fetch y actualización de Stores para reactividad máxima
-            if (eventName === 'order-updated') {
-                // Sincronizar con el store de órdenes si hay ID
-                if (eventPayload?.orderId) {
-                    const { useOrdersStore } = require('@/features/orders/store/ordersStore');
-                    useOrdersStore.getState().updateOrder(eventPayload.orderId, {
-                        status: eventPayload.status,
-                        lawyerId: eventPayload.lawyerId,
-                    });
-                }
-
-                // ─── Redirección automática post-pago ────────────────────────────
-                // Si el cliente está esperando confirmación de Zenobank (isWaitingForWebhook),
-                // y el broadcast indica que su orden fue confirmada → redirigir inmediatamente.
-                const successStatuses = ['PENDIENTE', 'EN_PROGRESO', 'PAID', 'COMPLETADO'];
-                if (successStatuses.includes(eventPayload?.status)) {
-                    const { useCheckoutStore } = require('@/features/checkout/store/checkoutStore');
-                    const checkoutState = useCheckoutStore.getState();
-                    
-                    if (
-                        checkoutState.isWaitingForWebhook &&
-                        checkoutState.orderId === eventPayload?.orderId
-                    ) {
-                        console.log('💰 [Realtime] Pago confirmado vía broadcast. Redirigiendo a /mis-servicios...');
-                        checkoutState.setIsWaitingForWebhook(false);
-                        window.localStorage.removeItem('virtuabogado_pending_order');
-                        checkoutState.reset();
-                        window.location.href = '/mis-servicios';
-                        return;
-                    }
-                }
-                // ─────────────────────────────────────────────────────────────────
-
-                // Invalida TODO lo relacionado a órdenes para un refresh total
-                queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
-                queryClient.invalidateQueries({ queryKey: ['DashboardStats'] });
-                queryClient.invalidateQueries({ queryKey: ['Finance'] });
-                queryClient.invalidateQueries({ queryKey: ['FinancialSummary'] });
-            } else if (eventName === 'service-updated') {
+            if (eventName === 'service-updated') {
+                console.log(`📡 [Broadcast] ${eventName} recibido:`, eventPayload);
                 if (eventPayload?.serviceId) {
                     const { useServicesStore } = require('@/features/services/store/servicesStore');
                     useServicesStore.getState().updateServiceState(eventPayload.serviceId, eventPayload);
@@ -133,8 +95,11 @@ export const useRealtimeSubscription = () => {
     // REALTIME - sincronización instantánea
     // ═══════════════════════════════════════════════
     useEffect(() => {
+        // Blindaje estricto: no iniciar si no hay usuario o si estamos cargando auth
         if (!user?.id) {
-            setConnectionStatus('DISCONNECTED');
+            if (connectionStatus !== 'DISCONNECTED') {
+                setConnectionStatus('DISCONNECTED');
+            }
             return;
         }
 

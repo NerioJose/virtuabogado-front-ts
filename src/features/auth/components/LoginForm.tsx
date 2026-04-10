@@ -5,7 +5,7 @@
  * El rol se detecta automáticamente según las credenciales del usuario
  */
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';

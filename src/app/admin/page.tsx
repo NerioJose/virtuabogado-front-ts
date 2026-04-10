@@ -270,7 +270,7 @@ export default function AdminPage() {
 						<DashboardStats />
 						<Suspense
 							fallback={<LoadingSpinner text="Cargando órdenes..." />}>
-							<RecentOrders />
+							<RecentOrders abrirModal={abrirModal} />
 						</Suspense>
 					</>
 				);

@@ -32,6 +32,9 @@ export const PaymentStep: React.FC = () => {
         reset
     } = useCheckout();
 
+    // Estado del botón de rescate (se activa tras 10 segundos de espera)
+    const [showFallbackButton, setShowFallbackButton] = useState(false);
+
     // Requisito Fintech: Persistencia de Sesión
     useEffect(() => {
         if (orderId) {
@@ -43,19 +46,47 @@ export const PaymentStep: React.FC = () => {
     }, [orderId, isWaitingForWebhook, setOrderId]);
 
     const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
-    const isPaid = statusData?.status?.trim().toUpperCase() === 'PAID';
+    const currentRawStatus = statusData?.status?.trim().toUpperCase();
+    const isPaid = currentRawStatus === 'PAID';
 
-    // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO (Fuera del condicional para cumplir Rules of Hooks)
+    // Log de diagnóstico en tiempo real para el navegador
+    useEffect(() => {
+        if (statusData) {
+            console.log(`📡 [PaymentStep Polling] Respuesta del servidor:`, statusData);
+        }
+    }, [statusData]);
+
+    // Temporizador de Rescate: activa el botón manual después de 10 segundos
+    useEffect(() => {
+        if (!isWaitingForWebhook || isPaid) {
+            setShowFallbackButton(false);
+            return;
+        }
+        const timer = setTimeout(() => setShowFallbackButton(true), 10_000);
+        return () => clearTimeout(timer);
+    }, [isWaitingForWebhook, isPaid]);
+
+    // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO
     useEffect(() => {
         if (isWaitingForWebhook && isPaid) {
-            console.log('✅ [PaymentStep] Pago confirmado. Redirigiendo en 2s...');
+            console.log(`✅ [PaymentStep] Pago confirmado (${currentRawStatus}). Limpiando caché y redirigiendo...`);
+            
+            // Invalida la lista de órdenes global para que el dashboard vea el nuevo caso
+            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
+            
             const timer = setTimeout(() => {
+                // Limpieza de estados locales antes de redirigir
+                setIsWaitingForWebhook(false);
+                if (typeof window !== 'undefined') {
+                    window.localStorage.removeItem('virtuabogado_pending_order');
+                    window.localStorage.removeItem('activeOrderId');
+                }
                 reset();
                 router.push('/mis-servicios');
-            }, 2000);
+            }, 1500); // 1.5s para apreciar el éxito
             return () => clearTimeout(timer);
         }
-    }, [isPaid, isWaitingForWebhook, router, reset]);
+    }, [isPaid, isWaitingForWebhook, router, reset, setIsWaitingForWebhook, currentRawStatus, queryClient]);
 
     const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
 
@@ -68,7 +99,7 @@ export const PaymentStep: React.FC = () => {
         }
 
         setIsProcessingPayment(true);
-        const loadingToast = toast.loading('Preparando conexión segura...');
+        const loadingToast = toast.loading('Conectando con la pasarela financiera segura...');
 
         try {
             const result = await processPaymentAction({
@@ -82,17 +113,20 @@ export const PaymentStep: React.FC = () => {
                 }
 
                 if (result.redirectUrl) {
-                    toast.success('Abriendo pasarela...', { id: loadingToast });
+                    toast.success('Sesión de pago iniciada. Redirigiendo...', { id: loadingToast });
+                    
+                    // IMPORTANTE: Aseguramos el estado de espera ANTES de cualquier redirección
+                    setIsWaitingForWebhook(true);
                     
                     if (checkoutWindow) {
                         checkoutWindow.location.href = result.redirectUrl;
-                        setIsWaitingForWebhook(true);
                     } else {
                         window.location.href = result.redirectUrl;
                     }
                 } else {
                     if (checkoutWindow) checkoutWindow.close();
                     toast.success('Solicitud procesada con éxito', { id: loadingToast });
+                    setIsProcessingPayment(false);
                     setStep(3);
                 }
             } else {
@@ -156,6 +190,13 @@ export const PaymentStep: React.FC = () => {
                             : 'He abierto la pasarela en una nueva pestaña. Por favor, completa allí el pago para continuar.'}
                     </p>
                 </div>
+
+                {/* No mostramos botón de rescate si el pago está confirmado o si preferimos flujo 100% automático */}
+                {showFallbackButton && !isPaid && (
+                   <div className="pt-4 text-xs text-slate-400 italic font-medium animate-pulse">
+                     Sincronizando con Zenobank... un momento por favor.
+                   </div>
+                )}
             </motion.div>
         );
     }

@@ -13,7 +13,14 @@ const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 horas
  * Auto-guarda cambios y recupera al volver
  */
 export const useCheckoutStorage = () => {
-    const { service, userData, step, isOpen } = useCheckoutStore();
+    const { 
+        service, 
+        userData, 
+        step, 
+        isOpen, 
+        orderId, 
+        isWaitingForWebhook 
+    } = useCheckoutStore();
 
     // Guardar en localStorage cada vez que cambia el estado
     useEffect(() => {
@@ -34,6 +41,8 @@ export const useCheckoutStorage = () => {
                 service: serializableService,
                 userData,
                 step,
+                orderId,
+                isWaitingForWebhook,
                 timestamp: Date.now(),
             };
 
@@ -49,6 +58,10 @@ export const useCheckoutStorage = () => {
     useEffect(() => {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (!savedData) return;
+
+        // Si ya cerramos manualmente en esta sesión, no auto-abrir
+        const wasClosed = sessionStorage.getItem('checkout_manually_closed');
+        if (wasClosed) return;
 
         try {
             const data: CheckoutStorageData = JSON.parse(savedData);
@@ -73,6 +86,14 @@ export const useCheckoutStorage = () => {
 
                 if (data.userData) {
                     store.setUserData(data.userData);
+                }
+
+                if (data.orderId) {
+                    store.setOrderId(data.orderId);
+                }
+
+                if (data.isWaitingForWebhook) {
+                    store.setIsWaitingForWebhook(true);
                 }
 
                 // Si está autenticado, NUNCA forzar paso 1 si ya teníamos un paso superior

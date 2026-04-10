@@ -121,6 +121,7 @@ export interface ServicioCliente {
     numeroOrden: string;
     fechaCita?: string;
     abogado?: string;
+    createdAt?: string;
 }
 
 export const mapOrderToServicio = (order: Order): ServicioCliente => {
@@ -139,6 +140,7 @@ export const mapOrderToServicio = (order: Order): ServicioCliente => {
         // Campos opcionales que se llenarán cuando haya backend
         fechaCita: undefined,
         abogado: undefined,
+        createdAt: typeof order.createdAt === 'string' ? order.createdAt : order.createdAt.toISOString(),
     };
 };
 
@@ -146,7 +148,11 @@ export const mapOrderToServicio = (order: Order): ServicioCliente => {
  * Ordena los servicios por fecha de creación (más reciente primero)
  */
 export const sortServicesByDate = (services: ServicioCliente[]): ServicioCliente[] => {
-    return [...services].sort((a, b) => b.numeroOrden.localeCompare(a.numeroOrden));
+    return [...services].sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA; // Más reciente primero
+    });
 };
 
 /**

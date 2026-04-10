@@ -14,13 +14,14 @@ import { useServicesStore } from '../store/servicesStore';
 
 import { useEffect } from 'react';
 
-export const useServices = () => {
+export const useServices = (options?: any) => {
     const setServices = useServicesStore(state => state.setServices);
     const query = useQuery({
         queryKey: servicesKeys.active,
         queryFn: () => servicesService.getActive(),
         staleTime: 30000, // 30 segundos
         refetchOnWindowFocus: true,
+        ...options
     });
 
     // Sincronizar con el store de Zustand cuando cambien los datos

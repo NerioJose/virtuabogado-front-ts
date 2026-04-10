@@ -1,18 +1,38 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { FiCheckCircle, FiMail, FiArrowRight } from 'react-icons/fi';
-import { useCheckout } from '../hooks/useCheckout';
-import Link from 'next/link';
+import { useOrderStatus } from '../hooks/useOrderStatus';
+import { useRouter } from 'next/navigation';
+import { FiCheckCircle, FiMail, FiLoader } from 'react-icons/fi';
 
 export const ConfirmationStep: React.FC = () => {
-    const { orderId, service, userData, closeCheckout, tempPassword, paymentMethod } = useCheckout();
+    const { orderId, service, userData, closeCheckout, tempPassword, paymentMethod, reset } = useCheckout();
+    const router = useRouter();
     
-    // Determinamos si es un pago que requiere confirmación externa (Zenobank/Cripto)
-    const isPendingConfirmation = (paymentMethod as string) === 'zenobank' || (paymentMethod as string) === 'crypto';
+    // 📡 MONITOREO FINTECH: Polling de alta frecuencia (1s) para reconciliación inmediata
+    // Solo se activa si estamos en un método que requiere verificación externa
+    const needsWaiting = (paymentMethod as string) === 'zenobank' || (paymentMethod as string) === 'crypto';
+    
+    const { data: statusData } = useOrderStatus(orderId, needsWaiting);
+    
+    // Determinamos si es un pago exitoso basado en la respuesta en tiempo real
+    const isSuccess = statusData?.status === 'PAID';
+    // Si el método no requiere espera, es éxito inmediato. Si requiere espera, depende del polling.
+    const isPendingConfirmation = needsWaiting && !isSuccess;
+
+    // 🚀 AUTO-REDIRECCIÓN: Se dispara solo cuando detectamos el éxito final
+    React.useEffect(() => {
+        if (!isPendingConfirmation) {
+            const timer = setTimeout(() => {
+                reset(); // Limpiar el store para futuras compras
+                closeCheckout();
+                router.push('/mis-servicios');
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [isPendingConfirmation, closeCheckout, router, reset]);
 
     const handleClose = () => {
+        reset();
         closeCheckout();
     };
 
@@ -33,8 +53,7 @@ export const ConfirmationStep: React.FC = () => {
             >
                 {isPendingConfirmation ? (
                     <div className="relative">
-                        <div className="absolute inset-0 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                        <FiCheckCircle className="w-12 h-12 text-amber-600 opacity-50" />
+                        <FiLoader className="w-12 h-12 text-amber-600 animate-spin" />
                     </div>
                 ) : (
                     <FiCheckCircle className="w-12 h-12 text-green-600" />
@@ -48,12 +67,12 @@ export const ConfirmationStep: React.FC = () => {
                 transition={{ delay: 0.3 }}
             >
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {isPendingConfirmation ? 'Pago en Proceso' : '¡Pago Exitoso!'}
+                    {isPendingConfirmation ? 'Validando Pago...' : '¡Pago Exitoso!'}
                 </h3>
                 <p className="text-sm text-gray-600 mb-6 max-w-xs mx-auto text-balance">
                     {isPendingConfirmation 
-                        ? 'Estamos esperando la confirmación de la red. Tu servicio se activará automáticamente en unos minutos.'
-                        : 'Tu servicio ha sido contratado correctamente y ya está activo en tu panel.'}
+                        ? 'Estamos detectando tu pago en tiempo real. Por favor, no cierres esta ventana.'
+                        : 'Tu servicio ha sido activado correctamente. Redirigiendo a tu panel en unos segundos...'}
                 </p>
             </motion.div>
 
@@ -67,7 +86,7 @@ export const ConfirmationStep: React.FC = () => {
                 <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Número de orden:</span>
-                        <span className="font-mono font-bold text-gray-900">{orderId}</span>
+                        <span className="font-mono font-bold text-gray-900">{orderId?.slice(0, 13)}...</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Servicio:</span>
@@ -76,9 +95,9 @@ export const ConfirmationStep: React.FC = () => {
                     <div className="flex justify-between text-sm pt-2 border-t border-gray-100">
                         <span className="text-gray-500">Estado:</span>
                         <span className={`font-black text-[10px] uppercase px-2 py-0.5 rounded ${
-                            isPendingConfirmation ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                            isPendingConfirmation ? 'bg-amber-100 text-amber-700 animate-pulse' : 'bg-green-100 text-green-700'
                         }`}>
-                            {isPendingConfirmation ? 'Esperando Validación' : 'Confirmado'}
+                            {isPendingConfirmation ? 'Sincronizando...' : 'Confirmado'}
                         </span>
                     </div>
                 </div>
@@ -94,44 +113,36 @@ export const ConfirmationStep: React.FC = () => {
                 <FiMail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-left text-sm">
                     <p className="text-blue-900 font-medium mb-1">
-                        Confirmación enviada a tu email
+                        Confirmación enviada
                     </p>
-                    <p className="text-blue-700">
-                        Hemos enviado los detalles de tu compra a <strong>{userData?.email}</strong>
+                    <p className="text-blue-700 text-xs">
+                        Hemos enviado los detalles a <strong>{userData?.email}</strong>
                     </p>
-                    {tempPassword && (
-                        <div className="mt-4 p-3 bg-white/50 border border-blue-100 rounded-md">
-                            <p className="text-blue-900 font-semibold mb-1">Tus credenciales de acceso:</p>
-                            <div className="flex flex-col gap-1">
-                                <p className="text-blue-800">Email: <span className="font-mono">{userData?.email}</span></p>
-                                <p className="text-blue-800">Clave temporal: <span className="font-mono bg-blue-100 px-1 rounded">{tempPassword}</span></p>
-                            </div>
-                            <p className="text-xs text-blue-600 mt-2 italic">
-                                * Te recomendamos cambiar tu clave al ingresar a tu panel.
-                            </p>
-                        </div>
-                    )}
                 </div>
             </motion.div>
 
-            {/* Botones */}
+            {/* Botones - Reducidos a lo mínimo según solicitud */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
                 className="flex flex-col gap-3"
             >
-                <Link href="/mis-servicios" onClick={handleClose}>
-                    <button className="btn-primary w-full">
-                        Ver mis servicios
-                        <FiArrowRight className="inline ml-2" />
-                    </button>
-                </Link>
+                {!isPendingConfirmation && (
+                   <div className="w-full bg-gray-100 rounded-full h-1 mb-4 overflow-hidden">
+                       <motion.div 
+                           className="bg-green-500 h-full"
+                           initial={{ width: '0%' }}
+                           animate={{ width: '100%' }}
+                           transition={{ duration: 5, ease: 'linear' }}
+                       />
+                   </div>
+                )}
                 <button
                     onClick={handleClose}
-                    className="btn-secondary w-full"
+                    className="text-gray-400 hover:text-gray-600 text-sm transition-colors py-2"
                 >
-                    Cerrar
+                    Cerrar ventana
                 </button>
             </motion.div>
         </motion.div>

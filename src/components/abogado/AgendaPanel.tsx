@@ -13,7 +13,7 @@ interface AgendaPanelProps {
 export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelProps) {
   // ============ REACT QUERY ============
   const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-  const orders = response?.data || [];
+  const orders = (response as any)?.data || [];
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
 
   // Función para formatear fecha
@@ -35,10 +35,29 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
 
   // Filtrar órdenes por fecha de creación o actualización para la "agenda"
   const casosDelDia = useMemo(() => {
-    return orders.filter(order => {
-      const fechaOrder = new Date(order.createdAt);
-      return fechaOrder.toDateString() === fechaSeleccionada.toDateString();
-    });
+    // Definir prioridades de estado: Estados activos primero (0), Finalizados después (1)
+    const getStatusPriority = (status: string) => {
+      const activeStates = ['PENDIENTE', 'EN_PROGRESO', 'REVISION'];
+      return activeStates.includes(status) ? 0 : 1;
+    };
+
+    return (orders as any[])
+      .filter((order: any) => {
+        const fechaOrder = new Date(order.createdAt);
+        return fechaOrder.toDateString() === fechaSeleccionada.toDateString();
+      })
+      .sort((a: any, b: any) => {
+        const priorityA = getStatusPriority(a.status);
+        const priorityB = getStatusPriority(b.status);
+        
+        // 1. Prioridad por estado
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        
+        // 2. Misma prioridad, los más recientes arriba
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
   }, [orders, fechaSeleccionada]);
 
   if (isLoading) {

@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 
 /**
  * Componente Button reutilizable con variantes

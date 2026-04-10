@@ -144,23 +144,24 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
     const taxes = (total * Number(settings?.tax_percentage ?? 15)) / 100;
     const platformFee = (total * Number(settings?.platform_fee_percentage ?? 5)) / 100;
 
-    // 4. IDEMPOTENCIA: ¿Existe ya una orden PENDIENTE para este usuario y servicio?
-    // Esto evita duplicados si el usuario hace doble clic o recarga.
+    /* 
+    // 4. IDEMPOTENCIA: Bloque desactivado para forzar registro visual de toda intención de pago
     let order = await prisma.order.findFirst({
         where: {
             userId: user.id,
             serviceId: service.id,
             status: 'PAGO_PENDIENTE',
-            // Opcional: Solo reusar si es reciente (ej. últimas 24h)
             createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
         },
         orderBy: { createdAt: 'desc' }
     });
+    */
+    let order: any = null;
 
     // 👨‍⚖️ AUTO-ASSIGNMENT: Si solo hay un abogado activo, asignar automáticamente
     const activeLawyers = await prisma.user.findMany({
         where: {
-            rol: 'ABOGADO',
+            rol: UserRole.ABOGADO,
             activo: true
         },
         select: { id: true }
@@ -175,17 +176,8 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         console.log(`⚖️ [Auto-Assignment] Asignando automáticamente al único abogado activo: ${autoAssignedLawyerId}`);
     }
 
-    if (order) {
-        console.log(`♻️ [Idempotencia] Reutilizando orden PENDIENTE existente: ${order.id}`);
-        // Actualizamos el método de pago por si el usuario cambió de opinión
-        order = await prisma.order.update({
-            where: { id: order.id },
-            data: { 
-                paymentMethodId: paymentMethod.id,
-                lawyerId: autoAssignedLawyerId, 
-                assignedAt
-            }
-        });
+    if (false) { // Bloque de reutilización deshabilitado (forzar nueva orden)
+        // ... logic
     } else {
         // Crear nueva orden con tipos seguros
         order = await prisma.order.create({

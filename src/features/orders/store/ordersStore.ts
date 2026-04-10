@@ -103,6 +103,8 @@ export const useOrdersStore = create<OrdersState>()(
                         isLoading: false,
                     }));
                     console.log('✅ OrdersStore: Order status updated in API:', orderId);
+
+
                 } catch (error) {
                     console.error('❌ OrdersStore: Error updating order status:', error);
                     set({

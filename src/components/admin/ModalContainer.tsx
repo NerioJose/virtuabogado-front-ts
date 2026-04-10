@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
 	FiX,
@@ -16,8 +16,7 @@ import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
 import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
 
-// Wrapper simple para propósitos de tipado en el render condicional
-const ChatWindowSupervision = ({ orderId, className }: { orderId: string, className?: string }) => <ChatWindow orderId={orderId} className={className} />;
+import AdminSupervisionTabs from './AdminSupervisionTabs';
 
 // Tipo unión para todos los posibles elementos (excluyendo null)
 type ElementoModal = Abogado | Cliente | Caso | Transaccion;
@@ -93,6 +92,15 @@ const obtenerCamposPorSeccion = (seccion: string, tipo: string) => {
 					type: 'text',
 					required: false,
 				},
+				...(tipo === 'editar' ? [
+					{
+						key: 'status',
+						label: 'Estado de la cuenta',
+						type: 'select',
+						options: ['ACTIVO', 'INACTIVO'],
+						required: true,
+					}
+				] : []),
 				...(tipo === 'crear' ? [
 					{
 						key: 'password',
@@ -114,6 +122,15 @@ const obtenerCamposPorSeccion = (seccion: string, tipo: string) => {
 				{ key: 'telefono', label: 'Teléfono', type: 'tel', required: true },
 				{ key: 'direccion', label: 'Dirección', type: 'text', required: false },
 				{ key: 'dni', label: 'DNI/RUC', type: 'text', required: false },
+				...(tipo === 'editar' ? [
+					{
+						key: 'status',
+						label: 'Estado de la cuenta',
+						type: 'select',
+						options: ['ACTIVO', 'INACTIVO'],
+						required: true,
+					}
+				] : []),
 				...(tipo === 'crear' ? [
 					{
 						key: 'password',
@@ -338,9 +355,16 @@ export default function ModalContainer({
 		setError('');
 
 		try {
-			console.log('📝 ModalContainer handleSubmit:', { tipo, formData });
+			// Transformar campos especiales (como el estado activo/inactivo)
+			const finalData = { ...formData };
+			if (finalData.status === 'ACTIVO') finalData.activo = true;
+			if (finalData.status === 'INACTIVO') finalData.activo = false;
+			if (finalData.status === 'active') finalData.activo = true;
+			if (finalData.status === 'inactive') finalData.activo = false;
+
+			console.log('📝 ModalContainer handleSubmit:', { tipo, finalData });
 			if (onSave) {
-				await onSave(formData);
+				await onSave(finalData);
 			} else {
 				// Simulación de API call
 				await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -679,30 +703,9 @@ export default function ModalContainer({
 								</div>
 							</form>
 
-							{/* CHAT DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
+							{/* TABS DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
 							{tipo === 'ver' && (seccion === 'casos' || seccion === 'finanzas') && (elemento as any)?.id && (
-								<div className="mt-6 border-t pt-6">
-									<div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
-										<h4 className="font-bold text-azul-primario mb-3 flex items-center">
-											<FiBriefcase className="mr-2" /> Servicios Contratados
-										</h4>
-										<div className="space-y-2">
-											{(elemento as any)?.items?.map((item: any, i: number) => (
-												<div key={i} className="flex justify-between items-center bg-white p-3 rounded border border-gray-100 shadow-sm">
-													<span className="text-sm font-medium text-gray-700">{item.serviceName}</span>
-													<span className="text-sm font-bold text-azul-primario">${item.price.toLocaleString()}</span>
-												</div>
-											))}
-										</div>
-									</div>
-
-									<h4 className="font-bold text-gray-800 mb-3 flex items-center">
-										<span className="mr-2">💬</span> Chat de Supervisión
-									</h4>
-									<div className="h-[500px] shadow-inner rounded-lg overflow-hidden border border-gray-200">
-										<ChatWindowSupervision orderId={(elemento as any).id} className="h-full" />
-									</div>
-								</div>
+								<AdminSupervisionTabs orderId={(elemento as any).id} elemento={elemento} />
 							)}
 						</div>
 					)}

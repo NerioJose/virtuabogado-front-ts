@@ -53,9 +53,9 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        console.log('🏛️ [API Clients] Fetching active users for administrative management...');
+        console.log('🏛️ [API Clients] Fetching users for administrative management...');
         const allUsers = await prisma.user.findMany({
-            where: { activo: true },
+            // Quitamos el filtro de activo: true para que el Admin pueda gestionar inactivos
             orderBy: { createdAt: 'desc' }
         });
 
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
             telefono: client.telefono || undefined,
             direccion: client.direccion || undefined,
             dni: client.dni || undefined,
-            status: 'active', // Default
+            status: client.activo ? 'active' : 'inactive', 
             createdAt: client.createdAt,
             updatedAt: client.updatedAt,
             serviciosContratados: 0, // Placeholder for stability

@@ -44,16 +44,45 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 	});
 
 	const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 500 });
-	const orders = response?.data || [];
+	const orders = (response as any)?.data || [];
 
 	const ordenesFiltradas = useMemo(() => {
-		if (!terminoBusqueda) return orders;
+		const filtradas = orders.filter((order: any) => {
+			if (!terminoBusqueda) return true;
+			return (
+				order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+				order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+				(order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
+			);
+		});
 
-		return orders.filter(order =>
-			order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-			order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-			(order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
-		);
+		// Función de prioridad consistente para el admin
+		const getStatusPriority = (status: string): number => {
+			switch (status) {
+				case 'PENDIENTE':
+				case 'PAID':
+					return 1;
+				case 'EN_PROGRESO':
+				case 'REVISION':
+					return 2;
+				case 'PAGO_PENDIENTE':
+					return 3;
+				case 'COMPLETADO':
+					return 4;
+				default:
+					return 5;
+			}
+		};
+
+		return [...filtradas].sort((a: any, b: any) => {
+			const priorityA = getStatusPriority(a.status);
+			const priorityB = getStatusPriority(b.status);
+			
+			if (priorityA !== priorityB) {
+				return priorityA - priorityB;
+			}
+			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+		});
 	}, [orders, terminoBusqueda]);
 
 	const isLoading = isLoadingSummary || isLoadingOrders;

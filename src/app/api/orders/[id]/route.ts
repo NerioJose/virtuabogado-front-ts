@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
+import { notifyNewCase, notifyOrderStatusUpdate } from '@/lib/push-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,13 +134,32 @@ export async function PATCH(
         };
 
         // 📡 Broadcast a todos los dashboards (admin, abogado, cliente)
+        const isNewAssignment = body.lawyerId && !order.lawyerId; // Esto no funciona bien porque 'order' es el objeto YA actualizado
+
+        // Necesitamos el estado anterior para saber si es nueva asignación. 
+        // Pero el Administrador suele enviar lawyerId y status: 'EN_PROGRESO' juntos.
+        // Si el body trae lawyerId, asumimos que es una intención de asignación.
+        
         broadcastOrderUpdate({
             orderId: order.id,
             userId: order.userId,
             lawyerId: order.lawyerId,
             status: order.status,
             eventType: 'updated',
+            isNewAssignment: !!body.lawyerId // Si el Admin mandó un lawyerId en este PATCH, es una asignación
         });
+
+        // 🔔 Enviar Notificación Push VAPID al abogado asignado
+        if (body.lawyerId && order.lawyerId) {
+            notifyNewCase(order.lawyerId, order.id, order.service.titulo)
+                .catch((e: Error | any) => console.error('Error enviando push de asignación:', e));
+        }
+
+        // 🔔 Enviar Notificación Push VAPID al cliente si cambia el estado a relevante (Asignado/Completado)
+        if (body.status === 'EN_PROGRESO' || body.status === 'COMPLETADO' || body.lawyerId) {
+            notifyOrderStatusUpdate(order.userId, order.id, order.status, order.service.titulo)
+                .catch((e: Error | any) => console.error('Error enviando push al cliente:', e));
+        }
 
         return NextResponse.json(formattedOrder);
     } catch (error: any) {

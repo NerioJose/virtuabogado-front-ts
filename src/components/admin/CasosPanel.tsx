@@ -15,18 +15,37 @@ interface CasosPanelProps {
 
 function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   const { data: response, isLoading } = useOrders({ limit: 100 });
-  const orders = response?.data || [];
+  const orders = (response as any)?.data || [];
   const unreadOrders = useChatStore((state) => state.unreadOrders);
 
   const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
 
   const ordenesFiltradas = useMemo(() => {
     const term = terminoBusqueda.toLowerCase().trim();
-    return orders.filter((orden) => {
+    
+    // Función de prioridad para el admin (igual a Dashboard)
+    const getStatusPriority = (status: string): number => {
+      switch (status) {
+        case OrderStatus.PENDIENTE:
+        case OrderStatus.PAID:
+          return 1; // Acción Requerida
+        case OrderStatus.EN_PROGRESO:
+        case OrderStatus.REVISION:
+          return 2; // Activos
+        case OrderStatus.PAGO_PENDIENTE:
+          return 3; 
+        case OrderStatus.COMPLETADO:
+          return 4;
+        default:
+          return 5;
+      }
+    };
+
+    const filtradas = orders.filter((orden: any) => {
       const coincideBusqueda =
         orden.userName?.toLowerCase().includes(term) ||
         orden.userEmail?.toLowerCase().includes(term) ||
-        orden.items?.some((item) => item.serviceName?.toLowerCase().includes(term)) ||
+        orden.items?.some((item: any) => item.serviceName?.toLowerCase().includes(term)) ||
         orden.lawyerName?.toLowerCase().includes(term) ||
         orden.id?.toLowerCase().includes(term);
 
@@ -34,6 +53,17 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
         filtroEstado === 'todos' || orden.status === filtroEstado;
 
       return coincideBusqueda && coincideEstado;
+    });
+
+    // Aplicar ordenamiento por prioridad y luego por fecha
+    return [...filtradas].sort((a: any, b: any) => {
+      const priorityA = getStatusPriority(a.status as OrderStatus);
+      const priorityB = getStatusPriority(b.status as OrderStatus);
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [orders, terminoBusqueda, filtroEstado]);
 
@@ -46,7 +76,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   };
 
   const statusConfig = {
-    [OrderStatus.PENDIENTE]: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700', icon: <FiClock /> },
+    [OrderStatus.PENDIENTE]: { label: 'Por Asignar', color: 'bg-amber-100 text-amber-700 font-bold', icon: <FiUserPlus /> },
     [OrderStatus.EN_PROGRESO]: { label: 'En Proceso', color: 'bg-blue-100 text-blue-700', icon: <FiBriefcase /> },
     [OrderStatus.REVISION]: { label: 'En Revisión', color: 'bg-purple-100 text-purple-700', icon: <FiEye /> },
     [OrderStatus.COMPLETADO]: { label: 'Completado', color: 'bg-emerald-100 text-emerald-700', icon: <FiCheckCircle /> },
@@ -78,11 +108,11 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
           <div className="flex gap-2">
             {[
               { id: 'todos', label: 'Todos', count: orders.length },
-              { id: OrderStatus.PENDIENTE, label: 'Pendientes', count: orders.filter(o => o.status === OrderStatus.PENDIENTE).length },
-              { id: OrderStatus.EN_PROGRESO, label: 'En Proceso', count: orders.filter(o => o.status === OrderStatus.EN_PROGRESO).length },
-              { id: OrderStatus.REVISION, label: 'En Revisión', count: orders.filter(o => o.status === OrderStatus.REVISION).length },
-              { id: OrderStatus.COMPLETADO, label: 'Completados', count: orders.filter(o => o.status === OrderStatus.COMPLETADO).length },
-              { id: OrderStatus.CANCELADO, label: 'Cancelados', count: orders.filter(o => o.status === OrderStatus.CANCELADO).length },
+              { id: OrderStatus.PENDIENTE, label: 'Pendientes', count: orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length },
+              { id: OrderStatus.EN_PROGRESO, label: 'En Proceso', count: orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length },
+              { id: OrderStatus.REVISION, label: 'En Revisión', count: orders.filter((o: any) => o.status === OrderStatus.REVISION).length },
+              { id: OrderStatus.COMPLETADO, label: 'Completados', count: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length },
+              { id: OrderStatus.CANCELADO, label: 'Cancelados', count: orders.filter((o: any) => o.status === OrderStatus.CANCELADO).length },
             ].map((btn) => (
               <button
                 key={btn.id}
@@ -152,7 +182,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                   </div>
                   <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Causa Legal</p>
-                    <p className="text-sm font-bold text-slate-600 truncate">{order.items.map(item => item.serviceName).join(', ')}</p>
+                    <p className="text-sm font-bold text-slate-600 truncate">{order.items.map((item: any) => item.serviceName).join(', ')}</p>
                   </div>
                 </div>
 
@@ -236,7 +266,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                       </td>
                       <td className="px-8 py-5">
                         <p className="text-xs font-bold text-slate-600 truncate max-w-[200px]">
-                          {order.items.map(item => item.serviceName).join(', ')}
+                          {order.items.map((item: any) => item.serviceName).join(', ')}
                         </p>
                       </td>
                       <td className="px-8 py-5">

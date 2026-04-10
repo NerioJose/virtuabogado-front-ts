@@ -12,6 +12,13 @@ import { useServicesStore } from '@/features/services/store/servicesStore';
 import { formatUSD } from '@/lib/finance';
 import { slugify } from '@/utils/formatters';
 
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useOrdersByUser } from '@/features/orders/hooks/useOrders';
+import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
+import { CasiListo } from '@/components/orders/CasiListo';
+
+// Blindaje contra errores de referencia en Vercel - Ya importado arriba
+
 // Mapeo de iconos para mantener el estilo visual con datos dinámicos
 const ICON_MAP: Record<string, React.ReactNode> = {
 	'Consultas Legales': (
@@ -58,18 +65,37 @@ const DEFAULT_ICON = (
 );
 
 export default function ServiciosClientPage() {
-	const { openCheckout } = useCheckout();
-	const { isLoading } = useServices();
-	useServicesRealtime(); // Tiempo real para todos los usuarios (sin auth requerida)
-	const activeServices = useServicesStore(state => state.activeServices);
+    // 1. REGLA DE ORO: TODOS los hooks al inicio absoluto
+    const { user, isLoading: authLoading } = useAuth();
+    const { openCheckout } = useCheckout();
+    
+    // Blindaje de Sesión: enabled solo si hay usuario
+    const { data: ordersResponse, isLoading: ordersLoading } = useOrdersByUser(user?.id || '', { 
+        enabled: !!user?.id 
+    });
+    const orders = (ordersResponse as any)?.data || [];
+    
+    const { isLoading: servicesLoading } = useServices(); // Public catalog
+    
+    // Limpieza de Realtime: solo si está autenticado
+    useServicesRealtime(!!user);
+    
+    // Configuración financiera opcional/guardada
+    const { isLoading: settingsLoading } = useFinancialSettings({
+        enabled: !!user
+    });
 
-	// Helper para previsualizar imagen con la misma logica del admin pero mejorada
-	const getServiceImage = (service: Service) => {
-		if (service.imagenUrl) return service.imagenUrl;
+    const activeServices = useServicesStore(state => state.activeServices);
+
+    // 2. Lógica de negocio (Cálculos derivados)
+    const hasPendingPayment = orders.some((order: any) => order.status === 'PAGO_PENDIENTE');
+    const pendingOrder = orders.find((order: any) => order.status === 'PAGO_PENDIENTE');
+
+    // Helper para previsualizar imagen
+    const getServiceImage = (service: Service) => {
+        if (service.imagenUrl) return service.imagenUrl;
         
         const slug = slugify(service.titulo);
-        
-        // Mapeos manuales para casos conocidos de plural/singular o nombres distintos
         const manualMap: Record<string, string> = {
             'consultas-legales': 'consulta-legal',
             'revision-de-documentos': 'revision-documentos',
@@ -80,30 +106,49 @@ export default function ServiciosClientPage() {
         };
 
         const finalSlug = manualMap[slug] || slug;
-		
-        // Si el slug ya tiene extensión (como .jpg), no añadir .png
-        if (finalSlug.includes('.')) {
-            return `/images/${finalSlug}`;
-        }
-        
-        return `/images/${finalSlug}.png`;
-	};
+        return finalSlug.includes('.') ? `/images/${finalSlug}` : `/images/${finalSlug}.png`;
+    };
 
-	const servicios = (activeServices || [])
-        .map(s => {
-            // Mapping de imágenes manual para nombres que no coinciden con el slug estándar
-            let imagenPath = getServiceImage(s);
+    const servicios = (activeServices || []).map(s => ({
+        id: s.id,
+        nombre: s.titulo,
+        titulo: s.titulo,
+        precio: Number(s.precio),
+        descripcion: s.descripcion,
+        icono: ICON_MAP[s.titulo] || DEFAULT_ICON,
+        imagen: getServiceImage(s),
+    }));
 
-            return {
-                id: s.id,
-                nombre: s.titulo,
-                titulo: s.titulo,
-                precio: Number(s.precio),
-                descripcion: s.descripcion,
-                icono: ICON_MAP[s.titulo] || DEFAULT_ICON,
-                imagen: imagenPath,
-            };
-        });
+    // 3. RENDERIZADO CONDICIONAL DE ESTADOS (Descending Order)
+    
+    // ESTADO 1: Cargando (Auth, Orders o Services)
+    if (authLoading || (user && ordersLoading) || servicesLoading || settingsLoading) {
+        return (
+            <main className="min-h-screen bg-white">
+                <section className="py-20 bg-azul-primario animate-pulse h-[400px]"></section>
+                <div className="container mx-auto px-6 py-16 space-y-12">
+                    {[1, 2].map(i => (
+                        <div key={i} className="grid grid-cols-1 lg:grid-cols-2 gap-10 animate-pulse">
+                            <div className="h-64 bg-gray-100 rounded-2xl"></div>
+                            <div className="space-y-4">
+                                <div className="h-8 bg-gray-100 w-3/4 rounded"></div>
+                                <div className="h-32 bg-gray-100 rounded"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </main>
+        );
+    }
+
+    // ESTADO 2: Pago en Espera (Prioridad sobre el listado)
+    if (hasPendingPayment && pendingOrder) {
+        return <CasiListo orderId={pendingOrder.id} />;
+    }
+
+    // ESTADO DE SEGURIDAD: Invitados pueden ver el catálogo (no bloqueamos)
+
+    // ESTADO 3: ÉXITO (Listado de servicios)
 
 	return (
 		<main className="min-h-screen">
@@ -144,23 +189,8 @@ export default function ServiciosClientPage() {
 			{/* Servicios Detallados */}
 			<section className="py-16 bg-white">
 				<div className="container mx-auto px-6">
-					{isLoading ? (
-						<div className="grid grid-cols-1 gap-16">
-							{[1, 2, 3].map(i => (
-								<div key={i} className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center animate-pulse">
-									<div className="space-y-6 text-center lg:text-left">
-										<div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto lg:mx-0"></div>
-										<div className="h-10 bg-gray-100 rounded w-3/4 mx-auto lg:mx-0"></div>
-										<div className="h-24 bg-gray-100 rounded"></div>
-										<div className="h-12 bg-gray-100 rounded w-1/3 mx-auto lg:mx-0"></div>
-									</div>
-									<div className="h-[300px] lg:h-[400px] bg-gray-100 rounded-xl"></div>
-								</div>
-							))}
-						</div>
-					) : (
-						<div className="grid grid-cols-1 gap-16">
-							{servicios.map((servicio, index) => (
+					<div className="grid grid-cols-1 gap-16">
+						{servicios.map((servicio, index) => (
 								<motion.div
 									key={servicio.id}
 									initial={{ 
@@ -228,8 +258,7 @@ export default function ServiciosClientPage() {
 								</motion.div>
 							))}
 						</div>
-					)}
-				</div>
+					</div>
 			</section>
 
 			{/* CTA Section */}

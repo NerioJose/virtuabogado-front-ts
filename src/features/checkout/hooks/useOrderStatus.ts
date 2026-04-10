@@ -21,7 +21,7 @@ export const useOrderStatus = (orderId?: string, enabled: boolean = false) => {
             return response.json() as Promise<{ status: 'PENDING' | 'PAID' | 'ERROR' }>;
         },
         enabled: enabled && !!orderId,
-        refetchInterval: enabled ? 3000 : false,
+        refetchInterval: (enabled && !!orderId) ? 500 : false,
         // Reintentos reducidos para evitar saturar el servidor en caso de error
         retry: 3,
         staleTime: 0, // Siempre fresco durante el monitoreo

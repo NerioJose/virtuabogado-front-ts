@@ -117,5 +117,7 @@ export interface CheckoutStorageData {
     service: Servicio | null;
     userData: UserCheckoutData | null;
     step: CheckoutStep;
+    orderId?: string;
+    isWaitingForWebhook?: boolean;
     timestamp: number;
 }

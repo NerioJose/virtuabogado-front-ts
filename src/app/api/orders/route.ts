@@ -49,7 +49,7 @@ export async function GET(request: Request) {
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol;
+            userRole = userData?.rol?.toUpperCase();
         }
 
         if (!userRole) {
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
         }
         
         // Final role normalization ensuring it's a string for comparisons
-        const role: string = userRole;
+        const role: string = userRole.toUpperCase();
         console.log(`🔍 [API Orders] Role identified: ${role} for user: ${user.id}`);
 
         const { searchParams } = new URL(request.url);
@@ -304,13 +304,13 @@ export async function POST(request: Request) {
                 where: { id: user.id },
                 select: { rol: true }
             });
-            userRole = userData?.rol;
+            userRole = userData?.rol?.toUpperCase();
         }
         if (!userRole) {
             return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
         }
         
-        const role: string = userRole;
+        const role: string = userRole.toUpperCase();
         const isAdmin = role === 'ADMIN';
         
         let finalUserId = user.id; 
@@ -515,7 +515,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Rol no definido' }, { status: 403 });
         }
 
-        const role: string = userRole;
+        const role: string = userRole.toUpperCase();
         const isAdmin = role === 'ADMIN';
         const isLawyer = userRole === 'ABOGADO';
         const isOwner = existingOrder.userId === user.id;

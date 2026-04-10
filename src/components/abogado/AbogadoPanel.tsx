@@ -28,6 +28,7 @@ import { UserRole } from '@/shared/types/entities.types';
 import { formatCurrency } from '@/utils/formatters';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 // OPTIMIZACIÓN (Dynamic Imports): Cargamos solo lo crítico (Casos) y el resto bajo demanda
 const CasosAbogadoPanel = dynamic(() => import('./CasosAbogadoPanel'), { 
@@ -53,6 +54,10 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 	const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
 	const [selectedCasoId, setSelectedCasoId] = useState<string | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+	// 🔥 REALTIME REACTIVITY: Escuchar cambios en órdenes y mensajes
+	// Esto invalida la caché de TanStack Query instantáneamente
+	useRealtimeSubscription();
 
 	const { user: userAuth, logout: storeLogout } = useAuthStore();
 	// VALIDACIÓN DE IDENTIDAD (ID Consistency): Priorizar prop abogadoId del servidor

@@ -5,7 +5,7 @@ import { OrderStatus, UserRole } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { Webhook } from 'svix';
 import { revalidatePath } from 'next/cache';
-import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
+import { notifyNewSale, notifyNewCase, notifyOrderStatusUpdate } from '@/lib/push-notifications';
 
 export async function POST(req: NextRequest) {
     const svixId = req.headers.get('svix-id');
@@ -120,13 +120,20 @@ export async function POST(req: NextRequest) {
 
                 // Notificación al Admin
                 notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName)
+                    .then(res => console.log(`[Webhook] Push Admin: ${res.success ? '✅' : '❌'}`))
                     .catch(e => console.error('Error push venta:', e));
 
                 // Notificación al Abogado (si hay uno)
                 if (targetLawyerId) {
                     notifyNewCase(targetLawyerId, orderId, serviceName)
+                        .then(res => console.log(`[Webhook] Push Abogado: ${res.success ? '✅' : '❌'}`))
                         .catch(e => console.error('Error push asignación:', e));
                 }
+
+                // Notificación al Cliente (¡NUEVO!)
+                notifyOrderStatusUpdate(currentOrder.userId, orderId, finalStatus, serviceName)
+                    .then(res => console.log(`[Webhook] Push Cliente: ${res.success ? '✅' : '❌'}`))
+                    .catch(e => console.error('Error push cliente:', e));
             })();
 
             revalidatePath('/', 'layout');

@@ -158,6 +158,8 @@ export async function notifyNewSale(
   } else {
     console.warn(`⚠️ [Push] Nadie recibió la notificación de venta para #${orderId}.`);
   }
+
+  return { success: totalSent > 0, sent: totalSent };
 }
 
 /**
@@ -167,7 +169,7 @@ export async function notifyNewSale(
 export async function notifyNewCase(lawyerId: string, orderId: string, serviceName?: string) {
   const serviceDisplay = serviceName || `Expediente #${orderId.slice(0, 8)}`;
 
-  await sendPushNotification(lawyerId, {
+  return await sendPushNotification(lawyerId, {
     title: '⚖️ Nuevo Caso Asignado',
     body: `Tienes un nuevo expediente asignado: ${serviceDisplay}. Entra para ver los detalles.`,
     // Opción B: URL específica para auto-abrir el caso en el panel del abogado
@@ -208,7 +210,7 @@ export async function notifyNewMessage(
         ? `/admin?orden=${orderId}`
         : `/detalle-servicio/${orderId}`;
 
-  await sendPushNotification(recipientId, {
+  return await sendPushNotification(recipientId, {
     title: `💬 Mensaje de ${senderName}`,
     body: content.length > 100 ? `${content.substring(0, 97)}...` : content,
     url,
@@ -221,7 +223,7 @@ export async function notifyNewMessage(
  * 💸 Liquidación de Honorarios Procesada
  */
 export async function notifyPayoutCompleted(lawyerId: string, payoutId: string, amount: string) {
-  await sendPushNotification(lawyerId, {
+  return await sendPushNotification(lawyerId, {
     title: '💸 Honorarios Transferidos',
     body: `¡Buenas noticias! Tu liquidación #${payoutId.slice(0, 8)} por ${amount} ha sido procesada. Revisa tu cuenta bancaria.`,
     url: '/abogado?seccion=facturacion',
@@ -254,7 +256,7 @@ export async function notifyOrderStatusUpdate(
     body = `Tu abogado ha marcado el caso ${serviceDisplay} como completado. ¡Revisa los resultados finales!`;
   }
 
-  await sendPushNotification(userId, {
+  return await sendPushNotification(userId, {
     title,
     body,
     url,

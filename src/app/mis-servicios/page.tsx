@@ -19,7 +19,7 @@ import { mapOrderToServicio, getStatusColor, getStatusText, sortServicesByDate, 
 // Importar el nuevo Panel Premium
 import ClientPanel from '@/components/cliente/ClientPanel';
 
-import { useServicesRealtime } from '@/features/services/hooks/useServicesRealtime';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { CasiListo } from '@/components/orders/CasiListo';
 
@@ -36,7 +36,7 @@ export default function MisServiciosPage() {
   });
   
   // Sincronización en tiempo real (Opcional pero recomendado en dashboard)
-  useServicesRealtime(!!user);
+  useRealtimeSubscription();
   
   // Guardar settings financieros
   const { isLoading: settingsLoading } = useFinancialSettings({

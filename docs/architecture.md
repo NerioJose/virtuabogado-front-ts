@@ -10,9 +10,10 @@ Este documento describe la estructura técnica, el stack de tecnologías y los p
 - **Autenticación y Almacenamiento**: [Supabase](https://supabase.com/) (SSR, Auth, Storage)
 - **Estilos**: [Tailwind CSS](https://tailwindcss.com/)
 - **Estado Global**: [Zustand](https://github.com/pmndrs/zustand)
-- **Gestión de Datos (Client-side)**: [TanStack Query v5](https://tanstack.com/query/latest)
+- **Gestión de Datos (Client-side)**: [TanStack Query v5](https://tanstack.com/query/latest) (con estrategias de invalidación por Broadcast)
 - **Animaciones**: [Framer Motion](https://www.framer.com/motion/)
-- **Notificaciones**: [Web Push API](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) y [Sonner](https://sonner.emilkowal.ski/)
+- **Notificaciones**: [Web Push API (VAPID)](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) y [Sonner](https://sonner.emilkowal.ski/)
+- **Tiempo Real**: [Supabase Realtime (Broadcast & Postgres Changes)](https://supabase.com/realtime)
 - **Correos**: [Nodemailer](https://nodemailer.com/) (vía Gmail App Passwords)
 
 ---
@@ -65,3 +66,19 @@ Recursos compartidos por múltiples features.
 - **Container/Presenter (implícito)**: La lógica se mantiene en Hooks y Servicios, mientras que los componentes se encargan mayormente del renderizado.
 - **Repository-ish Services**: Los servicios encapsulan la comunicación con el exterior, facilitando cambios futuros en la API.
 - **SSR & Client Components**: Se aprovecha el renderizado en servidor de Next.js para SEO y rendimiento, delegando la interactividad a Client Components.
+
+---
+
+## Reactividad y Tiempo Real
+
+### Capa de Reactividad (Supabase Broadcast)
+Para garantizar que los dashboards se actualicen instantáneamente sin polling constante, el sistema utiliza un patrón de **Invalidación Remota**:
+1.  **Evento**: Una acción en el servidor (ej. éxito en Webhook de Zenobank) dispara un `broadcastOrderUpdate`.
+2.  **Transporte**: Supabase Realtime envía un mensaje de broadcast al canal `app-updates` o `global_{userId}`.
+3.  **Recepción**: El hook `useRealtimeSubscription` en el frontend intercepta el mensaje.
+4.  **Reacción**: Se llama a `queryClient.invalidateQueries`, lo que fuerza a TanStack Query a refrescar los datos de la base de datos inmediatamente.
+
+### Infraestructura VAPID (Push Notifications)
+El sistema implementa notificaciones push nativas multi-dispositivo:
+-   **Sincronización Proactiva**: Al cargar cualquier dashboard, el hook `usePushNotifications` verifica si el navegador tiene un token de suscripción y lo re-sincroniza automáticamente con la base de datos. Esto previene la pérdida de alertas tras reinicios de datos.
+-   **Dispatcher Centralizado**: `src/lib/push-notifications.ts` abstrae la complejidad de `web-push`, manejando automáticamente la limpieza de suscripciones expiradas (error 410).

@@ -19,9 +19,9 @@ El flujo de compra es el corazón del sistema:
 
 ### 2. Reactividad y Tiempo Real (Capa Híbrida)
 VirtuAbogado usa una estrategia triple para garantizar datos siempre frescos:
-- **Broadcast Manual**: Como las mutaciones via Prisma no disparan eventos de Supabase automáticamente, la API emite un "broadcast" manual tras cada cambio importante.
+- **Broadcast Remoto**: El servidor emite señales (ej. `ORDER_UPDATED`) que los clientes escuchan para invalidar su caché local de TanStack Query inmediatamente.
 - **Postgres Changes**: Suscripción directa a tablas (Order, Message) para detectar inserts/updates.
-- **Polling Fallback**: Un "latido" cada 30 segundos que refresca las queries activas de TanStack Query como red de seguridad.
+- **Sincronización Proactiva (Push)**: Al cargar el panel, el sistema detecta si el navegador tiene un token de suscripciones que no existe en la DB e intenta re-sincronizarlo automáticamente, asegurando que las notificaciones funcionen incluso tras limpiezas de base de datos.
 
 ### 3. Ajustes Financieros y Simulador de Pagos
 El sistema de repartición de ingresos es totalmente configurable desde el panel de administración.
@@ -41,10 +41,16 @@ El sistema de repartición de ingresos es totalmente configurable desde el panel
         - Ganancia Neta de la Empresa (Margen).
 
 ### 4. Notificaciones Push (Efecto Shopify)
-- Implementado con la **Web Push API**.
-- Cuando entra una venta, el webhook dispara `notifyNewSale`.
-- Los administradores reciben una notificación tipo "Venta nueva" (con sonido configurado en el service worker).
-- Los abogados reciben una notificación de "Nuevo caso asignado".
+- Implementado con la **Web Push API** y el estándar VAPID.
+- **Ciclo Completo**: Se notifica al Administrador (venta), al Abogado (asignación) y al Cliente (confirmación de caso).
+- **Auto-reparación**: El componente `PushNotificationToggle.tsx` y el hook `usePushNotifications.ts` gestionan la coherencia entre el navegador y el servidor sin requerir clics repetitivos del usuario.
+
+### 5. Sistema de Priorización Inteligente
+Para evitar que cases antiguos o completados entierren los casos urgentes:
+- **Lógica de Ordenamiento**: Cada Dashboard (Admin, Abogado, Cliente) aplica una función `getStatusPriority`.
+- **Top Priority**: Casos `PAID`, `PENDIENTE` o con mensajes nuevos (`isUnread`).
+- **Secondary**: Casos `EN_PROGRESO` o `REVISION`.
+- **Low Priority**: Casos completados o cancelados.
 
 ---
 

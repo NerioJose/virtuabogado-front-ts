@@ -44,11 +44,10 @@ Para una comprensión profunda del proyecto, hemos desglosado la documentación 
 
 ## ✨ Características Principales
 
--   **Pagos en Tiempo Real**: Integración con Zenobank y reconciliación via Webhooks.
--   **Chat Integrado**: Comunicación directa entre abogado y cliente por cada caso.
--   **Notificaciones Push**: Alertas instantáneas de ventas y mensajes (VAPID).
--   **Dashboard Multi-Rol**: Vistas optimizadas para Admin, Abogado y Cliente.
--   **Gestión Documental**: Subida y descarga segura de archivos legales.
+-   **Reactividad 100% en Tiempo Real**: Dashboards que se actualizan instantáneamente sin refrescar, usando Supabase Realtime para invalidación remota de caché.
+-   **Notificaciones Push Transaccionales**: Alertas VAPID para Ventas (Admin), Asignaciones (Abogado) y Confirmaciones (Cliente).
+-   **Dashboard con Priorización Inteligente**: Algoritmo de ordenamiento que destaca casos urgentes y oculta casos inactivos.
+-   **Chat & Gestión Documental**: Comunicación directa y subida segura de archivos legales por cada caso.
 
 ---
 

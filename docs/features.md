@@ -9,6 +9,7 @@ El administrador tiene control total sobre la plataforma y la salud financiera d
 
 ### Gestión de Órdenes (Casos)
 - **Vigilancia 24/7**: Vista de todas las órdenes en tiempo real.
+- **Priorización Estratégica**: El sistema destaca automáticamente los casos pagados que requieren **asignación inmediata**, seguidos por los casos activos.
 - **Asignación Manual**: Capacidad de re-asignar un caso a un abogado específico si la auto-asignación falló o no es adecuada.
 - **Auditoría**: Acceso a los chats de cualquier orden para asegurar la calidad del servicio.
 
@@ -20,12 +21,16 @@ El administrador tiene control total sobre la plataforma y la salud financiera d
 - **Aprobación de Transferencias**: El Admin marca como `PAID` los pagos a abogados una vez realizados manualmente en el banco.
 - **Historial Completo**: Registro de cada centavo que entra y sale.
 
+### Gestión de Notificaciones
+- **Sidebar Control**: Botón dedicado para activar/desactivar alertas VAPID tácticas en el navegador.
+
 ---
 
 ## ⚖️ Abogado (Gestión de Casos)
 El abogado se enfoca en resolver los problemas legales de los clientes.
 
 ### Dashboard de Trabajo
+- **Prioridad Operativa**: Los casos que requieren acción inmediata o tienen mensajes nuevos aparecen siempre al principio del cronograma.
 - **Mis Casos**: Lista filtrada de órdenes asignadas.
 - **Mensajería Instantánea**: Chat con el cliente para pedir documentos o aclarar dudas.
 - **Subida de Documentos**: Intercambio seguro de archivos (PDFs, imágenes) con el cliente.
@@ -33,6 +38,7 @@ El abogado se enfoca en resolver los problemas legales de los clientes.
 ### Notificaciones en Tiempo Real
 - **Alerta de Nuevo Caso**: Notificación push "Shopify-style" cuando se le asigna un caso pagado.
 - **Aviso de Mensajes**: Indicadores visuales y sonoros de mensajes nuevos.
+- **Gestión de Alertas**: Control total desde el sidebar para suscribir dispositivos específicos.
 
 ---
 

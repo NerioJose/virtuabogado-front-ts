@@ -68,11 +68,14 @@ export function usePushNotifications() {
             setIsSubscribed(!!subscription);
             setPermission(currentPermission);
 
-            // 🔁 AUTO-RESUBSCRIPCIÓN SILENCIOSA:
-            // Si el usuario ya había dado permiso pero la suscripción desapareció
-            // (instaló el navegador de nuevo, limpió datos, cambió de PC), re-registramos
-            // automáticamente sin volver a pedir permisos. Esto garantiza que nunca queden "sordos".
-            if (!subscription && currentPermission === 'granted' && user && VAPID_PUBLIC_KEY) {
+            // 🔁 SINCRONIZACIÓN Y RE-SUBSCRIPCIÓN PROACTIVA:
+            // Escenario A: Existe suscripción en el navegador -> Sincronizar SIEMPRE con la DB para estar seguro.
+            // Escenario B: Permiso concedido pero sin suscripción -> Re-registrar silenciosamente.
+            
+            if (subscription && user) {
+                console.log('🔄 [Push] Suscripción encontrada en navegador. Sincronizando con DB por seguridad...');
+                await syncSubscription(subscription);
+            } else if (!subscription && currentPermission === 'granted' && user && VAPID_PUBLIC_KEY) {
                 console.log('🔄 [Push] Permiso concedido pero sin suscripción activa. Re-registrando silenciosamente...');
                 try {
                     const newSubscription = await registration.pushManager.subscribe({

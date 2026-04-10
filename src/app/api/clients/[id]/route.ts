@@ -47,7 +47,8 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { nombre, email, telefono, direccion, dni } = body;
+        const { nombre, email, telefono, direccion, dni, activo } = body;
+        const isAdmin = role === 'ADMIN';
 
         const updatedClient = await prisma.user.update({
             where: { id },
@@ -57,8 +58,23 @@ export async function PUT(
                 ...(telefono !== undefined && { telefono: telefono === '' ? null : telefono }),
                 ...(direccion !== undefined && { direccion: direccion === '' ? null : direccion }),
                 ...(dni !== undefined && { dni: dni === '' ? null : dni }),
+                ...(activo !== undefined && { activo }),
             },
         });
+
+        // Si se cambió el estado de activo, sincronizar con Supabase Auth Metadata para el Middleware
+        if (activo !== undefined && isAdmin) {
+            try {
+                const { createAdminClient } = await import('@/utils/supabase/admin');
+                const adminClient = createAdminClient();
+                await adminClient.auth.admin.updateUserById(id, {
+                    user_metadata: { activo: activo }
+                });
+                console.log(`✅ API: Sincronizado estado activo (${activo}) en Auth para cliente ${id}`);
+            } catch (authError) {
+                console.warn('⚠️ API: No se pudo sincronizar metadata en Auth para el cliente:', authError);
+            }
+        }
 
         // Formatear respuesta para que coincida con la interfaz Client
         const formattedClient = {
@@ -130,41 +146,28 @@ export async function DELETE(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // 1. Archivado Lógico y Depuración de Datos Sensibles
-        // Mantenemos las Órdenes para preservar el historial de la plataforma, pero limpiamos datos personales
-        console.log(`🏛️ API: Archivado y depuración de datos para el cliente ID: ${id}`);
+        // 1. Archivado Lógico en DB (Preservamos documentos y datos para el historial de casos)
+        console.log(`🏛️ API: Archivado lógico para el cliente ID: ${id}`);
         
-        // Primero, eliminar los documentos físicos/registros de archivos (solicitado: "no los documentos")
-        await prisma.document.deleteMany({
-            where: { 
-                OR: [
-                    { uploaderId: id },
-                    { order: { userId: id } }
-                ]
-            }
-        });
-
-        // Segundo, actualizar el usuario para inactivarlo y vaciar PII (solicitado: "no los datos")
+        // Mantenemos documentos y PII para que el historial de casos no se rompa
         await prisma.user.update({
             where: { id },
             data: { 
                 activo: false,
-                dni: null,
-                direccion: null,
-                telefono: null
-                // Mantenemos nombre y email para trazabilidad básica en las órdenes antiguas
             },
         });
 
-        // 2. Bloqueo de acceso en Supabase Auth
+        // 2. Bloqueo de acceso en Supabase Auth vía Metadata (no eliminamos la cuenta)
         try {
             const { createAdminClient } = await import('@/utils/supabase/admin');
             const adminClient = createAdminClient();
-            // Eliminamos de Auth para impedir el login, pero el registro en DB permanece para trazabilidad financiera
-            await adminClient.auth.admin.deleteUser(id);
-            console.log(`✅ API: Acceso bloqueado para el cliente ${id} en Supabase Auth.`);
+            // Marcamos como inactivo en metadata. El middleware revisará esto.
+            await adminClient.auth.admin.updateUserById(id, {
+                user_metadata: { activo: false }
+            });
+            console.log(`✅ API: Acceso bloqueado para el cliente ${id} en Supabase Auth vía metadata.`);
         } catch (authError) {
-            console.warn(`⚠️ API: No se pudo eliminar de Auth, pero el cliente fue depurado en DB.`, authError);
+            console.warn(`⚠️ API: No se pudo actualizar metadata en Auth, pero el cliente fue archivado en DB.`, authError);
         }
 
         return NextResponse.json({ 

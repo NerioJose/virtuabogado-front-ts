@@ -61,6 +61,18 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    // ⛔ BLOQUEO DE ACCESO PARA USUARIOS INACTIVOS
+    // Si el administrador ha marcado al usuario como inactivo vía metadata, le impedimos el paso.
+    if (user && user.user_metadata?.activo === false) {
+        console.warn(`🚫 Middleware: Bloqueando acceso a usuario inactivado: ${user.email}`);
+        const url = request.nextUrl.clone();
+        url.pathname = '/login';
+        url.searchParams.set('error', 'Cuenta inactivada. Contacte al administrador.');
+        
+        // Redirigir al login informando del estado
+        return NextResponse.redirect(url);
+    }
+
     // 1. REDIRECCIÓN SI NO ESTÁ AUTENTICADO Y ACCEDE A RUTA PROTEGIDA
     if (isProtectedRoute && !user) {
         const url = request.nextUrl.clone();

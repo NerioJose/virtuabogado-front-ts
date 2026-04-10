@@ -14,10 +14,10 @@ import { capitalizeName } from '@/utils/formatters';
 
 const statusConfig = {
     [OrderStatus.PENDIENTE]: {
-        label: 'Pendiente',
-        icon: FiClock,
-        color: 'text-yellow-600',
-        bg: 'bg-yellow-100',
+        label: '⚖️ Acción Requerida: Asignar',
+        icon: FiUserPlus,
+        color: 'text-amber-600',
+        bg: 'bg-amber-50 border border-amber-200 animate-pulse',
     },
     [OrderStatus.PAGO_PENDIENTE]: {
         label: 'Pago Pendiente',
@@ -183,7 +183,7 @@ export default function RecentOrders({ abrirModal }: RecentOrdersProps) {
 
                                         {/* Botones de Acción Dashboard */}
                                         <div className="flex gap-2">
-                                            {order.status === OrderStatus.PAID && !order.lawyerId && abrirModal && (
+                                            {([OrderStatus.PAID, OrderStatus.PENDIENTE].includes(order.status as OrderStatus)) && !order.lawyerId && abrirModal && (
                                                 <button
                                                     onClick={() => abrirModal('asignar', order)}
                                                     className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"

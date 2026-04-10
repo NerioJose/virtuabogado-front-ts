@@ -52,9 +52,9 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        console.log('🏛️ [API Lawyers] Fetching active users for administrative management...');
+        console.log('🏛️ [API Lawyers] Fetching users for administrative management...');
         const allUsers = await prisma.user.findMany({
-            where: { activo: true },
+            // Quitamos el filtro de activo: true para que el Admin pueda gestionar inactivos
             orderBy: { createdAt: 'desc' }
         });
 

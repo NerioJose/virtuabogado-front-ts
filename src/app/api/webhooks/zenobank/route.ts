@@ -67,9 +67,11 @@ export async function POST(req: NextRequest) {
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
 
             // ── PASO 1: Búsqueda de Abogado Único ANTES de la transacción ──
-            const activeLawyers = await prisma.user.findMany({
+            const activeLawyers = await (prisma.user as any).findMany({
                 where: { 
-                    rol: 'ABOGADO',
+                    rol: {
+                        in: ['ABOGADO', 'abogado'],
+                    },
                     activo: true 
                 },
                 select: { id: true, nombre: true }
@@ -80,8 +82,9 @@ export async function POST(req: NextRequest) {
             const isAutoAssign = activeLawyers.length === 1;
             const targetLawyerId = isAutoAssign ? activeLawyers[0].id : currentOrder.lawyerId;
             
-            // Forzado de Estado: Si hay abogado (manual o auto), SIEMPRE es EN_PROGRESO
-            const finalStatus = targetLawyerId ? 'EN_PROGRESO' : 'PAID';
+            // Forzado de Estado: Si hay abogado (manual o auto), SIEMPRE es EN_PROGRESO.
+            // Si no hay abogado (porque hay más de uno), el estado es PENDIENTE (esperando asignación).
+            const finalStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PENDIENTE;
 
             console.log(`[CheckoutFlow] ⚖️ Abogados: ${activeLawyers.length}. Auto-asignar: ${isAutoAssign}. Status Final: ${finalStatus}`);
 

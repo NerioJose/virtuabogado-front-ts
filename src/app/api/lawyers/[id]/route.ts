@@ -43,8 +43,7 @@ export async function PUT(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        const body = await request.json();
-        const { nombre, especialidad, experiencia, picture, telefono, matricula } = body;
+        const { nombre, especialidad, experiencia, picture, telefono, matricula, activo } = body;
         
         const dataToUpdate: any = {};
         if (nombre !== undefined) dataToUpdate.nombre = nombre;
@@ -53,11 +52,26 @@ export async function PUT(
         if (picture !== undefined) dataToUpdate.picture = picture;
         if (telefono !== undefined) dataToUpdate.telefono = telefono;
         if (matricula !== undefined) dataToUpdate.matricula = matricula;
+        if (activo !== undefined) dataToUpdate.activo = activo;
 
         const updatedLawyer = await prisma.user.update({
             where: { id },
             data: dataToUpdate,
         });
+
+        // Si se cambió el estado de activo, sincronizar con Supabase Auth Metadata para el Middleware
+        if (activo !== undefined && isAdmin) {
+            try {
+                const { createAdminClient } = await import('@/utils/supabase/admin');
+                const adminClient = createAdminClient();
+                await adminClient.auth.admin.updateUserById(id, {
+                    user_metadata: { activo: activo }
+                });
+                console.log(`✅ API: Sincronizado estado activo (${activo}) en Auth para ${id}`);
+            } catch (authError) {
+                console.warn('⚠️ API: No se pudo sincronizar metadata en Auth:', authError);
+            }
+        }
 
         // Formatear para coincidir con el estado del frontend
         const formattedLawyer = {
@@ -122,23 +136,24 @@ export async function DELETE(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        // 1. Archivado Lógico (Soft Delete)
-        // Mantenemos Órdenes, Mensajes, Documentos y Pagos intactos para preservar el historial de la plataforma
+        // 1. Archivado Lógico (Soft Delete) en DB
         console.log(`🏛️ API: Archivado lógico del abogado ID: ${id}`);
         const result = await prisma.user.update({
             where: { id },
             data: { activo: false },
         });
 
-        // 2. Bloqueo de acceso en Supabase Auth (Opcional pero recomendado para ex-colaboradores)
+        // 2. Bloqueo de acceso en Supabase Auth vía Metadata (no eliminamos la cuenta)
         try {
             const { createAdminClient } = await import('@/utils/supabase/admin');
             const adminClient = createAdminClient();
-            // Eliminamos de Auth para impedir el login, pero el registro en la DB (User table) permanece para trazabilidad
-            await adminClient.auth.admin.deleteUser(id);
-            console.log(`✅ API: Usuario ${id} eliminado de Supabase Auth para bloquear acceso.`);
+            // Marcamos como inactivo en metadata. El middleware revisará esto.
+            await adminClient.auth.admin.updateUserById(id, {
+                user_metadata: { activo: false }
+            });
+            console.log(`✅ API: Usuario ${id} bloqueado en metadata para impedir acceso.`);
         } catch (authError) {
-            console.warn(`⚠️ API: No se pudo eliminar de Auth, pero el registro en DB fue archivado correctamente.`, authError);
+            console.warn(`⚠️ API: No se pudo actualizar metadata en Auth, pero el registro en DB fue archivado.`, authError);
         }
 
         return NextResponse.json({ 

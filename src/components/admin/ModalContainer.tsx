@@ -93,6 +93,15 @@ const obtenerCamposPorSeccion = (seccion: string, tipo: string) => {
 					type: 'text',
 					required: false,
 				},
+				...(tipo === 'editar' ? [
+					{
+						key: 'status',
+						label: 'Estado de la cuenta',
+						type: 'select',
+						options: ['ACTIVO', 'INACTIVO'],
+						required: true,
+					}
+				] : []),
 				...(tipo === 'crear' ? [
 					{
 						key: 'password',
@@ -114,6 +123,15 @@ const obtenerCamposPorSeccion = (seccion: string, tipo: string) => {
 				{ key: 'telefono', label: 'Teléfono', type: 'tel', required: true },
 				{ key: 'direccion', label: 'Dirección', type: 'text', required: false },
 				{ key: 'dni', label: 'DNI/RUC', type: 'text', required: false },
+				...(tipo === 'editar' ? [
+					{
+						key: 'status',
+						label: 'Estado de la cuenta',
+						type: 'select',
+						options: ['ACTIVO', 'INACTIVO'],
+						required: true,
+					}
+				] : []),
 				...(tipo === 'crear' ? [
 					{
 						key: 'password',
@@ -338,9 +356,16 @@ export default function ModalContainer({
 		setError('');
 
 		try {
-			console.log('📝 ModalContainer handleSubmit:', { tipo, formData });
+			// Transformar campos especiales (como el estado activo/inactivo)
+			const finalData = { ...formData };
+			if (finalData.status === 'ACTIVO') finalData.activo = true;
+			if (finalData.status === 'INACTIVO') finalData.activo = false;
+			if (finalData.status === 'active') finalData.activo = true;
+			if (finalData.status === 'inactive') finalData.activo = false;
+
+			console.log('📝 ModalContainer handleSubmit:', { tipo, finalData });
 			if (onSave) {
-				await onSave(formData);
+				await onSave(finalData);
 			} else {
 				// Simulación de API call
 				await new Promise((resolve) => setTimeout(resolve, 1000));

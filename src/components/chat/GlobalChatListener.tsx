@@ -97,11 +97,15 @@ export default function GlobalChatListener() {
             console.log('📦 [Global Listener] Order Update detectado:', data);
 
             // 🔄 INVALIDAR CACHÉ: Esto forzará que FacturacionPanel y todas las tablas se refresquen en tiempo real
-            queryClient.invalidateQueries({ queryKey: ['orders'] });
-            queryClient.invalidateQueries({ queryKey: ['Finance'] });
+            // 🔄 INVALIDAR CACHÉ: Usando la convención de nombres de tabla de la base de datos
+            queryClient.invalidateQueries({ queryKey: ['Order'] });
+            queryClient.invalidateQueries({ queryKey: ['User'] });
+            queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['FinancialSummary'] });
 
             const isRelevantForAdmin = user.rol === 'ADMIN';
             const isRelevantForLawyer = user.rol === 'ABOGADO' && data.lawyerId === user.id;
+            const isRelevantForClient = user.rol === 'CLIENTE' && data.userId === user.id;
 
             // REGLA: Notificar Nueva Venta a Admins y Abogados (si es su caso o general)
             if (data.eventType === 'created' && (isRelevantForAdmin || user.rol === 'ABOGADO')) {
@@ -110,12 +114,35 @@ export default function GlobalChatListener() {
                     id: `sale-${data.orderId}-${Date.now()}`,
                     type: 'sale',
                     title: '💰 Nueva Venta Confirmada',
-                    content: `Se ha registrado una nueva orden (#${data.orderId.substring(0,8)}).`,
+                    content: `Se ha registrado una nueva orden (#${data.orderId.substring(0, 8)}).`,
                     orderId: data.orderId
                 });
                 triggerTabBlink('💰 ¡NUEVA VENTA!');
             } 
-            // REGLA: Notificar Asignación Directa a Abogados (SOLO si es una asignación nueva, no una actualización)
+            // REGLA: Notificar Acción a Clientes (Asignación, Pago Confirmado, etc)
+            else if (isRelevantForClient && data.eventType === 'updated') {
+                playNotificationSound();
+                
+                let title = '📈 Actualización de Caso';
+                let content = `Tu caso #${data.orderId.substring(0, 8)} ha sido actualizado.`;
+                
+                if (data.status === 'EN_PROGRESO' || data.isNewAssignment) {
+                    title = '⚖️ Abogado Asignado';
+                    content = 'Un abogado experto ha sido asignado a tu caso y ya puedes chatear.';
+                } else if (data.status === 'COMPLETADO') {
+                    title = '✅ Caso Finalizado';
+                    content = 'Tu abogado ha marcado el caso como completado. ¡Revisa los resultados!';
+                }
+
+                setToastMessage({
+                    id: `client-update-${data.orderId}-${Date.now()}`,
+                    type: 'case',
+                    title,
+                    content,
+                    orderId: data.orderId
+                });
+            }
+            // REGLA: Notificar Asignación Directa a Abogados
             else if (data.isNewAssignment && data.lawyerId === user.id && isRelevantForLawyer) {
                 playNotificationSound();
                 setToastMessage({
@@ -126,6 +153,24 @@ export default function GlobalChatListener() {
                     orderId: data.orderId
                 });
                 triggerTabBlink('⚖️ NUEVO CASO');
+            }
+
+            // ─── Redirección automática post-pago para Clientes ──────────────────
+            const successStatuses = ['PENDIENTE', 'EN_PROGRESO', 'PAID', 'COMPLETADO'];
+            if (successStatuses.includes(data?.status) && isRelevantForClient) {
+                const { useCheckoutStore } = require('@/features/checkout/store/checkoutStore');
+                const checkoutState = useCheckoutStore.getState();
+                
+                if (
+                    checkoutState.isWaitingForWebhook &&
+                    checkoutState.orderId === data?.orderId
+                ) {
+                    console.log('💰 [Global Listener] Pago confirmado. Redirigiendo...');
+                    checkoutState.setIsWaitingForWebhook(false);
+                    window.localStorage.removeItem('virtuabogado_pending_order');
+                    checkoutState.reset();
+                    router.push('/mis-servicios');
+                }
             }
         };
 

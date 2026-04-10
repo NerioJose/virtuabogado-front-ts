@@ -46,7 +46,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
   };
 
   const statusConfig = {
-    [OrderStatus.PENDIENTE]: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700', icon: <FiClock /> },
+    [OrderStatus.PENDIENTE]: { label: 'Por Asignar', color: 'bg-amber-100 text-amber-700 font-bold', icon: <FiUserPlus /> },
     [OrderStatus.EN_PROGRESO]: { label: 'En Proceso', color: 'bg-blue-100 text-blue-700', icon: <FiBriefcase /> },
     [OrderStatus.REVISION]: { label: 'En Revisión', color: 'bg-purple-100 text-purple-700', icon: <FiEye /> },
     [OrderStatus.COMPLETADO]: { label: 'Completado', color: 'bg-emerald-100 text-emerald-700', icon: <FiCheckCircle /> },

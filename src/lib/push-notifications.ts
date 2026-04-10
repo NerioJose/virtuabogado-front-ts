@@ -193,6 +193,13 @@ export async function notifyNewMessage(
     select: { rol: true },
   });
 
+  // RESTRICCIÓN: Los clientes NO reciben push por chat (solo por asignación/completado)
+  // para evitar saturación de procesos en el servidor.
+  if (recipient?.rol === 'CLIENTE') {
+    console.log(`ℹ️ [Push] Omitiendo notificación de chat para Cliente ${recipientId} según política de ahorro de recursos.`);
+    return { success: true, message: 'Push omitido por rol' };
+  }
+
   // URL específica según rol: abogado va a su panel con el caso seleccionado
   const url =
     recipient?.rol === 'ABOGADO'
@@ -219,6 +226,39 @@ export async function notifyPayoutCompleted(lawyerId: string, payoutId: string, 
     body: `¡Buenas noticias! Tu liquidación #${payoutId.slice(0, 8)} por ${amount} ha sido procesada. Revisa tu cuenta bancaria.`,
     url: '/abogado?seccion=facturacion',
     tag: `payout-${payoutId}`,
+    icon: '/logo/logo_sf_1.png',
+  });
+}
+
+/**
+ * 📈 Actualización de Estado de Orden (Para Clientes)
+ * Notifica eventos críticos como "Abogado Asignado" o "Caso Completado"
+ */
+export async function notifyOrderStatusUpdate(
+  userId: string,
+  orderId: string,
+  status: string,
+  serviceName?: string
+) {
+  const serviceDisplay = serviceName || `Expediente #${orderId.slice(0, 8)}`;
+  
+  let title = '📈 Actualización de Caso';
+  let body = `Tu caso ${serviceDisplay} ha cambiado al estado: ${status}.`;
+  let url = `/detalle-servicio/${orderId}`;
+
+  if (status === 'EN_PROGRESO') {
+    title = '⚖️ Abogado Asignado';
+    body = `¡Buenas noticias! Un abogado experto ha sido asignado a tu caso: ${serviceDisplay}. Ya puedes iniciar el chat.`;
+  } else if (status === 'COMPLETADO') {
+    title = '✅ Caso Finalizado';
+    body = `Tu abogado ha marcado el caso ${serviceDisplay} como completado. ¡Revisa los resultados finales!`;
+  }
+
+  await sendPushNotification(userId, {
+    title,
+    body,
+    url,
+    tag: `status-${orderId}`,
     icon: '/logo/logo_sf_1.png',
   });
 }

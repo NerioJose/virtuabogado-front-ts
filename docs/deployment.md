@@ -14,8 +14,9 @@ Copia el archivo `.env.example` (o crea uno nuevo) con las siguientes variables 
 - `SUPABASE_SERVICE_ROLE_KEY`: Key secreta para operaciones administrativas (bypass RLS). **Nunca exponer en el cliente.**
 
 ### Base de Datos (Prisma)
-- `DATABASE_URL`: URI de conexión a PostgreSQL (se recomienda usar el pooling de Supabase en puerto 6543).
-- `DIRECT_URL`: Conexión directa a la DB (puerto 5432) necesaria para migraciones de Prisma.
+- `DATABASE_URL`: URI de conexión a PostgreSQL (puerto 5432).
+- `DATABASE_URL_POOLER`: **(Crítico para Producción)** URI de conexión al puerto 6543 (Modo Transacción) de Supavisor.
+- `DIRECT_URL`: Conexión directa a la DB necesaria para migraciones de Prisma.
 
 ### Fintech (Zenobank)
 - `ZENOBANK_API_KEY`: Key secreta para crear sesiones de pago.
@@ -29,6 +30,10 @@ Copia el archivo `.env.example` (o crea uno nuevo) con las siguientes variables 
 ### Notificaciones Push (VAPID)
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: Generada con `web-push generate-vapid-keys`.
 - `VAPID_PRIVATE_KEY`: Key privada para firmar las notificaciones.
+
+### Observabilidad (Sentry)
+- `NEXT_PUBLIC_SENTRY_DSN`: URL del proyecto en Sentry (obtenida en Client Keys).
+- `SENTRY_AUTH_TOKEN`: Token interno de Sentry para la subida de Source Maps durante el build.
 
 ---
 

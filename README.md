@@ -44,8 +44,11 @@ Para una comprensión profunda del proyecto, hemos desglosado la documentación 
 
 ## ✨ Características Principales
 
--   **Reactividad 100% en Tiempo Real**: Dashboards que se actualizan instantáneamente sin refrescar, usando Supabase Realtime para invalidación remota de caché.
--   **Notificaciones Push Transaccionales**: Alertas VAPID para Ventas (Admin), Asignaciones (Abogado) y Confirmaciones (Cliente).
+-   **Engine de Escalabilidad y Resiliencia**: Connection Pooling optimizado con Supavisor y estrategias de SSR Hydration para carga instantánea bajo tráfico masivo.
+-   **Observabilidad de Producción (Caja Negra)**: Monitoreo de errores en tiempo real y rastreo de rendimiento con Sentry.
+-   **Seguridad en el Borde (Layer 3)**: Rate Limiting preventivo implementado en Middleware para proteger endpoints críticos de pagos y autenticación.
+-   **Reactividad 100% en Tiempo Real**: Dashboards que se actualizan instantáneamente sin refrescar, usando Supabase Realtime.
+-   **Notificaciones Push Transaccionales**: Alertas VAPID para Ventas, Asignaciones y Confirmaciones.
 -   **Dashboard con Priorización Inteligente**: Algoritmo de ordenamiento que destaca casos urgentes y oculta casos inactivos.
 -   **Chat & Gestión Documental**: Comunicación directa y subida segura de archivos legales por cada caso.
 

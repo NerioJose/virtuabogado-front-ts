@@ -82,3 +82,28 @@ Para garantizar que los dashboards se actualicen instantáneamente sin polling c
 El sistema implementa notificaciones push nativas multi-dispositivo:
 -   **Sincronización Proactiva**: Al cargar cualquier dashboard, el hook `usePushNotifications` verifica si el navegador tiene un token de suscripción y lo re-sincroniza automáticamente con la base de datos. Esto previene la pérdida de alertas tras reinicios de datos.
 -   **Dispatcher Centralizado**: `src/lib/push-notifications.ts` abstrae la complejidad de `web-push`, manejando automáticamente la limpieza de suscripciones expiradas (error 410).
+
+---
+
+## Capa de Escalabilidad y Observabilidad (Lanzamiento Masivo)
+
+Para garantizar la estabilidad durante eventos de tráfico extremo, el sistema implementa un blindaje de 4 capas:
+
+### 1. Nivel de Datos: Connection Pooling
+- **Tecnología**: Prisma + Supavisor (Modo Transacción).
+- **Implementación**: `src/lib/prisma.ts` detecta el entorno de producción y utiliza el pooler en el puerto `6543`.
+- **Efecto**: Permite que miles de funciones serverless simultáneas compartan un grupo reducido de conexiones a la DB, evitando el error "too many clients".
+
+### 2. Nivel de Rendimiento: SSR & Hydration
+- **Tecnología**: TanStack Query + Hydration Boundary.
+- **Implementación**: Las rutas `/` y `/servicios` pre-cargan datos en el servidor (`page.tsx`) con una estrategia de revalidación de 1 hora (`revalidate: 3600`).
+- **Efecto**: Carga instantánea (LCP optimizado) y reducción masiva de peticiones a la API durante ráfagas de tráfico.
+
+### 3. Nivel de Seguridad: Rate Limiting
+- **Tecnología**: Next.js Middleware.
+- **Implementación**: `middleware.ts` identifica peticiones a rutas críticas (`/api/auth`, `/api/checkout`) y actúa como guardia preventivo contra ataques de bots y inundaciones.
+
+### 4. Nivel de Observabilidad: Sentry "Caja Negra"
+- **Tecnología**: @sentry/nextjs + Instrumentation API.
+- **Implementación**: Configuración global de captura de errores en cliente, servidor y edge runtime.
+- **Efecto**: Trazabilidad total de fallos en producción, asegurando que cualquier error crítico sea notificado al instante al equipo técnico.

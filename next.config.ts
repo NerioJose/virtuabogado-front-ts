@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
 // Configuración de Sentry para el proceso de build
 const sentryConfig = {
   org: "virtuabogado", // Puedes cambiar esto por tu slug de organización en Sentry
-  project: "virtuabogado-front",
+  project: "virtuabogado",
   silent: !process.env.CI,
   widenClientFileUpload: true,
   hideSourceMaps: true,

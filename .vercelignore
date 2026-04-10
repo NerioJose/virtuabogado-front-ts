@@ -1,0 +1,17 @@
+# Excluir documentación de la subida a Vercel
+docs/
+README.md
+
+# Excluir herramientas de desarrollo y scripts locales
+scripts/
+migrations/
+supabase-email-templates/
+check_orders.ts
+fix_order.js
+test_db.js
+test_db_insert.js
+test_order.js
+test_trigger.js
+.vscode/
+.next_dev_log.txt
+tsconfig.tsbuildinfo

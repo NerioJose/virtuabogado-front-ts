@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma as prismaClient } from '@/lib/prisma';
 const prisma = prismaClient as any;
-import { OrderStatus } from '@/shared/types/entities.types';
+import { OrderStatus, UserRole } from '@/shared/types/entities.types';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { Webhook } from 'svix';
 import { revalidatePath } from 'next/cache';
@@ -74,9 +74,7 @@ export async function POST(req: NextRequest) {
             // ── PASO 1: Búsqueda de Abogado Único ANTES de la transacción ──
             const activeLawyers = await (prisma.user as any).findMany({
                 where: { 
-                    rol: {
-                        in: ['ABOGADO', 'abogado'],
-                    },
+                    rol: UserRole.ABOGADO,
                     activo: true 
                 },
                 select: { id: true, nombre: true }

@@ -370,6 +370,7 @@ export default function ClientPanel({
                       );
                     })}
                   </motion.div>
+                ) : (
                   /* VISTA DE HISTORIAL: Híbrida (Tabla en Desktop, Mini-Cards en Mobile) */
                   <div className="space-y-4">
                     {/* 🖥️ Tabla para Tablets, PCs y Televisores */}

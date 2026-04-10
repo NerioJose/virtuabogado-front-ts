@@ -21,7 +21,22 @@ export const useCheckoutStorage = () => {
         orderId, 
         isWaitingForWebhook 
     } = useCheckoutStore();
-...
+
+    // Guardar en localStorage cada vez que cambia el estado
+    useEffect(() => {
+        if (service && isOpen) {
+            // Excluir propiedades no serializables como icono (ReactNode)
+            const serializableService = service ? {
+                id: service.id,
+                nombre: service.nombre,
+                titulo: service.titulo,
+                descripcion: service.descripcion,
+                precio: service.precio,
+                duracion: service.duracion,
+                imagen: service.imagen,
+                // icono se excluye porque es un ReactNode
+            } : null;
+
             const data: CheckoutStorageData = {
                 service: serializableService,
                 userData,

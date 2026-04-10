@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi';
 import Link from 'next/link';
 import Image from 'next/image';
+import PushNotificationToggle from '../notifications/PushNotificationToggle';
 
 interface ClientSidebarProps {
   seccionActiva: string;
@@ -116,8 +117,9 @@ export default function ClientSidebar({
         </ul>
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="p-4 px-6 border-t border-slate-50 shrink-0">
+      <div className="p-4 px-6 border-t border-slate-50 shrink-0 space-y-3">
+        <PushNotificationToggle />
+        
         <button
           onClick={handleLogout}
           className="w-full flex items-center px-6 py-4 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-[2rem] transition-all group font-black text-xs uppercase tracking-widest shadow-sm"

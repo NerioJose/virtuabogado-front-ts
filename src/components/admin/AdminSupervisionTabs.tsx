@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiBriefcase, FiMessageSquare, FiFileText } from 'react-icons/fi';
-import ChatWindowSupervision from './ChatWindowSupervision';
+import { ChatWindow as ChatWindowSupervision } from '@/features/chat/components/ChatWindow';
 import DocumentList, { DocumentoItem } from '../documents/DocumentList';
 import { capitalizeName } from '@/utils/formatters';
 

@@ -84,7 +84,35 @@ export default function RecentOrders({ abrirModal }: RecentOrdersProps) {
     const ordersCount = pagination?.total || orders.length;
     const totalRevenue = orders.reduce((sum: number, order: Order) => sum + (Number(order.total) || 0), 0);
 
-    const recentOrders = orders; // Ya vienen limitados y ordenados por el servidor
+    // Prioridad por estado para el administrador
+    const getStatusPriority = (status: string): number => {
+        switch (status) {
+            case OrderStatus.PENDIENTE:
+            case OrderStatus.PAID:
+                return 1; // Acción requerida: Asignar
+            case OrderStatus.EN_PROGRESO:
+            case OrderStatus.REVISION:
+                return 2; // Activos
+            case OrderStatus.PAGO_PENDIENTE:
+                return 3; 
+            case OrderStatus.COMPLETADO:
+                return 4;
+            default:
+                return 5;
+        }
+    };
+
+    const recentOrders = [...orders].sort((a, b) => {
+        const priorityA = getStatusPriority(a.status as OrderStatus);
+        const priorityB = getStatusPriority(b.status as OrderStatus);
+        
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        
+        // Si tienen la misma prioridad, ordenar por fecha (más reciente primero)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">

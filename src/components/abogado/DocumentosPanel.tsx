@@ -9,8 +9,8 @@ import { ordersService } from '@/features/orders/services/orders.service';
 import { Order } from '@/features/orders/types/orders.types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { capitalizeName } from '@/utils/formatters';
-import { useResumableUpload } from '@/features/storage/hooks/useResumableUpload';
 import { compressImage } from '@/utils/imageCompression';
+import DocumentList, { DocumentoItem } from '../documents/DocumentList';
 
 interface DocumentosPanelProps {
   abogadoId: string;
@@ -201,29 +201,6 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
     return coincideTermino && coincideTipo;
   });
 
-  // Función para obtener el icono según el tipo de documento
-  const obtenerIconoDocumento = (nombre: string) => {
-    const extension = nombre.split('.').pop()?.toLowerCase();
-
-    if (extension === 'pdf') {
-      return <FiFileText className="text-red-500" />;
-    } else if (extension === 'docx' || extension === 'doc') {
-      return <FiFileText className="text-blue-500" />;
-    } else if (extension === 'xlsx' || extension === 'xls') {
-      return <FiFileText className="text-green-500" />;
-    } else {
-      return <FiFile className="text-gray-500" />;
-    }
-  };
-
-  if (loading && documentos.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Notificación */}
@@ -385,125 +362,12 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
         </div>
       </div>
 
-      {/* VISTA MÓVIL (Cards) */}
-      <div className="grid grid-cols-1 gap-4 md:hidden pb-10">
-        {documentosFiltrados.length === 0 ? (
-          <div className="py-16 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                <FiFolder size={32} />
-             </div>
-             <p className="text-slate-400 font-bold">No se encontraron documentos</p>
-          </div>
-        ) : (
-          documentosFiltrados.map((doc) => (
-            <motion.div 
-              key={doc.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
-                  {obtenerIconoDocumento(doc.nombre)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-black text-slate-800 text-sm truncate mb-0.5">
-                    {doc.nombre}
-                  </h4>
-                  <p className="text-[10px] font-bold text-azul-primario uppercase tracking-tighter truncate">{doc.caso}</p>
-                  
-                  <div className="mt-4 flex items-center gap-4 text-[10px] font-bold text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <FiClock size={12} />
-                      {doc.fechaSubida}
-                    </span>
-                    <span>{doc.tamaño}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 pt-4 border-t border-slate-50 flex gap-2">
-                <button
-                  onClick={() => handleDescargar(doc)}
-                  className="flex-1 py-2.5 bg-slate-50 text-azul-primario rounded-xl font-black text-[11px] flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition-all active:scale-95"
-                >
-                  <FiDownload size={14} />
-                  DESCARGAR
-                </button>
-                <button
-                  onClick={() => handleEliminar(doc)}
-                  className="w-12 h-[42px] bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all active:scale-95"
-                >
-                  <FiTrash2 size={16} />
-                </button>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </div>
-
-      {/* VISTA DESKTOP (Tabla) */}
-      <div className="hidden md:block bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-50">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Documento</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Caso</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subida</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tamaño</th>
-              <th scope="col" className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-50">
-            {documentosFiltrados.map((documento) => (
-              <tr key={documento.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                      {obtenerIconoDocumento(documento.nombre)}
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-black text-slate-800">{documento.nombre}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-black leading-none">{documento.tipo}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-black text-slate-700">{documento.cliente || 'Desconocido'}</div>
-                  <div className="text-xs text-azul-primario font-bold tracking-tight">{documento.caso || 'Sin caso'}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-slate-500 font-bold flex items-center">
-                    <FiClock className="mr-1.5 text-slate-300" size={14} />
-                    {documento.fechaSubida}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-xs text-slate-400 font-black font-mono">{documento.tamaño}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleDescargar(documento)}
-                      className="w-10 h-10 bg-slate-50 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
-                      title="Descargar / Ver"
-                    >
-                      <FiDownload size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleEliminar(documento)}
-                      className="w-10 h-10 bg-slate-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
-                      title="Eliminar"
-                    >
-                      <FiTrash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Lista de Documentos (Componente Reutilizable) */}
+      <DocumentList 
+        documentos={documentosFiltrados as DocumentoItem[]}
+        onDescargar={handleDescargar}
+        onEliminar={handleEliminar}
+      />
 
       <ConfirmModal 
         isOpen={!!docParaEliminar}

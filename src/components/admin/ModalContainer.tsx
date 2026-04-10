@@ -16,8 +16,7 @@ import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
 import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
 
-// Wrapper simple para propósitos de tipado en el render condicional
-const ChatWindowSupervision = ({ orderId, className }: { orderId: string, className?: string }) => <ChatWindow orderId={orderId} className={className} />;
+import AdminSupervisionTabs from './AdminSupervisionTabs';
 
 // Tipo unión para todos los posibles elementos (excluyendo null)
 type ElementoModal = Abogado | Cliente | Caso | Transaccion;
@@ -704,30 +703,9 @@ export default function ModalContainer({
 								</div>
 							</form>
 
-							{/* CHAT DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
+							{/* TABS DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
 							{tipo === 'ver' && (seccion === 'casos' || seccion === 'finanzas') && (elemento as any)?.id && (
-								<div className="mt-6 border-t pt-6">
-									<div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
-										<h4 className="font-bold text-azul-primario mb-3 flex items-center">
-											<FiBriefcase className="mr-2" /> Servicios Contratados
-										</h4>
-										<div className="space-y-2">
-											{(elemento as any)?.items?.map((item: any, i: number) => (
-												<div key={i} className="flex justify-between items-center bg-white p-3 rounded border border-gray-100 shadow-sm">
-													<span className="text-sm font-medium text-gray-700">{item.serviceName}</span>
-													<span className="text-sm font-bold text-azul-primario">${item.price.toLocaleString()}</span>
-												</div>
-											))}
-										</div>
-									</div>
-
-									<h4 className="font-bold text-gray-800 mb-3 flex items-center">
-										<span className="mr-2">💬</span> Chat de Supervisión
-									</h4>
-									<div className="h-[500px] shadow-inner rounded-lg overflow-hidden border border-gray-200">
-										<ChatWindowSupervision orderId={(elemento as any).id} className="h-full" />
-									</div>
-								</div>
+								<AdminSupervisionTabs orderId={(elemento as any).id} elemento={elemento} />
 							)}
 						</div>
 					)}

@@ -47,8 +47,7 @@ export const PaymentStep: React.FC = () => {
 
     const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
     const currentRawStatus = statusData?.status?.trim().toUpperCase();
-    const rawStatusFromServer = (statusData as any)?.rawStatus;
-    const isPaid = currentRawStatus === 'PAID' || currentRawStatus === 'EN_PROGRESO';
+    const isPaid = currentRawStatus === 'PAID';
 
     // Log de diagnóstico en tiempo real para el navegador
     useEffect(() => {
@@ -70,9 +69,13 @@ export const PaymentStep: React.FC = () => {
     // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO
     useEffect(() => {
         if (isWaitingForWebhook && isPaid) {
-            console.log(`✅ [PaymentStep] Pago confirmado (${currentRawStatus}). Redirigiendo en 2s...`);
+            console.log(`✅ [PaymentStep] Pago confirmado (${currentRawStatus}). Limpiando caché y redirigiendo...`);
+            
+            // Invalida la lista de órdenes global para que el dashboard vea el nuevo caso
+            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
+            
             const timer = setTimeout(() => {
-                // Limpieza de estados antes de redirigir
+                // Limpieza de estados locales antes de redirigir
                 setIsWaitingForWebhook(false);
                 if (typeof window !== 'undefined') {
                     window.localStorage.removeItem('virtuabogado_pending_order');
@@ -80,10 +83,10 @@ export const PaymentStep: React.FC = () => {
                 }
                 reset();
                 router.push('/mis-servicios');
-            }, 2000);
+            }, 1500); // 1.5s para apreciar el éxito
             return () => clearTimeout(timer);
         }
-    }, [isPaid, isWaitingForWebhook, router, reset, setIsWaitingForWebhook, currentRawStatus]);
+    }, [isPaid, isWaitingForWebhook, router, reset, setIsWaitingForWebhook, currentRawStatus, queryClient]);
 
     const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
 
@@ -188,25 +191,11 @@ export const PaymentStep: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Botón de Rescate: aparece si el polling tarda más de 10 segundos */}
+                {/* No mostramos botón de rescate si el pago está confirmado o si preferimos flujo 100% automático */}
                 {showFallbackButton && !isPaid && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="pt-2 space-y-2"
-                    >
-                        <p className="text-xs text-gray-400">Si ya completaste el pago en Zenobank:</p>
-                        <button
-                            onClick={() => {
-                                reset();
-                                router.push('/mis-servicios');
-                            }}
-                            className="w-full py-3 px-4 bg-azul-primario text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-azul-primario/90 transition-all"
-                        >
-                            <FiArrowRight size={16} />
-                            Ver mis servicios
-                        </button>
-                    </motion.div>
+                   <div className="pt-4 text-xs text-slate-400 italic font-medium animate-pulse">
+                     Sincronizando con Zenobank... un momento por favor.
+                   </div>
                 )}
             </motion.div>
         );

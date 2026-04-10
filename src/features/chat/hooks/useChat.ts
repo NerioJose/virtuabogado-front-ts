@@ -6,6 +6,7 @@ import { Message } from '../types/chat.types';
 import { useEffect } from 'react';
 import { useResumableUpload } from '@/features/storage/hooks/useResumableUpload';
 import { compressImage } from '@/utils/imageCompression';
+import { documentsService } from '@/features/documents/services/documents.service';
 
 export const chatKeys = {
     all: ['chat'] as const,
@@ -105,7 +106,20 @@ export function useChat(orderId: string) {
             // B. Carga reanudable (TUS)
             const publicUrl = await startUpload(orderId, fileToUpload);
             
-            // C. Registrar mensaje en chat
+            // C. Registrar en base de datos de documentos (Sincronización)
+            try {
+                await documentsService.create({
+                    orderId,
+                    name: file.name,
+                    url: publicUrl,
+                    type: fileToUpload.type,
+                    size: fileToUpload.size
+                });
+            } catch (err) {
+                console.error('⚠️ Document indexing failed, but chat message will proceed:', err);
+            }
+
+            // D. Registrar mensaje en chat
             return chatService.sendMessage(orderId, publicUrl, senderId);
         },
         onSuccess: (newMessage) => {
@@ -113,6 +127,8 @@ export function useChat(orderId: string) {
                 if (old.some(m => m.id === newMessage.id)) return old;
                 return [...old, newMessage];
             });
+            // Invalidar query de documentos para que se refresque el panel si está abierto
+            queryClient.invalidateQueries({ queryKey: ['documents', orderId] });
         }
     });
 

@@ -75,12 +75,9 @@ export default function MisServiciosPage() {
   };
 
   // ============ PROCESAMIENTO DE DATOS ============
-  const pendingOrder = allOrders.find((order: any) => order.status === 'PAGO_PENDIENTE');
-  const hasPendingPayment = !!pendingOrder;
-
   const servicios = useMemo(() => {
     if (!user || !allOrders) return [];
-    // Filtrar órdenes válidas para el panel principal
+    // Filtrar órdenes válidas para el panel principal: Solo mostramos lo pagado/activo
     const processedOrders = allOrders.filter((order: any) => 
         order.status !== 'PAGO_PENDIENTE' && order.status !== 'PAGO_RECHAZADO'
     );
@@ -104,12 +101,8 @@ export default function MisServiciosPage() {
     return null; // El useEffect manejará la redirección
   }
 
-  // ESTADO 2: Pago en Espera
-  if (hasPendingPayment && pendingOrder) {
-    return <CasiListo orderId={pendingOrder.id} />;
-  }
-
-  // ESTADO 3: ÉXITO (Panel de Cliente)
+  // ESTADO 2: ÉXITO (Panel de Cliente)
+  // Nota: Ya no bloqueamos con CasiListo, el usuario ve su panel completo de inmediato.
   return (
     <ClientPanel 
       user={user}

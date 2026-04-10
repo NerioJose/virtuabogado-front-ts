@@ -97,10 +97,9 @@ export async function GET(request: Request) {
                     // No debe ver carritos abandonados o pagos fallidos
                     where.status = { notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO'] };
                 } else {
-                    // El CLIENTE ahora puede ver PAGO_PENDIENTE para evitar sensación de "desaparición"
-                    // Pero seguimos ocultando los fallidos para no saturar su UI
+                    // El CLIENTE solo ve lo que ya disparó el webhook de éxito
                     where.status = {
-                        notIn: ['PAGO_RECHAZADO']
+                        notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO']
                     };
                 }
             }

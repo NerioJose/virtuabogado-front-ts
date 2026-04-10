@@ -32,7 +32,26 @@ export function useChat(orderId: string) {
             if (payload.new) {
                 queryClient.setQueryData<Message[]>(chatKeys.messages(orderId), (old = []) => {
                     const current = Array.isArray(old) ? old : [];
+                    
+                    // 1. Evitar duplicados por ID real (Seguridad base)
                     if (current.some(m => m.id === payload.new.id)) return current;
+
+                    // 2. Lógica Anti-Duplicación de UI Optimista
+                    // Buscamos si ya existe un mensaje "pendiente" del mismo emisor con el mismo contenido
+                    const optimisticMatchIndex = current.findIndex(m => 
+                        (m as any).isPending && 
+                        m.senderId === payload.new.senderId && 
+                        m.content === payload.new.content
+                    );
+
+                    if (optimisticMatchIndex !== -1) {
+                        // Reemplazamos la versión 'temp' por la real de la DB de forma atómica
+                        const next = [...current];
+                        next[optimisticMatchIndex] = payload.new;
+                        return next;
+                    }
+
+                    // 3. Si no es un match optimista, simplemente lo agregamos (mensaje de otros)
                     return [...current, payload.new];
                 });
             }

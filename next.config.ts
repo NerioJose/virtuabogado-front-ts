@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   compiler: {
@@ -8,16 +9,25 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // Partial Prerendering (PPR) is currently Canary-only in this version
-  // ppr: 'incremental',
+    // ppr: 'incremental',
   },
   eslint: {
-    // Permitir que el build continúe incluso con errores de ESLint
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Asegurar que el build no se bloquee por errores de tipos menores en producción
     ignoreBuildErrors: true,
   },
 };
 
-export default nextConfig;
+// Configuración de Sentry para el proceso de build
+const sentryConfig = {
+  org: "virtuabogado", // Puedes cambiar esto por tu slug de organización en Sentry
+  project: "virtuabogado-front",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+};
+
+export default withSentryConfig(nextConfig, sentryConfig);

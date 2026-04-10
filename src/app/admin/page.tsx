@@ -270,7 +270,10 @@ export default function AdminPage() {
 						<DashboardStats />
 						<Suspense
 							fallback={<LoadingSpinner text="Cargando órdenes..." />}>
-							<RecentOrders abrirModal={abrirModal} />
+							<RecentOrders 
+								abrirModal={abrirModal} 
+								onVerTodas={() => setSeccionActiva('casos')}
+							/>
 						</Suspense>
 					</>
 				);

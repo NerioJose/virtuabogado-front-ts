@@ -71,9 +71,10 @@ const statusConfig = {
 
 interface RecentOrdersProps {
     abrirModal?: (tipo: 'crear' | 'editar' | 'eliminar' | 'ver' | 'asignar', elemento?: any) => void;
+    onVerTodas?: () => void;
 }
 
-export default function RecentOrders({ abrirModal }: RecentOrdersProps) {
+export default function RecentOrders({ abrirModal, onVerTodas }: RecentOrdersProps) {
     const { data: response, isLoading } = useOrders({ limit: 5 });
 
     // useOrders returns { data: Order[], pagination: any }
@@ -129,7 +130,10 @@ export default function RecentOrders({ abrirModal }: RecentOrdersProps) {
                         </p>
                     </div>
                 </div>
-                <button className="text-sm text-vinotinto hover:text-vinotinto/80 font-medium">
+                <button 
+                    onClick={onVerTodas}
+                    className="text-sm text-vinotinto hover:text-vinotinto/80 font-medium"
+                >
                     Ver todas →
                 </button>
             </div>

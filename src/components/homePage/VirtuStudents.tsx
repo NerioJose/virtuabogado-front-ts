@@ -5,18 +5,29 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useServices } from '@/features/services/hooks/useServices';
+import { useServicesRealtime } from '@/features/services/hooks/useServicesRealtime';
+import { useServicesStore } from '@/features/services/store/servicesStore';
 import { useCheckout } from '@/features/checkout';
 import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { formatUSD } from '@/lib/finance';
 
 export default function VirtuStudents() {
-    const { data: services, isLoading } = useServices();
+    const { isLoading } = useServices(); // Mantener para el fetch inicial
+    useServicesRealtime(); // Activar tiempo real para esta sección
+    const activeServices = useServicesStore(state => state.activeServices);
     const { openCheckout } = useCheckout();
+    
+    // Búsqueda inteligente del servicio académico (VirtuStudents)
+    const studentService = (activeServices || []).find(s => {
+        // Criterio 1: Por URL de imagen (el más estable)
+        if (s.imagenUrl && s.imagenUrl.toLowerCase().includes('virtustudents')) return true;
+        
+        // Criterio 2: Por palabras clave en el título
+        const titulo = s.titulo.toLowerCase();
+        return titulo.includes('estudiantes') || titulo.includes('academia') || titulo.includes('estudiante');
+    });
 
-    // Buscar el servicio académico dinámico por título EXACTO
-    const studentService = (services || []).find(s => s.titulo === 'Asesoría Estudiantes de Derecho');
-
-    // SI NO EXISTE O NO ESTÁ ACTIVO, NO RENDERIZAR NADA
+    // Si no hay datos, está cargando o el servicio no está activo, no mostrar nada
     if (isLoading || !studentService) return null;
 
     const price = formatUSD(studentService.precio);

@@ -69,11 +69,27 @@ export default function ServiciosDestacados() {
             };
             const finalSlug = manualMap[slug] || slug;
 
+            // Buscar icono por coincidencia parcial si no hay coincidencia exacta
+            const findIcon = (title) => {
+                if (ICON_MAP[title]) return ICON_MAP[title];
+                
+                const lowerTitle = title.toLowerCase();
+                if (lowerTitle.includes('estudiantes') || lowerTitle.includes('virtustudents')) return ICON_MAP['Asesoría Estudiantes de Derecho'];
+                if (lowerTitle.includes('empresa') || lowerTitle.includes('negocio')) return ICON_MAP['Asesoría Empresarial'];
+                if (lowerTitle.includes('familiar') || lowerTitle.includes('familia')) return ICON_MAP['Derecho Familiar'];
+                if (lowerTitle.includes('inmobiliario') || lowerTitle.includes('casa')) return ICON_MAP['Derecho Inmobiliario'];
+                if (lowerTitle.includes('documento')) return ICON_MAP['Revisión de Documentos'];
+                if (lowerTitle.includes('representación')) return ICON_MAP['Representación Legal'];
+                if (lowerTitle.includes('consulta')) return ICON_MAP['Consultas Legales'];
+                
+                return DEFAULT_ICON;
+            };
+
             return {
                 id: s.id,
                 title: s.titulo,
                 description: s.descripcion,
-                icon: ICON_MAP[s.titulo] || DEFAULT_ICON,
+                icon: findIcon(s.titulo),
                 imagen: `/images/${finalSlug}.jpg`
             };
         });

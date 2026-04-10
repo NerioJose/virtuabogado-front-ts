@@ -9,19 +9,23 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
     const isDev = process.env.NODE_ENV === 'development';
     
-    const dbUrl = process.env.DATABASE_URL;
+    // PRIORIDAD: Usar DATABASE_URL_POOLER en producción para Connection Pooling (Supavisor Puerto 6543)
+    const dbUrl = process.env.DATABASE_URL_POOLER || process.env.DATABASE_URL;
     
     if (!dbUrl) {
-        console.error('❌ [Prisma] Error: DATABASE_URL no está definida en las variables de entorno.');
-        // No lanzamos error aquí para permitir que Next.js levante el servidor, 
-        // pero las consultas fallarán con un mensaje claro.
+        console.error('❌ [Prisma] Error: Ni DATABASE_URL ni DATABASE_URL_POOLER están definidas.');
+    }
+
+    if (!isDev) {
+        console.log('🔗 [Prisma] Usando configuración de Producción con Connection Pooler.');
     }
 
     const pool = new Pool({
         connectionString: dbUrl,
-        max: isDev ? 10 : 20, 
-        idleTimeoutMillis: 30000, // 30 segundos de inactividad
-        connectionTimeoutMillis: 30000, // 30 segundos para conectar (antes 5s)
+        // En Serverless (Vercel) + Pooler externo, queremos pools pequeños por instancia
+        max: isDev ? 10 : 3, 
+        idleTimeoutMillis: 10000, // 10s
+        connectionTimeoutMillis: isDev ? 30000 : 5000, // 5s en prod para fallar rápido
     });
     const adapter = new PrismaPg(pool);
 
@@ -44,13 +48,6 @@ function createPrismaClient() {
                 console.warn(`   Params: ${e.params}\n`);
             }
         });
-    } else {
-        // Preparado para Sentry en Producción
-        const SENTRY_DSN = process.env.SENTRY_DSN;
-        if (SENTRY_DSN) {
-            console.log('🚀 [SRE] Monitorización de Prisma (Sentry) activa.');
-            // Aquí se integraría el middleware de Sentry si se desea rastreo de trazas
-        }
     }
 
     return client;

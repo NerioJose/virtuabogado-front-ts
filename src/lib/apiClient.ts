@@ -13,14 +13,14 @@ export const apiClient = {
         let { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-            console.log('🔄 apiClient: No hay sesión activa, intentando refrescar...');
+            // console.log('🔄 apiClient: No hay sesión activa, intentando refrescar...');
             const { data: refreshData } = await supabase.auth.refreshSession();
             session = refreshData.session;
         }
 
         if (!session) {
-            console.warn(`🕵️ apiClient: Petición cancelada (Falta de sesión) para ${url}`);
-            // Devolver error controlado en lugar de dejar que sea 401 por el middleware/API
+            // Silenciamos este log para evitar ruido en la consola
+            // console.warn(`🕵️ apiClient: Petición cancelada (Falta de sesión) para ${url}`);
             throw new ApiError(401, 'No hay una sesión activa para realizar esta petición.');
         }
 

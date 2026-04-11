@@ -14,7 +14,12 @@ const getOrigins = () => {
 const ALLOWED_ORIGINS = getOrigins();
 
 // Configuración de rutas críticas para Rate Limiting
-const AUTH_PATHS = ['/api/auth', '/api/checkout', '/api/orders'];
+const getRateLimitPaths = () => {
+    const paths = process.env.RATE_LIMIT_PATHS;
+    return paths ? paths.split(',').map(p => p.trim()) : [];
+};
+
+const AUTH_PATHS = getRateLimitPaths();
 
 export async function middleware(request: NextRequest) {
     const origin = request.headers.get('origin');
@@ -44,11 +49,11 @@ export async function middleware(request: NextRequest) {
 
     // 🛡️ NIVEL 3: SEGURIDAD (Rate Limiting Preventivo)
     let response: NextResponse;
-    
+
     if (AUTH_PATHS.some(path => pathname.startsWith(path))) {
         // Marcamos la petición con un identificador de seguridad (IP)
         const ip = request.headers.get('x-forwarded-for') || 'anonymous';
-        
+
         // Aquí se puede integrar la lógica de Upstash Rate Limit
         // Por ahora, añadimos cabeceras de seguridad para rastreo en Vercel
         response = await updateSession(request);

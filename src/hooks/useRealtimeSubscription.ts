@@ -184,11 +184,11 @@ export const useRealtimeSubscription = () => {
             const channel = supabase.channel(channelName);
             channelRef = channel;
 
-            let tables = ['Order', 'Message', 'Service', 'PaymentMethod'];
+            let tables = ['"Order"', '"Message"', '"Service"', '"PaymentMethod"'];
             if (user?.rol === 'ADMIN') {
-                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod'];
+                tables = ['"User"', '"Order"', '"Service"', '"FinancialSettings"', '"Message"', '"PaymentMethod"'];
             } else if (user?.rol === 'ABOGADO') {
-                tables = ['User', 'Order', 'Service', 'Message', 'PaymentMethod'];
+                tables = ['"User"', '"Order"', '"Service"', '"Message"', '"PaymentMethod"'];
             }
 
             tables.forEach(table => {

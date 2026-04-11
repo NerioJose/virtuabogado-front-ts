@@ -39,7 +39,7 @@ export const useServicesRealtime = (enabled: boolean = true) => {
                 {
                     event: '*',        // INSERT, UPDATE, DELETE
                     schema: 'public',
-                    table: '"Service"', // Importante: Comillas dobles para tablas PascalCase en Prisma
+                    table: 'Service',
                 },
                 (payload) => {
                     console.log('🔄 [Realtime Event Received] Service:', payload.eventType, payload.new);

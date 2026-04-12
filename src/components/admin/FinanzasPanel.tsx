@@ -16,6 +16,7 @@ import { formatUSD } from '@/lib/finance';
 import { motion, AnimatePresence } from 'framer-motion';
 import PayoutManagement from '@/features/finance/components/PayoutManagement';
 import { useFinanzasPanel } from './hooks/useFinanzasPanel';
+import { ElementoSeleccionable } from '@/types/index';
 
 interface FinanzasPanelProps {
 	terminoBusqueda: string;

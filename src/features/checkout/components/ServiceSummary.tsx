@@ -13,7 +13,7 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
     const { data: settings } = useFinancialSettings();
 
     // Cálculo del desglose (Impuestos Incluidos)
-    const taxPercentage = settings?.taxPercentage || 0;
+    const taxPercentage = (settings as any)?.taxPercentage || 0;
     const total = Number(service.precio) || 0;
     const basePrice = total / (1 + (taxPercentage / 100));
     const taxAmount = total - basePrice;

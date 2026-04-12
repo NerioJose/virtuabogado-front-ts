@@ -139,7 +139,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
     try {
       // Lógica de Redirección a WhatsApp
-      const phone = settings?.whatsappPhone || '584120000000'; // Fallback sutil si no hay config
+      const phone = (settings as any)?.whatsappPhone || '584120000000'; // Fallback sutil si no hay config
       
       const message = `*Nueva consulta desde VirtuAbogado*
       
@@ -177,7 +177,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
       console.error('Error al procesar el contacto:', error);
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, onSubmitSuccess, settings?.whatsappPhone]);
+  }, [formData, validateForm, onSubmitSuccess, (settings as any)?.whatsappPhone]);
 
   const asuntoOptions = useMemo(() => [
     { value: '', label: 'Selecciona un asunto' },

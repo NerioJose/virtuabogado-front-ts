@@ -474,7 +474,7 @@ export default function AdminPage() {
 							| 'configuracion'
 						}
 						tipo={tipoModal}
-						elemento={elementoSeleccionado}
+						elemento={elementoSeleccionado || undefined}
 						onClose={cerrarModal}
 						onSave={handleSave}
 					/>

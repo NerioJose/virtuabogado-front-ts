@@ -14,6 +14,7 @@ import {
 	FiLock,
 	FiShield,
 	FiX,
+	FiClock,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';

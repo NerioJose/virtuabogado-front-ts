@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { FiCalendar, FiClock, FiUser, FiChevronLeft, FiChevronRight, FiBriefcase, FiArrowRight } from 'react-icons/fi';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAgendaPanel } from './hooks/useAgendaPanel';
 
 interface AgendaPanelProps {
   abogadoId: string;
@@ -11,54 +12,12 @@ interface AgendaPanelProps {
 }
 
 export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelProps) {
-  // ============ REACT QUERY ============
-  const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-  const orders = (response as any)?.data || [];
-  const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
-
-  // Función para formatear fecha
-  const formatearFecha = (fecha: Date): string => {
-    return fecha.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  // Función para cambiar de día
-  const cambiarDia = (dias: number) => {
-    const nuevaFecha = new Date(fechaSeleccionada);
-    nuevaFecha.setDate(nuevaFecha.getDate() + dias);
-    setFechaSeleccionada(nuevaFecha);
-  };
-
-  // Filtrar órdenes por fecha de creación o actualización para la "agenda"
-  const casosDelDia = useMemo(() => {
-    // Definir prioridades de estado: Estados activos primero (0), Finalizados después (1)
-    const getStatusPriority = (status: string) => {
-      const activeStates = ['PENDIENTE', 'EN_PROGRESO', 'REVISION'];
-      return activeStates.includes(status) ? 0 : 1;
-    };
-
-    return (orders as any[])
-      .filter((order: any) => {
-        const fechaOrder = new Date(order.createdAt);
-        return fechaOrder.toDateString() === fechaSeleccionada.toDateString();
-      })
-      .sort((a: any, b: any) => {
-        const priorityA = getStatusPriority(a.status);
-        const priorityB = getStatusPriority(b.status);
-        
-        // 1. Prioridad por estado
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        
-        // 2. Misma prioridad, los más recientes arriba
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-  }, [orders, fechaSeleccionada]);
+  const {
+    fechaSeleccionada,
+    casosDelDia,
+    isLoading,
+    cambiarDia,
+  } = useAgendaPanel(abogadoId);
 
   if (isLoading) {
     return (
@@ -133,7 +92,7 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
         ) : (
           <div className="relative pl-12 md:pl-20 border-l-2 border-slate-100 space-y-6">
             <AnimatePresence mode="popLayout">
-              {casosDelDia.map((caso, idx) => (
+              {casosDelDia.map((caso: any, idx: number) => (
                 <motion.div 
                   key={caso.id}
                   initial={{ opacity: 0, x: -20 }}

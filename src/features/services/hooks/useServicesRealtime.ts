@@ -53,7 +53,7 @@ export const useServicesRealtime = (enabled: boolean = true) => {
                 } else {
                     console.warn(`⚠️ [Realtime - Services] Estado: ${status}`, error || '');
                     if (status === 'CHANNEL_ERROR') {
-                        console.error('❌ Error de canal: Probablemente falta la política RLS de SELECT para "anon" o la tabla no está en la publicación "supabase_realtime".');
+                        console.warn('⚠️ Error de canal (Realtime): Probablemente falta la política RLS de SELECT para "anon" o la tabla no está en la publicación "supabase_realtime".');
                     }
                 }
             });

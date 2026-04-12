@@ -14,81 +14,27 @@ import {
     FiCreditCard,
     FiMessageCircle
 } from 'react-icons/fi';
-import { useFinancialSettings, useUpdateFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
-import { financialSettingsService } from '@/features/financial-settings/services/financial-settings.service';
 import { useAdminServices } from '@/features/services/hooks/useServices';
 import ServiciosPanel from './ServiciosPanel';
+import { useConfiguracionPanel } from '@/features/financial-settings/hooks/useConfiguracionPanel';
+import { useAdminConfiguracion, TabType } from './hooks/useAdminConfiguracion';
 
 // Componente para configuración financiera (Extraído por claridad)
 function FinancialSettingsSection() {
-	const { data: financialSettings, isLoading: loadingSettings } = useFinancialSettings();
-	const { data: services, isLoading: loadingServices } = useAdminServices();
-	const updateSettings = useUpdateFinancialSettings();
-
-	const [simulationBase, setSimulationBase] = useState<number>(0);
-	const [lawyerCommission, setLawyerCommission] = useState<number>(0);
-	const [operationalCosts, setOperationalCosts] = useState<number>(0);
-	const [taxPercentage, setTaxPercentage] = useState<number>(0);
-	const [platformFee, setPlatformFee] = useState<number>(0);
-	const [whatsappPhone, setWhatsappPhone] = useState<string>('');
-	const [isSaving, setIsSaving] = useState(false);
-	const [saveMessage, setSaveMessage] = useState('');
-
-	useEffect(() => {
-		if (financialSettings) {
-			setLawyerCommission((financialSettings as any).lawyerCommissionPercentage || 0);
-			setOperationalCosts((financialSettings as any).operationalCostsPercentage || 0);
-			setTaxPercentage((financialSettings as any).taxPercentage || 0);
-			setPlatformFee((financialSettings as any).platformFeePercentage || 0);
-			setSimulationBase((financialSettings as any).simulationBase || 0);
-			setWhatsappPhone((financialSettings as any).whatsappPhone || '');
-		}
-	}, [financialSettings]);
-
-	const validation = useMemo(() => {
-		return financialSettingsService.validateSettings({
-			lawyerCommissionPercentage: lawyerCommission,
-			operationalCostsPercentage: operationalCosts,
-			taxPercentage: taxPercentage,
-			platformFeePercentage: platformFee,
-			simulationBase: simulationBase,
-			whatsappPhone: whatsappPhone
-		});
-	}, [lawyerCommission, operationalCosts, taxPercentage, platformFee, simulationBase, whatsappPhone]);
-
-	const previewData = useMemo(() => {
-		return financialSettingsService.calculatePreview(
-			simulationBase,
-			lawyerCommission,
-			operationalCosts,
-			taxPercentage,
-			platformFee
-		);
-	}, [simulationBase, lawyerCommission, operationalCosts, taxPercentage, platformFee]);
-
-	const handleSave = async () => {
-		if (!validation.isValid) return;
-		setIsSaving(true);
-		setSaveMessage('');
-
-		try {
-			await updateSettings.mutateAsync({
-				lawyerCommissionPercentage: lawyerCommission,
-				operationalCostsPercentage: operationalCosts,
-				taxPercentage: taxPercentage,
-				platformFeePercentage: platformFee,
-				simulationBase: simulationBase,
-				whatsappPhone: whatsappPhone
-			});
-			setSaveMessage('Configuración financiera guardada correctamente');
-			setTimeout(() => setSaveMessage(''), 3000);
-		} catch (error) {
-			console.error('Error saving financial settings:', error);
-			setSaveMessage('Error al guardar la configuración');
-		} finally {
-			setIsSaving(false);
-		}
-	};
+	const {
+		loadingSettings,
+		lawyerCommission, setLawyerCommission,
+		operationalCosts, setOperationalCosts,
+		taxPercentage, setTaxPercentage,
+		platformFee, setPlatformFee,
+		simulationBase, setSimulationBase,
+		whatsappPhone, setWhatsappPhone,
+		validation,
+		previewData,
+		isSaving,
+		saveMessage,
+		handleSave
+	} = useConfiguracionPanel();
 
 	if (loadingSettings) {
 		return (
@@ -267,17 +213,15 @@ function FinancialSettingsSection() {
 	);
 }
 
-type TabType = 'perfil' | 'financiero' | 'servicios';
-
 export default function ConfiguracionPanel() {
-	const [activeTab, setActiveTab] = useState<TabType>('servicios');
+	const { activeTab, handleTabChange } = useAdminConfiguracion();
 
 	return (
 		<div className="space-y-8">
 			<div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 				<div className="flex border-b border-gray-100">
 					<button
-						onClick={() => setActiveTab('servicios')}
+						onClick={() => handleTabChange('servicios')}
 						className={`px-8 py-5 text-sm font-bold transition-all flex items-center gap-3 border-r border-gray-50 ${
 							activeTab === 'servicios' 
 								? 'bg-azul-primario text-white' 
@@ -288,7 +232,7 @@ export default function ConfiguracionPanel() {
 					</button>
 
 					<button
-						onClick={() => setActiveTab('financiero')}
+						onClick={() => handleTabChange('financiero')}
 						className={`px-8 py-5 text-sm font-bold transition-all flex items-center gap-3 border-r border-gray-50 ${
 							activeTab === 'financiero' 
 								? 'bg-azul-primario text-white' 
@@ -299,7 +243,7 @@ export default function ConfiguracionPanel() {
 					</button>
 
 					<button
-						onClick={() => setActiveTab('perfil')}
+						onClick={() => handleTabChange('perfil')}
 						className={`px-8 py-5 text-sm font-bold transition-all flex items-center gap-3 ${
 							activeTab === 'perfil' 
 								? 'bg-azul-primario text-white' 

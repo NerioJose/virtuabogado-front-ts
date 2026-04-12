@@ -29,6 +29,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useAbogadoPanel } from './hooks/useAbogadoPanel';
 
 // OPTIMIZACIÓN (Dynamic Imports): Cargamos solo lo crítico (Casos) y el resto bajo demanda
 const CasosAbogadoPanel = dynamic(() => import('./CasosAbogadoPanel'), { 
@@ -48,116 +49,29 @@ interface AbogadoPanelProps {
 }
 
 export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const [seccionActiva, setSeccionActiva] = useState('casos');
-	const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
-	const [selectedCasoId, setSelectedCasoId] = useState<string | null>(null);
-	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+	const {
+		seccionActiva,
+		setSeccionActiva,
+		selectedClienteId,
+		setSelectedClienteId,
+		selectedCasoId,
+		setSelectedCasoId,
+		isSidebarOpen,
+		setIsSidebarOpen,
+		abogado,
+		loading,
+		estadisticas,
+		handleNavClick,
+		handleVerDetallesCaso,
+		handleLogout,
+		currentAbogadoId,
+	} = useAbogadoPanel(abogadoId);
 
 	// 🔥 REALTIME REACTIVITY: Escuchar cambios en órdenes y mensajes
 	// Esto invalida la caché de TanStack Query instantáneamente
 	useRealtimeSubscription();
 
-	const { user: userAuth, logout: storeLogout } = useAuthStore();
-	// VALIDACIÓN DE IDENTIDAD (ID Consistency): Priorizar prop abogadoId del servidor
-	const currentAbogadoId = abogadoId || userAuth?.id || ''; 
-
-	// 🔔 DEEP-LINK DESDE NOTIFICACIÓN PUSH:
-	// Si la URL contiene ?caso=ORDERID (enviado por el SW al hacer clic en la notificación),
-	// navegar automáticamente a la sección de casos y pre-seleccionar ese expediente.
-	useEffect(() => {
-		const casoParam = searchParams.get('caso');
-		const seccionParam = searchParams.get('seccion');
-
-		if (casoParam) {
-			setSelectedCasoId(casoParam);
-			setSeccionActiva('casos');
-			console.log(`🔔 [AbogadoPanel] Deep-link desde notificación: caso=${casoParam}`);
-		}
-
-		if (seccionParam && !casoParam) {
-			setSeccionActiva(seccionParam);
-			console.log(`🔔 [AbogadoPanel] Deep-link desde notificación: seccion=${seccionParam}`);
-		}
-	}, [searchParams]);
-
-	// Fetch de datos optimizado con TanStack Query
-	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
-	const orders = (response as any)?.data || [];
-
-	useEffect(() => {
-		if (currentAbogadoId) {
-			// console.log(`[LawyerDashboard] Abogado ID verificado: ${currentAbogadoId}`);
-		}
-	}, [currentAbogadoId]);
-
-	const { data: summary } = useQuery({
-		queryKey: ['FinancialSummary', currentAbogadoId],
-		queryFn: () => getFinancialSummary({ lawyerId: currentAbogadoId }, { id: userAuth?.id || '', rol: UserRole.ABOGADO }),
-		enabled: !!userAuth?.id,
-        staleTime: 1000 * 60 * 5, // 5 min para KPIs financieros
-	});
-
-	const handleNavClick = (id: string) => {
-		setSeccionActiva(id);
-		setSelectedClienteId(null);
-		setSelectedCasoId(null);
-	};
-
-	const handleVerDetallesCaso = (casoId: string) => {
-		setSelectedCasoId(casoId);
-		setSeccionActiva('casos');
-	};
-
-	const [abogado, setAbogado] = useState<Abogado | null>(null);
-	const [loading, setLoading] = useState(true);
-
-	// Sincronización de estado local con AuthStore
-	useEffect(() => {
-		if (userAuth) {
-			setAbogado({
-				id: userAuth.id,
-				nombre: userAuth.nombre || userAuth.email?.split('@')[0] || 'Abogado',
-				email: userAuth.email || '',
-				telefono: userAuth.telefono || '',
-				picture: userAuth.picture || undefined,
-				especialidad: userAuth.especialidad || 'General',
-				numeroColegiado: userAuth.matricula || 'N/A',
-				experienciaAnios: userAuth.experiencia || 0,
-				valoracionMedia: 5.0,
-			});
-			setLoading(false);
-		} else {
-			setLoading(false);
-		}
-	}, [userAuth]);
-
-	// Estadísticas memoizadas para evitar re-renders costosos
-	const estadisticas = useMemo(() => {
-		if (!orders.length) return { casosActivos: 0, casosPendientes: 0, casosCompletados: 0, clientesActivos: 0, proximaCita: new Date().toISOString(), ingresosMes: 0 };
-        
-        const uniqueClients = new Set();
-		orders.forEach((order: any) => {
-			if (order.userId) uniqueClients.add(order.userId);
-		});
-
-		return {
-			casosActivos: orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length,
-			casosPendientes: orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length,
-			casosCompletados: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length,
-			clientesActivos: uniqueClients.size,
-			proximaCita: new Date().toISOString(), // Mock
-			ingresosMes: summary?.lawyerPendingBalance || 0,
-		};
-	}, [orders, summary]);
-
-	const handleLogout = async () => {
-		storeLogout();
-		router.push('/login');
-	};
-
-	if (loading || isLoadingOrders) {
+	if (loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<FiLoader className="animate-spin text-azul-primario" size={40} />
@@ -395,8 +309,8 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							{seccionActiva === 'clientes' && (
 								<ClientesAbogadoPanel 
                                     abogadoId={abogado.id} 
-                                    onNavigateToCasos={(id) => { setSelectedClienteId(id); setSeccionActiva('casos'); }}
-                                    onNavigateToMensajes={(id) => { setSelectedClienteId(id); setSeccionActiva('mensajes'); }}
+                                    onNavigateToCasos={(id: string) => { setSelectedClienteId(id); setSeccionActiva('casos'); }}
+                                    onNavigateToMensajes={(id: string) => { setSelectedClienteId(id); setSeccionActiva('mensajes'); }}
                                 />
 							)}
 							{seccionActiva === 'facturacion' && (

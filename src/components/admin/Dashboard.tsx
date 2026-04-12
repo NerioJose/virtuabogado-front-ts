@@ -14,58 +14,17 @@ import {
   FiCheckCircle
 } from 'react-icons/fi';
 import { formatCurrency } from '@/utils/formatters';
-import { useOrders } from '@/features/orders/hooks/useOrders';
-import { useClients } from '@/features/clients/hooks/useClients';
-import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
+import { useDashboard } from './hooks/useDashboard';
 import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 
 export default function Dashboard() {
-  const { data: ordersResponse, isLoading: isLoadingOrders } = useOrders({ limit: 200 });
-  const { data: clients, isLoading: isLoadingClients } = useClients();
-  const { data: lawyers, isLoading: isLoadingLawyers } = useLawyers();
-
-  // useOrders returns { data: Order[], ... }
-  const orders: Order[] = (ordersResponse as any)?.data || [];
-  // useClients and useLawyers return the array directly
-  const clientList = Array.isArray(clients) ? clients : [];
-  const lawyerList = Array.isArray(lawyers) ? lawyers : [];
-
-  const stats = useMemo(() => {
-    const activosStates = [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.PENDIENTE];
-    const casosActivos = orders.filter((o: Order) => activosStates.includes(o.status)).length;
-    const casosCompletados = orders.filter((o: Order) => o.status === OrderStatus.COMPLETADO).length;
-    
-    // Pagos rechazados: órdenes con status PAGO_RECHAZADO
-    const pagosRechazados = orders.filter((o: Order) => 
-      o.status === OrderStatus.PAGO_RECHAZADO || 
-      o.status === OrderStatus.FALLIDO || 
-      o.status === OrderStatus.CANCELADO
-    ).length;
-
-    // Casos sin abogado asignado (PAID = pago aprobado pero sin abogado aún)
-    const sinAsignar = orders.filter((o: Order) => o.status === OrderStatus.PAID && !o.lawyerId).length;
-    
-    const ingresosTotales = orders
-      .filter((o: Order) => [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.COMPLETADO].includes(o.status))
-      .reduce((sum: number, o: Order) => sum + (o.total || 0), 0);
-    
-    const mesActual = new Date().getMonth();
-    const anioActual = new Date().getFullYear();
-    const ingresosMes = orders
-      .filter((o: Order) => {
-        const fecha = new Date(o.createdAt);
-        return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual
-          && [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.COMPLETADO].includes(o.status);
-      })
-      .reduce((sum: number, o: Order) => sum + (o.total || 0), 0);
-
-    return { casosActivos, casosCompletados, pagosRechazados, sinAsignar, ingresosTotales, ingresosMes };
-  }, [orders]);
-
-  // Casos recientes para la tabla
-  const casosRecientes = useMemo(() => orders.slice(0, 5), [orders]);
-
-  const isLoading = isLoadingOrders || isLoadingClients || isLoadingLawyers;
+  const {
+    stats,
+    casosRecientes,
+    isLoading,
+    clientListLength,
+    lawyerListLength,
+  } = useDashboard();
 
   if (isLoading) {
     return (
@@ -96,7 +55,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm">Total Clientes</p>
-              <h3 className="text-3xl font-bold text-azul-primario mt-2">{clientList.length}</h3>
+              <h3 className="text-3xl font-bold text-azul-primario mt-2">{clientListLength}</h3>
             </div>
             <div className="w-12 h-12 bg-azul-claro/20 rounded-lg flex items-center justify-center text-azul-primario">
               <FiUsers size={24} />
@@ -117,7 +76,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm">Total Abogados</p>
-              <h3 className="text-3xl font-bold text-azul-primario mt-2">{lawyerList.length}</h3>
+              <h3 className="text-3xl font-bold text-azul-primario mt-2">{lawyerListLength}</h3>
             </div>
             <div className="w-12 h-12 bg-azul-claro/20 rounded-lg flex items-center justify-center text-azul-primario">
               <FiUserCheck size={24} />

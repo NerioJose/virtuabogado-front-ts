@@ -5,17 +5,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CheckoutModal, useCheckout, CartRecovery } from '@/features/checkout';
-import { useServices } from '@/features/services/hooks/useServices';
-import { useServicesRealtime } from '@/features/services/hooks/useServicesRealtime';
-import { Service } from '@/features/services/types/services.types';
-import { useServicesStore } from '@/features/services/store/servicesStore';
-import { formatUSD } from '@/lib/finance';
-import { slugify } from '@/utils/formatters';
-
-import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useOrdersByUser } from '@/features/orders/hooks/useOrders';
-import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { CasiListo } from '@/components/orders/CasiListo';
+import { formatUSD } from '@/lib/finance';
 
 // Blindaje contra errores de referencia en Vercel - Ya importado arriba
 
@@ -64,51 +55,20 @@ const DEFAULT_ICON = (
 	</svg>
 );
 
+import { useServiciosClientPage } from '@/features/services/hooks/useServiciosClientPage';
+
 export default function ServiciosClientPage() {
-    // 1. REGLA DE ORO: TODOS los hooks al inicio absoluto
-    const { user, isLoading: authLoading } = useAuth();
-    const { openCheckout } = useCheckout();
-    
-    // Blindaje de Sesión: enabled solo si hay usuario
-    const { data: ordersResponse, isLoading: ordersLoading } = useOrdersByUser(user?.id || '', { 
-        enabled: !!user?.id 
-    });
-    const orders = (ordersResponse as any)?.data || [];
-    
-    const { isLoading: servicesLoading } = useServices(); // Public catalog
-    
-    // Limpieza de Realtime: solo si está autenticado
-    useServicesRealtime(!!user);
-    
-    // Configuración financiera opcional/guardada
-    const { isLoading: settingsLoading } = useFinancialSettings({
-        enabled: !!user
-    });
+    const { 
+        user, 
+        activeServices, 
+        isLoading, 
+        hasPendingPayment, 
+        pendingOrder, 
+        getServiceImage, 
+        handleRequestService 
+    } = useServiciosClientPage();
 
-    const activeServices = useServicesStore(state => state.activeServices);
-
-    // 2. Lógica de negocio (Cálculos derivados)
-    const hasPendingPayment = orders.some((order: any) => order.status === 'PAGO_PENDIENTE');
-    const pendingOrder = orders.find((order: any) => order.status === 'PAGO_PENDIENTE');
-
-    // Helper para previsualizar imagen
-    const getServiceImage = (service: Service) => {
-        if (service.imagenUrl) return service.imagenUrl;
-        
-        const slug = slugify(service.titulo);
-        const manualMap: Record<string, string> = {
-            'consultas-legales': 'consulta-legal',
-            'revision-de-documentos': 'revision-documentos',
-            'redaccion-de-documentos': 'revision-documentos',
-            'asesoria-legal': 'consulta-legal',
-            'representacion-legal': 'representacion-legal',
-            'asesoria-estudiantes-de-derecho': 'virtustudents.jpg'
-        };
-
-        const finalSlug = manualMap[slug] || slug;
-        return finalSlug.includes('.') ? `/images/${finalSlug}` : `/images/${finalSlug}.png`;
-    };
-
+    // 2. Procesamiento de datos para la vista
     const servicios = (activeServices || []).map(s => ({
         id: s.id,
         nombre: s.titulo,
@@ -122,7 +82,7 @@ export default function ServiciosClientPage() {
     // 3. RENDERIZADO CONDICIONAL DE ESTADOS (Descending Order)
     
     // ESTADO 1: Cargando (Auth, Orders o Services)
-    if (authLoading || (user && ordersLoading) || servicesLoading || settingsLoading) {
+    if (isLoading) {
         return (
             <main className="min-h-screen bg-white">
                 <section className="py-20 bg-azul-primario animate-pulse h-[400px]"></section>
@@ -231,11 +191,7 @@ export default function ServiciosClientPage() {
 											{servicio.descripcion}
 										</p>
 										<motion.button
-											onClick={() => {
-												// Sanitizar objeto para evitar guardar ReactNodes en el store
-												const { icono, ...serviceData } = servicio;
-												openCheckout(serviceData);
-											}}
+											onClick={() => handleRequestService(servicio)}
 											whileHover={{ scale: 1.05 }}
 											whileTap={{ scale: 0.95 }}
 											className="btn-primary mt-4 font-bold shadow-lg">

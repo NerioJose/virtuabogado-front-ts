@@ -10,7 +10,8 @@ export interface Message {
         nombre: string;
         picture?: string | null;
         rol?: string;
-    }
+    };
+    isPending?: boolean;
 }
 
 export interface ChatState {

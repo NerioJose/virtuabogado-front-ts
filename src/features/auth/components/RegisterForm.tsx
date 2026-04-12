@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
 import { Input } from '@/shared/components/ui/Input/Input';
-import { useAuth } from '../hooks/useAuth';
+import { useRegisterForm } from '../hooks/useRegisterForm';
 import { UserRole } from '@/shared/types/entities.types';
 import { ROUTES } from '@/shared/constants/routes';
 
@@ -14,88 +14,16 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormProps) {
-    const [formData, setFormData] = useState({
-        nombre: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        telefono: '',
-        rol: defaultRole,
-    });
-    const [remember, setRemember] = useState(true);
-
-    // Cargar preferencia y datos al montar
-    useEffect(() => {
-        const savedRemember = localStorage.getItem('remember_me');
-        if (savedRemember !== null) {
-            const isRemembered = savedRemember === 'true';
-            setRemember(isRemembered);
-            
-            if (isRemembered) {
-                const savedEmail = localStorage.getItem('remember_email');
-                const savedNombre = localStorage.getItem('remember_nombre');
-                const savedTelefono = localStorage.getItem('remember_telefono');
-                
-                setFormData(prev => ({
-                    ...prev,
-                    email: savedEmail || prev.email,
-                    nombre: savedNombre || prev.nombre,
-                    telefono: savedTelefono || prev.telefono
-                }));
-            }
-        }
-    }, []);
-
-    // Guardar preferencia y limpiar si es necesario
-    useEffect(() => {
-        localStorage.setItem('remember_me', remember.toString());
-        if (!remember) {
-            localStorage.removeItem('remember_email');
-            localStorage.removeItem('remember_nombre');
-            localStorage.removeItem('remember_telefono');
-        }
-    }, [remember]);
-
-    // Guardar datos en tiempo real
-    useEffect(() => {
-        if (remember) {
-            if (formData.email) localStorage.setItem('remember_email', formData.email);
-            if (formData.nombre) localStorage.setItem('remember_nombre', formData.nombre);
-            if (formData.telefono) localStorage.setItem('remember_telefono', formData.telefono);
-        }
-    }, [formData.email, formData.nombre, formData.telefono, remember]);
-
-    const { register, isLoading, error } = useAuth();
-    const [passwordError, setPasswordError] = useState('');
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setPasswordError('');
-
-        // Validar que las contraseñas coincidan
-        if (formData.password !== formData.confirmPassword) {
-            setPasswordError('Las contraseñas no coinciden');
-            return;
-        }
-
-        try {
-            await register({
-                nombre: formData.nombre,
-                email: formData.email,
-                password: formData.password,
-                telefono: formData.telefono,
-                rol: formData.rol,
-                remember: remember,
-            });
-        } catch (err) {
-            // El error ya se maneja en el hook useAuth
-            console.error('Register error:', err);
-        }
-    };
-
-    const handleChange = (field: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
-    };
+    const {
+        formData,
+        remember,
+        setRemember,
+        passwordError,
+        isLoading,
+        error,
+        handleSubmit,
+        handleChange,
+    } = useRegisterForm(defaultRole);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-gray-100 px-4 py-12">

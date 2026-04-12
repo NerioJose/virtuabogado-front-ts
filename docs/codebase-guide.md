@@ -57,12 +57,12 @@ Para evitar que cases antiguos o completados entierren los casos urgentes:
 ## 🛠️ Patrones y Estándares
 
 ### Gestión de Estado
-- **Zustand**: Usado para estado global ligero que no viene de la DB (ej. datos temporales de checkout, sidebar abierta, estado del usuario autenticado).
-- **TanStack Query (React Query)**: Toda la data que viene del backend se maneja aquí. **Regla de oro**: Siempre usar `ORDER_KEYS` o similares para invalidar queries y mantener la consistencia.
+- **Zustand (Feature Level)**: Usado para estado global del dominio (ej. `chatStore`, `checkoutStore`). Permite una sincronización ligera entre componentes de la misma feature.
+- **TanStack Query (React Query)**: El estándar para toda la data persistente. **Regla de oro**: Las queries se definen en `hooks/` y las llaves de caché (`keys`) se centralizan para permitir invalidaciones precisas desde cualquier parte de la App.
 
-### Acceso a Datos (Services & Actions)
-- **API Routes**: Actúan como nuestro backend. Usan Prisma para interactuar con Postgres.
-- **Features Services**: Funciones puras en `src/features/[feature]/services` que encapsulan los `fetch` a nuestra propia API. Nunca llames a `fetch` directamente en un componente; usa el servicio.
+### Acceso a Datos (MVVM Model)
+- **API Routes (Backend)**: Actúan como controladores que usan Prisma para interactuar con Postgres.
+- **Model Services (Frontend)**: Funciones en `src/features/[feature]/services` que encapsulan los `fetch`. Los componentes nunca llaman a la API directamente; lo hacen a través de estos servicios que retornan tipos TypeScript estrictos.
 
 ### Autenticación (Supabase SSR)
 - Usamos `@supabase/ssr` para manejar sesiones tanto en el servidor (Middleware, Server Components) como en el cliente.

@@ -6,7 +6,7 @@ import SectionTestimonios from '@/components/homePage/SeccionTestimonios';
 import CallToAction from '@/components/homePage/CallToAction';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { prisma } from '@/lib/prisma';
-import { servicesKeys } from '@/features/services/hooks/useServices';
+
 
 export const metadata: Metadata = {
 	title: 'Inicio | Asesoría Legal Profesional Online',
@@ -24,7 +24,7 @@ export default async function HomePage() {
 
     // Pre-fetch de servicios para que todo el Home cargue sin loaders
     await queryClient.prefetchQuery({
-        queryKey: servicesKeys.active,
+        queryKey: ['Service', 'active'],
         queryFn: async () => {
             const data = await prisma.service.findMany({
                 where: { activo: true },

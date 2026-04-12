@@ -13,6 +13,8 @@ import { Order, OrderStatus, PaymentMethod as OrderPaymentMethod, ORDER_KEYS } f
 import { processPaymentAction } from '../actions/processPaymentAction';
 import { ClientStatus } from '@/features/clients/types/clients.types';
 
+import { checkUserExistsAction } from '../actions/checkUserAction';
+
 const getInitialState = () => ({
     service: null as Servicio | null,
     userData: null as UserCheckoutData | null,
@@ -141,7 +143,6 @@ export const useCheckoutStore = create<CheckoutState>()(
         },
 
         checkUserExists: async (email: string) => {
-            const { checkUserExistsAction } = await import('../actions/checkUserAction');
             const result = await checkUserExistsAction(email);
             
             set((state) => ({ 
@@ -323,7 +324,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                     throw new Error(result.message || 'Error al procesar el pago');
                 }
 
-                const order = result.order;
+                const order = result.order as any;
                 
                 // Si es Zenobank, redirigir a la pasarela
                 if (result.redirectUrl) {

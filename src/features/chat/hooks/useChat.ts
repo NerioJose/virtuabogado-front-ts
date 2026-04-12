@@ -29,7 +29,7 @@ export function useChat(orderId: string) {
     useEffect(() => {
         if (!orderId) return;
         
-        const channel = chatService.subscribeToMessages(orderId, (payload) => {
+        const channel = chatService.subscribeToMessages(orderId, (payload: { new: any }) => {
             if (payload.new) {
                 queryClient.setQueryData<Message[]>(chatKeys.messages(orderId), (old = []) => {
                     const current = Array.isArray(old) ? old : [];
@@ -40,7 +40,7 @@ export function useChat(orderId: string) {
                     // 2. Lógica Anti-Duplicación de UI Optimista
                     // Buscamos si ya existe un mensaje "pendiente" del mismo emisor con el mismo contenido
                     const optimisticMatchIndex = current.findIndex(m => 
-                        (m as any).isPending && 
+                        m.isPending && 
                         m.senderId === payload.new.senderId && 
                         m.content === payload.new.content
                     );
@@ -79,8 +79,10 @@ export function useChat(orderId: string) {
                 senderId: newMessage.senderId,
                 content: newMessage.content,
                 createdAt: new Date().toISOString(),
-                isPending: true
-            } as any;
+                isPending: true,
+                isSystem: false,
+                read: false
+            };
 
             queryClient.setQueryData<Message[]>(chatKeys.messages(orderId), (old = []) => [...old, optimisticMessage]);
             return { previousMessages };

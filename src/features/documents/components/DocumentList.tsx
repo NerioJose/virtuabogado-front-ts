@@ -4,6 +4,8 @@ import React from 'react';
 import { FiFile, FiFileText, FiDownload, FiTrash2, FiClock, FiFolder } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
+import { useDocumentListViewModel } from '../hooks/useDocumentListViewModel';
+
 export interface DocumentoItem {
   id: string;
   nombre: string;
@@ -29,19 +31,7 @@ export default function DocumentList({
   showActions = true
 }: DocumentListProps) {
   
-  const obtenerIconoDocumento = (nombre: string) => {
-    const extension = nombre.split('.').pop()?.toLowerCase();
-
-    if (extension === 'pdf') {
-      return <FiFileText className="text-red-500" />;
-    } else if (extension === 'docx' || extension === 'doc') {
-      return <FiFileText className="text-blue-500" />;
-    } else if (extension === 'xlsx' || extension === 'xls') {
-      return <FiFileText className="text-green-500" />;
-    } else {
-      return <FiFile className="text-gray-500" />;
-    }
-  };
+  const { obtenerIconoDocumento } = useDocumentListViewModel();
 
   if (documentos.length === 0) {
     return (
@@ -67,7 +57,7 @@ export default function DocumentList({
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
-                {obtenerIconoDocumento(doc.nombre)}
+                {obtenerIconoDocumento(doc.nombre).icon}
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-black text-slate-800 text-sm truncate mb-0.5">
@@ -124,11 +114,11 @@ export default function DocumentList({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                      {obtenerIconoDocumento(documento.nombre)}
+                      {obtenerIconoDocumento(documento.nombre).icon}
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-black text-slate-800">{documento.nombre}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-black leading-none">{documento.tipo}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-black leading-none">{obtenerIconoDocumento(documento.nombre).label}</div>
                     </div>
                   </div>
                 </td>

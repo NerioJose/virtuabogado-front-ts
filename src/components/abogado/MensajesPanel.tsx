@@ -14,6 +14,7 @@ import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOr
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useMensajesPanel } from './hooks/useMensajesPanel';
 
 interface MensajesPanelProps {
 	abogadoId: string;
@@ -21,80 +22,21 @@ interface MensajesPanelProps {
 }
 
 export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesPanelProps) {
-	const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-	const orders = response?.data || [];
-	const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
-	const [busqueda, setBusqueda] = useState('');
-	const [modalAbierto, setModalAbierto] = useState(false);
-	const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
-	const updateOrder = useUpdateOrder();
-
-	const openConfirmModal = (orderId: string) => {
-		setCasoParaCompletar(orderId);
-		setModalAbierto(true);
-	};
-
-	const handleConfirmarCompletar = async () => {
-		if (!casoParaCompletar) return;
-		try {
-			await updateOrder.mutateAsync({
-				id: casoParaCompletar,
-				data: {
-					status: OrderStatus.COMPLETADO,
-					closedAt: new Date().toISOString()
-				}
-			});
-			setModalAbierto(false);
-			setCasoParaCompletar(null);
-		} catch (error) {
-			console.error('Error al completar el caso:', error);
-			alert('Hubo un error al intentar completar el caso.');
-		}
-	};
-
-	// Filtrar conversaciones por búsqueda y mapear desde órdenes
-	const conversaciones = useMemo(() => {
-		return orders
-			.filter(order => {
-				if (initialClienteId && order.userId !== initialClienteId) return false;
-				const term = busqueda.toLowerCase();
-				return (
-					order.userName?.toLowerCase().includes(term) ||
-					order.items?.[0]?.serviceName?.toLowerCase().includes(term) ||
-					order.id.toLowerCase().includes(term)
-				);
-			})
-			.map(order => ({
-				id: order.id,
-				participante: order.userName || 'Cliente',
-				ultimoMensaje: 'Ver conversación', // Podríamos traer el último mensaje si la API lo incluyera
-				fechaUltimoMensaje: order.updatedAt || order.createdAt,
-				caso: order.items?.[0]?.serviceName || 'Servicio Legal',
-				status: order.status
-			}));
-	}, [orders, busqueda]);
-
-	// Formatear fecha
-	const formatearFecha = (fecha: string | Date): string => {
-		const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
-		const hoy = new Date();
-		const ayer = new Date(hoy);
-		ayer.setDate(hoy.getDate() - 1);
-
-		if (fechaObj.toDateString() === hoy.toDateString()) {
-			return fechaObj.toLocaleTimeString('es-ES', {
-				hour: '2-digit',
-				minute: '2-digit',
-			});
-		} else if (fechaObj.toDateString() === ayer.toDateString()) {
-			return 'Ayer';
-		} else {
-			return fechaObj.toLocaleDateString('es-ES', {
-				day: '2-digit',
-				month: '2-digit',
-			});
-		}
-	};
+	const {
+		conversacionActiva,
+		setConversacionActiva,
+		busqueda,
+		setBusqueda,
+		modalAbierto,
+		setModalAbierto,
+		conversaciones,
+		isLoading,
+		openConfirmModal,
+		handleConfirmarCompletar,
+		formatearFecha,
+		isUpdating,
+		ordenActual
+	} = useMensajesPanel(abogadoId, initialClienteId);
 
 	if (isLoading) {
 		return (
@@ -136,7 +78,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 							<p className="text-slate-400 font-bold text-sm tracking-tight">No hay mensajes aún</p>
 						</div>
 					) : (
-						conversaciones.map((conv) => (
+						conversaciones.map((conv: any) => (
 							<div
 								key={conv.id}
 								onClick={() => setConversacionActiva(conv.id)}
@@ -186,21 +128,21 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
                                 </div>
                                 <div className="min-w-0">
                                     <h3 className="text-base font-black text-slate-800 leading-tight truncate">
-                                        {conversaciones.find(c => c.id === conversacionActiva)?.participante}
+                                        {conversaciones.find((c: any) => c.id === conversacionActiva)?.participante}
                                     </h3>
                                     <p className="text-[10px] text-azul-primario font-black uppercase tracking-widest truncate mt-0.5">
-                                        {conversaciones.find(c => c.id === conversacionActiva)?.caso}
+                                        {conversaciones.find((c: any) => c.id === conversacionActiva)?.caso}
                                     </p>
                                 </div>
 							</div>
 
-							{conversacionActiva && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.COMPLETADO && orders.find(o => o.id === conversacionActiva)?.status !== OrderStatus.CANCELADO && (
+							{conversacionActiva && ordenActual?.status !== OrderStatus.COMPLETADO && ordenActual?.status !== OrderStatus.CANCELADO && (
 								<button
 									onClick={() => openConfirmModal(conversacionActiva)}
-									disabled={updateOrder.isPending}
+									disabled={isUpdating}
 									className="px-4 py-2.5 text-[10px] font-black text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-500 hover:text-white transition-all duration-300 disabled:opacity-50 uppercase tracking-widest shadow-sm active:scale-95"
 								>
-									{updateOrder.isPending ? 'Procesando...' : 'Finalizar Caso'}
+									{isUpdating ? 'Procesando...' : 'Finalizar Caso'}
 								</button>
 							)}
 						</div>
@@ -235,7 +177,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 				title="Finalizar Caso"
 				message="¿Estás seguro de que deseas completar este caso? Se cerrará el canal de comunicación permanente con el cliente."
 				confirmText="Sí, Finalizar Caso"
-				isLoading={updateOrder.isPending}
+				isLoading={isUpdating}
 			/>
 		</div>
 	);

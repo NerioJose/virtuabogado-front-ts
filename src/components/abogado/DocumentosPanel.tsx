@@ -1,205 +1,40 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { FiFile, FiFileText, FiDownload, FiUpload, FiTrash2, FiFolder, FiSearch, FiCheck, FiClock, FiX } from 'react-icons/fi';
+import React from 'react';
+import { FiFolder, FiUpload, FiX, FiCheck, FiClock, FiSearch } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import { createClient } from '@/utils/supabase/client';
-import { documentsService } from '@/features/documents/services/documents.service';
-import { ordersService } from '@/features/orders/services/orders.service';
-import { Order } from '@/features/orders/types/orders.types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { capitalizeName } from '@/utils/formatters';
-import { compressImage } from '@/utils/imageCompression';
-import DocumentList, { DocumentoItem } from '../documents/DocumentList';
+import DocumentList, { DocumentoItem } from '@/features/documents/components/DocumentList';
+import { useDocumentosPanel } from './hooks/useDocumentosPanel';
 
 interface DocumentosPanelProps {
   abogadoId: string;
 }
 
-interface DocumentoLocal {
-  id: string;
-  name: string; // Changed to match API
-  nombre: string; // Keep for legacy if needed/mapped
-  type: string;
-  tipo: string;
-  caso?: string;
-  cliente?: string;
-  fechaSubida: string;
-  tamaño: string;
-  url: string;
-}
+// Los tipos se heredan del hook useDocumentosPanel que ya extiende DocumentoItem
 export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
-  const supabase = createClient();
-  const [documentos, setDocumentos] = useState<DocumentoLocal[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'pdf' | 'doc'>('todos');
-  const [notificacion, setNotificacion] = useState<{tipo: 'success' | 'info' | 'error', mensaje: string} | null>(null);
-  const [docParaEliminar, setDocParaEliminar] = useState<DocumentoLocal | null>(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const fetchDocumentos = async () => {
-    if (!abogadoId) {
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/documents?lawyerId=${abogadoId}`);
-      const docs = await response.json();
-      
-      if (!Array.isArray(docs)) {
-        console.error('API did not return an array:', docs);
-        setDocumentos([]);
-        return;
-      }
-      
-      const mappedDocs: DocumentoLocal[] = docs.map((d: any) => {
-        let fecha = 'Pendiente';
-        try {
-          if (d.createdAt) {
-            fecha = new Date(d.createdAt).toISOString().split('T')[0];
-          }
-        } catch (e) {
-          console.error('Error parsing date:', d.createdAt);
-        }
-
-        return {
-          id: d.id,
-          name: d.name || 'Sin nombre',
-          nombre: d.name || 'Sin nombre',
-          type: d.type || 'Documento',
-          tipo: d.type || 'Documento',
-          caso: d.order ? `${d.order.service?.titulo || 'Servicio'} (#${d.order.numericId || '?'})` : undefined,
-          cliente: capitalizeName(d.order?.user?.nombre) || 'Desconocido',
-          fechaSubida: fecha,
-          tamaño: d.size ? `${(d.size / 1024 / 1024).toFixed(2)} MB` : 'N/A',
-          url: d.url || '#'
-        };
-      });
-      
-      setDocumentos(mappedDocs);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      setNotificacion({ tipo: 'error', mensaje: 'Error al cargar los documentos' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchOrders = async () => {
-    if (!abogadoId) return;
-    
-    try {
-      console.log('Fetching orders for upload modal...');
-      const response = await ordersService.getAll({ lawyerId: abogadoId });
-      const data = response.data || [];
-      setOrders(data);
-      console.log(`Fetched ${data.length} orders successfully.`);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchDocumentos();
-    fetchOrders();
-  }, [abogadoId]);
-
-  useEffect(() => {
-    if (notificacion) {
-      const timer = setTimeout(() => setNotificacion(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notificacion]);
-
-  const handleSubirClick = () => {
-    setShowUploadModal(true);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
-
-  const { startUpload } = useResumableUpload();
-
-  const processUpload = async () => {
-    if (!selectedFile || !selectedOrderId) return;
-
-    try {
-      setLoading(true);
-      setShowUploadModal(false);
-      setNotificacion({ tipo: 'info', mensaje: `Iniciando subida de ${selectedFile.name}...` });
-
-      // A. Compresión (Worker-based)
-      const fileToUpload = await compressImage(selectedFile);
-
-      // B. Subida Reanudable (TUS)
-      // El startUpload ya gestiona el registro en el UploadManager y el progreso
-      const publicUrl = await startUpload(selectedOrderId, fileToUpload);
-
-      // C. Registro en Base de Datos Técnica
-      await documentsService.create({
-        orderId: selectedOrderId,
-        name: selectedFile.name,
-        url: publicUrl,
-        type: fileToUpload.type,
-        size: fileToUpload.size
-      });
-
-      setNotificacion({ tipo: 'success', mensaje: 'Documento sincronizado correctamente' });
-      fetchDocumentos(); // Recargar lista
-    } catch (error: any) {
-      console.error('Error al subir documento:', error);
-      setNotificacion({ tipo: 'error', mensaje: 'Error: La subida falló o fue cancelada' });
-    } finally {
-      setLoading(false);
-      setSelectedFile(null);
-      setSelectedOrderId('');
-    }
-  };
-
-  const handleDescargar = (doc: DocumentoLocal) => {
-    window.open(doc.url, '_blank');
-  };
-
-  const handleEliminar = (doc: DocumentoLocal) => {
-    setDocParaEliminar(doc);
-  };
-
-  const confirmarEliminacion = async () => {
-    if (docParaEliminar) {
-      try {
-        await documentsService.delete(docParaEliminar.id);
-        setNotificacion({ tipo: 'success', mensaje: `Documento eliminado` });
-        fetchDocumentos();
-      } catch (error) {
-        console.error('Error deleting document:', error);
-      } finally {
-        setDocParaEliminar(null);
-      }
-    }
-  };
-
-  // Filtrar documentos según término de búsqueda y filtro de tipo
-  const documentosFiltrados = documentos.filter(documento => {
-    const coincideTermino =
-      documento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (documento.caso && documento.caso.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (documento.cliente && documento.cliente.toLowerCase().includes(busqueda.toLowerCase()));
-
-    const coincideTipo = filtroTipo === 'todos' || documento.nombre.toLowerCase().includes(filtroTipo.toLowerCase());
-
-    return coincideTermino && coincideTipo;
-  });
+  const {
+    documentosFiltrados,
+    loading,
+    orders,
+    busqueda,
+    setBusqueda,
+    filtroTipo,
+    setFiltroTipo,
+    notificacion,
+    docParaEliminar,
+    setDocParaEliminar,
+    showUploadModal,
+    setShowUploadModal,
+    selectedOrderId,
+    setSelectedOrderId,
+    selectedFile,
+    fileInputRef,
+    handleFileChange,
+    processUpload,
+    handleDescargar,
+    confirmarEliminacion,
+  } = useDocumentosPanel(abogadoId);
 
   return (
     <div className="space-y-6">
@@ -231,7 +66,7 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
         </h2>
 
         <button 
-          onClick={handleSubirClick}
+          onClick={() => setShowUploadModal(true)}
           className="w-full sm:w-auto bg-azul-primario text-white px-5 py-2.5 rounded-2xl hover:bg-azul-primario/90 transition-all flex items-center justify-center shadow-lg shadow-azul-primario/25 font-bold text-sm active:scale-95">
           <FiUpload className="mr-2" size={18} />
           Subir documento
@@ -364,9 +199,9 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
 
       {/* Lista de Documentos (Componente Reutilizable) */}
       <DocumentList 
-        documentos={documentosFiltrados as DocumentoItem[]}
+        documentos={documentosFiltrados}
         onDescargar={handleDescargar}
-        onEliminar={handleEliminar}
+        onEliminar={setDocParaEliminar}
       />
 
       <ConfirmModal 

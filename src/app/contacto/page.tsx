@@ -6,10 +6,10 @@ import { lazy, Suspense, useMemo } from 'react';
 //import Link from 'next/link';
 
 // Lazy loading de componentes
-const FormularioContacto = lazy(() => import('../../components/contacto/FormularioContacto'));
-const InformacionContacto = lazy(() => import('../../components/contacto/InformacionContacto'));
-const SeccionMapa = lazy(() => import('../../components/contacto/SeccionMapa'));
-const SeccionFAQ = lazy(() => import('../../components/contacto/SeccionFAQ'));
+const FormularioContacto = lazy(() => import('@/components/contacto/FormularioContacto'));
+const InformacionContacto = lazy(() => import('@/components/contacto/InformacionContacto'));
+const SeccionMapa = lazy(() => import('@/components/contacto/SeccionMapa'));
+const SeccionFAQ = lazy(() => import('@/components/contacto/SeccionFAQ'));
 
 export default function ContactoPage() {
 

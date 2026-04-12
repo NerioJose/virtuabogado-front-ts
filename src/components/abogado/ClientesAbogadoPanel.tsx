@@ -7,90 +7,24 @@ import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 
+import { useClientesAbogadoPanel, ClienteRecord } from './hooks/useClientesAbogadoPanel';
+
 interface ClientesAbogadoPanelProps {
   abogadoId: string;
   onNavigateToCasos?: (clienteId: string) => void;
   onNavigateToMensajes?: (clienteId: string) => void;
 }
 
-interface Cliente {
-  id: string;
-  nombre: string;
-  email: string;
-  telefono: string;
-  fechaAsignacion: string;
-  casosActivos: number;
-  casosCompletados: number;
-  ultimaActividad: string;
-  imagen?: string;
-}
-
 export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onNavigateToMensajes }: ClientesAbogadoPanelProps) {
-  // Use real data from orders to derive clients
-  const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-  const orders = response?.data || [];
-  const [busqueda, setBusqueda] = useState('');
-  const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
-
-  // Derive unique clients from orders
-  const clientes: Cliente[] = useMemo(() => {
-    if (!orders) return [];
-
-    const clientMap = new Map<string, Cliente>();
-
-    orders.forEach(order => {
-      if (!order.userId || !order.userEmail) return;
-
-      const existingClient = clientMap.get(order.userId);
-
-      const fechaActualizacion = new Date(order.updatedAt);
-      const fechaCreacion = new Date(order.createdAt);
-
-      if (existingClient) {
-        existingClient.casosActivos += (order.status === OrderStatus.EN_PROGRESO || order.status === OrderStatus.PENDIENTE) ? 1 : 0;
-        existingClient.casosCompletados += order.status === OrderStatus.COMPLETADO ? 1 : 0;
-        // Update last activity if newer
-        if (fechaActualizacion > new Date(existingClient.ultimaActividad)) {
-          existingClient.ultimaActividad = fechaActualizacion.toISOString();
-        }
-      } else {
-        clientMap.set(order.userId, {
-          id: order.userId,
-          nombre: order.userName || order.userEmail.split('@')[0], // Fallback name
-          email: order.userEmail,
-          telefono: 'No registrado', // userPhone no existe en Order, placeholder por ahora
-          fechaAsignacion: fechaCreacion.toISOString(),
-          casosActivos: (order.status === OrderStatus.EN_PROGRESO || order.status === OrderStatus.PENDIENTE) ? 1 : 0,
-          casosCompletados: order.status === OrderStatus.COMPLETADO ? 1 : 0,
-          ultimaActividad: (order.updatedAt ? fechaActualizacion : fechaCreacion).toISOString()
-        });
-      }
-    });
-
-    return Array.from(clientMap.values());
-  }, [orders]);
-
-  // Calcular si un cliente ha estado activo recientemente (últimos 30 días)
-  const esClienteReciente = (ultimaActividad: string) => {
-    const fechaActividad = new Date(ultimaActividad);
-    const hoy = new Date();
-    const diferenciaDias = Math.floor((hoy.getTime() - fechaActividad.getTime()) / (1000 * 60 * 60 * 24));
-    return diferenciaDias <= 30;
-  };
-
-  // Filtrar clientes según término de búsqueda y filtro de actividad
-  const clientesFiltrados = clientes.filter(cliente => {
-    const coincideTermino =
-      cliente.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      cliente.email.toLowerCase().includes(busqueda.toLowerCase()) ||
-      cliente.telefono.includes(busqueda);
-
-    if (filtroActividad === 'todos') return coincideTermino;
-    if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.ultimaActividad);
-    if (filtroActividad === 'inactivo') return coincideTermino && !esClienteReciente(cliente.ultimaActividad);
-
-    return coincideTermino;
-  });
+  const {
+    clientesFiltrados,
+    isLoading,
+    busqueda,
+    setBusqueda,
+    filtroActividad,
+    setFiltroActividad,
+    esClienteReciente,
+  } = useClientesAbogadoPanel(abogadoId);
 
   if (isLoading) {
     return (

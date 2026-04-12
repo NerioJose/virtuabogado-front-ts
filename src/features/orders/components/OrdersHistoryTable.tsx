@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useOrdersHistory } from '../hooks/useOrdersHistory';
-import { GetOrdersFilters } from '../actions/getOrdersHistory';
+import React from 'react';
+import { useOrdersHistoryTable } from '../hooks/useOrdersHistoryTable';
 import { OrderStatus, UserRole } from '@/shared/types/entities.types';
 import { 
     Search, 
@@ -36,23 +35,14 @@ const statusConfig: Record<OrderStatus, { label: string, color: string, icon: an
 };
 
 export function OrdersHistoryTable({ user }: Props) {
-    const [filters, setFilters] = useState<GetOrdersFilters>({
-        page: 1,
-        limit: 10,
-        status: undefined,
-        dateRange: undefined,
-        search: '',
-    });
-
-    const { data, isLoading, isPlaceholderData } = useOrdersHistory(filters, user);
-
-    const handlePageChange = (newPage: number) => {
-        setFilters(prev => ({ ...prev, page: newPage }));
-    };
-
-    const handleFilterChange = (key: keyof GetOrdersFilters, value: any) => {
-        setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
-    };
+    const {
+        filters,
+        data,
+        isLoading,
+        isPlaceholderData,
+        handlePageChange,
+        handleFilterChange,
+    } = useOrdersHistoryTable(user);
 
     return (
         <div className="space-y-4">

@@ -21,8 +21,8 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 // Lazy loading para componentes pesados
 const RecentOrders = lazy(() => import('@/components/admin/RecentOrders'));
-const AbogadosPanel = lazy(() => import('@/components/admin/AbogadosPanel'));
-const ClientesPanel = lazy(() => import('@/components/admin/ClientesPanel'));
+const AbogadosPanel = lazy(() => import('@/features/lawyers/components/AbogadosPanel'));
+const ClientesPanel = lazy(() => import('@/features/clients/components/ClientesPanel'));
 const CasosPanel = lazy(() => import('@/components/admin/CasosPanel'));
 const FinanzasPanel = lazy(() => import('@/components/admin/FinanzasPanel'));
 const EstadisticasPanel = lazy(

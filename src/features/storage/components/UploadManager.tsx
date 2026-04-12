@@ -1,7 +1,5 @@
 'use client';
 
-import { useUploadStore } from '../store/uploadStore';
-import { useResumableUpload } from '../hooks/useResumableUpload';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FiUploadCloud, 
@@ -12,33 +10,21 @@ import {
     FiChevronUp,
     FiWifiOff
 } from 'react-icons/fi';
-import { useState, useEffect } from 'react';
+import { useUploadManagerViewModel } from '../hooks/useUploadManagerViewModel';
 
 /**
  * UploadManager: Orquestador Global de Cargas.
  * Estilo Gmail/Google Drive.
  */
 export default function UploadManager() {
-    const { uploads, removeUpload } = useUploadStore();
-    const [isExpanded, setIsExpanded] = useState(true);
-    const [isOnline, setIsOnline] = useState(true);
-
-    const uploadList = Object.values(uploads);
-    const hasUploads = uploadList.length > 0;
-
-    // Monitorizar conexión para mostrar feedback de "Sincronización Pausada"
-    useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
+    const {
+        uploadList,
+        hasUploads,
+        isExpanded,
+        toggleExpanded,
+        isOnline,
+        removeUpload
+    } = useUploadManagerViewModel();
 
     if (!hasUploads) return null;
 
@@ -48,7 +34,7 @@ export default function UploadManager() {
                 {/* Cabecera */}
                 <div 
                     className="bg-azul-primario p-4 flex justify-between items-center cursor-pointer"
-                    onClick={() => setIsExpanded(!isExpanded)}
+                    onClick={toggleExpanded}
                 >
                     <div className="flex items-center gap-2 text-white">
                         <FiUploadCloud className={uploadList.some(u => u.status === 'uploading') ? 'animate-bounce' : ''} />

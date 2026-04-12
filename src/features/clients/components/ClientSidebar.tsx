@@ -14,6 +14,15 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import PushNotificationToggle from '../notifications/PushNotificationToggle';
+import { useClientSidebar } from './hooks/useClientSidebar';
+
+const ICON_MAP: Record<string, React.ReactNode> = {
+  FiBriefcase: <FiBriefcase />,
+  FiSearch: <FiSearch />,
+  FiMessageSquare: <FiMessageSquare />,
+  FiUser: <FiUser />,
+  FiHelpCircle: <FiHelpCircle />
+};
 
 interface ClientSidebarProps {
   seccionActiva: string;
@@ -36,14 +45,7 @@ export default function ClientSidebar({
   userEmail,
   userPicture
 }: ClientSidebarProps) {
-  
-  const navItems = [
-    { id: 'servicios', label: 'Mis Servicios', icon: <FiBriefcase /> },
-    { id: 'explorar', label: 'Contratar Nuevo', icon: <FiSearch />, href: '/servicios' },
-    { id: 'mensajes', label: 'Mensajes', icon: <FiMessageSquare /> },
-    { id: 'perfil', label: 'Mi Perfil', icon: <FiUser />, divider: true },
-    { id: 'ayuda', label: 'Centro de Ayuda', icon: <FiHelpCircle /> },
-  ];
+  const { navItems, handleNavItemClick } = useClientSidebar(seccionActiva, setSeccionActiva, onClose);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white overflow-hidden">
@@ -91,13 +93,13 @@ export default function ClientSidebar({
               {item.href ? (
                 <Link href={item.href} className="flex items-center px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-azul-primario transition-all group">
                   <span className="text-lg mr-3 text-slate-400 group-hover:scale-110 transition-transform">
-                    {item.icon}
+                    {ICON_MAP[item.icon]}
                   </span>
                   <span className="font-bold text-sm tracking-tight">{item.label}</span>
                 </Link>
               ) : (
                 <button
-                  onClick={() => { setSeccionActiva(item.id); onClose(); }}
+                  onClick={() => handleNavItemClick(item.id)}
                   className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
                     seccionActiva === item.id
                       ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 translate-x-2'
@@ -107,7 +109,7 @@ export default function ClientSidebar({
                   <span className={`text-lg mr-3 transition-transform group-hover:scale-110 ${
                     seccionActiva === item.id ? 'text-white' : 'text-slate-400'
                   }`}>
-                    {item.icon}
+                    {ICON_MAP[item.icon]}
                   </span>
                   <span className="font-bold text-sm tracking-tight">{item.label}</span>
                 </button>

@@ -1,28 +1,21 @@
 'use client';
 
-import { useMemo, useState, memo } from 'react';
+import { memo } from 'react';
 import {
 	FiDollarSign,
-	FiTrendingUp,
-	FiTrendingDown,
-	FiFilter,
-	FiDownload,
 	FiCreditCard,
 	FiEye,
 	FiPieChart,
 	FiCalendar,
 	FiArrowUpRight,
 	FiArrowDownLeft,
-	FiActivity
+	FiActivity,
+	FiDownload
 } from 'react-icons/fi';
-import { useOrders } from '@/features/orders';
-import { ElementoSeleccionable } from '@/types';
 import { formatUSD } from '@/lib/finance';
-import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
-import { useAuthStore } from '@/features/auth/store/authStore';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PayoutManagement from '@/features/finance/components/PayoutManagement';
+import { useFinanzasPanel } from './hooks/useFinanzasPanel';
 
 interface FinanzasPanelProps {
 	terminoBusqueda: string;
@@ -33,59 +26,15 @@ interface FinanzasPanelProps {
 }
 
 function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
-	const user = useAuthStore(state => state.user);
-	const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes' | 'año' | 'all'>('mes');
-	const [tabActiva, setTabActiva] = useState<'operaciones' | 'liquidaciones'>('operaciones');
-
-	const { data: summary, isLoading: isLoadingSummary } = useQuery({
-		queryKey: ['Finance', periodo, user?.id],
-		queryFn: () => getFinancialSummary({ dateRange: periodo as any }, { id: user!.id, rol: user!.rol as any }),
-		enabled: !!user
-	});
-
-	const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 500 });
-	const orders = (response as any)?.data || [];
-
-	const ordenesFiltradas = useMemo(() => {
-		const filtradas = orders.filter((order: any) => {
-			if (!terminoBusqueda) return true;
-			return (
-				order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-				order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-				(order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
-			);
-		});
-
-		// Función de prioridad consistente para el admin
-		const getStatusPriority = (status: string): number => {
-			switch (status) {
-				case 'PENDIENTE':
-				case 'PAID':
-					return 1;
-				case 'EN_PROGRESO':
-				case 'REVISION':
-					return 2;
-				case 'PAGO_PENDIENTE':
-					return 3;
-				case 'COMPLETADO':
-					return 4;
-				default:
-					return 5;
-			}
-		};
-
-		return [...filtradas].sort((a: any, b: any) => {
-			const priorityA = getStatusPriority(a.status);
-			const priorityB = getStatusPriority(b.status);
-			
-			if (priorityA !== priorityB) {
-				return priorityA - priorityB;
-			}
-			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-		});
-	}, [orders, terminoBusqueda]);
-
-	const isLoading = isLoadingSummary || isLoadingOrders;
+	const {
+		periodo,
+		setPeriodo,
+		tabActiva,
+		setTabActiva,
+		summary,
+		ordenesFiltradas,
+		isLoading,
+	} = useFinanzasPanel(terminoBusqueda);
 
 	const container = {
 		hidden: { opacity: 0 },

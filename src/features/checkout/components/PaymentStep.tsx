@@ -1,145 +1,23 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiShield, FiCreditCard, FiArrowRight, FiLoader, FiAlertCircle, FiLock, FiCheckCircle } from 'react-icons/fi';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { FiShield, FiCreditCard, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { SiBitcoin, SiVisa, SiMastercard, SiAmericanexpress } from 'react-icons/si';
 import { FaCcPaypal } from 'react-icons/fa';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
-import { useOrderStatus } from '../hooks/useOrderStatus';
-import { useCheckout } from '../hooks/useCheckout';
-import { usePaymentMethods } from '../hooks/usePaymentMethods';
-import { processPaymentAction } from '../actions/processPaymentAction';
-import { toast } from 'sonner';
-import { formatUSD } from '@/lib/finance';
+import { usePaymentStep } from '../hooks/usePaymentStep';
 
 export const PaymentStep: React.FC = () => {
-    const router = useRouter();
-    const queryClient = useQueryClient();
-    const { 
-        service, 
-        setStep, 
-        total, 
-        orderId,
-        setOrderId,
-        isProcessingPayment, 
-        setIsProcessingPayment,
+    const {
+        methods,
+        isLoadingMethods,
         isWaitingForWebhook,
-        setIsWaitingForWebhook,
-        markAsCompleted,
-        reset
-    } = useCheckout();
-
-    // Estado del botón de rescate (se activa tras 10 segundos de espera)
-    const [showFallbackButton, setShowFallbackButton] = useState(false);
-
-    // Requisito Fintech: Persistencia de Sesión
-    useEffect(() => {
-        if (orderId) {
-            localStorage.setItem('virtuabogado_pending_order', orderId);
-        } else if (isWaitingForWebhook) {
-            const savedOrder = localStorage.getItem('virtuabogado_pending_order');
-            if (savedOrder) setOrderId(savedOrder);
-        }
-    }, [orderId, isWaitingForWebhook, setOrderId]);
-
-    const { data: statusData } = useOrderStatus(orderId, isWaitingForWebhook);
-    const currentRawStatus = statusData?.status?.trim().toUpperCase();
-    const isPaid = currentRawStatus === 'PAID';
-
-    // Log de diagnóstico en tiempo real para el navegador
-    useEffect(() => {
-        if (statusData) {
-            console.log(`📡 [PaymentStep Polling] Respuesta del servidor:`, statusData);
-        }
-    }, [statusData]);
-
-    // Temporizador de Rescate: activa el botón manual después de 10 segundos
-    useEffect(() => {
-        if (!isWaitingForWebhook || isPaid) {
-            setShowFallbackButton(false);
-            return;
-        }
-        const timer = setTimeout(() => setShowFallbackButton(true), 10_000);
-        return () => clearTimeout(timer);
-    }, [isWaitingForWebhook, isPaid]);
-
-    // 🚀 REDIRECCIÓN AUTOMÁTICA TRAS ÉXITO
-    useEffect(() => {
-        if (isWaitingForWebhook && isPaid) {
-            console.log(`✅ [PaymentStep] Pago confirmado (${currentRawStatus}). Limpiando caché y redirigiendo...`);
-            
-            // Invalida la lista de órdenes global para que el dashboard vea el nuevo caso
-            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all });
-            
-            const timer = setTimeout(() => {
-                // Limpieza de estados locales antes de redirigir
-                setIsWaitingForWebhook(false);
-                if (typeof window !== 'undefined') {
-                    window.localStorage.removeItem('virtuabogado_pending_order');
-                    window.localStorage.removeItem('activeOrderId');
-                }
-                reset();
-                router.push('/mis-servicios');
-            }, 1500); // 1.5s para apreciar el éxito
-            return () => clearTimeout(timer);
-        }
-    }, [isPaid, isWaitingForWebhook, router, reset, setIsWaitingForWebhook, currentRawStatus, queryClient]);
-
-    const { data: methods, isLoading: isLoadingMethods } = usePaymentMethods();
-
-    const handlePayment = async (paymentMethodId: string) => {
-        if (isProcessingPayment) return;
-
-        let checkoutWindow: Window | null = null;
-        if (paymentMethodId === 'zenobank') {
-            checkoutWindow = window.open('', '_blank');
-        }
-
-        setIsProcessingPayment(true);
-        const loadingToast = toast.loading('Conectando con la pasarela financiera segura...');
-
-        try {
-            const result = await processPaymentAction({
-                serviceId: service!.id,
-                paymentMethodId
-            });
-
-            if (result.success) {
-                if (result.order?.id) {
-                    setOrderId(result.order.id);
-                }
-
-                if (result.redirectUrl) {
-                    toast.success('Sesión de pago iniciada. Redirigiendo...', { id: loadingToast });
-                    
-                    // IMPORTANTE: Aseguramos el estado de espera ANTES de cualquier redirección
-                    setIsWaitingForWebhook(true);
-                    
-                    if (checkoutWindow) {
-                        checkoutWindow.location.href = result.redirectUrl;
-                    } else {
-                        window.location.href = result.redirectUrl;
-                    }
-                } else {
-                    if (checkoutWindow) checkoutWindow.close();
-                    toast.success('Solicitud procesada con éxito', { id: loadingToast });
-                    setIsProcessingPayment(false);
-                    setStep(3);
-                }
-            } else {
-                if (checkoutWindow) checkoutWindow.close();
-                toast.error(result.message || 'Error en el procesamiento', { id: loadingToast });
-                setIsProcessingPayment(false);
-            }
-        } catch (error: any) {
-            if (checkoutWindow) checkoutWindow.close();
-            toast.error(error.message || 'Error en el procesamiento seguro', { id: loadingToast });
-            setIsProcessingPayment(false);
-        }
-    };
+        isPaid,
+        showFallbackButton,
+        isProcessingPayment,
+        setStep,
+        handlePayment
+    } = usePaymentStep();
 
     if (isLoadingMethods) {
         return (

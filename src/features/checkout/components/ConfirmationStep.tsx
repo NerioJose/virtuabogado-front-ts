@@ -1,43 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useOrderStatus } from '../hooks/useOrderStatus';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import { FiCheckCircle, FiMail, FiLoader } from 'react-icons/fi';
-import { useCheckout } from '../hooks/useCheckout';
 import { motion } from 'framer-motion';
+import { useConfirmationStep } from '../hooks/useConfirmationStep';
 
 export const ConfirmationStep: React.FC = () => {
-    const { orderId, service, userData, closeCheckout, tempPassword, paymentMethod, reset } = useCheckout();
-    const router = useRouter();
-    
-    // 📡 MONITOREO FINTECH: Polling de alta frecuencia (1s) para reconciliación inmediata
-    // Solo se activa si estamos en un método que requiere verificación externa
-    const needsWaiting = (paymentMethod as string) === 'zenobank' || (paymentMethod as string) === 'crypto';
-    
-    const { data: statusData } = useOrderStatus(orderId, needsWaiting);
-    
-    // Determinamos si es un pago exitoso basado en la respuesta en tiempo real
-    const isSuccess = statusData?.status === 'PAID';
-    // Si el método no requiere espera, es éxito inmediato. Si requiere espera, depende del polling.
-    const isPendingConfirmation = needsWaiting && !isSuccess;
-
-    // 🚀 AUTO-REDIRECCIÓN: Se dispara solo cuando detectamos el éxito final
-    useEffect(() => {
-        if (!isPendingConfirmation) {
-            const timer = setTimeout(() => {
-                reset(); // Limpiar el store para futuras compras
-                closeCheckout();
-                router.push('/mis-servicios');
-            }, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [isPendingConfirmation, closeCheckout, router, reset]);
-
-    const handleClose = () => {
-        reset();
-        closeCheckout();
-    };
+    const {
+        orderId,
+        service,
+        userData,
+        isPendingConfirmation,
+        handleClose
+    } = useConfirmationStep();
 
     return (
         <motion.div

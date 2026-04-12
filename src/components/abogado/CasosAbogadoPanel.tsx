@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, memo, useMemo } from 'react';
+import { memo } from 'react';
 import { FiEye, FiMessageSquare, FiFileText, FiFilter, FiArrowLeft, FiBriefcase, FiCheckCircle } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
-import { useChatStore } from '@/features/chat/store/chatStore';
 import { motion } from 'framer-motion';
-import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
+import { useCasosAbogadoPanel } from './hooks/useCasosAbogadoPanel';
 
 interface CasosAbogadoPanelProps {
   abogadoId: string;
@@ -16,79 +15,21 @@ interface CasosAbogadoPanelProps {
 }
 
 function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: CasosAbogadoPanelProps) {
-  // ============ REACT QUERY ============
-  const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-  const misCasos = (response as any)?.data || [];
-
-  useEffect(() => {
-    if (!isLoading) {
-      // console.log(`[LawyerDashboard] Casos encontrados en frontend: ${misCasos.length}`);
-    }
-  }, [misCasos.length, isLoading]);
-
-  const unreadOrders = useChatStore((state) => state.unreadOrders);
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
-  const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
-  const updateOrder = useUpdateOrder();
-
-  // Sincronizar caso seleccionado inicial
-  useEffect(() => {
-    setCasoSeleccionado(initialCasoId || null);
-  }, [initialCasoId]);
-
-  const openConfirmModal = (orderId: string) => {
-    setCasoParaCompletar(orderId);
-    setModalAbierto(true);
-  };
-
-  const handleConfirmarCompletar = () => {
-    if (!casoParaCompletar) return;
-    
-    // Optimizamos flujo: Cerramos modal y lanzamos mutación sin esperar (Optimistic UI)
-    updateOrder.mutate({
-      id: casoParaCompletar,
-      data: { 
-        status: OrderStatus.COMPLETADO,
-        closedAt: new Date().toISOString()
-      }
-    });
-
-    setModalAbierto(false);
-    setCasoParaCompletar(null);
-  };
-
-  // Ya no necesitamos useEffect para fetchOrders porque useQuery lo maneja automáticamente
-  // ni useMemo para filtrar por abogado porque el hook ya lo hace en el servidor
-
-  // Filtrar y ordenar casos (Activos primero, luego por fecha)
-  const casosFiltrados = useMemo(() => {
-    // Definir prioridades de estado: Estados activos primero (0), Finalizados después (1)
-    const getStatusPriority = (status: string) => {
-      const activeStates = [OrderStatus.PENDIENTE, OrderStatus.EN_PROGRESO, OrderStatus.REVISION];
-      return activeStates.includes(status as OrderStatus) ? 0 : 1;
-    };
-
-    return misCasos
-      .filter((caso: any) => {
-        const matchEstado = filtroEstado === 'todos' || caso.status === filtroEstado;
-        const matchCliente = initialClienteId ? caso.userId === initialClienteId : true;
-        return matchEstado && matchCliente;
-      })
-      .sort((a: any, b: any) => {
-        const priorityA = getStatusPriority(a.status);
-        const priorityB = getStatusPriority(b.status);
-        
-        // 1. Si tienen distinta prioridad, el activo (0) va arriba
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        
-        // 2. Si tienen la misma prioridad, ordenar por fecha descendente (más nuevos arriba)
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-  }, [misCasos, filtroEstado, initialClienteId]);
+  const {
+      misCasos,
+      casosFiltrados,
+      isLoading,
+      unreadOrders,
+      filtroEstado,
+      setFiltroEstado,
+      casoSeleccionado,
+      setCasoSeleccionado,
+      modalAbierto,
+      setModalAbierto,
+      openConfirmModal,
+      handleConfirmarCompletar,
+      isUpdating,
+  } = useCasosAbogadoPanel(abogadoId, initialClienteId, initialCasoId);
 
   if (isLoading && misCasos.length === 0) {
     return (
@@ -150,10 +91,10 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               <div className="pt-4 mt-6 border-t border-gray-100">
                 <button
                   onClick={() => caso && openConfirmModal(caso.id)}
-                  disabled={updateOrder.isPending}
+                  disabled={isUpdating}
                   className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex justify-center items-center shadow-sm disabled:opacity-50"
                 >
-                  {updateOrder.isPending ? 'Procesando...' : 'Marcar como Completado'}
+                  {isUpdating ? 'Procesando...' : 'Marcar como Completado'}
                 </button>
                 <p className="text-xs text-gray-500 text-center mt-3 leading-tight">
                   Al completar el caso, el chat se cerrará permanentemente para ambas partes.
@@ -176,7 +117,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
           title="Completar Caso"
           message="¿Estás seguro de que deseas marcar este caso como completado? Esta acción es final y cerrará el chat de forma permanente."
           confirmText="Sí, Completar Caso"
-          isLoading={updateOrder.isPending}
+          isLoading={isUpdating}
         />
       </div>
     );

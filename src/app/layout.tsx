@@ -6,7 +6,7 @@ import NavBar from '../components/layout/NavBar';
 import Footer from '@/components/layout/Footer';
 import { DynamicCheckoutWrapper } from '@/features/checkout/DynamicCheckoutWrapper';
 import Providers from '@/components/providers/Providers';
-import GlobalChatListener from '@/components/chat/GlobalChatListener';
+import GlobalChatListener from '@/features/chat/components/GlobalChatListener';
 import { Toaster } from 'sonner';
 
 const geistSans = Geist({

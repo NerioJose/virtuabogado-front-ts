@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo, memo, useState } from 'react';
+import { useMemo, memo } from 'react';
 import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserPlus, FiMessageSquare, FiBriefcase, FiClock, FiCheckCircle, FiXCircle, FiDollarSign } from 'react-icons/fi';
 import { ElementoSeleccionable } from '@/types/index';
-import { useOrders } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
-import { useChatStore } from '@/features/chat/store/chatStore';
+import { useCasosPanel } from './hooks/useCasosPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CasosPanelProps {
@@ -14,58 +13,27 @@ interface CasosPanelProps {
 }
 
 function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
-  const { data: response, isLoading } = useOrders({ limit: 100 });
-  const orders = (response as any)?.data || [];
-  const unreadOrders = useChatStore((state) => state.unreadOrders);
+  const {
+      orders,
+      ordenesFiltradas,
+      unreadOrders,
+      isLoading,
+      filtroEstado,
+      setFiltroEstado,
+      getStatusConfig,
+  } = useCasosPanel(terminoBusqueda);
 
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
-
-  const ordenesFiltradas = useMemo(() => {
-    const term = terminoBusqueda.toLowerCase().trim();
-    
-    // Función de prioridad para el admin (igual a Dashboard)
-    const getStatusPriority = (status: string): number => {
-      switch (status) {
-        case OrderStatus.PENDIENTE:
-        case OrderStatus.PAID:
-          return 1; // Acción Requerida
-        case OrderStatus.EN_PROGRESO:
-        case OrderStatus.REVISION:
-          return 2; // Activos
-        case OrderStatus.PAGO_PENDIENTE:
-          return 3; 
-        case OrderStatus.COMPLETADO:
-          return 4;
-        default:
-          return 5;
-      }
-    };
-
-    const filtradas = orders.filter((orden: any) => {
-      const coincideBusqueda =
-        orden.userName?.toLowerCase().includes(term) ||
-        orden.userEmail?.toLowerCase().includes(term) ||
-        orden.items?.some((item: any) => item.serviceName?.toLowerCase().includes(term)) ||
-        orden.lawyerName?.toLowerCase().includes(term) ||
-        orden.id?.toLowerCase().includes(term);
-
-      const coincideEstado =
-        filtroEstado === 'todos' || orden.status === filtroEstado;
-
-      return coincideBusqueda && coincideEstado;
-    });
-
-    // Aplicar ordenamiento por prioridad y luego por fecha
-    return [...filtradas].sort((a: any, b: any) => {
-      const priorityA = getStatusPriority(a.status as OrderStatus);
-      const priorityB = getStatusPriority(b.status as OrderStatus);
-      
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [orders, terminoBusqueda, filtroEstado]);
+  const statusIcons: Record<string, React.ReactNode> = {
+    [OrderStatus.PENDIENTE]: <FiUserPlus />,
+    [OrderStatus.EN_PROGRESO]: <FiBriefcase />,
+    [OrderStatus.REVISION]: <FiEye />,
+    [OrderStatus.COMPLETADO]: <FiCheckCircle />,
+    [OrderStatus.CANCELADO]: <FiXCircle />,
+    [OrderStatus.FALLIDO]: <FiXCircle />,
+    [OrderStatus.PAID]: <FiDollarSign />,
+    [OrderStatus.PAGO_PENDIENTE]: <FiClock />,
+    [OrderStatus.PAGO_RECHAZADO]: <FiXCircle />,
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -73,18 +41,6 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
       opacity: 1,
       transition: { staggerChildren: 0.05 }
     }
-  };
-
-  const statusConfig = {
-    [OrderStatus.PENDIENTE]: { label: 'Por Asignar', color: 'bg-amber-100 text-amber-700 font-bold', icon: <FiUserPlus /> },
-    [OrderStatus.EN_PROGRESO]: { label: 'En Proceso', color: 'bg-blue-100 text-blue-700', icon: <FiBriefcase /> },
-    [OrderStatus.REVISION]: { label: 'En Revisión', color: 'bg-purple-100 text-purple-700', icon: <FiEye /> },
-    [OrderStatus.COMPLETADO]: { label: 'Completado', color: 'bg-emerald-100 text-emerald-700', icon: <FiCheckCircle /> },
-    [OrderStatus.CANCELADO]: { label: 'Cancelado', color: 'bg-rose-100 text-rose-700', icon: <FiXCircle /> },
-    [OrderStatus.FALLIDO]: { label: 'Fallido', color: 'bg-red-100 text-red-700', icon: <FiXCircle /> },
-    [OrderStatus.PAID]: { label: 'Pagado', color: 'bg-emerald-100 text-emerald-700', icon: <FiDollarSign /> },
-    [OrderStatus.PAGO_PENDIENTE]: { label: 'Pago Pend.', color: 'bg-slate-100 text-slate-500', icon: <FiClock /> },
-    [OrderStatus.PAGO_RECHAZADO]: { label: 'Pago Rech.', color: 'bg-red-100 text-red-700', icon: <FiXCircle /> },
   };
 
   if (isLoading && orders.length === 0) {
@@ -144,7 +100,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
       >
         <AnimatePresence mode='popLayout'>
           {ordenesFiltradas.map((order) => {
-            const config = (statusConfig as any)[order.status] || { color: 'text-slate-600', bg: 'bg-slate-50', icon: <FiClock /> };
+            const config = getStatusConfig(order.status as OrderStatus);
+            const icon = statusIcons[order.status] || <FiClock />;
             const isUnread = unreadOrders.includes(order.id);
             
             return (
@@ -170,8 +127,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                     </div>
                     <p className="text-[10px] font-bold text-slate-400">{new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
-                    {config.icon} {order.status}
+                  <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.color.split(' ').includes('bg-slate-100') ? config.color : config.color.replace('text-', 'bg-').replace('700', '500').replace('800', '600') + ' text-white'}`}>
+                    {icon} {order.status}
                   </span>
                 </div>
 
@@ -238,7 +195,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
             <tbody className="divide-y divide-slate-100">
               <AnimatePresence mode='popLayout'>
                 {ordenesFiltradas.map((order) => {
-                  const config = (statusConfig as any)[order.status] || { color: 'text-slate-600', bg: 'bg-slate-50', icon: <FiClock /> };
+                  const config = getStatusConfig(order.status as OrderStatus);
+                  const icon = statusIcons[order.status] || <FiClock />;
                   const isUnread = unreadOrders.includes(order.id);
                   
                   return (
@@ -282,8 +240,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                         </span>
                       </td>
                       <td className="px-8 py-5">
-                        <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
-                          {config.icon} {order.status}
+                        <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.color}`}>
+                          {icon} {order.status}
                         </span>
                       </td>
                       <td className="px-8 py-5">

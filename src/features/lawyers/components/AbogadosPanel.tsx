@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useMemo, memo } from 'react';
+import { useMemo, memo } from 'react';
 import { FiBriefcase, FiEdit2, FiTrash2, FiUserCheck, FiStar, FiCheck, FiX, FiFilter, FiAward, FiMail, FiPhone, FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
-import userImage from '../../../public/images/user-placeholder.png';
-import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
+import userImage from '../../../../public/images/user-placeholder.png';
 import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
-import { useOrders } from '@/features/orders/hooks/useOrders';
-import { OrderStatus } from '@/features/orders/types/orders.types';
+import { useAbogadosPanel } from '../hooks/useAbogadosPanel';
 import { ElementoSeleccionable } from '@/types/index';
 import { formatLawyerName } from '@/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,39 +16,18 @@ interface AbogadosPanelProps {
 }
 
 function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
-  const { data: lawyers = [], isLoading } = useLawyers();
-  const { data: ordersResponse } = useOrders();
-  const orders = ordersResponse?.data || [];
-
-  const [especialidadFilter, setEspecialidadFilter] = useState<string>('todas');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | LawyerStatus>('ALL');
-
-  const especialidades = useMemo(() => {
-    const specs = new Set<string>();
-    lawyers.forEach(l => specs.add(l.especialidad));
-    return Array.from(specs).sort();
-  }, [lawyers]);
-
-  const filteredLawyers = useMemo(() => {
-    const term = terminoBusqueda.toLowerCase().trim();
-    return lawyers.filter(lawyer => {
-      const matchesSearch =
-        lawyer.nombre?.toLowerCase().includes(term) ||
-        lawyer.email?.toLowerCase().includes(term) ||
-        (lawyer.telefono && lawyer.telefono.includes(term));
-      const matchesSpecialty = especialidadFilter === 'todas' || lawyer.especialidad === especialidadFilter;
-      const matchesStatus = statusFilter === 'ALL' || lawyer.status === statusFilter;
-      return matchesSearch && matchesSpecialty && matchesStatus;
-    });
-  }, [lawyers, terminoBusqueda, especialidadFilter, statusFilter]);
-
-  const getActiveCases = (lawyerId: string) => {
-    return orders.filter(o => o.lawyerId === lawyerId && o.status === OrderStatus.EN_PROGRESO).length;
-  };
-
-  const cambiarEstadoAbogado = (id: string, status: LawyerStatus) => {
-    console.log('Implement change status', id, status);
-  };
+  const {
+      lawyers,
+      filteredLawyers,
+      especialidades,
+      especialidadFilter,
+      setEspecialidadFilter,
+      statusFilter,
+      setStatusFilter,
+      getActiveCases,
+      updateStatus,
+      isLoading,
+  } = useAbogadosPanel(terminoBusqueda);
 
   const container = {
     hidden: { opacity: 0 },

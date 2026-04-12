@@ -13,8 +13,8 @@ import {
 	FiHelpCircle,
 } from 'react-icons/fi';
 // Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
-import { logAbandonment } from '../../lib/utils/analytics';
-import { saveCartData } from '../../lib/utils/cartRecovery';
+import { logAbandonment } from '@/lib/utils/analytics';
+import { saveCartData } from '@/lib/utils/cartRecovery';
 
 
 import { Suspense } from 'react';

@@ -5,47 +5,18 @@
  * Muestra gráficos y métricas calculadas desde Zustand
  */
 
-import { useMemo, memo } from 'react';
+import { memo } from 'react';
 import { FiBarChart2, FiTrendingUp, FiDownload, FiFilter, FiPieChart } from 'react-icons/fi';
-import { useOrders } from '@/features/orders/hooks/useOrders';
-// import { useOrdersStore } from '@/features/orders';
-import { OrderStatus } from '@/features/orders/types/orders.types';
-import { useClients } from '@/features/clients/hooks/useClients';
-import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
-import { useState } from 'react';
+import { useEstadisticasPanel, PeriodoEstadistica } from './hooks/useEstadisticasPanel';
 
 function EstadisticasPanel() {
-  const [periodo, setPeriodo] = useState<'mes' | 'trimestre' | 'año'>('mes');
-
-  // ============ STORES GLOBALES & HOOKS ============
-  const { data: response, isLoading } = useOrders({ limit: 500 });
-  const orders = response?.data || [];
-  const { data: clients = [] } = useClients();
-  const { data: lawyers = [] } = useLawyers();
-
-  // Calcular estadísticas reales
-  const estadisticas = useMemo(() => {
-    if (orders.length === 0) {
-      return {
-        totalOrdenes: 0,
-        totalClientes: clients.length,
-        totalAbogados: lawyers.length,
-        ingresosTotales: 0,
-        promedioOrden: 0,
-      };
-    }
-
-    const ingresosTotales = orders.reduce((sum, order) => sum + order.total, 0);
-    const promedioOrden = ingresosTotales / orders.length;
-
-    return {
-      totalOrdenes: orders.length,
-      totalClientes: clients.length,
-      totalAbogados: lawyers.length,
-      ingresosTotales,
-      promedioOrden,
-    };
-  }, [orders, clients.length, lawyers.length]);
+  const {
+      periodo,
+      setPeriodo,
+      orders,
+      estadisticas,
+      isLoading
+  } = useEstadisticasPanel();
 
   return (
     <div className="space-y-6">
@@ -55,7 +26,7 @@ function EstadisticasPanel() {
           <FiFilter className="text-gray-500 mr-2" />
           <span className="text-gray-700 font-medium mr-3">Período:</span>
           <div className="flex gap-2">
-            {(['mes', 'trimestre', 'año'] as const).map((p) => (
+            {(['mes', 'trimestre', 'año'] as PeriodoEstadistica[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriodo(p)}
@@ -168,16 +139,16 @@ function EstadisticasPanel() {
                   ${estadisticas.promedioOrden.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Órdenes completadas</span>
                 <span className="text-lg font-medium text-green-600">
-                  {orders.filter(o => o.status === OrderStatus.COMPLETADO).length}
+                  {estadisticas.completadas}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Órdenes pendientes</span>
                 <span className="text-lg font-medium text-yellow-600">
-                  {orders.filter(o => o.status === OrderStatus.PENDIENTE).length}
+                  {estadisticas.pendientes}
                 </span>
               </div>
             </div>

@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import {
 	FiDollarSign,
 	FiDownload,
@@ -18,174 +16,37 @@ import {
 	FiUser,
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-
-import { OrderStatus } from '@/features/orders/types/orders.types';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+
 import { formatUSD } from '@/lib/finance';
-import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
-import { getPayoutHistory } from '@/features/finance/actions/payoutActions';
-import { useAuthStore } from '@/features/auth/store/authStore';
-import { useQuery } from '@tanstack/react-query';
 import PayoutHistoryList from '@/features/finance/components/PayoutHistoryList';
+import { useFacturacionPanel, Factura, PeriodoFacturacion } from './hooks/useFacturacionPanel';
 
 interface FacturacionPanelProps {
 	abogadoId: string;
 }
 
-interface Factura {
-	id: string;
-	numero: string;
-	cliente: string;
-	clienteEmail: string;
-	concepto: string;
-	fecha: string;
-	importeBruto: number;
-	importeNeto: number;
-	estado: 'liquidada' | 'procesando' | 'por_liquidar' | 'pendiente' | 'vencida';
-}
-
-// Tipo para el periodo de facturación
-type PeriodoFacturacion = 'mes' | 'trimestre' | 'año';
-
 export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
-	// Use real orders as invoices
+	const {
+		summary,
+		facturasFiltradas,
+		isLoading,
+		notificacion,
+		periodo,
+		setPeriodo,
+		filtroEstado,
+		setFiltroEstado,
+		facturaSeleccionada,
+		setFacturaSeleccionada,
+		mostrarModalConfirmacion,
+		setMostrarModalConfirmacion,
+		handleDescargar,
+		handleMarcarPagada,
+		confirmarPago,
+		isUpdating,
+	} = useFacturacionPanel(abogadoId);
 
-	const user = useAuthStore(state => state.user);
-	const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(abogadoId);
-	const orders = response?.data || [];
-	const updateOrder = useUpdateOrder();
-	const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
-	const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
-	const [notificacion, setNotificacion] = useState<{ tipo: 'success' | 'info', mensaje: string } | null>(null);
 
-	const [periodo, setPeriodo] = useState<PeriodoFacturacion>('mes');
-
-	// ============ REACT QUERY (Resumen Financiero Real) ============
-	const { data: summary, isLoading: isLoadingSummary } = useQuery({
-		queryKey: ['Finance', periodo, abogadoId],
-		queryFn: () => getFinancialSummary({ lawyerId: abogadoId, dateRange: periodo as any }, { id: user!.id, rol: user!.rol as any }),
-		enabled: !!user
-	});
-
-	// ============ FUENTE DE VERDAD DE PAGOS ============
-	// Consulta el historial de liquidaciones directamente (misma fuente que el admin)
-	// Esto asegura que el estado de pago sea 100% preciso sin depender del JOIN de órdenes
-	const { data: payoutHistory = [] as any[] } = useQuery({
-		queryKey: ['PayoutHistory', abogadoId],
-		queryFn: () => getPayoutHistory(abogadoId),
-		enabled: !!abogadoId,
-		refetchInterval: 15000 // Re-check every 15s for real-time feel
-	});
-
-	// Build a map of orderId -> payoutStatus from the authoritative payout records
-	const payoutStatusMap = useMemo(() => {
-		const map: Record<string, string> = {};
-		payoutHistory.forEach((payout: any) => {
-			payout.orders?.forEach((order: any) => {
-				map[order.id] = payout.status; // 'PENDIENTE' | 'COMPLETADO'
-			});
-		});
-		return map;
-	}, [payoutHistory]);
-
-	// Derive invoices from ALL relevant orders
-	const facturas: Factura[] = useMemo(() => {
-		return orders
-			.filter(o => ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status))
-			.map(o => {
-				let estado: Factura['estado'] = 'pendiente';
-				
-			if (o.status === OrderStatus.COMPLETADO) {
-				// Use the authoritative payout map. COMPLETADO = liquidada. PENDIENTE = en proceso.
-				const resolvedPayoutStatus = payoutStatusMap[o.id] ?? (o as any).payoutStatus;
-				
-				if (resolvedPayoutStatus === 'COMPLETADO') {
-					estado = 'liquidada';
-				} else if (resolvedPayoutStatus === 'PENDIENTE') {
-					estado = 'procesando';
-				} else {
-					estado = 'por_liquidar';
-				}
-			}
-
-				return {
-					id: o.id.toString(),
-					numero: `F-${o.numericId || o.id.toString().slice(0, 8)}`,
-					cliente: o.userName || 'Cliente',
-					clienteEmail: o.userEmail || '',
-					concepto: o.items?.[0]?.serviceName || 'Servicios Legales',
-					fecha: new Date(o.createdAt).toISOString().split('T')[0],
-					importeBruto: Number(o.total),
-					importeNeto: Number((o as any).commissionAmount || o.total),
-					estado
-				};
-			});
-	}, [orders, payoutStatusMap]);
-
-	const [filtroEstado, setFiltroEstado] = useState<
-		'todas' | 'liquidada' | 'procesando' | 'por_liquidar' | 'pendientes'
-	>('todas');
-
-	const isLoading = isLoadingOrders || isLoadingSummary;
-
-	const handleDescargar = (factura: Factura) => {
-		setNotificacion({
-			tipo: 'info',
-			mensaje: `Generando PDF para ${factura.numero}...`
-		});
-
-		// Real-ish behavior: open print dialog or generate simple blob
-		setTimeout(() => {
-			window.print();
-			setNotificacion({
-				tipo: 'success',
-				mensaje: `Factura ${factura.numero} lista para imprimir.`
-			});
-		}, 1000);
-	};
-
-	const handleMarcarPagada = (factura: Factura) => {
-		setFacturaSeleccionada(factura);
-		setMostrarModalConfirmacion(true);
-	};
-
-	const confirmarPago = async () => {
-		if (!facturaSeleccionada) return;
-
-		try {
-			// Real update in DB
-			await updateOrder.mutateAsync({
-				id: facturaSeleccionada.id,
-				data: {
-					status: OrderStatus.COMPLETADO,
-					closedAt: new Date().toISOString()
-				}
-			});
-
-			setNotificacion({
-				tipo: 'success',
-				mensaje: `Factura ${facturaSeleccionada.numero} marcada como pagada exitosamente.`
-			});
-			setMostrarModalConfirmacion(false);
-			setFacturaSeleccionada(null);
-		} catch (error) {
-			console.error('Error al actualizar factura:', error);
-			setNotificacion({
-				tipo: 'info', // Using info for error because it matches the blue style
-				mensaje: 'Error al actualizar el estado de la factura.'
-			});
-		}
-	};
-
-	// Filtrar facturas según el estado seleccionado
-	const facturasFiltradas = facturas.filter((factura) => {
-		if (filtroEstado === 'todas') return true;
-		if (filtroEstado === 'liquidada') return factura.estado === 'liquidada';
-		if (filtroEstado === 'procesando') return factura.estado === 'procesando';
-		if (filtroEstado === 'por_liquidar') return factura.estado === 'por_liquidar';
-		if (filtroEstado === 'pendientes') return factura.estado === 'pendiente';
-		return true;
-	});
 
 	// Función para obtener el color según el estado de la factura
 	const obtenerColorEstado = (estado: string) => {
@@ -557,7 +418,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 				title="Confirmar Pago"
 				message={`¿Confirmas que has recibido el pago para la liquidación ${facturaSeleccionada?.numero}? Esta acción actualizará tu balance contable.`}
 				confirmText="Sí, Conciliar Pago"
-				isLoading={updateOrder.isPending}
+				isLoading={isUpdating}
 			/>
 		</div>
 	);

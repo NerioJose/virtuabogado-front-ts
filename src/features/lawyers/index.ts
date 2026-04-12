@@ -1,7 +1,5 @@
-/**
- * Barrel export para el feature lawyers
- */
-
+export * from './hooks/useLawyers';
+export * from './hooks/useAbogadosPanel';
+export * from './components/AbogadosPanel';
+export * from './types/lawyers.types';
 export { useLawyersStore, initializeLawyers } from './store/lawyersStore';
-export type { Lawyer, LawyersState, LawyersFilters, CreateLawyerRequest, UpdateLawyerRequest } from './types/lawyers.types';
-export { LawyerStatus, LawyerSpecialty } from './types/lawyers.types';

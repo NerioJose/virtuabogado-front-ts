@@ -23,29 +23,27 @@ Este documento describe la estructura técnica, el stack de tecnologías y los p
 El proyecto sigue una arquitectura basada en **Módulos/Features**, lo que permite una alta escalabilidad y desacoplamiento de funcionalidades.
 
 ### `src/features/`
-Cada subcarpeta representa una funcionalidad core del negocio (ej. `auth`, `chat`, `checkout`).
-- **`components/`**: Componentes visuales específicos de la feature.
-- **`hooks/`**: Lógica de negocio encapsulada en React Hooks.
-- **`services/`**: Llamadas a APIs y lógica de procesamiento de datos.
-- **`store/`**: Estado local/global de la feature manejado con Zustand.
-- **`types/`**: Definiciones de TypeScript para la feature.
+Representa el corazón de la aplicación, organizada por dominios de negocio (ej. `auth`, `chat`, `orders`, `clients`, `lawyers`). Sigue el patrón **MVVM (Model-View-ViewModel)**:
+- **`components/` (View)**: Componentes visuales específicos de la feature.
+- **`hooks/` (ViewModel)**: Hooks que encapsulan el estado y la lógica de presentación.
+- **`services/` (Model/Data)**: Lógica de comunicación con APIs y procesamiento de datos.
+- **`types/`**: Definiciones de TypeScript específicas del dominio.
+- **`store/`**: Estado local persistente o reactivo (Zustand).
+- **`index.ts` (Public API)**: Barrel export que centraliza lo que otras features pueden consumir.
 
 ### `src/app/`
-Utiliza el App Router de Next.js.
-- **`api/`**: Endpoints de la API (Backend-as-a-Service interna).
-- **`(routes)/`**: Páginas de la aplicación organizadas por rutas URL.
-- **`layout.tsx`**: Layout principal y proveedores de contexto.
+Estructura de App Router de Next.js para rutas de página y API.
+- **`api/`**: Endpoints de backend serverless.
+- **`(página)/`**: Páginas principales (`servicios`, `mis-servicios`, `admin`, `abogado`).
 
-### `src/infrastructure/`
-Contiene los adaptadores para servicios externos o APIs globales.
-- **`api/`**: Configuración del cliente base para fetch/axios.
-- **`storage/`**: Adaptadores para `localStorage` o servicios de archivos.
+### `src/components/`
+Componentes compartidos y transversales.
+- **`layout/`**: NavBar, Sidebar, Footer.
+- **`ui/`**: Componentes atómicos (Botones, Modales, Inputs).
+- **`providers/`**: Proveedores de contexto (Auth, React Query, Theme).
 
-### `src/shared/`
-Recursos compartidos por múltiples features.
-- **`components/ui/`**: Librería de componentes base (Buttons, Inputs, Cards).
-- **`utils/`**: Funciones de utilidad (formateo de fechas, manejo de clases con `cn`).
-- **`constants/`**: Rutas constantes, configuraciones globales.
+### `src/hooks/`, `src/services/`, `src/utils/`
+Utilidades, hooks y servicios globales que no pertenecen a un dominio específico (ej. `usePushNotifications`, `supabase-client`).
 
 ---
 
@@ -63,9 +61,11 @@ Recursos compartidos por múltiples features.
 
 ## Patrones de Diseño Clave
 
-- **Container/Presenter (implícito)**: La lógica se mantiene en Hooks y Servicios, mientras que los componentes se encargan mayormente del renderizado.
-- **Repository-ish Services**: Los servicios encapsulan la comunicación con el exterior, facilitando cambios futuros en la API.
-- **SSR & Client Components**: Se aprovecha el renderizado en servidor de Next.js para SEO y rendimiento, delegando la interactividad a Client Components.
+- **MVVM (Model-View-ViewModel)**: Desacoplamiento total entre la UI y la data a través de Hooks (ViewModel) que consumen Servicios (Model/Data).
+- **Feature-Driven Design**: Organización por dominios para evitar archivos gigantes y facilitar la navegación.
+- **Barrel Export Pattern**: Uso de `index.ts` en cada feature para definir una API pública clara y evitar importaciones anidadas profundas.
+- **Inyección de Dependencias vía Hooks**: Los componentes consumen lógica solo a través de hooks específicos, facilitando el testing y la modularidad.
+- **SSR & Client Components**: Uso equilibrado de Server Components para SEO y Client Components para interactividad enriquecida.
 
 ---
 

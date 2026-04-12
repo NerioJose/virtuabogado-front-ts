@@ -1,13 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-    getPendingPayoutsSummary, 
-    createPayout, 
-    finalizePayout, 
-    getPayoutHistory 
-} from '../actions/payoutActions';
 import { formatUSD } from '@/lib/finance';
+import { usePayoutManagement } from '../hooks/usePayoutManagement';
 import { 
     FiDollarSign, 
     FiClock, 
@@ -22,87 +17,25 @@ import {
     FiArrowRight
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function PayoutManagement() {
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [reference, setReference] = useState('');
-    const [actionType, setActionType] = useState<'create' | 'finalize'>('create');
-    const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
-    const [selectedLawyer, setSelectedLawyer] = useState<any | null>(null);
-    const queryClient = useQueryClient();
-
-    const { data: pending = [], isLoading: loadingPending, refetch: refetchPending } = useQuery({
-        queryKey: ['PendingPayouts'],
-        queryFn: getPendingPayoutsSummary
-    });
-
-    const { data: history = [] as any[], isLoading: loadingHistory, refetch: refetchHistory } = useQuery({
-        queryKey: ['PayoutHistory'],
-        queryFn: () => getPayoutHistory()
-    });
-
-    const handleCreatePayout = async (lawyer: any) => {
-        setIsProcessing(true);
-        try {
-            const res = await createPayout({
-                lawyerId: lawyer.lawyer.id,
-                orderIds: lawyer.orderIds,
-                amount: lawyer.totalPending,
-                method: 'Transferencia Bancaria',
-                notes: `Pago por ${lawyer.orderCount} casos completados.`
-            });
-            if (res.success) {
-                // 🚀 Sync: Invalidate all financial and history queries
-                queryClient.invalidateQueries({ queryKey: ['Order'] });
-                queryClient.invalidateQueries({ queryKey: ['Finance'] });
-                queryClient.invalidateQueries({ queryKey: ['PayoutHistory'] });
-                
-                // Refresh local data
-                refetchPending();
-                refetchHistory();
-            }
-        } catch (error) {
-            console.error('Error creating payout:', error);
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleFinalize = (payout: any) => {
-        setSelectedPayoutId(payout.id);
-        setSelectedLawyer(payout);
-        setActionType('finalize');
-        setShowModal(true);
-    };
-
-    const confirmFinalize = async () => {
-        if (!reference || !selectedPayoutId) return;
-        setIsProcessing(true);
-        try {
-            const res = await finalizePayout(selectedPayoutId, reference);
-            if (res.success) {
-                setReference('');
-                setShowModal(false);
-                setSelectedLawyer(null);
-                
-                // 🚀 Sync: Invalidate all financial and history queries
-                queryClient.invalidateQueries({ queryKey: ['Order'] });
-                queryClient.invalidateQueries({ queryKey: ['Finance'] });
-                queryClient.invalidateQueries({ queryKey: ['PayoutHistory'] });
-                
-                // Refresh local data
-                refetchPending();
-                refetchHistory();
-            }
-        } catch (error) {
-            console.error('Error finalizing payout:', error);
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+    const {
+        pending,
+        history,
+        loadingPending,
+        loadingHistory,
+        showModal,
+        closeModal,
+        reference,
+        setReference,
+        actionType,
+        selectedLawyer,
+        isProcessing,
+        handleCreatePayout,
+        handleFinalize,
+        confirmFinalize
+    } = usePayoutManagement();
 
     if (loadingPending || loadingHistory) {
         return (
@@ -297,7 +230,7 @@ export default function PayoutManagement() {
 
                                 <div className="flex gap-4 pt-4">
                                     <button 
-                                        onClick={() => setShowModal(false)}
+                                        onClick={closeModal}
                                         className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
                                     >
                                         Cancelar

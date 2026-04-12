@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useMemo, memo } from 'react';
+import { useMemo, memo } from 'react';
 import { FiUsers, FiSearch, FiEdit, FiTrash2, FiEye, FiMail, FiPhone, FiFilter, FiCalendar, FiShoppingBag, FiDollarSign } from 'react-icons/fi';
 import Image from 'next/image';
-import userImage from '../../../public/images/user-placeholder.png';
-import { useClients } from '@/features/clients/hooks/useClients';
+import userImage from '../../../../public/images/user-placeholder.png';
 import { ClientStatus } from '@/features/clients/types/clients.types';
-import { useOrdersStore } from '@/features/orders';
+import { useClientesPanel } from '../hooks/useClientesPanel';
 import { ElementoSeleccionable } from '@/types/index';
 import { capitalizeName } from '@/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,37 +16,13 @@ interface ClientesPanelProps {
 }
 
 function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
-  const { data: clients = [], isLoading } = useClients();
-  const orders = useOrdersStore((state) => state.orders);
-
-  const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
-
-  const esClienteReciente = (createdAt: Date | string) => {
-    const hoy = new Date();
-    const fechaRegistro = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
-    const diferenciaDias = Math.floor((hoy.getTime() - fechaRegistro.getTime()) / (1000 * 60 * 60 * 24));
-    return diferenciaDias <= 30;
-  };
-
-  const clientesFiltrados = useMemo(() => {
-    const term = terminoBusqueda.toLowerCase().trim();
-    return clients.filter(cliente => {
-      const coincideTermino =
-        cliente.nombre?.toLowerCase().includes(term) ||
-        cliente.email?.toLowerCase().includes(term) ||
-        (cliente.telefono && cliente.telefono.includes(term)) ||
-        cliente.id?.toLowerCase().includes(term);
-
-      if (filtroActividad === 'todos') return coincideTermino;
-      if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.createdAt);
-      if (filtroActividad === 'inactivo') return coincideTermino && !esClienteReciente(cliente.createdAt);
-      return coincideTermino;
-    });
-  }, [clients, terminoBusqueda, filtroActividad]);
-
-  const getClientOrders = (clientId: string) => {
-    return orders.filter(order => order.userId === clientId);
-  };
+  const {
+      clientesFiltrados,
+      filtroActividad,
+      setFiltroActividad,
+      getClientOrders,
+      isLoading,
+  } = useClientesPanel(terminoBusqueda);
 
   const container = {
     hidden: { opacity: 0 },
@@ -57,7 +32,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
     }
   };
 
-  if (isLoading && clients.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="w-12 h-12 border-4 border-azul-primario border-t-transparent rounded-full animate-spin"></div>

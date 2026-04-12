@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import ServiciosClientPage from './ServiciosClientPage';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { prisma } from '@/lib/prisma';
-import { servicesKeys } from '@/features/services/hooks/useServices';
+
 
 export const metadata: Metadata = {
 	title: 'Nuestros Servicios Legales',
@@ -20,7 +20,7 @@ export default async function ServiciosPage() {
 
     // Pre-fetch de servicios directamente desde la DB en el servidor
     await queryClient.prefetchQuery({
-        queryKey: servicesKeys.active,
+        queryKey: ['Service', 'active'],
         queryFn: async () => {
             const data = await prisma.service.findMany({
                 where: { activo: true },

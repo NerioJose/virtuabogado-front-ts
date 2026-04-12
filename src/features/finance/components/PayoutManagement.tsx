@@ -200,7 +200,7 @@ export default function PayoutManagement() {
                                     <td colSpan={5} className="px-8 py-10 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No hay historial de pagos</td>
                                 </tr>
                             ) : (
-                                history.map((payout) => (
+                                history.map((payout: any) => (
                                     <tr key={payout.id} className="group hover:bg-slate-50/30 transition-colors">
                                         <td className="px-8 py-6">
                                             <p className="text-sm font-black text-slate-700">{payout.lawyer.nombre}</p>

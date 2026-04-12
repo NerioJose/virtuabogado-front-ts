@@ -44,7 +44,7 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
 
     return (
         <>
-            {payouts.map((payout, idx) => (
+            {payouts.map((payout: any, idx: number) => (
                 <motion.div 
                     key={payout.id}
                     initial={{ opacity: 0, scale: 0.95 }}

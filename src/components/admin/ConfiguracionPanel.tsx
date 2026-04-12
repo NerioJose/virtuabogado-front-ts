@@ -36,12 +36,12 @@ function FinancialSettingsSection() {
 
 	useEffect(() => {
 		if (financialSettings) {
-			setLawyerCommission(financialSettings.lawyerCommissionPercentage || 0);
-			setOperationalCosts(financialSettings.operationalCostsPercentage || 0);
-			setTaxPercentage(financialSettings.taxPercentage || 0);
-			setPlatformFee(financialSettings.platformFeePercentage || 0);
-			setSimulationBase(financialSettings.simulationBase || 0);
-			setWhatsappPhone(financialSettings.whatsappPhone || '');
+			setLawyerCommission((financialSettings as any).lawyerCommissionPercentage || 0);
+			setOperationalCosts((financialSettings as any).operationalCostsPercentage || 0);
+			setTaxPercentage((financialSettings as any).taxPercentage || 0);
+			setPlatformFee((financialSettings as any).platformFeePercentage || 0);
+			setSimulationBase((financialSettings as any).simulationBase || 0);
+			setWhatsappPhone((financialSettings as any).whatsappPhone || '');
 		}
 	}, [financialSettings]);
 

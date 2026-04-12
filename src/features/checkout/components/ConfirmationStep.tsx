@@ -1,8 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { useRouter } from 'next/navigation';
 import { FiCheckCircle, FiMail, FiLoader } from 'react-icons/fi';
+import { useCheckout } from '../hooks/useCheckout';
+import { motion } from 'framer-motion';
 
 export const ConfirmationStep: React.FC = () => {
     const { orderId, service, userData, closeCheckout, tempPassword, paymentMethod, reset } = useCheckout();
@@ -20,7 +23,7 @@ export const ConfirmationStep: React.FC = () => {
     const isPendingConfirmation = needsWaiting && !isSuccess;
 
     // 🚀 AUTO-REDIRECCIÓN: Se dispara solo cuando detectamos el éxito final
-    React.useEffect(() => {
+    useEffect(() => {
         if (!isPendingConfirmation) {
             const timer = setTimeout(() => {
                 reset(); // Limpiar el store para futuras compras

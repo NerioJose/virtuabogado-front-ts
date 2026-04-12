@@ -43,6 +43,7 @@ export async function PUT(
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
+        const body = await request.json();
         const { nombre, especialidad, experiencia, picture, telefono, matricula, activo } = body;
         
         const dataToUpdate: any = {};

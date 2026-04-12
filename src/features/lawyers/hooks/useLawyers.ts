@@ -123,7 +123,7 @@ export const useDeleteLawyer = () => {
         onSuccess: () => {
             // Invalidate to ensure sync with server
             queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all });
-            console.log('✅ Abogado eliminado y caché invalidada');
+            
         },
     });
 };

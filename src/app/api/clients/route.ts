@@ -22,7 +22,7 @@ export async function GET(request: Request) {
                 const { data: { user: headerUser } } = await supabase.auth.getUser(token);
                 if (headerUser) {
                     user = headerUser;
-                    console.log('✅ Clients API: Auth success via Authorization header');
+                    
                 }
             }
         }
@@ -47,13 +47,13 @@ export async function GET(request: Request) {
         }
 
         const role: string = userRole;
-        console.log(`🔍 [API Clients] Access granted. Role: ${role} for User: ${user.id}`);
+        
 
         if (role !== 'ADMIN' && role !== 'ABOGADO') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        console.log('🏛️ [API Clients] Fetching users for administrative management...');
+        
         const allUsers = await prisma.user.findMany({
             // Quitamos el filtro de activo: true para que el Admin pueda gestionar inactivos
             orderBy: { createdAt: 'desc' }
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
             }
         });
 
-        console.log('✅ Client created successfully:', newClient.id);
+        
 
         return NextResponse.json(newClient);
     } catch (error: any) {

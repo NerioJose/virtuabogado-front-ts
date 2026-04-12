@@ -41,7 +41,7 @@ export const usePaymentStep = () => {
 
     useEffect(() => {
         if (statusData) {
-            console.log(`📡 [PaymentStep] Respuesta del servidor:`, statusData);
+            
         }
     }, [statusData]);
 

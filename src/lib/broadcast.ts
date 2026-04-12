@@ -83,7 +83,7 @@ export async function broadcastOrderUpdate(params: {
     // 🛡️ FIREWALL: No notificar sobre órdenes que aún no han sido pagadas o han sido rechazadas
     // Esto evita el "ruido" y las órdenes fantasma en los Dashboards de Admin/Abogado.
     if (status === 'PAGO_PENDIENTE' || status === 'PAGO_RECHAZADO') {
-        console.log(`🔇 [Broadcast] Silencing notification for order ${orderId} in state ${status}`);
+        
         return;
     }
     const payload = {

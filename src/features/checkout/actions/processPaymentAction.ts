@@ -31,7 +31,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         const updateData: any = { email: user.email!, activo: true };
 
         if (existingUserByEmail && existingUserByEmail.id !== user.id) {
-            console.log(`🔗 [Identity Merge] Email ${user.email} colisiona (ID Local: ${existingUserByEmail.id} vs IDs Supabase: ${user.id}). Reconciliando...`);
+            
             
             // 1. Rescate de Identidad
             if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
@@ -72,11 +72,11 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: user.id } }),
                 prisma.pushSubscription.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
             ]);
-            console.log('✅ [Identity Merge] Relaciones y Suscripciones Push migradas exitosamente.');
+            
 
             // 5. Sincronizar metadatos con Supabase Auth para que el NavBar se actualice de inmediato
             if (finalName) {
-                console.log(`📝 [Identity Merge] Sincronizando nombre "${finalName}" con Supabase Auth...`);
+                
                 await supabase.auth.updateUser({
                     data: { nombre: finalName }
                 });
@@ -173,7 +173,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
     if (activeLawyers.length === 1) {
         autoAssignedLawyerId = activeLawyers[0].id;
         assignedAt = new Date();
-        console.log(`⚖️ [Auto-Assignment] Asignando automáticamente al único abogado activo: ${autoAssignedLawyerId}`);
+        
     }
 
     if (false) { // Bloque de reutilización deshabilitado (forzar nueva orden)
@@ -195,14 +195,14 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 assignedAt
             }
         });
-        console.log(`🆕 [Idempotencia] Nueva orden creada: ${order.id}`);
+        
     }
 
     // 5. LÓGICA POR PASARELA
     if (paymentMethod.identifier === 'zenobank') {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         
-        console.log(`📡 [Zenobank] Generando sesión. Redirect Base: ${baseUrl}`);
+        
 
         try {
             const session = await ZenobankService.createCheckoutSession({

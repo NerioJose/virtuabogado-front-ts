@@ -7,7 +7,7 @@ const privateKey = process.env.VAPID_PRIVATE_KEY;
 const email = process.env.VAPID_EMAIL || 'mailto:virtuabogado.legal@gmail.com';
 
 if (publicKey && privateKey) {
-  console.log('✅ [Push Config] VAPID configurado en el servidor.');
+  
   webpush.setVapidDetails(email, publicKey, privateKey);
 } else {
   console.error('🚨 [Push Config] VAPID NO CONFIGURADO CORRECTAMENTE.');
@@ -54,7 +54,7 @@ export async function sendPushNotification(userId: string, options: PushNotifica
       return { success: false, sent: 0, error: 'No hay dispositivos registrados.' };
     }
 
-    console.log(`📡 [Push] Enviando a ${subscriptions.length} dispositivo(s) para usuario ${userId}...`);
+    
 
     const payload = JSON.stringify({
       title: options.title,
@@ -84,7 +84,7 @@ export async function sendPushNotification(userId: string, options: PushNotifica
       return webpush
         .sendNotification(pushConfig, payload, webPushOptions)
         .then(() => {
-          console.log(`✅ [Push] Entregado a endpoint: ...${sub.endpoint.slice(-20)}`);
+          
         })
         .catch(async (error: any) => {
           // Suscripción expirada (navegador desinstalado, permisos revocados) → limpiar DB
@@ -128,7 +128,7 @@ export async function notifyNewSale(
     select: { id: true, email: true },
   });
 
-  console.log(`🕵️ [Push] Notificando venta a ${admins.length} admin(s)...`);
+  
 
   const clientDisplay = clientName || 'un cliente';
   const serviceDisplay = serviceName || 'servicios legales';
@@ -154,7 +154,7 @@ export async function notifyNewSale(
   const totalSent = results.reduce((acc, res) => acc + (res.sent || 0), 0);
 
   if (totalSent > 0) {
-    console.log(`✅ [Push] Venta #${orderId} notificada a ${totalSent} dispositivo(s).`);
+    
   } else {
     console.warn(`⚠️ [Push] Nadie recibió la notificación de venta para #${orderId}.`);
   }
@@ -198,7 +198,7 @@ export async function notifyNewMessage(
   // RESTRICCIÓN: Los clientes NO reciben push por chat (solo por asignación/completado)
   // para evitar saturación de procesos en el servidor.
   if (recipient?.rol === 'CLIENTE') {
-    console.log(`ℹ️ [Push] Omitiendo notificación de chat para Cliente ${recipientId} según política de ahorro de recursos.`);
+    
     return { success: true, message: 'Push omitido por rol' };
   }
 

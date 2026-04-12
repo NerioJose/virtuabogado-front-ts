@@ -26,12 +26,12 @@ export async function GET(request: Request) {
 
         if (headerId) {
             user = { id: headerId, email: headerEmail };
-            console.log('⚡ [API Orders] Fast-auth via middleware headers');
+            
         } else {
             // Fallback (solo si falla el middleware o en ciertos entornos de test)
             const { data: { user: supabaseUser } } = await supabase.auth.getUser();
             user = supabaseUser;
-            console.log('🐢 [API Orders] Slow-auth via getUser() fallback');
+            
         }
 
         if (!user) {
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         
         // Final role normalization ensuring it's a string for comparisons
         const role: string = userRole.toUpperCase();
-        console.log(`🔍 [API Orders] Role identified: ${role} for user: ${user.id}`);
+        
 
         const { searchParams } = new URL(request.url);
         const lawyerId = searchParams.get('lawyerId');
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
         if (!isAdmin) {
             if (role === 'ABOGADO') {
                 where.lawyerId = user.id;
-                console.log(`[LawyerDashboard] Buscando casos para ID: ${user.id}`);
+                
             } else {
                 where.userId = user.id;
             }
@@ -206,9 +206,9 @@ export async function GET(request: Request) {
         });
 
         if (role === 'ABOGADO') {
-            console.log(`[LawyerDashboard] ID: ${user.id} | Casos para este ID: ${formattedOrders.length}`);
+            
         } else {
-            console.log(`📊 [API Orders] Backend returning ${formattedOrders.length} orders of ${totalCount} total.`);
+            
         }
 
         return NextResponse.json(serializeFinance({
@@ -252,7 +252,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        console.log('📦 [Orders API POST] Body received:', body);
+        
         const { serviceId, userId, paymentId } = body;
 
         // 🛡️ SECURITY: Fetch current service price and availability from DB
@@ -318,7 +318,7 @@ export async function POST(request: Request) {
             finalUserId = userId;
         }
 
-        console.log('📦 API: Syncing user and creating order for user:', finalUserId);
+        
 
         // 0. SINCRONIZACIÓN DE USUARIO (Identity Merge Strategy - No Deletion)
         // Buscamos si el email ya existe con otro ID (Conflicto de Identidad Local)
@@ -330,12 +330,12 @@ export async function POST(request: Request) {
             const updateData: any = { email: user.email!, activo: true };
 
             if (existingUserByEmail && existingUserByEmail.id !== finalUserId) {
-                console.log(`🔗 [API] Email colisiona (Local: ${existingUserByEmail.id} -> Supabase: ${finalUserId}). Recableando...`);
+                
                 
                 // 1. Rescate de Identidad: heredar el nombre si era válido
                 if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
                     finalName = existingUserByEmail.nombre;
-                    console.log(`🦸 [Identity Rescue Orders] Nombre recuperado del historial: ${finalName}`);
+                    
                 }
                 
                 // 2. Liberar el email
@@ -407,11 +407,11 @@ export async function POST(request: Request) {
         if (activeLawyers.length === 1) {
             autoAssignedLawyerId = activeLawyers[0].id;
             assignedAt = new Date();
-            console.log('⚖️ API: Auto-asignando a abogado activo único:', activeLawyers[0].nombre);
+            
         } else if (activeLawyers.length > 1) {
-            console.log(`⚖️ API: Hay ${activeLawyers.length} abogados activos, se requiere asignación manual.`);
+            
         } else {
-            console.log('⚖️ API: No hay abogados activos disponibles para auto-asignación.');
+            
         }
 
         // Crear la orden en base de datos con el desglose financiero
@@ -441,7 +441,7 @@ export async function POST(request: Request) {
             }
         });
 
-        console.log('✅ API: Order created successfully:', newOrder.id);
+        
 
         // Silenciamos el broadcast en la creación inicial (Firewalled en broadcast.ts)
         // Solo se activará cuando pase el flujo de pago real.
@@ -566,7 +566,7 @@ export async function PUT(request: Request) {
         // 🔔 NOTIFICACIONES PUSH TÁCTICAS 
         // 1. Si el estado cambia a PAID -> Notificar a los ADMINS de la nueva venta (Efecto Shopify)
         if (isNewSale) {
-            console.log(`💰 [Push] Disparando alerta de venta para Orden #${updatedOrder.id} a Admins...`);
+            
             await notifyNewSale(
                 updatedOrder.id,
                 updatedOrder.total.toString(),
@@ -577,7 +577,7 @@ export async function PUT(request: Request) {
 
             // Si el sistema había auto-asignado al único abogado disponible, le avisamos AHORA
             if (updatedOrder.lawyerId) {
-                console.log(`⚖️ [Push] Orden pagada. Alertando de auto-asignación al Abogado: ${updatedOrder.lawyerId}`);
+                
                 await notifyNewCase(updatedOrder.lawyerId, updatedOrder.id, serviceName).catch(err =>
                     console.error('❌ Error disparando push de auto-asignación:', err)
                 );
@@ -587,7 +587,7 @@ export async function PUT(request: Request) {
         // 2. Si se asigna un Abogado manualmente desde el panel de admin (Cambio explícito de lawyerId)
         // Evitamos mandar doble push si justo acaba de pagarse (lo maneja el bloque de arriba)
         if (isLawyerManuallyAssigned && !isNewSale) {
-            console.log(`⚖️ [Push] Disparando alerta de asignación manual para Abogado: ${lawyerId}`);
+            
             await notifyNewCase(lawyerId, updatedOrder.id, serviceName).catch(err =>
                 console.error('❌ Error disparando push de asignación manual:', err)
             );

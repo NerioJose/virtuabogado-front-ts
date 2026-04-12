@@ -13,7 +13,7 @@ export const apiClient = {
         let { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-            // console.log('🔄 apiClient: No hay sesión activa, intentando refrescar...');
+            // 
             const { data: refreshData } = await supabase.auth.refreshSession();
             session = refreshData.session;
         }
@@ -24,7 +24,7 @@ export const apiClient = {
             throw new ApiError(401, 'No hay una sesión activa para realizar esta petición.');
         }
 
-        console.log(`🔑 apiClient: Sesión activa/recuperada para ${url}`);
+        
 
         const response = await fetch(url, {
             ...options,
@@ -43,7 +43,7 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) console.log(`🔑 apiClient POST: Enviando Bearer Token a ${url}`);
+        if (session) 
 
         const response = await fetch(url, {
             method: 'POST',
@@ -62,7 +62,7 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) console.log(`🔑 apiClient PUT: Enviando Bearer Token a ${url}`);
+        if (session) 
 
         const response = await fetch(url, {
             method: 'PUT',
@@ -81,7 +81,7 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) console.log(`🔑 apiClient PATCH: Enviando Bearer Token a ${url}`);
+        if (session) 
 
         const response = await fetch(url, {
             method: 'PATCH',
@@ -100,7 +100,7 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) console.log(`🔑 apiClient DELETE: Enviando Bearer Token a ${url}`);
+        if (session) 
 
         const response = await fetch(url, {
             method: 'DELETE',

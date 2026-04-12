@@ -4,7 +4,7 @@ import { broadcastServiceUpdate } from '@/lib/broadcast';
 
 export async function GET() {
     try {
-        console.log('--- Force Seed Started ---');
+        
         
         const service = await prisma.service.upsert({
             where: { id: 7 },
@@ -35,7 +35,7 @@ export async function GET() {
             orderBy: { id: 'asc' }
         });
 
-        console.log('--- Force Seed Finished ---');
+        
         return NextResponse.json({ 
             success: true, 
             upsertedService: service,

@@ -123,7 +123,7 @@ export const useDeleteClient = () => {
         onSuccess: () => {
             // Invalidate to ensure sync with server
             queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all });
-            console.log('✅ Cliente eliminado y caché actualizada');
+            
         },
     });
 };

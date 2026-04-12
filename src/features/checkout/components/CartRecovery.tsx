@@ -67,7 +67,7 @@ export const CartRecovery = () => {
         // Si quieres algo más avanzado, podrías guardar un timestamp en localStorage
         const timer = setTimeout(() => {
             if (!isOpen && service && !completedAt && !isProcessingPayment) {
-                console.log('🛒 [UX] Carrito abandonado detectado tras periodo de gracia.');
+                
                 setShowRecovery(true);
             }
         }, 2000); // 2 segundos de gracia para evitar parpadeos al navegar

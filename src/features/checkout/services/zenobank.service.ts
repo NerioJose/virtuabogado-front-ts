@@ -30,7 +30,7 @@ export class ZenobankService {
             throw new Error('Configuración de pago incompleta en el servidor.');
         }
 
-        console.log('💳 [Zenobank] Petición de Checkout:', request.orderId);
+        
 
         try {
             // Body exacto según documentación oficial de Zenobank API v1

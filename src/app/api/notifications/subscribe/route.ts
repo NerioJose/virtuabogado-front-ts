@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Estructura de suscripción inválida' }, { status: 400 });
     }
 
-    console.log(`📡 [Push Subscribe] Registrando dispositivo para usuario: ${user.email}`);
+    
 
     // 2. ALINEACIÓN DE IDENTIDAD (Supabase -> Prisma):
     // El error 500 ocurría porque el ID de Supabase no existía en Prisma.
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       });
 
       if (existingUserByEmail && existingUserByEmail.id !== user.id) {
-        console.log(`🔗 [Push Subscribe] Email colisiona con ID antiguo: ${existingUserByEmail.id}. Liberando...`);
+        
         await prisma.user.update({
           where: { id: existingUserByEmail.id },
           data: { email: `legacy_${existingUserByEmail.id}_${user.email}` }

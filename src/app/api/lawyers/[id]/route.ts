@@ -68,7 +68,7 @@ export async function PUT(
                 await adminClient.auth.admin.updateUserById(id, {
                     user_metadata: { activo: activo }
                 });
-                console.log(`✅ API: Sincronizado estado activo (${activo}) en Auth para ${id}`);
+                
             } catch (authError) {
                 console.warn('⚠️ API: No se pudo sincronizar metadata en Auth:', authError);
             }
@@ -138,7 +138,7 @@ export async function DELETE(
         }
 
         // 1. Archivado Lógico (Soft Delete) en DB
-        console.log(`🏛️ API: Archivado lógico del abogado ID: ${id}`);
+        
         const result = await prisma.user.update({
             where: { id },
             data: { activo: false },
@@ -152,7 +152,7 @@ export async function DELETE(
             await adminClient.auth.admin.updateUserById(id, {
                 user_metadata: { activo: false }
             });
-            console.log(`✅ API: Usuario ${id} bloqueado en metadata para impedir acceso.`);
+            
         } catch (authError) {
             console.warn(`⚠️ API: No se pudo actualizar metadata en Auth, pero el registro en DB fue archivado.`, authError);
         }

@@ -21,7 +21,7 @@ if (process.env.NODE_ENV === 'development') {
         if (error) {
             console.error('❌ [Nodemailer] Error de conexión SMTP:', error);
         } else {
-            console.log('🚀 [Nodemailer] Servidor listo para enviar correos reales.');
+            
         }
     });
 }

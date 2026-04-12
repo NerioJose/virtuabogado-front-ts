@@ -20,7 +20,7 @@ export async function POST() {
     const testOrderId = 'TEST-' + Math.random().toString(36).substring(7).toUpperCase();
     const testTotal = '99.00';
 
-    console.log(`🧪 [Push Test] Ejecutando prueba de venta para Admin: ${user.email}`);
+    
 
     // 1. Notificación Push VAPID
     await notifyNewSale(testOrderId, testTotal, true);

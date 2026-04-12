@@ -25,16 +25,16 @@ export const useOrdersStore = create<OrdersState>()(
             // ============ Acciones ============
 
             addOrder: (order: Order) => {
-                console.log('🔥 ordersStore.addOrder() llamado con:', order);
-                console.log('🔥 Estado actual antes de agregar:', get().orders.length, 'orders');
+                
+                
 
                 set((state) => ({
                     orders: [order, ...state.orders],
                     error: null,
                 }));
 
-                console.log('🔥 Estado después de agregar:', get().orders.length, 'orders');
-                console.log('🔥 Nueva orden en el array:', get().orders[get().orders.length - 1]);
+                
+                
             },
 
             setOrders: (orders: Order[]) => {
@@ -73,7 +73,7 @@ export const useOrdersStore = create<OrdersState>()(
                         error: null,
                     });
 
-                    console.log('✅ OrdersStore: Loaded', orders.length, 'orders from API');
+                    
                 } catch (error) {
                     console.error('❌ OrdersStore: Error fetching orders:', error);
                     set({
@@ -102,7 +102,7 @@ export const useOrdersStore = create<OrdersState>()(
                         ),
                         isLoading: false,
                     }));
-                    console.log('✅ OrdersStore: Order status updated in API:', orderId);
+                    
 
 
                 } catch (error) {
@@ -133,7 +133,7 @@ export const useOrdersStore = create<OrdersState>()(
                         ),
                         isLoading: false,
                     }));
-                    console.log(`✅ OrdersStore: Lawyer ${lawyerId} assigned to order ${orderId}`);
+                    
                 } catch (error) {
                     console.error('❌ OrdersStore: Error assigning lawyer:', error);
                     set({
@@ -153,7 +153,7 @@ export const useOrdersStore = create<OrdersState>()(
                         orders: state.orders.filter((order) => order.id !== id),
                         isLoading: false,
                     }));
-                    console.log('✅ OrdersStore: Order deleted in API (logic delete):', id);
+                    
                 } catch (error) {
                     console.error('❌ OrdersStore: Error deleting order:', error);
                     set({
@@ -192,12 +192,12 @@ export const useOrdersStore = create<OrdersState>()(
             name: 'virtuabogado-orders-v2', // v2 para limpiar datos mock del localStorage
             storage: createJSONStorage(() => localStorage),
             onRehydrateStorage: () => {
-                console.log('🔄 OrdersStore: Iniciando rehydration desde localStorage');
+                
                 return (state, error) => {
                     if (error) {
                         console.error('❌ OrdersStore: Error en rehydration:', error);
                     } else {
-                        console.log('✅ OrdersStore: Rehydration completada. Orders:', state?.orders.length || 0);
+                        
                     }
                 };
             },
@@ -211,6 +211,6 @@ export const initializeOrders = () => {
     const store = useOrdersStore.getState();
 
     // Disparar carga inicial desde la API
-    console.log('🔄 OrdersStore: Inicializando datos desde la API...');
+    
     store.fetchOrders();
 };

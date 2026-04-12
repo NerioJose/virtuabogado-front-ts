@@ -43,7 +43,7 @@ export const useCheckoutStore = create<CheckoutState>()(
 
             // Si el checkout previo se completó (Paso 3), resetear antes de abrir uno nuevo
             if (currentState.step === 3 || currentState.completedAt) {
-                console.log('🔄 Resetting checkout state for a new purchase...');
+                
                 set(getInitialState());
                 // Pequeño delay para asegurar que el estado se limpie antes de re-abrir
                 setTimeout(() => {
@@ -57,15 +57,11 @@ export const useCheckoutStore = create<CheckoutState>()(
             const authUser = authStore.user;
             const isUserAuthenticated = authStore.isAuthenticated;
 
-            console.log('🛒 OpenCheckout:', { 
-                service: service.titulo, 
-                isUserAuthenticated, 
-                hasUser: !!authUser 
-            });
+            // Registro interno de apertura de checkout (sin log en consola)
 
             // Si el usuario está autenticado, saltar directamente al paso 2 (Pago)
             if (isUserAuthenticated && authUser) {
-                console.log('⏭️ Skipping to Step 2 for authenticated user:', authUser.email);
+                
                 
                 const prefilledUserData = {
                     email: authUser.email,
@@ -86,7 +82,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                     completedAt: null,
                 });
             } else {
-                console.log('👤 Starting at Step 1 for guest/unauthenticated user');
+                
                 set({
                     ...getInitialState(),
                     isOpen: true,
@@ -207,7 +203,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         authenticateUser: async (userData: UserCheckoutData) => {
             set({ isLoading: true, error: null });
             try {
-                console.log('🔐 [Checkout] Autenticando usuario en Paso 1:', userData.email);
+                
                 
                 // PREVENCIÓN DE COLISIÓN DE SESIONES MULTI-PESTAÑA
                 const supabase = (await import('@/utils/supabase/client')).createClient();
@@ -236,7 +232,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                         step: 2 // Avanzar al pago
                     });
                     
-                    console.log('✅ [Checkout] Autenticación exitosa. Usuario:', user.email);
+                    
                     return true;
                 }
                 return false;
@@ -270,7 +266,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                 
                 // Si NO hay usuario logueado o sesión, intentamos el login final (Fallback)
                 if (!currentUserId && state.userData) {
-                    console.log('🔄 [Checkout] Usuario no detectado al final, intentando registerOrLogin de último minuto...');
+                    
                     try {
                         const { user: rawUser } = await checkoutService.registerOrLogin(state.userData);
                         if (rawUser) {
@@ -303,7 +299,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                 // 1.5. ACTUALIZAR PERFIL: Si el usuario ya existe pero no tiene nombre (o es 'Usuario')
                 const currentUser = useAuthStore.getState().user;
                 if (currentUser && state.userData?.nombre && (currentUser.nombre === 'Usuario' || !currentUser.nombre)) {
-                    console.log('📝 Actualizando nombre de usuario en perfil:', state.userData.nombre);
+                    
                     const { error: updateError } = await supabase.auth.updateUser({
                         data: { nombre: state.userData.nombre }
                     });
@@ -314,7 +310,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                 }
 
                 // 2. Procesar pago y crear orden en un solo paso atómico (Server Action)
-                console.log('🚀 [Checkout Store] Iniciando transacción en el servidor...');
+                
                 const result = await processPaymentAction({
                     serviceId: state.service.id,
                     paymentMethodId: state.paymentMethod === 'card' ? 'mock' : state.paymentMethod // Ajuste temporal según IDENTIFIER
@@ -328,7 +324,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                 
                 // Si es Zenobank, redirigir a la pasarela
                 if (result.redirectUrl) {
-                    console.log('🔗 [Checkout Store] Redirigiendo a pasarela:', result.redirectUrl);
+                    
                     window.location.href = result.redirectUrl;
                     return;
                 }

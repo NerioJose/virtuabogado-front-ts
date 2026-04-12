@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
             'Pragma': 'no-cache',
         };
 
-        console.log(`[Status API] Orden ${orderId}: rawStatus=${order.status}, mappedStatus=${statusResponse}`);
+        
 
         return NextResponse.json({ 
             status: statusResponse,

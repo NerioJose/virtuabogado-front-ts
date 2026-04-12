@@ -12,7 +12,7 @@ export async function GET(
 ) {
     const { id } = await params;
     const supabase = await createClient();
-    console.log(`🔍 [Orders API] Fetching order: ${id}`);
+    
 
     try {
         // Verificar autenticación
@@ -218,7 +218,7 @@ export async function DELETE(
             prisma.order.delete({ where: { id: uuid } })
         ]);
         
-        console.log(`✅ [Orders API] Order ${uuid} and related entities deleted`);
+        
         return NextResponse.json({ 
             success: true,
             message: 'Caso y todo su historial de mensajes/documentos han sido eliminados correctamente.' 

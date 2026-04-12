@@ -130,7 +130,7 @@ export const useAuthStore = create<AuthState>()(
                     const state = get() as any;
                     const currentUser = state.user;
                     if (currentUser) {
-                        console.log('✅ Usuario ya en store:', currentUser.email);
+                        
                         return;
                     }
                     // -------------------------------------------
@@ -152,7 +152,7 @@ export const useAuthStore = create<AuthState>()(
                                 .then(res => res.json())
                                 .then(syncData => {
                                     if (syncData.success && syncData.user) {
-                                        console.log('🔄 [Auth Sync] Perfil unificado con DB:', syncData.user.nombre);
+                                        
                                         // ACTUALIZACIÓN REACTIVA: Si el nombre en la DB es mejor que el de la sesión, actualizamos el store
                                         const currentState = get() as any;
                                         const needsUpdate: Partial<User> = {};
@@ -163,7 +163,7 @@ export const useAuthStore = create<AuthState>()(
 
                                         if (syncData.user.rol && currentState.user && currentState.user.rol !== syncData.user.rol) {
                                             needsUpdate.rol = syncData.user.rol;
-                                            console.log('🔄 [Auth Sync] Rol actualizado desde DB:', syncData.user.rol);
+                                            
                                         }
 
                                         if (Object.keys(needsUpdate).length > 0 && currentState.updateUser) {

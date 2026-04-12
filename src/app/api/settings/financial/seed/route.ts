@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        console.log('✅ Financial settings seeded successfully');
+        
         return NextResponse.json({ message: 'Financial settings created with 0% defaults', data }, { status: 201 });
     } catch (error) {
         console.error('Unexpected error seeding financial settings:', error);

@@ -77,7 +77,7 @@ export default function AdminPage() {
 	// Inicializar datos del dashboard
 	useEffect(() => {
 		if (isAuthenticated && user?.rol === UserRole.ADMIN) {
-			console.log('📊 AdminPage: Inicializando datos...');
+			
 			// initializeOrders(); -- Legacy removed, using React Query
 			// React Query handles clients and lawyers automatically
 		}
@@ -122,7 +122,7 @@ export default function AdminPage() {
 	const handleSave = async (data: any) => {
 		try {
 			const id = elementoSeleccionado?.id;
-			console.log('🚀 Admin handleSave [START]:', { seccionActiva, tipoModal, id, data });
+			
 
 			switch (seccionActiva) {
 				case 'clientes':

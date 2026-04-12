@@ -50,7 +50,7 @@ export default function PaymentSuccessPage({
     // Redirección inmediata post-aprobación
     useEffect(() => {
         if (isApproved) {
-            console.log('🚀 [PaymentSuccess] Pago aprobado. Redirigiendo inmediatamente...');
+            
             router.push('/mis-servicios');
         }
     }, [isApproved, router]);

@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
     const orderId = data?.orderId || data?.order_id || evt.orderId || evt.order_id || data?.metadata?.orderId;
     const paymentId = data?.id || evt.id;
 
-    console.log(`✅ [Webhook SVIX] Evento: ${type} | Final orderId: ${orderId} | paymentId: ${paymentId}`);
+    
     
     if (process.env.NODE_ENV === 'development') {
-        console.log(`🔍 [Webhook Debug Data]:`, JSON.stringify(evt, null, 2));
+        
     }
 
     try {
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
                 select: { id: true, nombre: true }
             });
 
-            console.log('DEBUG: Abogados encontrados:', activeLawyers.map((l: any) => l.nombre));
+            
 
             const isAutoAssign = activeLawyers.length === 1;
             const targetLawyerId = isAutoAssign ? activeLawyers[0].id : currentOrder.lawyerId;
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
             // Si no hay abogado (porque hay más de uno), el estado es PENDIENTE (esperando asignación).
             const finalStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PENDIENTE;
 
-            console.log(`[CheckoutFlow] ⚖️ Abogados: ${activeLawyers.length}. Auto-asignar: ${isAutoAssign}. Status Final: ${finalStatus}`);
+            
 
             // ── PASO 2: Transacción Atómica de Única Escritura ──
             await prisma.$transaction(async (tx: any) => {
@@ -137,8 +137,8 @@ export async function POST(req: NextRequest) {
             })();
 
             revalidatePath('/', 'layout');
-            console.log(`[Webhook] Estado final determinado: ${finalStatus}`);
-            console.log(`✅ [Webhook] Orden ${orderId} procesada con éxito.`);
+            
+            
 
         } else if (['payment.failed', 'checkout.expired', 'checkout.canceled'].includes(type)) {
             await prisma.order.update({

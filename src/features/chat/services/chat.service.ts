@@ -36,7 +36,7 @@ export const chatService = {
                 'broadcast',
                 { event: 'new_message' },
                 (payload) => {
-                    console.log('📬 Nuevo mensaje recibido via Broadcast:', payload);
+                    
                     // Pasamos el payload empaquetado para mantener la compatibilidad con el formato anterior
                     callback({ new: payload.payload.new });
                 }
@@ -45,7 +45,7 @@ export const chatService = {
                 if (status === 'CHANNEL_ERROR') {
                     console.error('❌ Canal Realtime Error:', error);
                 } else if (status === 'SUBSCRIBED') {
-                    console.log('✅ Realtime Broadcast Subscribed for Chat window');
+                    
                 }
             });
     },

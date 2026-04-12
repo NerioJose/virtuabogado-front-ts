@@ -17,7 +17,7 @@ function createPrismaClient() {
     }
 
     if (!isDev) {
-        console.log('🔗 [Prisma] Usando configuración de Producción con Connection Pooler.');
+        
     }
 
     const pool = new Pool({

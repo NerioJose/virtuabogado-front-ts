@@ -77,10 +77,7 @@ export const useCheckoutStorage = () => {
                 const store = useCheckoutStore.getState();
                 const isAuth = useAuthStore.getState().isAuthenticated;
 
-                console.log('🔄 useCheckoutStorage: Re-opening checkout from storage', { 
-                    step: data.step, 
-                    isAuth 
-                });
+                // Re-abriendo checkout desde almacenamiento (registro interno)
 
                 store.openCheckout(data.service);
 

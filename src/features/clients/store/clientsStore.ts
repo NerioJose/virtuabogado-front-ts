@@ -39,7 +39,7 @@ export const useClientsStore = create<ClientsState>()(
                         filters: filters || {},
                     });
 
-                    console.log('✅ ClientsStore: Clients fetched from API:', clients.length);
+                    
                 } catch (error) {
                     console.error('❌ ClientsStore: Error fetching clients:', error);
                     // Don't break UI for demo/offline mode
@@ -52,10 +52,10 @@ export const useClientsStore = create<ClientsState>()(
 
             updateClient: async (id: string, data: Partial<Client>) => {
                 try {
-                    console.log('🔄 ClientsStore: updateClient called with:', { id, data });
+                    
                     set({ isLoading: true, error: null });
                     const updatedClient = await apiClient.put<Client>(`/api/clients/${id}`, data);
-                    console.log('📥 ClientsStore: API response:', updatedClient);
+                    
 
                     set((state) => ({
                         clients: state.clients.map((client) =>
@@ -63,7 +63,7 @@ export const useClientsStore = create<ClientsState>()(
                         ),
                         isLoading: false,
                     }));
-                    console.log('✅ ClientsStore: Client updated in API:', id);
+                    
                 } catch (error) {
                     console.error('❌ ClientsStore: Error updating client:', error);
                     set({
@@ -83,7 +83,7 @@ export const useClientsStore = create<ClientsState>()(
                         clients: state.clients.filter((client) => client.id !== id),
                         isLoading: false,
                     }));
-                    console.log('✅ ClientsStore: Client deleted in API (logic delete):', id);
+                    
                 } catch (error) {
                     console.error('❌ ClientsStore: Error deleting client:', error);
                     set({
@@ -114,12 +114,12 @@ export const useClientsStore = create<ClientsState>()(
             name: 'virtuabogado-clients-v2',
             storage: createJSONStorage(() => localStorage),
             onRehydrateStorage: () => {
-                console.log('🔄 ClientsStore: Iniciando rehydration desde localStorage');
+                
                 return (state, error) => {
                     if (error) {
                         console.error('❌ ClientsStore: Error en rehydration:', error);
                     } else {
-                        console.log('✅ ClientsStore: Rehydration completada. Clients:', state?.clients.length || 0);
+                        
                     }
                 };
             }
@@ -130,6 +130,6 @@ export const useClientsStore = create<ClientsState>()(
 // Función para inicializar clientes desde la API
 export const initializeClients = () => {
     const store = useClientsStore.getState();
-    console.log('🔄 ClientsStore: Inicializando datos desde la API...');
+    
     store.fetchClients();
 };

@@ -40,7 +40,7 @@ export default async function AbogadoPage() {
     let role = user.user_metadata?.rol?.toUpperCase();
     
     if (!role) {
-        console.log(`🔍 [Auth Guard] Rol ausente en metadatos para ${user.email}. Consultando DB...`);
+        
         const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
             select: { rol: true }

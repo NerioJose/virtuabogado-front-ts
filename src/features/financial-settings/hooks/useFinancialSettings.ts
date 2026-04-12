@@ -66,7 +66,7 @@ export const useUpdateFinancialSettings = () => {
                 queryKey: FINANCIAL_SETTINGS_KEYS.detail(),
                 refetchType: 'active',
             });
-            console.log('✅ Financial settings updated successfully');
+            
         },
     });
 };

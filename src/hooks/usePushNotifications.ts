@@ -40,7 +40,7 @@ export function usePushNotifications() {
                 console.error('❌ [Push] Error sync:', errorText);
                 return false;
             }
-            console.log('✅ [Push] Suscripción sincronizada con el servidor.');
+            
             return true;
         } catch (error) {
             console.error('❌ [Push] Error red sync:', error);
@@ -59,11 +59,7 @@ export function usePushNotifications() {
             const subscription = await registration.pushManager.getSubscription();
             const currentPermission = Notification.permission;
 
-            console.log('📡 [Push Diag] Estado actual:', {
-                subscribed: !!subscription,
-                permission: currentPermission,
-                swReady: !!registration,
-            });
+            // Verificación silenciosa de suscripción push
 
             setIsSubscribed(!!subscription);
             setPermission(currentPermission);
@@ -73,10 +69,10 @@ export function usePushNotifications() {
             // Escenario B: Permiso concedido pero sin suscripción -> Re-registrar silenciosamente.
             
             if (subscription && user) {
-                console.log('🔄 [Push] Suscripción encontrada en navegador. Sincronizando con DB por seguridad...');
+                
                 await syncSubscription(subscription);
             } else if (!subscription && currentPermission === 'granted' && user && VAPID_PUBLIC_KEY) {
-                console.log('🔄 [Push] Permiso concedido pero sin suscripción activa. Re-registrando silenciosamente...');
+                
                 try {
                     const newSubscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
@@ -85,7 +81,7 @@ export function usePushNotifications() {
                     const synced = await syncSubscription(newSubscription);
                     if (synced) {
                         setIsSubscribed(true);
-                        console.log('✅ [Push] Re-suscripción silenciosa exitosa.');
+                        
                     }
                 } catch (resubError) {
                     console.warn('⚠️ [Push] Re-suscripción silenciosa falló (permiso puede haber sido revocado):', resubError);
@@ -108,7 +104,7 @@ export function usePushNotifications() {
         }
 
         setIsPending(true);
-        console.log(`🚀 [Push] Iniciando ${force ? 'reparación' : 'suscripción'}...`);
+        
 
         try {
             const perm = await Notification.requestPermission();
@@ -126,7 +122,7 @@ export function usePushNotifications() {
             if (force) {
                 const existingSub = await registration.pushManager.getSubscription();
                 if (existingSub) await existingSub.unsubscribe();
-                console.log('🗑️ [Push] Suscripción anterior eliminada.');
+                
             }
 
             const subscription = await registration.pushManager.subscribe({
@@ -134,7 +130,7 @@ export function usePushNotifications() {
                 applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
             });
 
-            console.log('✅ [Push] Nueva suscripción generada:', subscription.endpoint.substring(0, 30) + '...');
+            
             const syncSuccess = await syncSubscription(subscription);
             
             if (syncSuccess) {
@@ -171,7 +167,7 @@ export function usePushNotifications() {
                 }
             }
             setIsSubscribed(false);
-            console.log('🗑️ [Push] Notificaciones desactivadas.');
+            
             return true;
         } catch (error: any) {
             console.error('❌ [Push] Error al desactivar:', error);

@@ -42,14 +42,14 @@ export const useServicesRealtime = (enabled: boolean = true) => {
                     table: 'Service',
                 },
                 (payload) => {
-                    console.log('🔄 [Realtime Event Received] Service:', payload.eventType, payload.new);
+                    
                     // Invalida la query de servicios activos → refetch automático
                     queryClient.invalidateQueries({ queryKey: servicesKeys.active });
                 }
             )
             .subscribe((status, error) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('✅ [Realtime - Services] Suscrito correctamente a la tabla "Service".');
+                    
                 } else {
                     console.warn(`⚠️ [Realtime - Services] Estado: ${status}`, error || '');
                     if (status === 'CHANNEL_ERROR') {

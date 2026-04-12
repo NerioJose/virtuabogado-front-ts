@@ -53,7 +53,7 @@ export const ordersService = {
     async create(orderData: CreateOrderRequest): Promise<Order> {
         try {
             // TODO: Implementar con API real
-            console.log('Creating order:', orderData);
+            
 
             // Mock: retornar orden simulada
             throw new Error('Not implemented yet');
@@ -95,7 +95,7 @@ export const ordersService = {
     async getByUser(userId: number): Promise<Order[]> {
         try {
             // TODO: Implementar con API real
-            console.log('Fetching orders for user:', userId);
+            
             return [];
         } catch (error) {
             console.error(`Error fetching orders for user ${userId}:`, error);
@@ -109,7 +109,7 @@ export const ordersService = {
     async delete(orderId: number): Promise<void> {
         try {
             // TODO: Implementar con API real
-            console.log('Deleting order:', orderId);
+            
         } catch (error) {
             console.error(`Error deleting order ${orderId}:`, error);
             throw error;

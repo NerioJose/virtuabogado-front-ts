@@ -60,7 +60,7 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
 
     // Security & Filtering by User Role (In-case normalization fails elsewhere)
     const role = (user.rol as string).toUpperCase();
-    console.log(`📊 [getFinancialSummary] User: ${user.id}, Normalized Role: ${role}`);
+    
 
     if (role === 'ABOGADO') {
         where.lawyerId = user.id;
@@ -68,7 +68,7 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
         where.lawyerId = lawyerId;
     }
     
-    console.log(`📊 [getFinancialSummary] Where clause: ${JSON.stringify(where)}`);
+    
 
     try {
         // 4. Fetch Order Data (Including payout status for balance calculation)

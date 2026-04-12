@@ -25,7 +25,7 @@ function StateSyncHandler() {
         if (authSuccess && !hasSyncAttempted.current) {
             // Si aún no estamos autenticados en el store, forzar verificación
             if (!isAuthenticated) {
-                console.log('🔐 Detectado auth_success pero store no autenticado. Verificando sesión...');
+                
                 checkAuth();
                 return; // Esperar al próximo render cuando isAuthenticated sea true
             }
@@ -33,7 +33,7 @@ function StateSyncHandler() {
             // Marcar como intentado para evitar bucles si isOpen cambia
             hasSyncAttempted.current = true;
 
-            console.log('🔄 Sesión confirmada. Recuperando estado de compra...');
+            
             
             // 1. Recuperar el estado de localStorage
             const pendingDataRaw = localStorage.getItem('checkout_pending');
@@ -45,7 +45,7 @@ function StateSyncHandler() {
 
                     // Verificar que no sea muy antiguo (1 hora)
                     if (now - pendingData.timestamp < oneHour) {
-                        console.log('🛒 Re-abriendo checkout en Paso 2 para:', pendingData.service?.nombre);
+                        
                         
                         // Si ya está abierto, no hacer nada
                         if (isOpen) return;

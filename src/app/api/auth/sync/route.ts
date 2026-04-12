@@ -41,12 +41,12 @@ export async function POST() {
         let updatedUser: any;
 
         if (existingByEmail && existingByEmail.id !== user.id) {
-            console.log(`🔗 [Sync Merge] Unificando email ${user.email} (Local: ${existingByEmail.id} -> Supabase: ${user.id})`);
+            
             
             // 1. Rescate de Identidad: heredar el nombre si era válido
             if (!finalName && existingByEmail.nombre && !existingByEmail.nombre.includes('@')) {
                 finalName = existingByEmail.nombre;
-                console.log(`🦸 [Identity Rescue API] Nombre recuperado del historial: ${finalName}`);
+                
             }
 
             // 2. Liberar el email del registro antiguo para permitir crear el nuevo ID
@@ -85,7 +85,7 @@ export async function POST() {
                 prisma.document.updateMany({ where: { uploaderId: existingByEmail.id }, data: { uploaderId: user.id } }),
                 prisma.pushSubscription.updateMany({ where: { userId: existingByEmail.id }, data: { userId: user.id } }),
             ]);
-            console.log('✅ [Sync Merge] Migración de relaciones y Suscripciones Push completada.');
+            
 
             // 5. Sincronizar metadatos con Supabase Auth si se rescató un nombre o cambió el rol
             const currentRoleInMetadata = (user.user_metadata?.rol || 'CLIENTE').toUpperCase();
@@ -93,7 +93,7 @@ export async function POST() {
                                      (roleToPreserve && currentRoleInMetadata !== roleToPreserve);
 
             if (needsMetadataSync) {
-                console.log(`📝 [Sync Merge] Actualizando metadatos en Supabase Auth: ${finalName || 'Mismo nombre'}, Rol: ${roleToPreserve}`);
+                
                 await supabase.auth.updateUser({
                     data: { 
                         ...(finalName && { nombre: finalName }),
@@ -148,7 +148,7 @@ export async function POST() {
             }
         }
 
-        console.log(`✅ [Sync API] User ${updatedUser.id} synchronized successfully.`);
+        
 
         return NextResponse.json({
             success: true,

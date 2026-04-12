@@ -38,7 +38,7 @@ export function useAbogadosPanel(terminoBusqueda: string) {
     const updateStatus = async (id: string, status: LawyerStatus) => {
         // En una implementación real, aquí se llamaría al servicio de abogados
         // useLawyers ya maneja mutaciones, pero por ahora simulamos la lógica
-        console.log('Implement change status', id, status);
+        
         // await mutateStatus({ id, status });
     };
 

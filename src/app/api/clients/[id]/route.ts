@@ -70,7 +70,7 @@ export async function PUT(
                 await adminClient.auth.admin.updateUserById(id, {
                     user_metadata: { activo: activo }
                 });
-                console.log(`✅ API: Sincronizado estado activo (${activo}) en Auth para cliente ${id}`);
+                
             } catch (authError) {
                 console.warn('⚠️ API: No se pudo sincronizar metadata en Auth para el cliente:', authError);
             }
@@ -147,7 +147,7 @@ export async function DELETE(
         }
 
         // 1. Archivado Lógico en DB (Preservamos documentos y datos para el historial de casos)
-        console.log(`🏛️ API: Archivado lógico para el cliente ID: ${id}`);
+        
         
         // Mantenemos documentos y PII para que el historial de casos no se rompa
         await prisma.user.update({
@@ -165,7 +165,7 @@ export async function DELETE(
             await adminClient.auth.admin.updateUserById(id, {
                 user_metadata: { activo: false }
             });
-            console.log(`✅ API: Acceso bloqueado para el cliente ${id} en Supabase Auth vía metadata.`);
+            
         } catch (authError) {
             console.warn(`⚠️ API: No se pudo actualizar metadata en Auth, pero el cliente fue archivado en DB.`, authError);
         }

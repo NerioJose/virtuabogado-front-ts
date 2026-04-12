@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        console.log('🔐 Intentando registro server-side para:', email);
+        
 
         // 1. Intentar Login primero
         const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (signInData.user && !signInError) {
-            console.log('✅ Usuario ya existe, login exitoso:', signInData.user.id);
+            
             return NextResponse.json({
                 user: {
                     id: signInData.user.id,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.log('✨ Usuario registrado exitosamente (server-side):', signUpData.user.id);
+        
 
         return NextResponse.json({
             user: {

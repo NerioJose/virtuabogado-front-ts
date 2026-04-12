@@ -53,7 +53,7 @@ export const useCreateOrder = () => {
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ORDER_KEYS.lists() });
-            console.log('✅ Orden creada (A la espera de webhook de Zenobank)');
+            
         },
     });
 };
@@ -119,7 +119,7 @@ export const useUpdateOrder = () => {
                 refetchType: 'active' // Only refetch currently active queries
             });
 
-            console.log('✅ Orden actualizada con invalidación selectiva');
+            
         },
     });
 };
@@ -155,7 +155,7 @@ export const useDeleteOrder = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ORDER_KEYS.lists() });
-            console.log('✅ Orden eliminada y caché actualizada');
+            
         },
     });
 };

@@ -23,7 +23,7 @@ export const useRealtimeSubscription = () => {
     useEffect(() => {
         const pollInterval = setInterval(() => {
             if (document.visibilityState === 'visible' && user?.id) {
-                console.log('🔄 [Polling] Refrescando datos en segundo plano...');
+                
                 // Force refetch all active order and service queries
                 queryClient.refetchQueries({ 
                     queryKey: ORDER_KEYS.all,
@@ -50,7 +50,7 @@ export const useRealtimeSubscription = () => {
         if (!user?.id || connectionStatus === 'DISCONNECTED') return;
 
         const supabase = createClient();
-        console.log('📡 [Realtime] Inicializando listeners de Broadcast...');
+        
 
         const handleUpdate = (payload: any) => {
             // Este handler ahora solo se encarga de actualizaciones de servicios
@@ -59,7 +59,7 @@ export const useRealtimeSubscription = () => {
             const eventPayload = payload?.payload || payload;
             
             if (eventName === 'service-updated') {
-                console.log(`📡 [Broadcast] ${eventName} recibido:`, eventPayload);
+                
                 if (eventPayload?.serviceId) {
                     const { useServicesStore } = require('@/features/services/store/servicesStore');
                     useServicesStore.getState().updateServiceState(eventPayload.serviceId, eventPayload);
@@ -74,7 +74,7 @@ export const useRealtimeSubscription = () => {
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
             .subscribe((status) => {
-                console.log('📡 [Broadcast Global] Estado:', status);
+                
             });
 
         // Canal personal - notificaciones dirigidas (abogado asignado, cliente propietario)
@@ -82,7 +82,7 @@ export const useRealtimeSubscription = () => {
         personalChannel
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .subscribe((status) => {
-                console.log(`📡 [Broadcast Personal global_${user.id}] Estado:`, status);
+                
             });
 
         return () => {
@@ -104,21 +104,21 @@ export const useRealtimeSubscription = () => {
         }
 
         const supabase = createClient();
-        console.log(`🚀 [Realtime] Inicializando para usuario: ${user.email} (ID: ${user.id})`);
+        
 
         // Función para manejar los cambios
         const handleChanges = (payload: any) => {
-            console.log('🔄 Cambio en DB detectado:', payload.table, payload.eventType);
+            
             const { table } = payload;
 
             switch (table) {
                 case 'User':
-                    console.log('👤 Actualizando usuarios...');
+                    
                     queryClient.invalidateQueries({ queryKey: CLIENT_KEYS.all, refetchType: 'all' });
                     queryClient.invalidateQueries({ queryKey: LAWYER_KEYS.all, refetchType: 'all' });
                     break;
                 case 'Order':
-                    console.log('📦 Actualizando órdenes... [Realtime force-refetch]');
+                    
                     // Force immediate refetch of ALL active order queries (including filtered by lawyer)
                     queryClient.refetchQueries({ 
                         queryKey: ORDER_KEYS.all,
@@ -139,20 +139,20 @@ export const useRealtimeSubscription = () => {
                     }
                     break;
                 case 'Service':
-                    console.log('🛠️ Actualizando servicios...');
+                    
                     queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
                     break;
                 case 'FinancialSettings':
-                    console.log('💰 Actualizando configuración financiera...');
+                    
                     queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
                     queryClient.invalidateQueries({ queryKey: ['DashboardStats'], refetchType: 'all' });
                     break;
                 case 'PaymentMethod':
-                    console.log('💳 Actualizando métodos de pago...');
+                    
                     queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
                     break;
                 case 'Message':
-                    console.log('💬 Nuevo mensaje detectado');
+                    
                     if (payload.new && 'orderId' in payload.new) {
                         queryClient.refetchQueries({
                             queryKey: ['Message', payload.new.orderId],
@@ -178,7 +178,7 @@ export const useRealtimeSubscription = () => {
                 return;
             }
 
-            console.log('🚀 Inicializando suscripción Realtime por tablas...');
+            
 
             const channelName = `db-changes-${user?.id}-${Date.now()}`;
             const channel = supabase.channel(channelName);
@@ -199,7 +199,7 @@ export const useRealtimeSubscription = () => {
                 switch (status) {
                     case 'SUBSCRIBED':
                         setConnectionStatus('CONNECTED');
-                        console.log(`✅ [Realtime] Suscripción activa [${channelName}]`);
+                        
                         queryClient.refetchQueries({ queryKey: ORDER_KEYS.all, type: 'active' });
                         break;
                     case 'CHANNEL_ERROR':
@@ -225,7 +225,7 @@ export const useRealtimeSubscription = () => {
         })();
 
         return () => {
-            console.log(`🛑 [Realtime] Limpiando suscripción para: ${user?.email || 'Anónimo'}`);
+            
             if (channelRef) supabase.removeChannel(channelRef);
         };
     }, [queryClient, user?.id]);

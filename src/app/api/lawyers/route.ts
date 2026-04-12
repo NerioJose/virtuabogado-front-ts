@@ -21,7 +21,7 @@ export async function GET(request: Request) {
                 const { data: { user: headerUser } } = await supabase.auth.getUser(token);
                 if (headerUser) {
                     user = headerUser;
-                    console.log('✅ Lawyers API: Auth success via Authorization header');
+                    
                 }
             }
         }
@@ -46,13 +46,13 @@ export async function GET(request: Request) {
         }
 
         const role: string = userRole;
-        console.log(`🔍 [API Lawyers] Access granted. Role: ${role} for User: ${user.id}`);
+        
 
         if (role !== 'ADMIN') {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        console.log('🏛️ [API Lawyers] Fetching users for administrative management...');
+        
         const allUsers = await prisma.user.findMany({
             // Quitamos el filtro de activo: true para que el Admin pueda gestionar inactivos
             orderBy: { createdAt: 'desc' }
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
         const clients = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE');
         const lawyers = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'ABOGADO' || u.rol === 'ABOGADO');
 
-        console.log(`📊 [API Lawyers] Consolidated Results -> Clients: ${clients.length}, Lawyers: ${lawyers.length}`);
+        
 
         // Mapear al formato que espera el frontend
         const formattedLawyers = lawyers.map((lawyer: any) => ({
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
             }
         });
 
-        console.log('✅ Lawyer created successfully:', newLawyer.id);
+        
 
         return NextResponse.json(newLawyer);
     } catch (error: any) {

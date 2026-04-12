@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
     try {
-        console.log(`🔍 [GET] /api/settings/financial - Buscando ID: ${FINANCIAL_SETTINGS_ID}`);
+        
         const supabase = await createClient();
 
         // Verificar autenticación
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         const model = getSettingsModel();
 
         if (!model) {
-            console.log('⚠️ [GET] Fallback raw query...');
+            
             const rawResult = await prisma.$queryRaw<any[]>`SELECT * FROM "FinancialSettings" WHERE id = ${FINANCIAL_SETTINGS_ID} LIMIT 1`;
             
             if (rawResult && rawResult.length > 0) {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (!settings) {
-            console.log('💡 [GET] Settings no encontrados, usando defaults 0');
+            
             settings = {
                 id: FINANCIAL_SETTINGS_ID,
                 lawyer_commission_percentage: (0 as any),
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
     try {
-        console.log(`✍️ [PATCH] /api/settings/financial - Actualizando ID: ${FINANCIAL_SETTINGS_ID}`);
+        
         const supabase = await createClient();
 
         // Verificar autenticación
@@ -103,7 +103,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         const body = await request.json();
-        console.log('📦 [PATCH] Body:', body);
+        
 
         const updates: any = { 
             updated_by: user.id,

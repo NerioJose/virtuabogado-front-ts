@@ -16,7 +16,7 @@ export async function POST() {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        console.log(`🧪 [Push Test] Enviando notificación de prueba a: ${user.email}`);
+        
 
         const result = await sendPushNotification(user.id, {
             title: '🎉 Prueba de VirtuAbogado',

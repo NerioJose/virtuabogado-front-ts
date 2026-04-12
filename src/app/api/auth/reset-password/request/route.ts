@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         const normalizedEmail = email.toLowerCase().trim();
         const GMAIL_USER = process.env.GMAIL_USER;
 
-        console.log('📨 [Password Reset] Solicitando vía Gmail para:', normalizedEmail);
+        
 
         // 1. Verificar si el usuario existe y está ACTIVO (Case-Insensitive)
         const user = await prisma.user.findFirst({
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         
         const resetLink = `${origin}/recuperar-password?token=${token}`;
         
-        console.log(`🔗 [Password Reset] Generando link: ${resetLink}`);
+        
 
         try {
             await transporter.sendMail({
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
                 `
             });
 
-            console.log('✅ [Nodemailer] Correo enviado exitosamente a:', normalizedEmail);
+            
             return NextResponse.json({ message: 'Correo enviado correctamente' });
 
         } catch (mailError: any) {

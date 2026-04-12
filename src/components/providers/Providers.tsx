@@ -13,7 +13,7 @@ const RealtimeSubscription = () => {
 
     // Optional: You can display connection status in dev mode
     if (process.env.NODE_ENV === 'development') {
-        console.log('📊 Realtime Status:', status);
+        
     }
 
     return null;
@@ -29,7 +29,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             if ('serviceWorker' in navigator) {
                 try {
                     const reg = await navigator.serviceWorker.register('/sw.js');
-                    console.log('✅ Service Worker registrado:', reg.scope);
+                    
                     
                     // Asegurar que si hay una versión nueva, se active de inmediato
                     reg.onupdatefound = () => {
@@ -37,7 +37,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                         if (installingWorker) {
                             installingWorker.onstatechange = () => {
                                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('🔄 Nueva versión de Notificaciones lista. Actualizando...');
+                                    
                                     window.location.reload();
                                 }
                             };

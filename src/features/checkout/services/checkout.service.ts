@@ -157,7 +157,7 @@ class CheckoutService {
      */
     async createOrder(orderData: OrderRequest): Promise<OrderResponse> {
         try {
-            console.log('📤 Creando orden via API:', orderData);
+            
 
             const response = await apiClient.post<any>('/api/orders', {
                 serviceId: orderData.serviceId,
@@ -166,7 +166,7 @@ class CheckoutService {
                 paymentId: orderData.paymentId
             });
 
-            console.log('✅ Orden creada exitosamente:', response);
+            
 
             return {
                 orderId: response.uuid || response.id, // API returns both
@@ -181,7 +181,7 @@ class CheckoutService {
     }
 
     async sendConfirmationEmail(orderId: string): Promise<void> {
-        console.log('📧 (Simulado) Enviando email para orden:', orderId);
+        
     }
 }
 

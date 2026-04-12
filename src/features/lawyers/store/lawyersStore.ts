@@ -39,7 +39,7 @@ export const useLawyersStore = create<LawyersState>()(
                         filters: filters || {},
                     });
 
-                    console.log('✅ LawyersStore: Lawyers fetched from API:', lawyers.length);
+                    
                 } catch (error) {
                     console.error('❌ LawyersStore: Error fetching lawyers:', error);
                     set({
@@ -60,7 +60,7 @@ export const useLawyersStore = create<LawyersState>()(
                         ),
                         isLoading: false,
                     }));
-                    console.log('✅ LawyersStore: Lawyer updated in API:', id);
+                    
                 } catch (error) {
                     console.error('❌ LawyersStore: Error updating lawyer:', error);
                     set({
@@ -80,7 +80,7 @@ export const useLawyersStore = create<LawyersState>()(
                         lawyers: state.lawyers.filter((lawyer) => lawyer.id !== id),
                         isLoading: false,
                     }));
-                    console.log('✅ LawyersStore: Lawyer deleted in API (logic delete):', id);
+                    
                 } catch (error) {
                     console.error('❌ LawyersStore: Error deleting lawyer:', error);
                     set({
@@ -117,6 +117,6 @@ export const useLawyersStore = create<LawyersState>()(
 // Función para inicializar abogados desde la API
 export const initializeLawyers = () => {
     const store = useLawyersStore.getState();
-    console.log('🔄 LawyersStore: Inicializando datos desde la API...');
+    
     store.fetchLawyers();
 };

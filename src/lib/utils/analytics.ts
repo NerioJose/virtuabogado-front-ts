@@ -36,7 +36,7 @@ export const logAbandonment = (data: Omit<AbandonmentData, 'timestamp'>) => {
     // En una implementación real, aquí enviaríamos los datos a un servicio de analítica
     // sendToAnalyticsService(data);
     
-    console.log('Abandono registrado:', data);
+    
   } catch (error) {
     console.error('Error al registrar abandono:', error);
   }

@@ -22,7 +22,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import ClientSidebar from './ClientSidebar';
 import ClientStats from './ClientStats';
-import { getStatusColor, getStatusText, type ServicioCliente } from '..';
+import { getStatusColor, getStatusText, type ServicioCliente } from '@/features/orders';
 import { useClientPanel } from '../hooks/useClientPanel';
 
 interface ClientPanelProps {

@@ -13,8 +13,8 @@ import {
 } from 'react-icons/fi';
 import Link from 'next/link';
 import Image from 'next/image';
-import PushNotificationToggle from '../notifications/PushNotificationToggle';
-import { useClientSidebar } from './hooks/useClientSidebar';
+import PushNotificationToggle from '@/components/notifications/PushNotificationToggle';
+import { useClientSidebar } from '../hooks/useClientSidebar';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   FiBriefcase: <FiBriefcase />,

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiBriefcase, FiMessageSquare, FiFileText } from 'react-icons/fi';
 import { ChatWindow as ChatWindowSupervision } from '@/features/chat/components/ChatWindow';
-import DocumentList, { DocumentoItem } from '../documents/DocumentList';
+import DocumentList, { DocumentoItem } from '@/features/documents/components/DocumentList';
 import { capitalizeName } from '@/utils/formatters';
 
 interface AdminSupervisionTabsProps {

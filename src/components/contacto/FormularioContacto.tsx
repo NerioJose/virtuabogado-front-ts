@@ -139,7 +139,8 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
     try {
       // Lógica de Redirección a WhatsApp
-      const phone = (settings as any)?.whatsappPhone || '584120000000'; // Fallback sutil si no hay config
+      const rawPhone = (settings as any)?.whatsappPhone || '584120000000';
+      const phone = rawPhone.replace(/\D/g, ''); // Limpiar para wa.me
       
       const message = `*Nueva consulta desde VirtuAbogado*
       

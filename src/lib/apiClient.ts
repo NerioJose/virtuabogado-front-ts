@@ -43,8 +43,6 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) 
-
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -61,8 +59,6 @@ export const apiClient = {
     async put<T>(url: string, body: any): Promise<T> {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
-
-        if (session) 
 
         const response = await fetch(url, {
             method: 'PUT',
@@ -81,8 +77,6 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) 
-
         const response = await fetch(url, {
             method: 'PATCH',
             headers: {
@@ -99,8 +93,6 @@ export const apiClient = {
     async delete<T>(url: string): Promise<T> {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
-
-        if (session) 
 
         const response = await fetch(url, {
             method: 'DELETE',

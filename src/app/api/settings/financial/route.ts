@@ -14,16 +14,7 @@ export async function GET(request: NextRequest) {
         
         const supabase = await createClient();
 
-        // Verificar autenticación
-        let {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-            console.warn('⚠️ [GET] No autorizado');
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
+        // Configuración financiera pública para lectura (permite a Contacto y Checkout acceder sin sesión)
 
         const getSettingsModel = () => {
              const p = prisma as any;

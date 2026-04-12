@@ -16,6 +16,15 @@ export async function GET(request: NextRequest) {
 
         // Configuración financiera pública para lectura (permite a Contacto y Checkout acceder sin sesión)
 
+        let isAdmin = false;
+        if (user) {
+            const dbUser = await prisma.user.findUnique({
+                 where: { id: user.id },
+                 select: { rol: true }
+            });
+            isAdmin = dbUser?.rol === 'ADMIN';
+        }
+
         const getSettingsModel = () => {
              const p = prisma as any;
              return p.financialSettings || p.FinancialSettings || p['FinancialSettings'];
@@ -29,12 +38,15 @@ export async function GET(request: NextRequest) {
             
             if (rawResult && rawResult.length > 0) {
                 return NextResponse.json({
-                    lawyerCommissionPercentage: Number(rawResult[0].lawyer_commission_percentage),
-                    operationalCostsPercentage: Number(rawResult[0].operational_costs_percentage),
+                    id: FINANCIAL_SETTINGS_ID,
+                    lawyerCommissionPercentage: isAdmin ? Number(rawResult[0].lawyer_commission_percentage) : 0,
+                    operationalCostsPercentage: isAdmin ? Number(rawResult[0].operational_costs_percentage) : 0,
                     taxPercentage: Number(rawResult[0].tax_percentage),
-                    platformFeePercentage: Number(rawResult[0].platform_fee_percentage),
-                    simulationBase: Number(rawResult[0].simulation_base || 0),
+                    platformFeePercentage: isAdmin ? Number(rawResult[0].platform_fee_percentage) : 0,
+                    simulationBase: isAdmin ? Number(rawResult[0].simulation_base || 0) : 0,
                     whatsappPhone: rawResult[0].whatsapp_phone || null,
+                    updatedAt: rawResult[0].updated_at || new Date(),
+                    updatedBy: isAdmin ? rawResult[0].updated_by : undefined,
                 });
             }
         }
@@ -60,14 +72,14 @@ export async function GET(request: NextRequest) {
 
         const response = {
             id: settings!.id,
-            lawyerCommissionPercentage: Number(settings!.lawyer_commission_percentage),
-            operationalCostsPercentage: Number(settings!.operational_costs_percentage),
+            lawyerCommissionPercentage: isAdmin ? Number(settings!.lawyer_commission_percentage) : 0,
+            operationalCostsPercentage: isAdmin ? Number(settings!.operational_costs_percentage) : 0,
             taxPercentage: Number(settings!.tax_percentage),
-            platformFeePercentage: Number(settings!.platform_fee_percentage),
-            simulationBase: Number(settings!.simulation_base || 0),
+            platformFeePercentage: isAdmin ? Number(settings!.platform_fee_percentage) : 0,
+            simulationBase: isAdmin ? Number(settings!.simulation_base || 0) : 0,
             whatsappPhone: (settings as any).whatsappPhone || null,
             updatedAt: settings!.updated_at,
-            updatedBy: settings!.updated_by,
+            updatedBy: isAdmin ? settings!.updated_by : undefined,
         };
 
         return NextResponse.json(response);

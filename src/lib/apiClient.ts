@@ -12,20 +12,6 @@ export const apiClient = {
         const supabase = createClient();
         let { data: { session } } = await supabase.auth.getSession();
         
-        if (!session) {
-            // 
-            const { data: refreshData } = await supabase.auth.refreshSession();
-            session = refreshData.session;
-        }
-
-        if (!session) {
-            // Silenciamos este log para evitar ruido en la consola
-            // console.warn(`🕵️ apiClient: Petición cancelada (Falta de sesión) para ${url}`);
-            throw new ApiError(401, 'No hay una sesión activa para realizar esta petición.');
-        }
-
-        
-
         const response = await fetch(url, {
             ...options,
             headers: {

@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
         const supabase = await createClient();
 
         // Configuración financiera pública para lectura (permite a Contacto y Checkout acceder sin sesión)
+        const { data: { user } } = await supabase.auth.getUser();
 
         let isAdmin = false;
         if (user) {

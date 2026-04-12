@@ -27,7 +27,7 @@ export const useServices = (options?: any) => {
     // Sincronizar con el store de Zustand cuando cambien los datos
     useEffect(() => {
         if (query.data) {
-            setServices(query.data);
+            setServices(query.data as any);
         }
     }, [query.data, setServices]);
 
@@ -45,7 +45,7 @@ export const useAdminServices = () => {
 
     useEffect(() => {
         if (query.data) {
-            setServices(query.data);
+            setServices(query.data as any);
         }
     }, [query.data, setServices]);
 

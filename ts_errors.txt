@@ -1,0 +1,12 @@
+src/app/admin/page.tsx(477,7): error TS2322: Type 'ElementoSeleccionable' is not assignable to type 'ElementoModal | undefined'.
+  Type 'null' is not assignable to type 'ElementoModal | undefined'.
+src/components/abogado/PerfilAbogadoPanel.tsx(260,13): error TS2552: Cannot find name 'FiClock'. Did you mean 'FiLock'?
+src/components/admin/FinanzasPanel.tsx(24,14): error TS2304: Cannot find name 'ElementoSeleccionable'.
+src/components/contacto/FormularioContacto.tsx(142,31): error TS2339: Property 'whatsappPhone' does not exist on type '{}'.
+src/components/contacto/FormularioContacto.tsx(180,58): error TS2339: Property 'whatsappPhone' does not exist on type '{}'.
+src/components/contacto/InformacionContacto.tsx(31,26): error TS2339: Property 'whatsappPhone' does not exist on type '{}'.
+src/components/contacto/InformacionContacto.tsx(31,55): error TS2339: Property 'whatsappPhone' does not exist on type '{}'.
+src/features/checkout/components/ServiceSummary.tsx(16,37): error TS2339: Property 'taxPercentage' does not exist on type '{}'.
+src/features/documents/hooks/useDocumentListViewModel.tsx(5,31): error TS2307: Cannot find module '../DocumentList' or its corresponding type declarations.
+src/features/services/hooks/useServices.ts(30,25): error TS2345: Argument of type '{}' is not assignable to parameter of type 'Service[]'.
+  Type '{}' is missing the following properties from type 'Service[]': length, pop, push, concat, and 35 more.

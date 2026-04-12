@@ -28,7 +28,7 @@ const InformacionContacto = React.memo(() => {
         </svg>
       ),
       title: 'WhatsApp / Teléfono',
-      primary: settings?.whatsappPhone ? `+${settings.whatsappPhone}` : 'Contactar vía web',
+      primary: (settings as any)?.whatsappPhone ? `+${(settings as any).whatsappPhone}` : 'Contactar vía web',
       secondary: 'Lunes a Viernes, 9:00 - 18:00'
     },
     {

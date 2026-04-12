@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FiFile, FiFileText } from 'react-icons/fi';
-import { DocumentoItem } from '../DocumentList';
+import { DocumentoItem } from '../components/DocumentList';
 
 export function useDocumentListViewModel() {
   

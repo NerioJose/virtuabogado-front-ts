@@ -102,6 +102,7 @@ export default function ModalContainer({
 			casos: <FiBriefcase className="h-6 w-6" />,
 			finanzas: <FiDollarSign className="h-6 w-6" />,
 			configuracion: <FiSettings className="h-6 w-6" />,
+			dashboard: <FiBriefcase className="h-6 w-6" />,
 		};
 
 		return iconos[seccion] || <FiX className="h-6 w-6" />;

@@ -19,7 +19,9 @@ export type CampoFormulario = {
 
 // Helper function moved to the hook or exported for use
 export const obtenerCamposPorSeccion = (seccion: string, tipo: string): CampoFormulario[] => {
-  switch (seccion) {
+  // Dashboard usa los mismos campos que Casos
+  const effectiveSeccion = seccion === 'dashboard' ? 'casos' : seccion;
+  switch (effectiveSeccion) {
     case 'abogados':
       return [
         { key: 'nombre', label: 'Nombre completo', type: 'text', required: true },

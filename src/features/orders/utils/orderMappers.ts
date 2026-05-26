@@ -1,4 +1,5 @@
 import { Order, OrderStatus } from '../types/orders.types';
+import { formatOrderId } from '@/lib/formatOrderId';
 
 /**
  * Mapea el estado de la orden del sistema a un estado visual para el cliente
@@ -131,7 +132,7 @@ export const mapOrderToServicio = (order: Order): ServicioCliente => {
 
     return {
         id: order.id,
-        numeroOrden: order.id,
+        numeroOrden: formatOrderId(order.numericId, order.createdAt),
         nombre: serviceName,
         descripcion: getServiceDescription(serviceName),
         fecha: formatOrderDate(order.createdAt),

@@ -4,29 +4,36 @@ import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
-    directPrisma: PrismaClient | undefined;
 };
 
-let poolerCongested = false;
-let congestedAt = 0;
+function createPrismaClient() {
+    const isDev = process.env.NODE_ENV === 'development';
 
-function createPoolClient(connectionString: string, max: number, timeoutMs: number) {
-    return new Pool({
-        connectionString,
-        max,
+    // ⚠️ SERVERLESS: SIEMPRE usar pooler (Supavisor). La conexión directa
+    // multiplica pools por cada función serverless de Vercel y agota
+    // el límite de conexiones de PostgreSQL (15 en plan free).
+    // El pooler multiplexa N clientes en pocas conexiones reales.
+    const poolerUrl = process.env.DATABASE_URL_POOLER;
+    const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+    
+    const dbUrl = poolerUrl || directUrl;
+    const usingPooler = !!poolerUrl;
+
+    if (!dbUrl) {
+        console.error('❌ [Prisma] No hay URL de base de datos configurada.');
+    }
+
+    // Serverless: pools pequeños por instancia, el pooler se encarga de encolar
+    const maxConnections = isDev ? 10 : (usingPooler ? 5 : 3);
+
+    const pool = new Pool({
+        connectionString: dbUrl,
+        max: maxConnections,
         idleTimeoutMillis: 3000,
-        connectionTimeoutMillis: timeoutMs,
+        connectionTimeoutMillis: isDev ? 10000 : 10000, // 10s en prod para dar tiempo al pooler
     });
-}
-
-function createPrismaFromUrl(
-    connectionString: string,
-    max: number,
-    timeoutMs: number,
-    isDev: boolean,
-): PrismaClient {
-    const pool = createPoolClient(connectionString, max, timeoutMs);
     const adapter = new PrismaPg(pool);
+
     const client = new PrismaClient({ 
         adapter,
         log: isDev ? [
@@ -50,52 +57,10 @@ function createPrismaFromUrl(
     return client;
 }
 
-function createPrismaClient(): PrismaClient {
-    const isDev = process.env.NODE_ENV === 'development';
-    const poolerUrl = process.env.DATABASE_URL_POOLER;
-    const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-    if (poolerUrl) {
-        const client = createPrismaFromUrl(poolerUrl, isDev ? 10 : 5, isDev ? 10000 : 5000, isDev);
-        if (directUrl) {
-            const directClient = createPrismaFromUrl(directUrl, isDev ? 20 : 15, 5000, isDev);
-            globalForPrisma.directPrisma = directClient;
-        }
-        return client;
-    }
-
-    if (directUrl) {
-        return createPrismaFromUrl(directUrl, isDev ? 20 : 15, 5000, isDev);
-    }
-
-    throw new Error('❌ [Prisma] No hay URL de base de datos configurada.');
+if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prisma;
 }
-
-function getActiveClient(): PrismaClient {
-    if (poolerCongested && globalForPrisma.directPrisma) {
-        const elapsed = Date.now() - congestedAt;
-        if (elapsed < 120_000) return globalForPrisma.directPrisma;
-        poolerCongested = false;
-    }
-    if (!globalForPrisma.prisma) {
-        globalForPrisma.prisma = createPrismaClient();
-    }
-    return globalForPrisma.prisma;
-}
-
-export function useDirectConnection(): void {
-    if (!poolerCongested && globalForPrisma.directPrisma) {
-        poolerCongested = true;
-        congestedAt = Date.now();
-    }
-}
-
-// Proxy: permite que `prisma.$queryRaw`, `prisma.order.findMany()`, etc.
-// usen el cliente activo (pooler o directo) según la congestión
-export const prisma = new Proxy<PrismaClient>({} as PrismaClient, {
-    get(_target, prop) {
-        return (getActiveClient() as any)[prop];
-    }
-}) as PrismaClient;
 
 export default prisma;

@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { broadcastOrderUpdate } from '@/lib/broadcast';
-import { notifyNewCase, notifyOrderStatusUpdate } from '@/lib/push-notifications';
+import { notifyNewCase, notifyOrderStatusUpdate, notifyCaseCompleted } from '@/lib/push-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,6 +114,11 @@ export async function PATCH(
                         nombre: true,
                         email: true
                     }
+                },
+                lawyer: {
+                    select: {
+                        nombre: true
+                    }
                 }
             }
         });
@@ -159,6 +164,30 @@ export async function PATCH(
         if (body.status === 'EN_PROGRESO' || body.status === 'COMPLETADO' || body.lawyerId) {
             notifyOrderStatusUpdate(order.userId, order.id, order.status, order.service.titulo)
                 .catch((e: Error | any) => console.error('Error enviando push al cliente:', e));
+        }
+
+        // ✅ Caso Completado: notificar a los admins + auto-crear liquidación si aplica
+        if (body.status === 'COMPLETADO' || order.status === 'COMPLETADO') {
+            const commissionAmount = Number(order.commissionAmount || 0);
+            notifyCaseCompleted(order.id, order.lawyer?.nombre, order.service.titulo, commissionAmount > 0 ? commissionAmount.toString() : undefined)
+                .catch((e: Error | any) => console.error('Error enviando push de caso completado:', e));
+
+            if (commissionAmount > 0 && order.lawyerId) {
+                prisma.lawyerPayout.create({
+                    data: {
+                        lawyerId: order.lawyerId,
+                        amount: commissionAmount,
+                        status: 'PENDIENTE',
+                        method: 'Transferencia Bancaria',
+                    }
+                }).then(() => {
+                    
+                }).catch((e: Error | any) => {
+                    if (e.code !== 'P2002' && !e.message?.includes('Unique constraint')) {
+                        console.error('Error auto-creando liquidación:', e);
+                    }
+                });
+            }
         }
 
         return NextResponse.json(formattedOrder);

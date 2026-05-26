@@ -64,6 +64,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 						src={user.picture || "/user.png"}
 						alt="User"
 						fill
+						sizes="40px"
 						className="rounded-full border-2 border-azul-primario object-cover"
 						loading="lazy"
 					/>
@@ -107,53 +108,50 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 							<div className="py-2">
 								{/* Mis Servicios - Visible solo para clientes */}
 								{user.rol === UserRole.CLIENTE && (
-									<Link href="/mis-servicios">
-										<button
-											onClick={() => setIsDropdownOpen(false)}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between group transition-colors"
-										>
-											<div className="flex items-center space-x-3">
-												<FiFileText className="text-azul-primario" />
-												<span className="text-gray-700 group-hover:text-azul-primario">
-													Mis Servicios
-												</span>
-											</div>
-											{userActiveServices > 0 && (
-												<span className="bg-azul-primario text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-													{userActiveServices}
-												</span>
-											)}
-										</button>
+									<Link
+										href="/mis-servicios"
+										onClick={() => setIsDropdownOpen(false)}
+										className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between group transition-colors"
+									>
+										<div className="flex items-center space-x-3">
+											<FiFileText className="text-azul-primario" />
+											<span className="text-gray-700 group-hover:text-azul-primario">
+												Mis Servicios
+											</span>
+										</div>
+										{userActiveServices > 0 && (
+											<span className="bg-azul-primario text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+												{userActiveServices}
+											</span>
+										)}
 									</Link>
 								)}
 
 								{/* Abogado Panel (solo abogado) */}
 								{user.rol === UserRole.ABOGADO && (
-									<Link href="/abogado">
-										<button
-											onClick={() => setIsDropdownOpen(false)}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 group transition-colors"
-										>
-											<FiSettings className="text-azul-primario" />
-											<span className="text-gray-700 group-hover:text-azul-primario">
-												Panel de Abogado
-											</span>
-										</button>
+									<Link
+										href="/abogado"
+										onClick={() => setIsDropdownOpen(false)}
+										className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 group transition-colors"
+									>
+										<FiSettings className="text-azul-primario" />
+										<span className="text-gray-700 group-hover:text-azul-primario">
+											Panel de Abogado
+										</span>
 									</Link>
 								)}
 
 								{/* Admin Dashboard (solo admin) */}
 								{user.rol === UserRole.ADMIN && (
-									<Link href="/admin">
-										<button
-											onClick={() => setIsDropdownOpen(false)}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 group transition-colors"
-										>
-											<FiSettings className="text-azul-primario" />
-											<span className="text-gray-700 group-hover:text-azul-primario">
-												Admin Dashboard
-											</span>
-										</button>
+									<Link
+										href="/admin"
+										onClick={() => setIsDropdownOpen(false)}
+										className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-3 group transition-colors"
+									>
+										<FiSettings className="text-azul-primario" />
+										<span className="text-gray-700 group-hover:text-azul-primario">
+											Admin Dashboard
+										</span>
 									</Link>
 								)}
 							</div>
@@ -377,45 +375,43 @@ const Navbar = () => {
 						{user ? (
 							<div className="border-t pt-4 space-y-3">
 								<div className="flex items-center space-x-3">
-									<div className="relative w-8 h-8">
-										<Image
-											src={user.picture || "/user.png"}
-											alt="User"
-											fill
-											className="rounded-full border-2 border-azul-primario object-cover"
-										/>
-									</div>
+								<div className="relative w-8 h-8">
+									<Image
+										src={user.picture || "/user.png"}
+										alt="User"
+										fill
+										sizes="40px"
+										className="rounded-full border-2 border-azul-primario object-cover"
+									/>
+								</div>
 									<span className="text-azul-primario font-medium">
 										{getDisplayName(user)}
 									</span>
 								</div>
 								{user.rol === UserRole.CLIENTE && (
-									<Link href="/mis-servicios">
-										<button
-											onClick={() => setIsOpen(false)}
-											className="w-full btn-secondary px-4 py-2 text-left flex items-center justify-between">
-											<span>Mis Servicios</span>
-										</button>
+									<Link
+										href="/mis-servicios"
+										onClick={() => setIsOpen(false)}
+										className="w-full btn-secondary px-4 py-2 text-left flex items-center justify-between">
+										<span>Mis Servicios</span>
 									</Link>
 								)}
 
 								{user.rol === UserRole.ABOGADO && (
-									<Link href="/abogado">
-										<button
-											onClick={() => setIsOpen(false)}
-											className="w-full btn-secondary px-4 py-2 text-left">
-											Panel de Abogado
-										</button>
+									<Link
+										href="/abogado"
+										onClick={() => setIsOpen(false)}
+										className="w-full btn-secondary px-4 py-2 text-left">
+										Panel de Abogado
 									</Link>
 								)}
 
 								{user.rol === UserRole.ADMIN && (
-									<Link href="/admin">
-										<button
-											onClick={() => setIsOpen(false)}
-											className="w-full btn-secondary px-4 py-2 text-left">
-											Admin Dashboard
-										</button>
+									<Link
+										href="/admin"
+										onClick={() => setIsOpen(false)}
+										className="w-full btn-secondary px-4 py-2 text-left">
+										Admin Dashboard
 									</Link>
 								)}
 								<button
@@ -426,12 +422,11 @@ const Navbar = () => {
 							</div>
 						) : (
 							<div className="border-t pt-4 space-y-3">
-								<Link href="/login">
-									<button
-										className="w-full btn-primary px-5 py-2"
-										onClick={() => setIsOpen(false)}>
-										Iniciar sesión
-									</button>
+								<Link
+									href="/login"
+									className="w-full btn-primary px-5 py-2 block text-center"
+									onClick={() => setIsOpen(false)}>
+									Iniciar sesión
 								</Link>
 							</div>
 						)}

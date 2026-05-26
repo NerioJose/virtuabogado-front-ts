@@ -193,7 +193,7 @@ export function useGlobalChatListener() {
             personalSub.unsubscribe();
             if (globalChannel) globalChannel.unsubscribe();
         };
-    }, [user, queryClient, router]);
+    }, [user?.id, user?.rol]);
 
     const handleSubscribe = async () => {
         if (isSubscribing) return;

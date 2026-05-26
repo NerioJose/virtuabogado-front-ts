@@ -17,6 +17,7 @@ import {
     RotateCcw
 } from 'lucide-react';
 import { formatUSD } from '@/lib/finance';
+import { formatOrderId } from '@/lib/formatOrderId';
 
 interface Props {
     user: { id: string, rol: UserRole };
@@ -109,7 +110,7 @@ export function OrdersHistoryTable({ user }: Props) {
                             <div key={order.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all">
                                 {/* Header: ID & Status */}
                                 <div className="flex justify-between items-start mb-4">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{order.id.slice(0, 8)}</span>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{formatOrderId(order.numericId, order.createdAt)}</span>
                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black border uppercase tracking-tighter shadow-sm ${status.color}`}>
                                         <StatusIcon className="size-3" />
                                         {status.label}
@@ -201,7 +202,7 @@ export function OrdersHistoryTable({ user }: Props) {
                                             <tr key={order.id} className={`hover:bg-slate-50 transition-colors ${isPlaceholderData ? 'opacity-50' : ''}`}>
                                                 <td className="px-6 py-5">
                                                     <div className="text-sm font-black text-slate-900">
-                                                        #{order.id.slice(0, 8)}
+                                                        #{formatOrderId(order.numericId, order.createdAt)}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5 text-sm text-slate-600 font-black">

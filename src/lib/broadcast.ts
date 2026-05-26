@@ -141,3 +141,16 @@ export async function broadcastServiceUpdate(params: {
         console.warn('⚠️ [Broadcast] Error enviando broadcast de servicios:', err)
     );
 }
+
+export async function broadcastPayoutUpdate(params: {
+    payoutId: string;
+    lawyerId: string;
+    eventType: 'created' | 'finalized';
+}): Promise<void> {
+    const { payoutId, lawyerId, eventType } = params;
+    const payload = { payoutId, lawyerId, eventType, timestamp: new Date().toISOString() };
+    const broadcasts: Promise<boolean>[] = [];
+    broadcasts.push(sendBroadcast('app-updates', 'payout-updated', payload));
+    broadcasts.push(sendBroadcast(`global_${lawyerId}`, 'payout-updated', payload));
+    await Promise.allSettled(broadcasts);
+}

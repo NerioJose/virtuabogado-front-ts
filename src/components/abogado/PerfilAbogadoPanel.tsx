@@ -118,6 +118,7 @@ export default function PerfilAbogadoPanel({
 									src={abogado.picture || userImage}
 									alt={abogado.nombre}
 									fill
+									sizes="200px"
 									className="object-cover"
 									unoptimized={!!abogado.picture}
 								/>

@@ -92,7 +92,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-4">
                     <div className="relative w-14 h-14 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
-                      <Image src={userImage} alt={cliente.nombre} fill className="object-cover" />
+                      <Image src={userImage} alt={cliente.nombre} fill sizes="200px" className="object-cover" />
                     </div>
                     <div>
                       <h3 className="font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</h3>
@@ -176,7 +176,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           <div className="relative h-11 w-11 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
-                            <Image src={userImage} alt={cliente.nombre} fill className="object-cover" />
+                            <Image src={userImage} alt={cliente.nombre} fill sizes="200px" className="object-cover" />
                           </div>
                           <div>
                             <p className="text-sm font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</p>

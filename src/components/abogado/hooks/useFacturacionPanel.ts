@@ -44,7 +44,7 @@ export function useFacturacionPanel(abogadoId: string) {
         queryKey: ['PayoutHistory', abogadoId],
         queryFn: () => getPayoutHistory(abogadoId),
         enabled: !!abogadoId,
-        refetchInterval: 15000
+    
     });
 
     const payoutStatusMap = useMemo(() => {
@@ -59,7 +59,7 @@ export function useFacturacionPanel(abogadoId: string) {
 
     const facturas: Factura[] = useMemo(() => {
         return orders
-            .filter((o: any) => ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status))
+            .filter((o: any) => ['PENDIENTE', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status))
             .map((o: any) => {
                 let estado: Factura['estado'] = 'pendiente';
                 

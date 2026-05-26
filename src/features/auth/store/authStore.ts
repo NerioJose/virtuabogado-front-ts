@@ -88,6 +88,16 @@ export const useAuthStore = create<AuthState>()(
                 useCheckoutStore.getState().reset();
                 useOrdersStore.getState().reset();
 
+                // 4. Limpiar chat store
+                import('@/features/chat/store/chatStore').then(({ useChatStore }) => {
+                    useChatStore.getState().cleanup();
+                }).catch(() => {});
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('virtuabogado-clients-v2');
+                    localStorage.removeItem('virtuabogado-lawyers-v2');
+                    localStorage.removeItem('virtu-services-storage');
+                }
+
                 // 4. Limpiar React Query Cache (Previene 401s de polling/refetch)
                 import('@/lib/queryClient').then(({ queryClient }) => {
                     queryClient.clear();

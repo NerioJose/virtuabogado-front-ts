@@ -89,7 +89,7 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
         // 🏛️ Filter orders for income reporting
         const orders = allOrders.filter((o: any) => {
             const s = (o.status || '').toUpperCase();
-            return ['PAID', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(s);
+            return ['PENDIENTE', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(s);
         });
 
         // Orders that are COMPLETED but NOT yet paid out to the lawyer

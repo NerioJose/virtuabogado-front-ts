@@ -220,6 +220,31 @@ export async function notifyNewMessage(
 }
 
 /**
+ * ✅ Caso Completado (para Admins)
+ */
+export async function notifyCaseCompleted(orderId: string, lawyerName?: string, serviceName?: string, amount?: string) {
+    const admins = await prisma.user.findMany({
+        where: { rol: 'ADMIN', activo: true },
+        select: { id: true },
+    });
+    const lawyerDisplay = lawyerName || 'El abogado';
+    const serviceDisplay = serviceName || 'un caso';
+    const amountDisplay = amount ? ` ($${amount})` : '';
+    const promises = admins.map((admin) =>
+        sendPushNotification(admin.id, {
+            title: '✅ Caso Completado',
+            body: `${lawyerDisplay} ha completado ${serviceDisplay}${amountDisplay}. Revisa las liquidaciones pendientes.`,
+            url: `/admin?orden=${orderId}`,
+            tag: `completed-${orderId}`,
+            icon: '/logo/logo_sf_1.png',
+        })
+    );
+    const results = await Promise.allSettled(promises);
+    const sent = results.filter(r => r.status === 'fulfilled').length;
+    return { success: sent > 0, sent };
+}
+
+/**
  * 💸 Liquidación de Honorarios Procesada
  */
 export async function notifyPayoutCompleted(lawyerId: string, payoutId: string, amount: string) {

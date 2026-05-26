@@ -38,11 +38,11 @@ function createPrismaClient() {
         ] : ['error']
     });
 
-    // SISTEMA DE LOGGING SRE (Big-Tech Pattern)
+    // SISTEMA DE LOGGING SRE (Big-Tech Pattern) - Umbral elevado a 1000ms por latencia del pooler Supavisor en dev
     if (isDev) {
         // @ts-ignore
         client.$on('query', (e: any) => {
-            if (e.duration >= 200) {
+            if (e.duration >= 1000) {
                 console.warn(`\n⚠️  [Prisma Slow Query] (${e.duration}ms):`);
                 console.warn(`   Query: ${e.query}`);
                 console.warn(`   Params: ${e.params}\n`);

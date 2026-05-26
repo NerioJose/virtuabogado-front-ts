@@ -48,6 +48,7 @@ export default function NuestraHistoria() {
 								src="/logo/logo_sf_1.png"
 								alt="Nuestra Historia"
 								fill
+								sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 								className="object-contain p-4"
 								priority
 							/>

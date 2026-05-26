@@ -358,7 +358,7 @@ export default function ClientPanel({
                                 animate={{ opacity: 1 }}
                                 className="group hover:bg-slate-50/50 transition-colors"
                               >
-                                <td className="px-8 py-5 text-sm font-black text-azul-primario tracking-tighter">#{servicio.numeroOrden.slice(0, 8)}</td>
+                                <td className="px-8 py-5 text-sm font-black text-azul-primario tracking-tighter">#{servicio.numeroOrden}</td>
                                 <td className="px-8 py-5">
                                   <p className="text-sm font-black text-slate-700">{servicio.nombre}</p>
                                 </td>
@@ -394,7 +394,7 @@ export default function ClientPanel({
                         >
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-black text-azul-primario bg-azul-primario/5 px-2 py-0.5 rounded-lg">#{servicio.numeroOrden.slice(0, 8)}</span>
+                              <span className="text-[10px] font-black text-azul-primario bg-azul-primario/5 px-2 py-0.5 rounded-lg">#{servicio.numeroOrden}</span>
                               <span className="text-[10px] font-bold text-slate-400">{servicio.fecha}</span>
                             </div>
                             <h4 className="text-sm font-black text-slate-800 truncate">{servicio.nombre}</h4>

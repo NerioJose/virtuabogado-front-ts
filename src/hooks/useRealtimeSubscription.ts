@@ -39,6 +39,24 @@ export const useRealtimeSubscription = () => {
         return () => clearInterval(pollInterval);
     }, [queryClient, user?.id]);
 
+    // Polling fallback for payout data
+    useEffect(() => {
+        const pollInterval = setInterval(() => {
+            if (document.visibilityState === 'visible' && user?.id) {
+                queryClient.refetchQueries({
+                    queryKey: ['PayoutHistory'],
+                    type: 'active'
+                });
+                queryClient.refetchQueries({
+                    queryKey: ['PendingPayouts'],
+                    type: 'active'
+                });
+            }
+        }, 30_000);
+
+        return () => clearInterval(pollInterval);
+    }, [queryClient, user?.id]);
+
     // ═══════════════════════════════════════════════
     // BROADCAST LISTENER - sincronización instantánea entre usuarios
     // Las mutaciones via Prisma (PATCH/POST API) no disparan WAL events.
@@ -58,6 +76,11 @@ export const useRealtimeSubscription = () => {
             const eventName = payload?.event || (payload?.payload as any)?.event;
             const eventPayload = payload?.payload || payload;
             
+            if (eventName === 'order-updated') {
+                queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
+            }
+            
             if (eventName === 'service-updated') {
                 
                 if (eventPayload?.serviceId) {
@@ -66,6 +89,14 @@ export const useRealtimeSubscription = () => {
                 }
                 queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
             }
+            
+            if (eventName === 'payout-updated') {
+                queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['Finance'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['FinancialSummary'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
+            }
         };
 
         // Canal global - todos los administradores y usuarios lo reciben
@@ -73,6 +104,7 @@ export const useRealtimeSubscription = () => {
         globalChannel
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
+            .on('broadcast', { event: 'payout-updated' }, handleUpdate)
             .subscribe((status) => {
                 
             });
@@ -81,6 +113,7 @@ export const useRealtimeSubscription = () => {
         const personalChannel = supabase.channel(`global_${user.id}`);
         personalChannel
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
+            .on('broadcast', { event: 'payout-updated' }, handleUpdate)
             .subscribe((status) => {
                 
             });
@@ -161,6 +194,14 @@ export const useRealtimeSubscription = () => {
                     }
                     queryClient.invalidateQueries({ queryKey: ['Message'] });
                     break;
+                case 'LawyerPayouts':
+                    
+                    queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['Finance'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['FinancialSummary'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
+                    break;
             }
         };
 
@@ -186,9 +227,9 @@ export const useRealtimeSubscription = () => {
 
             let tables = ['Order', 'Message', 'Service', 'PaymentMethod'];
             if (user?.rol === 'ADMIN') {
-                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod'];
+                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod', 'LawyerPayouts'];
             } else if (user?.rol === 'ABOGADO') {
-                tables = ['User', 'Order', 'Service', 'Message', 'PaymentMethod'];
+                tables = ['User', 'Order', 'Service', 'Message', 'PaymentMethod', 'LawyerPayouts'];
             }
 
             tables.forEach(table => {

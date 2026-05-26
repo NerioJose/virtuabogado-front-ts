@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string) {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return new Uint8Array(0);
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding)
         .replace(/-/g, '+')

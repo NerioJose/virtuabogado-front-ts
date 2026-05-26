@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 
@@ -53,6 +53,8 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const mountedRef = useRef(true);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Debounce para validación en tiempo real
   const debouncedEmail = useDebounce(formData.email, 500);
@@ -153,7 +155,8 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
       const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       
       // Simulación de delay para UX
-      setTimeout(() => {
+      const timer1 = setTimeout(() => {
+        if (!mountedRef.current) return;
         window.open(waUrl, '_blank');
         
         setIsSubmitting(false);
@@ -169,10 +172,13 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
         onSubmitSuccess?.();
 
-        setTimeout(() => {
+        const timer2 = setTimeout(() => {
+          if (!mountedRef.current) return;
           setSubmitSuccess(false);
         }, 5000);
+        timersRef.current.push(timer2);
       }, 1000);
+      timersRef.current.push(timer1);
 
     } catch (error) {
       console.error('Error al procesar el contacto:', error);
@@ -188,6 +194,14 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
     { value: 'Información general', label: 'Información general' },
     { value: 'Otro', label: 'Otro' }
   ], []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, []);
 
   const loadingSpinner = useMemo(() => (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

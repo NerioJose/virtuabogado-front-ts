@@ -51,13 +51,14 @@ export default function SectionTestimonios() {
 							className="bg-white p-6 rounded-xl shadow-md">
 							<div className="flex items-center gap-4 mb-4">
 								<div className="w-12 h-12 rounded-full overflow-hidden relative">
-									<Image
-										src={testimonial.avatar}
-										alt={testimonial.name}
-										fill
-										className="object-cover"
-										loading="lazy"
-									/>
+								<Image
+									src={testimonial.avatar}
+									alt={testimonial.name}
+									fill
+									sizes="150px"
+									className="object-cover"
+									loading="lazy"
+								/>
 								</div>
 								<div>
 									<h4 className="font-bold text-azul-primario">

@@ -101,7 +101,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-4">
                     <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-white">
-                      <Image src={userImage} alt={lawyer.nombre} fill className="object-cover" />
+                      <Image src={userImage} alt={lawyer.nombre} fill sizes="200px" className="object-cover" />
                     </div>
                     <div>
                       <h3 className="font-black text-azul-primario leading-tight">{formatLawyerName(lawyer.nombre)}</h3>
@@ -180,7 +180,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           <div className="relative h-12 w-12 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
-                            <Image src={userImage} alt={lawyer.nombre} fill className="object-cover" />
+                            <Image src={userImage} alt={lawyer.nombre} fill sizes="200px" className="object-cover" />
                           </div>
                           <div>
                             <p className="text-sm font-black text-azul-primario leading-tight">{formatLawyerName(lawyer.nombre)}</p>

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { PayoutStatus } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { notifyPayoutCompleted } from '@/lib/push-notifications';
+import { broadcastPayoutUpdate } from '@/lib/broadcast';
 import { formatUSD, serializeFinance } from '@/lib/finance';
 
 /**
@@ -106,6 +107,10 @@ export async function createPayout(data: {
 
         revalidatePath('/admin/finanzas');
         revalidatePath('/abogado/finanzas');
+
+        broadcastPayoutUpdate({ payoutId: payout.id, lawyerId: data.lawyerId, eventType: 'created' })
+            .catch(err => console.error('Error enviando broadcast de liquidación:', err));
+
         return serializeFinance({ success: true, payout });
     } catch (error) {
         console.error('Error creating payout:', error);
@@ -148,6 +153,11 @@ export async function finalizePayout(payoutId: string, reference: string) {
         revalidatePath('/admin/finanzas');
         revalidatePath('/abogado/finanzas');
         revalidatePath('/api/orders', 'page');
+
+        if (updatedPayout.lawyerId) {
+            broadcastPayoutUpdate({ payoutId: updatedPayout.id, lawyerId: updatedPayout.lawyerId, eventType: 'finalized' })
+                .catch(err => console.error('Error enviando broadcast de liquidación:', err));
+        }
         
         return serializeFinance({ success: true, payout: updatedPayout });
     } catch (error) {

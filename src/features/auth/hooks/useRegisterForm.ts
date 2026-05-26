@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { UserRole } from '@/shared/types/entities.types';
 
@@ -13,6 +13,8 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
     });
     const [remember, setRemember] = useState(true);
     const [passwordError, setPasswordError] = useState('');
+
+    const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const { register, isLoading, error } = useAuth();
 
@@ -40,16 +42,22 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
 
     // Guardar preferencia y limpiar si es necesario
     useEffect(() => {
-        localStorage.setItem('remember_me', remember.toString());
-        if (!remember) {
-            localStorage.removeItem('remember_email');
-            localStorage.removeItem('remember_nombre');
-            localStorage.removeItem('remember_telefono');
-        } else {
-            if (formData.email) localStorage.setItem('remember_email', formData.email);
-            if (formData.nombre) localStorage.setItem('remember_nombre', formData.nombre);
-            if (formData.telefono) localStorage.setItem('remember_telefono', formData.telefono);
-        }
+        if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = setTimeout(() => {
+            localStorage.setItem('remember_me', remember.toString());
+            if (!remember) {
+                localStorage.removeItem('remember_email');
+                localStorage.removeItem('remember_nombre');
+                localStorage.removeItem('remember_telefono');
+            } else {
+                if (formData.email) localStorage.setItem('remember_email', formData.email);
+                if (formData.nombre) localStorage.setItem('remember_nombre', formData.nombre);
+                if (formData.telefono) localStorage.setItem('remember_telefono', formData.telefono);
+            }
+        }, 500);
+        return () => {
+            if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+        };
     }, [remember, formData.email, formData.nombre, formData.telefono]);
 
     const handleSubmit = async (e: React.FormEvent) => {

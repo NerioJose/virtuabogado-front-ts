@@ -4,6 +4,7 @@ import { FiSend, FiPaperclip, FiLock, FiVolume2, FiVolumeX, FiFileText, FiDownlo
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useChatViewModel } from '../hooks/useChatViewModel';
 import { linkifyText, getMessageContentInfo } from '../utils/chatHelpers';
+import { formatOrderId } from '@/lib/formatOrderId';
 
 interface ChatWindowProps {
     orderId: string;
@@ -142,7 +143,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
             {/* Header */}
             <div className="p-4 border-b bg-gray-50 rounded-t-lg flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2 min-w-0">
-                    <h3 className="font-semibold text-gray-700 truncate text-sm md:text-base">Chat del Caso #{orderId.slice(0, 8)}</h3>
+                    <h3 className="font-semibold text-gray-700 truncate text-sm md:text-base">Chat del Caso #{order?.numericId ? formatOrderId(order.numericId, order.createdAt) : orderId.slice(0, 8)}</h3>
                     <button 
                         onClick={toggleSound} 
                         type="button"

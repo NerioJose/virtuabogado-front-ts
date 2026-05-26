@@ -60,6 +60,7 @@ export const useRealtimeSubscription = () => {
             if (eventName === 'order-updated') {
                 queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'], refetchType: 'all' });
             }
             
             if (eventName === 'service-updated') {
@@ -73,6 +74,7 @@ export const useRealtimeSubscription = () => {
                 queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['Finance'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['FinancialSummary'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
             }
         };
@@ -141,6 +143,7 @@ export const useRealtimeSubscription = () => {
                     queryClient.invalidateQueries({ queryKey: ['DashboardStats'] });
                     queryClient.invalidateQueries({ queryKey: ['Finance'] });
                     queryClient.invalidateQueries({ queryKey: ['FinancialSummary'] });
+                    queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'] });
                     
                     if (payload.new && 'id' in payload.new) {
                         queryClient.refetchQueries({ 
@@ -178,6 +181,7 @@ export const useRealtimeSubscription = () => {
                     queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
                     queryClient.invalidateQueries({ queryKey: ['Finance'], refetchType: 'all' });
                     queryClient.invalidateQueries({ queryKey: ['FinancialSummary'], refetchType: 'all' });
+                    queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'], refetchType: 'all' });
                     queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
                     break;
             }

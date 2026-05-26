@@ -6,6 +6,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { motion } from 'framer-motion';
 import { OrderStatus } from '@/features/orders/types/orders.types';
+import { formatOrderId } from '@/lib/formatOrderId';
 import { useCasosAbogadoPanel } from './hooks/useCasosAbogadoPanel';
 
 interface CasosAbogadoPanelProps {
@@ -53,7 +54,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
             Volver a mis casos
           </button>
           <h2 className="text-xl font-bold text-gray-800">
-            Chat: {caso?.items[0]?.serviceName || 'Caso'}
+            {caso ? `${formatOrderId(caso.numericId, caso.createdAt)} - ${caso.items?.[0]?.serviceName || 'Caso'}` : 'Chat'}
           </h2>
         </div>
 
@@ -201,7 +202,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                   <h3 className="text-sm font-black text-slate-800 leading-tight mb-1">
                     {caso.items[0]?.serviceName || 'Servicio Legal'}
                   </h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {caso.id.slice(0, 8)}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatOrderId(caso.numericId, caso.createdAt)}</p>
                 </div>
               </div>
 
@@ -293,7 +294,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                             <div className="text-sm font-black text-slate-800 tracking-tight">
                               {caso.items[0]?.serviceName || 'Servicio Legal'}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: {caso.id.slice(0, 8)}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{formatOrderId(caso.numericId, caso.createdAt)}</div>
                          </div>
                          {unreadOrders.includes(caso.id) && (
                            <div className="relative flex h-2 w-2">

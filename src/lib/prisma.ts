@@ -4,30 +4,29 @@ import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
+    directPrisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
-    const isDev = process.env.NODE_ENV === 'development';
-    
-    // PRIORIDAD: Usar DATABASE_URL_POOLER en producción para Connection Pooling (Supavisor Puerto 6543)
-    const dbUrl = process.env.DATABASE_URL_POOLER || process.env.DATABASE_URL;
-    
-    if (!dbUrl) {
-        console.error('❌ [Prisma] Error: Ni DATABASE_URL ni DATABASE_URL_POOLER están definidas.');
-    }
+let poolerCongested = false;
+let congestedAt = 0;
 
-    if (!isDev) {
-        
-    }
-
-    const pool = new Pool({
-        connectionString: dbUrl,
-        max: isDev ? 10 : 3,
-        idleTimeoutMillis: 3000, // 3s - libera conexiones rápido para dejar espacio a otros
-        connectionTimeoutMillis: isDev ? 10000 : 3000, // 3s en prod - falla rápido si está congestionado
+function createPoolClient(connectionString: string, max: number, timeoutMs: number) {
+    return new Pool({
+        connectionString,
+        max,
+        idleTimeoutMillis: 3000,
+        connectionTimeoutMillis: timeoutMs,
     });
-    const adapter = new PrismaPg(pool);
+}
 
+function createPrismaFromUrl(
+    connectionString: string,
+    max: number,
+    timeoutMs: number,
+    isDev: boolean,
+): PrismaClient {
+    const pool = createPoolClient(connectionString, max, timeoutMs);
+    const adapter = new PrismaPg(pool);
     const client = new PrismaClient({ 
         adapter,
         log: isDev ? [
@@ -37,7 +36,6 @@ function createPrismaClient() {
         ] : ['error']
     });
 
-    // SISTEMA DE LOGGING SRE (Big-Tech Pattern) - Umbral elevado a 1000ms por latencia del pooler Supavisor en dev
     if (isDev) {
         // @ts-ignore
         client.$on('query', (e: any) => {
@@ -52,10 +50,52 @@ function createPrismaClient() {
     return client;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function createPrismaClient(): PrismaClient {
+    const isDev = process.env.NODE_ENV === 'development';
+    const poolerUrl = process.env.DATABASE_URL_POOLER;
+    const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
-if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = prisma;
+    if (poolerUrl) {
+        const client = createPrismaFromUrl(poolerUrl, isDev ? 10 : 5, isDev ? 10000 : 5000, isDev);
+        if (directUrl) {
+            const directClient = createPrismaFromUrl(directUrl, isDev ? 20 : 15, 5000, isDev);
+            globalForPrisma.directPrisma = directClient;
+        }
+        return client;
+    }
+
+    if (directUrl) {
+        return createPrismaFromUrl(directUrl, isDev ? 20 : 15, 5000, isDev);
+    }
+
+    throw new Error('❌ [Prisma] No hay URL de base de datos configurada.');
 }
+
+function getActiveClient(): PrismaClient {
+    if (poolerCongested && globalForPrisma.directPrisma) {
+        const elapsed = Date.now() - congestedAt;
+        if (elapsed < 120_000) return globalForPrisma.directPrisma;
+        poolerCongested = false;
+    }
+    if (!globalForPrisma.prisma) {
+        globalForPrisma.prisma = createPrismaClient();
+    }
+    return globalForPrisma.prisma;
+}
+
+export function useDirectConnection(): void {
+    if (!poolerCongested && globalForPrisma.directPrisma) {
+        poolerCongested = true;
+        congestedAt = Date.now();
+    }
+}
+
+// Proxy: permite que `prisma.$queryRaw`, `prisma.order.findMany()`, etc.
+// usen el cliente activo (pooler o directo) según la congestión
+export const prisma = new Proxy<PrismaClient>({} as PrismaClient, {
+    get(_target, prop) {
+        return (getActiveClient() as any)[prop];
+    }
+}) as PrismaClient;
 
 export default prisma;

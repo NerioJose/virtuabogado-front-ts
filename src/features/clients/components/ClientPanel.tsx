@@ -24,6 +24,8 @@ import ClientSidebar from './ClientSidebar';
 import ClientStats from './ClientStats';
 import { getStatusColor, getStatusText, type ServicioCliente } from '@/features/orders';
 import { useClientPanel } from '../hooks/useClientPanel';
+import { ChatWindow } from '@/features/chat/components/ChatWindow';
+import { FiMessageSquare, FiArrowLeft } from 'react-icons/fi';
 
 interface ClientPanelProps {
   user: any;
@@ -415,6 +417,58 @@ export default function ClientPanel({
                     </div>
                   </div>
                 )}
+              </motion.div>
+            )}
+
+            {seccionActiva === 'mensajes' && (
+              <motion.div
+                key="mensajes"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="w-full"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => setSeccionActiva('servicios')} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                    <FiArrowLeft size={20} className="text-slate-500" />
+                  </button>
+                  <div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center text-azul-primario">
+                    <FiMessageSquare size={20} />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Mensajes</h2>
+                </div>
+
+                <div className="space-y-4">
+                  {servicios.length === 0 ? (
+                    <div className="py-16 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                      <FiMessageSquare className="mx-auto text-slate-300 mb-4" size={48} />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No tienes mensajes aún</p>
+                      <p className="text-slate-300 text-xs mt-2">Los mensajes aparecerán cuando tengas un caso activo</p>
+                    </div>
+                  ) : (
+                    servicios.map((servicio) => (
+                      <div key={servicio.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-azul-primario/10 flex items-center justify-center shrink-0">
+                              <FiMessageSquare className="text-azul-primario" size={18} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-slate-800 text-sm truncate">{servicio.nombre}</p>
+                              <p className="text-[10px] font-bold text-azul-primario uppercase tracking-tight">{servicio.numeroOrden}</p>
+                            </div>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusColor(servicio.estado)}`}>
+                            {getStatusText(servicio.estado)}
+                          </span>
+                        </div>
+                        <div className="h-64 md:h-80 border border-slate-100 rounded-2xl overflow-hidden">
+                          <ChatWindow orderId={servicio.id} className="h-full" />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </motion.div>
             )}
 

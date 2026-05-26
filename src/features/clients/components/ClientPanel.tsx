@@ -16,7 +16,8 @@ import {
   FiUser,
   FiLock,
   FiShield,
-  FiCheck
+  FiCheck,
+  FiArrowLeft
 } from 'react-icons/fi';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -25,7 +26,6 @@ import ClientStats from './ClientStats';
 import { getStatusColor, getStatusText, type ServicioCliente } from '@/features/orders';
 import { useClientPanel } from '../hooks/useClientPanel';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
-import { FiMessageSquare, FiArrowLeft } from 'react-icons/fi';
 
 interface ClientPanelProps {
   user: any;

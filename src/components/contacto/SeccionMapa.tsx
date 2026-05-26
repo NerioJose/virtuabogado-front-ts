@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { FiMapPin } from 'react-icons/fi';
+
+const MAP_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d507183.4768929463!2d-68.1994!3d10.1621!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e8063ac94b61481%3A0x1d1b0f4c1c1c1c1c!2sEstado%20Carabobo%2C%20Venezuela!5e0!3m2!1ses!2sve!4v1732206000000!5m2!1ses!2sve&z=9';
 
 const SeccionMapa = React.memo(() => {
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [showMap, setShowMap] = React.useState(false);
 
   return (
     <div>
@@ -27,25 +28,11 @@ const SeccionMapa = React.memo(() => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="w-full h-[450px] rounded-xl overflow-hidden shadow-lg relative bg-gray-100 flex items-center justify-center group"
+        className="w-full h-[300px] md:h-[450px] rounded-xl overflow-hidden shadow-lg relative bg-gradient-to-br from-azul-primario/10 to-azul-claro/20"
       >
-        {!mapLoaded ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/90 backdrop-blur-sm z-10 transition-colors">
-            <div className="bg-white p-6 rounded-full shadow-md mb-4 text-azul-primario group-hover:scale-110 group-hover:bg-azul-primario group-hover:text-white transition-all duration-300 cursor-pointer" onClick={() => setMapLoaded(true)}>
-              <FiMapPin className="w-10 h-10" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Visítanos en Carabobo</h3>
-            <button
-              onClick={() => setMapLoaded(true)}
-              className="btn-primary mt-2 shadow-lg"
-            >
-              Cargar Mapa Interactivo
-            </button>
-            <p className="text-xs text-gray-500 mt-4">(Al hacer clic aceptarás cargar contenido de Google Maps)</p>
-          </div>
-        ) : (
+        {showMap ? (
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d507183.4768929463!2d-68.1994!3d10.1621!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e8063ac94b61481%3A0x1d1b0f4c1c1c1c1c!2sEstado%20Carabobo%2C%20Venezuela!5e0!3m2!1ses!2sve!4v1732206000000!5m2!1ses!2sve&z=9"
+            src={MAP_URL}
             width="100%"
             height="100%"
             style={{ border: 0 }}
@@ -55,6 +42,18 @@ const SeccionMapa = React.memo(() => {
             title="Mapa de Carabobo, Venezuela"
             className="absolute inset-0"
           />
+        ) : (
+          <button
+            onClick={() => setShowMap(true)}
+            className="absolute inset-0 w-full h-full group cursor-pointer flex items-center justify-center"
+            aria-label="Cargar mapa interactivo"
+          >
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-6 shadow-xl text-center group-hover:bg-white transition-colors group-hover:scale-105 duration-300">
+              <div className="text-4xl mb-2">🗺️</div>
+              <p className="text-sm font-bold text-gray-800">Ver mapa interactivo</p>
+              <p className="text-[10px] text-gray-500 mt-1">(Google Maps)</p>
+            </div>
+          </button>
         )}
       </motion.div>
     </div>

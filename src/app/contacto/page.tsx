@@ -2,13 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { lazy, Suspense, useMemo } from 'react';
-//import Image from 'next/image';
-//import Link from 'next/link';
+import SeccionMapa from '@/components/contacto/SeccionMapa';
 
-// Lazy loading de componentes
+// Lazy loading de componentes pesados
 const FormularioContacto = lazy(() => import('@/components/contacto/FormularioContacto'));
 const InformacionContacto = lazy(() => import('@/components/contacto/InformacionContacto'));
-const SeccionMapa = lazy(() => import('@/components/contacto/SeccionMapa'));
 const SeccionFAQ = lazy(() => import('@/components/contacto/SeccionFAQ'));
 
 export default function ContactoPage() {
@@ -66,9 +64,7 @@ export default function ContactoPage() {
       {/* Mapa */}
       <section className="py-16 bg-azul-claro/20">
         <div className="container mx-auto px-6">
-          <Suspense fallback={LoadingSpinner}>
-            <SeccionMapa />
-          </Suspense>
+          <SeccionMapa />
         </div>
       </section>
 

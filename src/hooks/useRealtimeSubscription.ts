@@ -17,44 +17,25 @@ export const useRealtimeSubscription = () => {
     const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>('CONNECTING');
 
     // ═══════════════════════════════════════════════
-    // POLLING FALLBACK - garantiza datos frescos
-    // incluso cuando RLS bloquea eventos Realtime
+    // POLLING FALLBACK MINIMIZADO - solo si broadcast falla
+    // Con staleTimes largos + broadcast, esto casi nunca se ejecuta
+    // Stagger inicial por usuario para evitar picos sincronizados
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        const pollInterval = setInterval(() => {
-            if (document.visibilityState === 'visible' && user?.id) {
-                
-                // Force refetch all active order and service queries
-                queryClient.refetchQueries({ 
-                    queryKey: ORDER_KEYS.all,
-                    type: 'active' 
-                });
-                queryClient.refetchQueries({
-                    queryKey: ['Service'],
-                    type: 'active'
-                });
-            }
-        }, 30_000); // Reducido a 30s para mayor respuesta
-
-        return () => clearInterval(pollInterval);
-    }, [queryClient, user?.id]);
-
-    // Polling fallback for payout data
-    useEffect(() => {
-        const pollInterval = setInterval(() => {
-            if (document.visibilityState === 'visible' && user?.id) {
-                queryClient.refetchQueries({
-                    queryKey: ['PayoutHistory'],
-                    type: 'active'
-                });
-                queryClient.refetchQueries({
-                    queryKey: ['PendingPayouts'],
-                    type: 'active'
-                });
-            }
-        }, 30_000);
-
-        return () => clearInterval(pollInterval);
+        if (!user?.id) return;
+        const startDelay = Math.abs(parseInt(user.id.slice(-8), 16) % 120_000); // 0-2min de stagger por usuario
+        const timer = setTimeout(() => {
+            const interval = setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    queryClient.refetchQueries({ queryKey: ['Order'], type: 'active' });
+                    queryClient.refetchQueries({ queryKey: ['Service'], type: 'active' });
+                    queryClient.refetchQueries({ queryKey: ['PayoutHistory'], type: 'active' });
+                    queryClient.refetchQueries({ queryKey: ['PendingPayouts'], type: 'active' });
+                }
+            }, 300_000); // 5 minutos
+            return () => clearInterval(interval);
+        }, startDelay);
+        return () => clearTimeout(timer);
     }, [queryClient, user?.id]);
 
     // ═══════════════════════════════════════════════

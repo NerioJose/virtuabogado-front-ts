@@ -9,6 +9,7 @@ import { calculateOrderFinances } from '@/services/finance.service';
 
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
+import { getCached, setCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -159,15 +160,24 @@ export async function GET(request: Request) {
                     createdAt: 'desc'
                 }
             }),
-            prisma.financialSettings.findUnique({
+            getCachedFinancialSettings()
+        ]);
+
+        async function getCachedFinancialSettings() {
+            const cached = getCached<any>('financial-settings');
+            if (cached) return cached;
+            const settings = await prisma.financialSettings.findUnique({
                 where: { id: FINANCIAL_SETTINGS_ID }
-            }).then((s: any) => s || {
+            });
+            const result = settings || {
                 lawyer_commission_percentage: 0,
                 operational_costs_percentage: 0,
                 tax_percentage: 0,
                 platform_fee_percentage: 0
-            })
-        ]);
+            };
+            setCache('financial-settings', result, 30_000);
+            return result;
+        }
 
         // Mapear al formato que espera el frontend con desglose financiero dinámico
         const formattedOrders = (orders as any[]).map((order: any) => {
@@ -267,10 +277,8 @@ export async function POST(request: Request) {
 
         const currentPrice = Number(service.precio);
 
-        // 🏛️ FINANCIAL SETTINGS: Fetch current split percentages (Strict ID Synchronization)
-        let settings = await prisma.financialSettings.findUnique({
-            where: { id: FINANCIAL_SETTINGS_ID }
-        });
+        // 🏛️ FINANCIAL SETTINGS: Fetch current split percentages (cached 30s)
+        let settings = await getCachedFinancialSettings();
 
         // Use defaults if settings don't exist yet (Absolute Zero Fallback)
         if (!settings) {

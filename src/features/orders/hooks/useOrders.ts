@@ -18,8 +18,8 @@ export function useOrders(filters?: OrdersFilters & { page?: number; limit?: num
     return useQuery({
         queryKey: ORDER_KEYS.list(filters || {}),
         queryFn: () => ordersService.getAll(filters),
-        staleTime: 1000 * 60 * 2, // 2 minutes - orders change frequently
-        select: (response) => response, // Default select
+        staleTime: 1000 * 60 * 10, // 10 min - broadcasts invalidan cuando hay cambios reales
+        select: (response) => response,
         ...options
     });
 }

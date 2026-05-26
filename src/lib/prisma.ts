@@ -22,10 +22,9 @@ function createPrismaClient() {
 
     const pool = new Pool({
         connectionString: dbUrl,
-        // En Serverless (Vercel) + Pooler externo, queremos pools pequeños por instancia
-        max: isDev ? 10 : 3, 
-        idleTimeoutMillis: 10000, // 10s
-        connectionTimeoutMillis: isDev ? 30000 : 5000, // 5s en prod para fallar rápido
+        max: isDev ? 10 : 3,
+        idleTimeoutMillis: 3000, // 3s - libera conexiones rápido para dejar espacio a otros
+        connectionTimeoutMillis: isDev ? 10000 : 3000, // 3s en prod - falla rápido si está congestionado
     });
     const adapter = new PrismaPg(pool);
 

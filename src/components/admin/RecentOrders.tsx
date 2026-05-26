@@ -189,9 +189,9 @@ export default function RecentOrders({ abrirModal, onVerTodas }: RecentOrdersPro
                                             {order.userEmail}
                                         </p>
                                         <div className="mt-2 flex flex-wrap gap-2">
-                                            {order.items.map((item: any, i: number) => (
+                                            {(order.items || []).map((item: any, i: number) => (
                                                 <span key={i} className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md border border-gray-200">
-                                                    {item.serviceName}
+                                                    {item.serviceName || 'Servicio'}
                                                 </span>
                                             ))}
                                             {order.lawyerName && order.lawyerName !== 'Pendiente' && (

@@ -28,7 +28,7 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
           nombre: d.name || 'Sin nombre',
           tipo: d.type || 'Documento',
           caso: d.order ? `${d.order.service?.titulo || 'Servicio'} (#${d.order.numericId || '?'})` : undefined,
-          cliente: capitalizeName(d.order?.user?.nombre) || 'Desconocido',
+          cliente: d.order?.user?.nombre ? capitalizeName(d.order.user.nombre) : 'Desconocido',
           fechaSubida: d.createdAt ? new Date(d.createdAt).toISOString().split('T')[0] : 'N/A',
           tamaño: d.size ? `${(d.size / 1024 / 1024).toFixed(2)} MB` : 'N/A',
           url: d.url || '#'
@@ -92,10 +92,10 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
               {elemento?.items?.map((item: any, i: number) => (
                 <div key={i} className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                   <div>
-                    <span className="text-sm font-black text-slate-800 block">{item.serviceName}</span>
+                    <span className="text-sm font-black text-slate-800 block">{item.serviceName || 'Servicio Legal'}</span>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Vigencia Ilimitada</span>
                   </div>
-                  <span className="text-sm font-black text-azul-primario">${item.price.toLocaleString()}</span>
+                  <span className="text-sm font-black text-azul-primario">${(item.price || 0).toLocaleString()}</span>
                 </div>
               ))}
               {!elemento?.items?.length && (

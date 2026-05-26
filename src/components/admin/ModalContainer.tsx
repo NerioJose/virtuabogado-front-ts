@@ -10,6 +10,7 @@ import {
 	FiUsers,
 	FiBriefcase,
 	FiDollarSign,
+	FiSettings,
 } from 'react-icons/fi';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
@@ -87,6 +88,7 @@ export default function ModalContainer({
 			casos: 'caso',
 			finanzas: 'transacción',
 			configuracion: 'configuración',
+			dashboard: 'caso',
 		};
 
 		return `${acciones[tipo]} ${entidades[seccion]}`;
@@ -99,7 +101,7 @@ export default function ModalContainer({
 			clientes: <FiUsers className="h-6 w-6" />,
 			casos: <FiBriefcase className="h-6 w-6" />,
 			finanzas: <FiDollarSign className="h-6 w-6" />,
-			configuracion: <FiX className="h-6 w-6" />,
+			configuracion: <FiSettings className="h-6 w-6" />,
 		};
 
 		return iconos[seccion] || <FiX className="h-6 w-6" />;

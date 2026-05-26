@@ -46,11 +46,11 @@ export async function PATCH(
             data: updateData
         });
 
-        // 📡 Broadcast a todos los usuarios
-        broadcastServiceUpdate({
+        // 📡 Broadcast a todos los usuarios (await = bloqueante, garantiza envío)
+        await broadcastServiceUpdate({
             serviceId: service.id,
             eventType: 'updated',
-        });
+        }).catch((e: unknown) => console.error('Broadcast error:', e));
 
         return NextResponse.json(serializeFinance(service));
     } catch (error) {
@@ -71,11 +71,11 @@ export async function DELETE(
             data: { activo: false }
         });
 
-        // 📡 Broadcast a todos los usuarios
-        broadcastServiceUpdate({
+        // 📡 Broadcast a todos los usuarios (await = bloqueante, garantiza envío)
+        await broadcastServiceUpdate({
             serviceId: service.id,
             eventType: 'deleted',
-        });
+        }).catch((e: unknown) => console.error('Broadcast error:', e));
 
         return NextResponse.json(serializeFinance({ message: 'Service deactivated successfully', service }));
     } catch (error) {

@@ -39,11 +39,11 @@ export async function POST(req: Request) {
             }
         });
 
-        // 📡 Broadcast a todos los usuarios
-        broadcastServiceUpdate({
+        // 📡 Broadcast a todos los usuarios (await = bloqueante, garantiza envío)
+        await broadcastServiceUpdate({
             serviceId: service.id,
             eventType: 'created',
-        });
+        }).catch((e: unknown) => console.error('Broadcast error:', e));
 
         return NextResponse.json(serializeFinance(service));
     } catch (error) {

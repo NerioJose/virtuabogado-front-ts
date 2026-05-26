@@ -63,12 +63,9 @@ export const useRealtimeSubscription = () => {
             }
             
             if (eventName === 'service-updated') {
-                
-                if (eventPayload?.serviceId) {
-                    const { useServicesStore } = require('@/features/services/store/servicesStore');
-                    useServicesStore.getState().updateServiceState(eventPayload.serviceId, eventPayload);
-                }
+                // Invalidar TODAS las queries de servicios (activos, inactivos, detalle)
                 queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
+                queryClient.invalidateQueries({ queryKey: ['Service', 'active'], refetchType: 'all' });
             }
             
             if (eventName === 'payout-updated') {

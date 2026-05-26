@@ -41,9 +41,9 @@ export const useServicesRealtime = (enabled: boolean = true) => {
                     schema: 'public',
                     table: 'Service',
                 },
-                (payload) => {
-                    
-                    // Invalida la query de servicios activos → refetch automático
+                () => {
+                    // Invalida TODAS las queries de servicios (activos e inactivos)
+                    queryClient.invalidateQueries({ queryKey: servicesKeys.all });
                     queryClient.invalidateQueries({ queryKey: servicesKeys.active });
                 }
             )

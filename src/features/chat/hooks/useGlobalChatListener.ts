@@ -99,10 +99,6 @@ export function useGlobalChatListener() {
 
     useEffect(() => {
         if (!user) return;
-        
-        if (!originalTitleRef.current) {
-            originalTitleRef.current = document.title || 'VirtuAbogado';
-        }
 
         const supabase = createClient();
         const personalChannel = supabase.channel(`global_${user.id}`);

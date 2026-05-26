@@ -7,6 +7,69 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useRouter } from 'next/navigation';
 import { useCheckoutStore } from '@/features/checkout/store/checkoutStore';
 
+// ─── AUDIO POOL: un solo elemento reutilizable ───────────────────
+let audioEl: HTMLAudioElement | null = null;
+function playSound() {
+    try {
+        if (!audioEl) audioEl = new Audio('/virtuabogado-chat.mp3');
+        audioEl.volume = 1.0;
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
+    } catch (err) {
+        console.error("Error al reproducir audio:", err);
+    }
+}
+
+// ─── TAB BLINK THROTTLED ────────────────────────────────────────
+const blinkState = {
+    ref: null as NodeJS.Timeout | null,
+    originalTitle: '',
+    active: false,
+};
+
+function blinkTab(text: string) {
+    if (blinkState.active) return;
+    blinkState.active = true;
+
+    if (!blinkState.originalTitle) {
+        blinkState.originalTitle = document.title || 'VirtuAbogado';
+    }
+
+    let isBlinking = true;
+    blinkState.ref = setInterval(() => {
+        document.title = isBlinking ? `(1) ${text}` : blinkState.originalTitle;
+        isBlinking = !isBlinking;
+    }, 1000);
+
+    setTimeout(() => {
+        if (blinkState.ref) clearInterval(blinkState.ref);
+        document.title = blinkState.originalTitle;
+        blinkState.active = false;
+    }, 10000);
+}
+
+function stopBlink() {
+    if (blinkState.ref) clearInterval(blinkState.ref);
+    if (blinkState.originalTitle) document.title = blinkState.originalTitle;
+    blinkState.active = false;
+}
+
+// ─── TOAST DEBOUNCE: agrupa eventos rápidos ─────────────────────
+const toastState = {
+    timer: null as NodeJS.Timeout | null,
+    setter: null as ((msg: any) => void) | null,
+};
+
+function showToast(setter: typeof toastState.setter, msg: any) {
+    toastState.setter = setter;
+    if (toastState.timer) clearTimeout(toastState.timer);
+    setter(msg);
+    toastState.timer = setTimeout(() => {
+        setter(null);
+        toastState.timer = null;
+    }, 5000);
+}
+
 export function useGlobalChatListener() {
     const { user } = useAuthStore();
     const router = useRouter();
@@ -15,8 +78,8 @@ export function useGlobalChatListener() {
     const [showPushBanner, setShowPushBanner] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [toastMessage, setToastMessage] = useState<any>(null);
-    const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const originalTitleRef = useRef<string>('');
+    const toastSetterRef = useRef(setToastMessage);
+    toastSetterRef.current = setToastMessage;
 
     useEffect(() => {
         if (!user) return;
@@ -32,31 +95,7 @@ export function useGlobalChatListener() {
         setShowPushBanner(false);
     };
 
-    const playNotificationSound = () => {
-        try {
-            const audio = new Audio('/virtuabogado-chat.mp3');
-            audio.volume = 1.0;
-            audio.play().catch(e => console.warn('🔇 Audio bloqueado por el navegador:', e));
-        } catch (err) {
-            console.error("Error al reproducir audio:", err);
-        }
-    };
 
-    const triggerTabBlink = (text: string) => {
-        if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
-        let isBlinking = true;
-        blinkIntervalRef.current = setInterval(() => {
-            document.title = isBlinking ? `(1) ${text}` : originalTitleRef.current;
-            isBlinking = !isBlinking;
-        }, 1000);
-
-        setTimeout(() => {
-            if (blinkIntervalRef.current) {
-                clearInterval(blinkIntervalRef.current);
-                document.title = originalTitleRef.current;
-            }
-        }, 10000);
-    };
 
     useEffect(() => {
         if (!user) return;
@@ -82,18 +121,18 @@ export function useGlobalChatListener() {
             const isRelevantForClient = user.rol === 'CLIENTE' && data.userId === user.id;
 
             if (data.eventType === 'created' && (isRelevantForAdmin || user.rol === 'ABOGADO')) {
-                playNotificationSound();
-                setToastMessage({
+                playSound();
+                showToast(toastSetterRef.current, {
                     id: `sale-${data.orderId}-${Date.now()}`,
                     type: 'sale',
                     title: '💰 Nueva Venta Confirmada',
                     content: `Se ha registrado una nueva orden (#${data.orderId.substring(0, 8)}).`,
                     orderId: data.orderId
                 });
-                triggerTabBlink('💰 ¡NUEVA VENTA!');
+                blinkTab('💰 ¡NUEVA VENTA!');
             } 
             else if (isRelevantForClient && data.eventType === 'updated') {
-                playNotificationSound();
+                playSound();
                 
                 let title = '📈 Actualización de Caso';
                 let content = `Tu caso #${data.orderId.substring(0, 8)} ha sido actualizado.`;
@@ -106,7 +145,7 @@ export function useGlobalChatListener() {
                     content = 'Tu abogado ha marcado el caso como completado. ¡Revisa los resultados!';
                 }
 
-                setToastMessage({
+                showToast(toastSetterRef.current, {
                     id: `client-update-${data.orderId}-${Date.now()}`,
                     type: 'case',
                     title,
@@ -115,15 +154,15 @@ export function useGlobalChatListener() {
                 });
             }
             else if (data.isNewAssignment && data.lawyerId === user.id && isRelevantForLawyer) {
-                playNotificationSound();
-                setToastMessage({
+                playSound();
+                showToast(toastSetterRef.current, {
                     id: `case-${data.orderId}-${Date.now()}`,
                     type: 'case',
                     title: '⚖️ Nuevo Caso Asignado',
                     content: `Se te ha asignado el caso #${data.orderId.substring(0,8)}. ¡Empieza ahora!`,
                     orderId: data.orderId
                 });
-                triggerTabBlink('⚖️ NUEVO CASO');
+                blinkTab('⚖️ NUEVO CASO');
             }
 
             const successStatuses = ['PENDIENTE', 'EN_PROGRESO', 'PAID', 'COMPLETADO'];
@@ -139,6 +178,38 @@ export function useGlobalChatListener() {
                     checkoutState.reset();
                     router.push('/mis-servicios');
                 }
+            }
+        };
+
+        const handlePayoutUpdate = (payload: { payload: any }) => {
+            const data = payload.payload;
+            const isRelevantForAdmin = user?.rol === 'ADMIN';
+            const isRelevantForLawyer = user?.rol === 'ABOGADO' && data.lawyerId === user?.id;
+
+            if (!isRelevantForAdmin && !isRelevantForLawyer) return;
+
+            if (data.eventType === 'created' && isRelevantForAdmin) {
+                playSound();
+                showToast(toastSetterRef.current, {
+                    id: `payout-created-${data.payoutId}-${Date.now()}`,
+                    type: 'sale',
+                    title: '💸 Liquidación Creada',
+                    content: `Se ha creado una liquidación pendiente (#${data.payoutId.substring(0,8)}).`,
+                    orderId: data.payoutId
+                });
+                blinkTab('💸 LIQUIDACIÓN PENDIENTE');
+            }
+
+            if (data.eventType === 'finalized' && isRelevantForLawyer) {
+                playSound();
+                showToast(toastSetterRef.current, {
+                    id: `payout-finalized-${data.payoutId}-${Date.now()}`,
+                    type: 'case',
+                    title: '💰 Honorarios Transferidos',
+                    content: 'Tu liquidación ha sido procesada. Revisa tu cuenta bancaria.',
+                    orderId: data.payoutId
+                });
+                blinkTab('💰 HONORARIOS RECIBIDOS');
             }
         };
 
@@ -162,9 +233,9 @@ export function useGlobalChatListener() {
                         if (newMessage.senderId !== user.id) {
                             const activeOrder = useChatStore.getState().activeOrderId;
                             if (activeOrder !== newMessage.orderId) {
-                                playNotificationSound();
+                                playSound();
                                 setToastMessage({ ...newMessage, type: 'chat' });
-                                triggerTabBlink('💬 Nuevo Mensaje');
+                                blinkTab('💬 Nuevo Mensaje');
                             }
                             useChatStore.getState().markAsUnread(newMessage.orderId);
                         }
@@ -181,15 +252,18 @@ export function useGlobalChatListener() {
                 }
             )
             .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
             .subscribe();
 
         if (globalChannel) {
-            globalChannel.on('broadcast', { event: 'order-updated' }, handleOrderUpdate).subscribe();
+            globalChannel
+                .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+                .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
+                .subscribe();
         }
 
         return () => {
-            if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
-            document.title = originalTitleRef.current || 'VirtuAbogado';
+            stopBlink();
             personalSub.unsubscribe();
             if (globalChannel) globalChannel.unsubscribe();
         };

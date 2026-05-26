@@ -157,10 +157,11 @@ export function useDocumentosPanel(abogadoId: string) {
     if (docParaEliminar) {
       try {
         await documentsService.delete(docParaEliminar.id);
-        setNotificacion({ tipo: 'success', mensaje: `Documento eliminado` });
+        setNotificacion({ tipo: 'success', mensaje: 'Documento eliminado correctamente' });
         fetchDocumentos();
       } catch (error) {
         console.error('Error deleting document:', error);
+        setNotificacion({ tipo: 'error', mensaje: 'Error al eliminar el documento' });
       } finally {
         setDocParaEliminar(null);
       }

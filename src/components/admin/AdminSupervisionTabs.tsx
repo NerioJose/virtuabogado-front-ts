@@ -129,7 +129,17 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
               <DocumentList 
                 documentos={documentos}
                 onDescargar={(doc) => window.open(doc.url, '_blank')}
-                onEliminar={() => {/* Admin monitoring only, for now no delete from here unless requested */}}
+                onEliminar={async (doc) => {
+                    if (confirm(`¿Eliminar documento "${doc.nombre}"?`)) {
+                        try {
+                            const res = await fetch(`/api/documents?id=${doc.id}`, { method: 'DELETE' });
+                            if (res.ok) fetchDocumentos();
+                            else alert('Error al eliminar el documento');
+                        } catch {
+                            alert('Error al eliminar el documento');
+                        }
+                    }
+                }}
                 showActions={true} // Permits downloading
               />
             )}

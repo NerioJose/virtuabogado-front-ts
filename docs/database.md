@@ -4,7 +4,7 @@ Este documento detalla el esquema de datos, las relaciones y los tipos utilizado
 
 ---
 
-## 🗺️ Diagrama Lógico de Entidades
+## Diagrama de Entidades
 
 ```mermaid
 erDiagram
@@ -14,63 +14,78 @@ erDiagram
     User ||--o{ Document : "sube"
     User ||--o{ Payout : "recibe"
     User ||--o{ PushSubscription : "registra"
-    
+
     Service ||--o{ Order : "es el producto de"
-    
+
     Order ||--o{ Message : "contiene conversación"
     Order ||--o{ Document : "contiene archivos"
     Order ||--o| Review : "tiene calificación"
     Order }o--|| Payout : "se agrupa en"
     Order }o--|| PaymentMethod : "pago con"
-    
+
     FinancialSettings ||--o{ User : "gestionado por"
 ```
 
 ---
 
-## 📂 Descripción de Modelos (Principales)
+## Modelos Principales
 
 ### `User` (Usuarios)
-- **Roles**: `CLIENTE`, `ABOGADO`, `ADMIN`.
-- **Campos**: Email, Hash de Contraseña (opcional para Supabase Auth), Perfil (DNI, teléfono, dirección), Especialidad y Matrícula (solo para Abogados).
+- Roles: `CLIENTE`, `ABOGADO`, `ADMIN`.
+- Perfil: DNI, teléfono, dirección, especialidad y matrícula (solo Abogados).
 
 ### `Service` (Servicios Legales)
-- Los "productos" que el cliente puede comprar.
-- **Campos**: Título, Descripción, Precio (Decimal), Imagen.
+- Productos que el cliente puede comprar.
+- Campos: Título, Descripción, Precio (Decimal), Imagen.
 
 ### `Order` (Órdenes / Casos)
-- Es el eje central del sistema. Representa una compra y el caso legal activo.
-- **Estados Core**:
-  - `PENDIENTE`: Pago verificado, esperando respuesta de admin/abogado.
-  - `EN_PROGRESO`: Abogado asignado trabajando en el caso.
-  - `PAID`: Pago confirmado (estado técnico post-webhook).
-  - `COMPLETADO`: Caso cerrado con éxito.
-  - `PAGO_RECHAZADO`: Error en la transacción.
-- **Cálculos Financieros**: Almacena el desglose de comisiones (`commissionAmount`), costos operativos y ganancia neta en el momento del pago.
+- Eje central del sistema. Representa compra y caso legal activo.
+- Almacena desglose de comisiones al momento del pago.
+
+### `LawyerPayout` (Liquidaciones)
+- Agrupa múltiples órdenes completadas para pagar al abogado en una transferencia.
+- Estados: `PENDING`, `PAID`, `CANCELLED`, `FAILED`.
 
 ### `Message` (Mensajería)
-- Chat interno para cada orden.
-- Soporta mensajes de usuario y "mensajes de sistema" (automáticos).
+- Chat interno por orden. Soporta mensajes de sistema (automáticos).
 
 ### `FinancialSettings` (Configuración Global)
-- Define los porcentajes de repartición de ingresos:
-  - `% Comisión Abogado` (default 70%).
-  - `% Costos Operativos` (default 10%).
-  - `% Impuestos` (default 15%).
-  - `% Tarifa de Plataforma` (default 5%).
-- También contiene el teléfono de WhatsApp global para contacto.
+- % Comisión Abogado (default 70%), % Costos Operativos (default 10%), % Impuestos (default 15%), % Tarifa Plataforma (default 5%).
+- Teléfono WhatsApp global.
 
 ---
 
-## ⛓️ Relaciones Críticas
+## Mapa de Estados de Orden
 
-1. **Auto-Asignación (Self-Relation)**: La tabla `Order` tiene dos relaciones con `User`: `userId` (quién compra) y `lawyerId` (quién atiende).
-2. **Cascada de Notificaciones**: `PushSubscription` está vinculada a `User` con `onDelete: Cascade`. Si se borra el usuario, se limpian sus permisos de push automáticamente.
-3. **Mapeo de Payouts**: Un `LawyerPayout` puede contener múltiples `Order`. Esto permite pagarle al abogado varios casos en una sola transferencia.
+```
+PAGO_PENDIENTE ──> PENDIENTE ──> EN_PROGRESO ──> COMPLETADO
+       │                                                   
+       └──> PAGO_RECHAZADO                  CANCELADO
+```
+
+Nota: `PAID` existe en el enum pero **NO** se usa activamente en el flujo. Los estados reales son `PAGO_PENDIENTE` → `PENDIENTE`/`EN_PROGRESO` → `COMPLETADO`.
 
 ---
 
-## 📝 Notas Técnicas (Prisma)
-- Se utiliza `Decimal` para todos los montos de dinero para evitar errores de redondeo de punto flotante.
-- Los índices (`@@index`) están optimizados para las vistas de dashboard (filtrado por estado y fecha de creación descendente).
-- Se usa `revalidatePath` en los webhooks para forzar que Next.js limpie el caché de estas entidades tras cambios asíncronos.
+## Ciclo de Vida de LawyerPayout
+
+1. **Creación Automática**: Al marcar orden como `COMPLETADO`, el sistema agrupa órdenes del mismo abogado en un `LawyerPayout` con estado `PENDING`.
+2. **Revisión Admin**: El administrador revisa el payout en el panel de finanzas.
+3. **Aprobación**: Admin transfiere manualmente y marca como `PAID`.
+4. **Historial**: Los payouts `PAID` quedan registrados para contabilidad.
+
+---
+
+## Relaciones Críticas
+
+1. **Auto-Asignación**: `Order` tiene `userId` (comprador) y `lawyerId` (abogado asignado).
+2. **Cascada Push**: `PushSubscription` → `User` con `onDelete: Cascade`.
+3. **Agrupación Payouts**: `LawyerPayout` contiene múltiples `Order` para pago agrupado.
+
+---
+
+## Notas Técnicas
+
+- `Decimal` para montos (evita errores de punto flotante).
+- Índices optimizados para dashboards (filtro por estado + fecha descendente).
+- `revalidatePath` en webhooks para limpiar caché de Next.js tras cambios asíncronos.

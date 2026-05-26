@@ -4,59 +4,67 @@ Este documento detalla las capacidades del sistema para cada uno de los tres rol
 
 ---
 
-## 👨‍💼 Administrador (Dashboard Central)
-El administrador tiene control total sobre la plataforma y la salud financiera del negocio.
+## Administrador (Dashboard Central)
 
-### Gestión de Órdenes (Casos)
-- **Vigilancia 24/7**: Vista de todas las órdenes en tiempo real.
-- **Priorización Estratégica**: El sistema destaca automáticamente los casos pagados que requieren **asignación inmediata**, seguidos por los casos activos.
-- **Asignación Manual**: Capacidad de re-asignar un caso a un abogado específico si la auto-asignación falló o no es adecuada.
-- **Auditoría**: Acceso a los chats de cualquier orden para asegurar la calidad del servicio.
+### Gestión de Órdenes
+- Vista de todas las órdenes en tiempo real.
+- Priorización automática: casos pagados requieren asignación inmediata.
+- Asignación manual y re-asignación de casos a abogados.
+- Auditoría de chats de cualquier orden.
 
-### Configuración Financiera
-- **Reparto de Ingresos**: Ajuste de porcentajes de comisión, impuestos y ganancias de plataforma.
-- **WhatsApp Global**: Gestión del número de contacto que aparece en toda la web.
+### Finanzas / Liquidaciones
+- Aprobación de pagos a abogados (marcar `PAID`).
+- Historial completo de transacciones.
+- Configuración de reparto de ingresos (% comisión, impuestos, plataforma).
+- Simulador financiero con precios actuales y proyecciones.
 
-### Gestión de Pagos (Payouts)
-- **Aprobación de Transferencias**: El Admin marca como `PAID` los pagos a abogados una vez realizados manualmente en el banco.
-- **Historial Completo**: Registro de cada centavo que entra y sale.
-
-### Gestión de Notificaciones
-- **Sidebar Control**: Botón dedicado para activar/desactivar alertas VAPID tácticas en el navegador.
-
----
-
-## ⚖️ Abogado (Gestión de Casos)
-El abogado se enfoca en resolver los problemas legales de los clientes.
-
-### Dashboard de Trabajo
-- **Prioridad Operativa**: Los casos que requieren acción inmediata o tienen mensajes nuevos aparecen siempre al principio del cronograma.
-- **Mis Casos**: Lista filtrada de órdenes asignadas.
-- **Mensajería Instantánea**: Chat con el cliente para pedir documentos o aclarar dudas.
-- **Subida de Documentos**: Intercambio seguro de archivos (PDFs, imágenes) con el cliente.
-
-### Notificaciones en Tiempo Real
-- **Alerta de Nuevo Caso**: Notificación push "Shopify-style" cuando se le asigna un caso pagado.
-- **Aviso de Mensajes**: Indicadores visuales y sonoros de mensajes nuevos.
-- **Gestión de Alertas**: Control total desde el sidebar para suscribir dispositivos específicos.
+### Notificaciones Push
+- Control de suscripciones VAPID desde el sidebar.
+- Alertas de nuevas órdenes pagadas.
+- Gestión de tokens de dispositivos.
 
 ---
 
-## 👤 Cliente (Experiencia de Usuario)
-El cliente busca una solución legal rápida, transparente y profesional.
+## Abogado (Gestión de Casos)
 
-### Proceso de Compra (Checkout)
-- **Selección de Servicio**: Catálogo de servicios legales con precios claros.
-- **Pago Seguro**: Integración con Zenobank (Tarjeta, Transferencia, etc.).
-- **Auto-Login**: Si el cliente ya existe, el sistema lo reconoce; si no, se le crea una cuenta automáticamente tras el pago.
+### Dashboard
+- Casos priorizados por urgencia.
+- Lista filtrada de órdenes asignadas.
+- Mensajería instantánea con clientes.
+- Subida segura de documentos (PDFs, imágenes).
+
+### Facturación (4 Estados)
+- **PENDING**: Payout creado, esperando aprobación Admin.
+- **PAID**: Payout transferido y confirmado.
+- **CANCELLED**: Payout cancelado por Admin.
+- **FAILED**: Error en la transferencia.
+
+### Historial de Liquidaciones
+- Registro de todos los pagos recibidos.
+- Desglose por orden y período.
+- Balance pendiente y total histórico.
+
+---
+
+## Cliente (Experiencia de Usuario)
+
+### Checkout
+- Catálogo de servicios legales con precios claros.
+- Pago seguro via Zenobank (tarjeta, transferencia).
+- Auto-login: reconocimiento de usuario existente o creación automática de cuenta.
+- Confirmación en tiempo real vía webhook + broadcast.
 
 ### Seguimiento de Casos
-- **Panel "Mis Servicios"**: Vista clara del progreso de sus trámites legales.
-- **Chat Directo**: Comunicación constante con su abogado asignado.
-- **Descargas**: Acceso a los documentos generados por el abogado en tiempo real.
+- Panel "Mis Servicios" con progreso de trámites.
+- Chat directo con abogado asignado.
+- Descarga de documentos generados por el abogado.
+- Notificaciones push de cambios de estado y mensajes nuevos.
 
 ---
 
-## 🛡️ Seguridad y Accesos
-- **Middleware**: Todas las rutas de Abogado y Admin están protegidas. Si un cliente intenta entrar a `/admin`, es redirigido automáticamente.
-- **RLS (Row Level Security)**: A nivel de Supabase, solo puedes ver archivos si eres el dueño del caso o el abogado asignado.
+## Seguridad
+
+- **Middleware**: Protección de rutas `/admin`, `/abogado`, `/mis-servicios`.
+- **RLS (Row Level Security)**: Políticas en Supabase para aislamiento de datos por usuario/rol.
+- **Firma de Webhooks**: Verificación Svix en endpoints de Zenobank.
+- **Rate Limiting**: Middleware protege rutas críticas contra abusos.

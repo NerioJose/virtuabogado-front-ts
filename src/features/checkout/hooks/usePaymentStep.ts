@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
@@ -22,6 +22,12 @@ export const usePaymentStep = () => {
         setIsWaitingForWebhook,
         reset
     } = useCheckout();
+
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        return () => { mountedRef.current = false; };
+    }, []);
 
     const [showFallbackButton, setShowFallbackButton] = useState(false);
 

@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Abogado, Estadisticas, UseAbogadoDataReturn } from '../types';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
-/**
- * Hook Profesionalizado para el Abogado.
- * Consume datos reales del servidor con blindaje financiero.
- */
 export function useAbogadoData(abogadoId?: string): UseAbogadoDataReturn {
 	const user = useAuthStore(state => state.user);
+	const mountedRef = useRef(true);
 	const [abogado, setAbogado] = useState<Abogado | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [estadisticas, setEstadisticas] = useState<Estadisticas>({
@@ -22,19 +19,24 @@ export function useAbogadoData(abogadoId?: string): UseAbogadoDataReturn {
 		ingresosMes: 0,
 	});
 
+	useEffect(() => {
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+
 	const cargarDatosReales = useCallback(async () => {
 		if (!user || user.rol !== 'ABOGADO') {
-			setLoading(false);
+			if (mountedRef.current) setLoading(false);
 			return;
 		}
 
 		try {
-			setLoading(true);
-			
-			// 1. Cargar Perfil (Safe access to metadata for TS compatibility)
+			if (mountedRef.current) setLoading(true);
+
 			const metadata = (user as any).user_metadata || {};
 
-			setAbogado({
+			if (mountedRef.current) setAbogado({
 				id: user.id,
 				nombre: metadata.nombre || 'Abogado',
 				email: user.email || '',
@@ -45,27 +47,26 @@ export function useAbogadoData(abogadoId?: string): UseAbogadoDataReturn {
 				valoracionMedia: 5.0,
 			});
 
-			// 2. Cargar Estadísticas Financieras Reales
 			const summary = await getFinancialSummary(
 				{ lawyerId: user.id, dateRange: 'month' },
 				{ id: user.id, rol: 'ABOGADO' as any }
 			);
 
-			setEstadisticas({
-				casosActivos: summary.transactionCount || 0, // Ajustar según lógica de negocio si es necesario
-				casosPendientes: 0, 
+			if (mountedRef.current) setEstadisticas({
+				casosActivos: summary.transactionCount || 0,
+				casosPendientes: 0,
 				casosCompletados: summary.transactionCount || 0,
-				clientesActivos: 0, // Placeholder hasta tener conteo real
+				clientesActivos: 0,
 				proximaCita: new Date().toISOString(),
-				ingresosMes: summary.lawyerPendingBalance || 0, // BALANCE REAL DEL ABOGADO
+				ingresosMes: summary.lawyerPendingBalance || 0,
 			});
 
-			setLoading(false);
+			if (mountedRef.current) setLoading(false);
 		} catch (error) {
 			console.error('❌ Error al cargar datos reales del abogado:', error);
-			setLoading(false);
+			if (mountedRef.current) setLoading(false);
 		}
-	}, [user]);
+	}, [user?.id, user?.rol]);
 
 	useEffect(() => {
 		cargarDatosReales();

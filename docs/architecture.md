@@ -59,51 +59,53 @@ Utilidades, hooks y servicios globales que no pertenecen a un dominio específic
 
 ---
 
-## Patrones de Diseño Clave
+## Reactividad en 3 Capas
 
-- **MVVM (Model-View-ViewModel)**: Desacoplamiento total entre la UI y la data a través de Hooks (ViewModel) que consumen Servicios (Model/Data).
-- **Feature-Driven Design**: Organización por dominios para evitar archivos gigantes y facilitar la navegación.
-- **Barrel Export Pattern**: Uso de `index.ts` en cada feature para definir una API pública clara y evitar importaciones anidadas profundas.
-- **Inyección de Dependencias vía Hooks**: Los componentes consumen lógica solo a través de hooks específicos, facilitando el testing y la modularidad.
-- **SSR & Client Components**: Uso equilibrado de Server Components para SEO y Client Components para interactividad enriquecida.
+VirtuAbogado usa una estrategia triple para datos siempre frescos:
+
+| Capa | Mecanismo | Latencia | Uso |
+|------|-----------|----------|-----|
+| Broadcast | Supabase Realtime Broadcast | < 100ms | Invalidación remota de caché TanStack Query |
+| Postgres Changes | Suscripción directa a tablas (Order, Message) | < 500ms | Detectar inserts/updates de otros usuarios |
+| Polling | TanStack Query refetchInterval | 30s | Fallback cuando Realtime no está disponible |
+
+### Tabla de Eventos de Broadcast
+
+| Evento | Canal | Disparador | Efecto en Frontend |
+|--------|-------|------------|-------------------|
+| `order-updated` | `app-updates` | Webhook Zenobank / Admin Action | Invalida queries de Order, DashboardStats, Finance |
+| `payout-updated` | `app-updates` | Admin aprueba payout | Invalida PayoutHistory, PendingPayouts, Finance |
+| `message-new` | `user-{userId}` | Nuevo mensaje en chat | Invalida Message queries, notificación push |
+| `payment-webhook` | `order-{orderId}` | Webhook de pago recibido | Refresca estado de orden, redirección automática |
+
+### Optimizaciones de Rendimiento
+
+- **Audio Pool**: Precarga y reuso de instancias de audio para sonidos de notificación sin latencia.
+- **Debounce**: Búsquedas y filtros con debounce de 300ms para evitar re-renders excesivos.
+- **Throttle**: Actualizaciones de UI en tiempo real limitadas a 1 frame cada 100ms.
+- **Estabilidad de Referencias**: Todos los callbacks usan `useCallback` con dependencias estables (`user?.id`, `user?.rol`).
+- **Limpieza de Stores**: Zustand stores se resetean al cerrar checkout o al desmontar componentes.
+- **Debounce localStorage**: Escrituras a localStorage debounced para evitar bloqueos de IO.
 
 ---
 
-## Reactividad y Tiempo Real
+## Notificaciones Push (Multiplataforma)
 
-### Capa de Reactividad (Supabase Broadcast)
-Para garantizar que los dashboards se actualicen instantáneamente sin polling constante, el sistema utiliza un patrón de **Invalidación Remota**:
-1.  **Evento**: Una acción en el servidor (ej. éxito en Webhook de Zenobank) dispara un `broadcastOrderUpdate`.
-2.  **Transporte**: Supabase Realtime envía un mensaje de broadcast al canal `app-updates` o `global_{userId}`.
-3.  **Recepción**: El hook `useRealtimeSubscription` en el frontend intercepta el mensaje.
-4.  **Reacción**: Se llama a `queryClient.invalidateQueries`, lo que fuerza a TanStack Query a refrescar los datos de la base de datos inmediatamente.
-
-### Infraestructura VAPID (Push Notifications)
 El sistema implementa notificaciones push nativas multi-dispositivo:
--   **Sincronización Proactiva**: Al cargar cualquier dashboard, el hook `usePushNotifications` verifica si el navegador tiene un token de suscripción y lo re-sincroniza automáticamente con la base de datos. Esto previene la pérdida de alertas tras reinicios de datos.
--   **Dispatcher Centralizado**: `src/lib/push-notifications.ts` abstrae la complejidad de `web-push`, manejando automáticamente la limpieza de suscripciones expiradas (error 410).
+
+| Función | Archivo | Descripción |
+|---------|---------|-------------|
+| Suscripción | `usePushNotifications.ts` | Registra el dispositivo y almacena token en DB |
+| Envío | `push-notifications.ts` | Dispatcher centralizado con manejo de errores 410 |
+| Service Worker | `public/sw.js` | Receptor de push events, muestra notificación y reproduce sonido |
+| UI Control | `PushNotificationToggle.tsx` | Botón de activar/desactivar notificaciones en sidebar |
+| Sincronización | `usePushNotifications.ts` | Auto-re-sincroniza tokens huérfanos al cargar dashboard |
 
 ---
 
-## Capa de Escalabilidad y Observabilidad (Lanzamiento Masivo)
+## Capa de Escalabilidad
 
-Para garantizar la estabilidad durante eventos de tráfico extremo, el sistema implementa un blindaje de 4 capas:
-
-### 1. Nivel de Datos: Connection Pooling
-- **Tecnología**: Prisma + Supavisor (Modo Transacción).
-- **Implementación**: `src/lib/prisma.ts` detecta el entorno de producción y utiliza el pooler en el puerto `6543`.
-- **Efecto**: Permite que miles de funciones serverless simultáneas compartan un grupo reducido de conexiones a la DB, evitando el error "too many clients".
-
-### 2. Nivel de Rendimiento: SSR & Hydration
-- **Tecnología**: TanStack Query + Hydration Boundary.
-- **Implementación**: Las rutas `/` y `/servicios` pre-cargan datos en el servidor (`page.tsx`) con una estrategia de revalidación de 1 hora (`revalidate: 3600`).
-- **Efecto**: Carga instantánea (LCP optimizado) y reducción masiva de peticiones a la API durante ráfagas de tráfico.
-
-### 3. Nivel de Seguridad: Rate Limiting
-- **Tecnología**: Next.js Middleware.
-- **Implementación**: `middleware.ts` identifica peticiones a rutas críticas (`/api/auth`, `/api/checkout`) y actúa como guardia preventivo contra ataques de bots y inundaciones.
-
-### 4. Nivel de Observabilidad: Sentry "Caja Negra"
-- **Tecnología**: @sentry/nextjs + Instrumentation API.
-- **Implementación**: Configuración global de captura de errores en cliente, servidor y edge runtime.
-- **Efecto**: Trazabilidad total de fallos en producción, asegurando que cualquier error crítico sea notificado al instante al equipo técnico.
+1. **Connection Pooling**: Prisma + Supavisor (puerto 6543) para funciones serverless.
+2. **SSR & Hydration**: Pre-carga de datos con TanStack Query y revalidate: 3600.
+3. **Rate Limiting**: Next.js Middleware protege rutas críticas.
+4. **Observabilidad**: @sentry/nextjs captura errores en cliente, servidor y edge.

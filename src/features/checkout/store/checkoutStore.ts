@@ -201,6 +201,7 @@ export const useCheckoutStore = create<CheckoutState>()(
          * Autentica al usuario (login o registro) en el Paso 1
          */
         authenticateUser: async (userData: UserCheckoutData) => {
+            const currentState = get(); if (currentState.isLoading) return false;
             set({ isLoading: true, error: null });
             try {
                 
@@ -248,6 +249,7 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         submitOrder: async () => {
             const state = get();
+            if (state.isLoading) return;
 
             if (!state.service || !state.userData || !state.paymentData) {
                 set({ error: 'Datos incompletos. Por favor completa todos los campos.' });

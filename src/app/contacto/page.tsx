@@ -9,6 +9,45 @@ const FormularioContacto = lazy(() => import('@/components/contacto/FormularioCo
 const InformacionContacto = lazy(() => import('@/components/contacto/InformacionContacto'));
 const SeccionFAQ = lazy(() => import('@/components/contacto/SeccionFAQ'));
 
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': [
+    {
+      '@type': 'Question',
+      'name': '¿Cuánto tiempo toma una consulta legal?',
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': 'Una consulta inicial típicamente dura entre 30 a 60 minutos, dependiendo de la complejidad del caso. Durante este tiempo, evaluamos tu situación y te proporcionamos una orientación inicial.'
+      }
+    },
+    {
+      '@type': 'Question',
+      'name': '¿Ofrecen consultas gratuitas?',
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': 'Sí, ofrecemos una consulta inicial gratuita de 15 minutos para evaluar tu caso y determinar cómo podemos ayudarte. Esto nos permite entender tus necesidades antes de proceder.'
+      }
+    },
+    {
+      '@type': 'Question',
+      'name': '¿En qué áreas del derecho se especializan?',
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': 'Contamos con especialistas en derecho civil, mercantil, laboral y familiar. VirtuAbogado tiene amplia experiencia en contratos, disputas comerciales, asuntos laborales y procedimientos familiares.'
+      }
+    },
+    {
+      '@type': 'Question',
+      'name': '¿Cómo funcionan los honorarios?',
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': 'Nuestros honorarios varían según el tipo de servicio y la complejidad del caso. Ofrecemos tarifas transparentes y te proporcionaremos un presupuesto detallado antes de comenzar cualquier trabajo.'
+      }
+    }
+  ]
+};
+
 export default function ContactoPage() {
 
   // Memoizar las animaciones del hero para optimizar rendimiento
@@ -27,6 +66,10 @@ export default function ContactoPage() {
 
   return (
     <main className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* Hero Section */}
       <section className="relative py-20 md:py-28 overflow-hidden bg-gradient-to-br from-azul-claro/30 to-white">
         <div className="container mx-auto px-6 relative z-10">

@@ -85,7 +85,7 @@ const jsonLd = {
 	image: 'https://virtuabogado.app/logo/logo_resized.png',
 	'@id': 'https://virtuabogado.app',
 	url: 'https://virtuabogado.app',
-	telephone: '+58-000-0000000', // Actualizar con el real si es necesario
+	telephone: '+58-412-0000000',
 	address: {
 		'@type': 'PostalAddress',
 		streetAddress: 'Asesoría Online',

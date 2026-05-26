@@ -96,7 +96,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                     </div>
                     <div>
                       <h3 className="font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: {cliente.id.slice(-6)}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">ID: {cliente.id.slice(0, 4).toUpperCase()}</p>
                     </div>
                   </div>
                   <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
@@ -180,7 +180,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           </div>
                           <div>
                             <p className="text-sm font-black text-azul-primario leading-tight">{capitalizeName(cliente.nombre)}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {cliente.id.slice(-8)}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {cliente.id.slice(0, 4).toUpperCase()}</p>
                           </div>
                         </div>
                       </td>

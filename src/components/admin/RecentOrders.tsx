@@ -11,6 +11,7 @@ import { FiShoppingBag, FiClock, FiCheckCircle, FiAlertCircle, FiUserPlus, FiEye
 import { useOrders } from '@/features/orders/hooks/useOrders';
 import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 import { capitalizeName } from '@/utils/formatters';
+import { formatOrderId } from '@/lib/formatOrderId';
 
 const statusConfig = {
     [OrderStatus.PENDIENTE]: {
@@ -174,7 +175,7 @@ export default function RecentOrders({ abrirModal, onVerTodas }: RecentOrdersPro
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-semibold text-azul-primario">
-                                                #{order.numericId || order.id.slice(0, 8)}
+                                                #{formatOrderId(order.numericId, order.createdAt)}
                                             </span>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.color} flex items-center gap-1`}>
                                                 <StatusIcon className="w-3 h-3" />

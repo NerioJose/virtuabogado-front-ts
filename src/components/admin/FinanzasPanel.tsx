@@ -13,6 +13,7 @@ import {
 	FiDownload
 } from 'react-icons/fi';
 import { formatUSD } from '@/lib/finance';
+import { formatOrderId } from '@/lib/formatOrderId';
 import { motion, AnimatePresence } from 'framer-motion';
 import PayoutManagement from '@/features/finance/components/PayoutManagement';
 import { useFinanzasPanel } from './hooks/useFinanzasPanel';
@@ -182,7 +183,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 							>
 								<div className="flex justify-between items-start mb-4">
 									<div className="space-y-1">
-										<p className="text-xs font-black text-azul-primario tracking-tighter">#{order.numericId || order.id.slice(0, 8)}</p>
+										<p className="text-xs font-black text-azul-primario tracking-tighter">#{formatOrderId(order.numericId, order.createdAt)}</p>
 										<p className="text-[10px] font-bold text-slate-400">{new Date(order.createdAt).toLocaleDateString()}</p>
 									</div>
 									<span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
@@ -243,7 +244,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 										className="group hover:bg-slate-50/30 transition-colors"
 									>
 										<td className="px-8 py-5 text-sm font-black text-azul-primario">
-											#{order.numericId || order.id.slice(0, 8)}
+											#{formatOrderId(order.numericId, order.createdAt)}
 										</td>
 										<td className="px-8 py-5">
 											<div className="space-y-0.5">

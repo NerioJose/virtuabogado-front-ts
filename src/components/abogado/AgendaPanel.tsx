@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { FiCalendar, FiClock, FiUser, FiChevronLeft, FiChevronRight, FiBriefcase, FiArrowRight } from 'react-icons/fi';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { formatOrderId } from '@/lib/formatOrderId';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAgendaPanel } from './hooks/useAgendaPanel';
 
@@ -119,7 +120,7 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
                            </div>
                            <div className="flex items-center gap-2">
                              <div className="bg-slate-50 text-slate-400 text-[10px] px-3 py-1.5 rounded-xl font-black tracking-tighter uppercase font-mono">
-                                ID: {caso.numericId || caso.id.slice(0, 4)}
+                                #{formatOrderId(caso.numericId as number, caso.createdAt as string)}
                              </div>
                              <span className={`w-3 h-3 rounded-full animate-pulse ${caso.status === 'COMPLETADO' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                            </div>

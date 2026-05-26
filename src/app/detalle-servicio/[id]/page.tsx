@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FiArrowLeft, FiCalendar, FiDollarSign, FiFileText, FiClock, FiUser } from 'react-icons/fi';
+import { formatOrderId } from '@/lib/formatOrderId';
 import { useAuthStore } from '@/features/auth';
 // import { useOrdersStore } from '@/features/orders';
 import { useOrder } from '@/features/orders/hooks/useOrders';
@@ -128,7 +129,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                 <h2 className="text-2xl font-bold mb-2">
                                     {order.items[0]?.serviceName || 'Servicio Legal'}
                                 </h2>
-                                <p className="text-blue-100">Orden #{order.id}</p>
+                                <p className="text-blue-100">{formatOrderId(order.numericId, order.createdAt)}</p>
                             </div>
                             <span className={`px-4 py-2 rounded-full text-sm font-semibold ${status.color}`}>
                                 {status.text}
@@ -164,7 +165,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Total pagado</p>
-                                        <p className="font-semibold text-gray-900">${order.total.toFixed(2)}</p>
+                                        <p className="font-semibold text-gray-900">${(order.total || 0).toFixed(2)}</p>
                                     </div>
                                 </div>
 
@@ -196,18 +197,20 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                         <div className="border-t border-gray-200 pt-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalles del Pedido</h3>
                             <div className="bg-gray-50 rounded-lg p-4">
-                                {order.items.map((item, index) => (
+                                {order.items?.length ? order.items.map((item, index) => (
                                     <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-2 border-b border-gray-100 last:border-0">
                                         <div className="min-w-0">
-                                            <p className="font-bold text-gray-900 truncate">{item.serviceName}</p>
-                                            <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
+                                            <p className="font-bold text-gray-900 truncate">{item.serviceName || 'Servicio'}</p>
+                                            <p className="text-sm text-gray-600">Cantidad: {item.quantity || 1}</p>
                                         </div>
-                                        <p className="font-black text-azul-primario text-lg sm:text-base">${item.price.toFixed(2)}</p>
+                                        <p className="font-black text-azul-primario text-lg sm:text-base">${(item.price || 0).toFixed(2)}</p>
                                     </div>
-                                ))}
+                                )) : (
+                                    <p className="text-sm text-gray-500 py-4 text-center">No hay información de items disponible</p>
+                                )}
                                 <div className="mt-4 pt-4 flex justify-between items-center border-t border-gray-200">
                                     <p className="font-black text-gray-900 uppercase tracking-widest text-xs">Total del Pedido</p>
-                                    <p className="text-2xl font-black text-azul-primario tracking-tighter">${order.total.toFixed(2)}</p>
+                                    <p className="text-2xl font-black text-azul-primario tracking-tighter">${(order.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>

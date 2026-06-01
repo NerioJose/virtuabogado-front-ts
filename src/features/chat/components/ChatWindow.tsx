@@ -1,10 +1,12 @@
 'use client';
 
 import { FiSend, FiPaperclip, FiLock, FiVolume2, FiVolumeX, FiFileText, FiDownload, FiImage, FiTrash2, FiShield, FiX, FiCheck, FiClock } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useChatViewModel } from '../hooks/useChatViewModel';
 import { linkifyText, getMessageContentInfo } from '../utils/chatHelpers';
 import { formatOrderId } from '@/lib/formatOrderId';
+import { useUploadStore } from '@/features/storage/store/uploadStore';
 
 interface ChatWindowProps {
     orderId: string;
@@ -39,6 +41,13 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         fileInputRef,
         audioRef
     } = useChatViewModel(orderId);
+
+    // Leer progreso de subida desde el store global
+    const uploads = useUploadStore(state => state.uploads);
+    const activeUpload = Object.values(uploads).find(u => u.orderId === orderId && (u.status === 'uploading' || u.status === 'compressing'));
+    const uploadProgress = activeUpload?.progress || 0;
+    const uploadFileName = activeUpload?.fileName || '';
+    const uploadStatus = activeUpload?.status;
 
     // Helper para detectar si un mensaje es un archivo/imagen
     const renderMessageContent = (msg: any) => {
@@ -208,6 +217,26 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
                 )}
 
             </div>
+
+            {/* Progress Bar */}
+            {(isUploading || uploadStatus === 'compressing') && (
+                <div className="px-4 py-2 bg-blue-50 border-t border-blue-100">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-blue-600 truncate max-w-[200px]">
+                            {uploadStatus === 'compressing' ? 'Comprimiendo...' : uploadFileName}
+                        </span>
+                        <span className="text-[10px] font-black text-blue-600">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${uploadProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                            className="h-full bg-blue-600 rounded-full"
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Input Area */}
             <form onSubmit={handleSend} className="p-4 border-t flex items-center gap-2 relative">

@@ -21,7 +21,7 @@ export default function LoginPage() {
                         ? ROUTES.ABOGADO
                         : ROUTES.MIS_SERVICIOS;
             
-            router.replace(redirectPath);
+            window.location.href = redirectPath;
         }
     }, [isAuthenticated, user, router]);
 

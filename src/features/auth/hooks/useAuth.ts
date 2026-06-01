@@ -37,12 +37,10 @@ export function useAuth() {
                         ? ROUTES.ABOGADO
                         : ROUTES.MIS_SERVICIOS;
 
-            // En Next.js 15, refresh() sincroniza la sesión con el servidor (cookies)
-            // antes de realizar la redirección final.
-            router.refresh();
-            
-            // Usamos replace en lugar de push para que el usuario no pueda "volver" al login
-            router.replace(redirectPath);
+            // Hard redirect: window.location garantiza que el middleware se ejecute
+            // y que las cookies de sesión estén disponibles para el servidor.
+            // router.replace() no ejecuta el middleware en Next.js 15.
+            window.location.href = redirectPath;
             return user;
         } catch (err) {
             const errorMessage =

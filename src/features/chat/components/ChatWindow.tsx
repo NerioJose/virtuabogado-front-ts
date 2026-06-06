@@ -45,7 +45,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
     const handleStartVideoCall = () => {
         const roomName = `VIRTUA-${orderId.slice(0, 8)}`;
         const displayName = user?.nombre || (user?.rol === 'ABOGADO' ? 'Abogado' : 'Admin');
-        const meetUrl = `${MEET_BASE}/${roomName}#config.prejoinPageEnabled=false&userInfo.displayName=${encodeURIComponent(displayName)}`;
+        const meetUrl = `${MEET_BASE}/${roomName}#config.prejoinPageEnabled=false&config.disableLobby=true&config.startWithAudioMuted=false&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(displayName)}`;
         
         window.open(meetUrl, '_blank', 'noopener,noreferrer');
         

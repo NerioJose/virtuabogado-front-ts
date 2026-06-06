@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { broadcastServiceUpdate } from '@/lib/broadcast';
 import { serializeFinance } from '@/lib/finance';
@@ -52,6 +53,10 @@ export async function PATCH(
             eventType: 'updated',
         }).catch((e: unknown) => console.error('Broadcast error:', e));
 
+        // Invalidar caché ISR para que nuevos visitantes vean los cambios al instante
+        revalidatePath('/');
+        revalidatePath('/servicios');
+
         return NextResponse.json(serializeFinance(service));
     } catch (error) {
         console.error('Error updating service:', error);
@@ -76,6 +81,10 @@ export async function DELETE(
             serviceId: service.id,
             eventType: 'deleted',
         }).catch((e: unknown) => console.error('Broadcast error:', e));
+
+        // Invalidar caché ISR para que nuevos visitantes vean los cambios al instante
+        revalidatePath('/');
+        revalidatePath('/servicios');
 
         return NextResponse.json(serializeFinance({ message: 'Service deactivated successfully', service }));
     } catch (error) {

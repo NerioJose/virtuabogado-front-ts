@@ -11,9 +11,15 @@ export default function LoginPage() {
     const router = useRouter();
     const { isAuthenticated, user } = useAuthStore();
 
-    // Auto-redirección si ya está autenticado
+    // Auto-redirección solo si la sesión de Supabase es válida
     useEffect(() => {
-        if (isAuthenticated && user) {
+        if (!isAuthenticated || !user) return;
+        
+        const checkAndRedirect = async () => {
+            const supabase = await import('@/utils/supabase/client').then(m => m.createClient());
+            const { data } = await supabase.auth.getSession();
+            if (!data.session) return;
+            
             const redirectPath =
                 user.rol === UserRole.ADMIN
                     ? ROUTES.ADMIN
@@ -22,8 +28,10 @@ export default function LoginPage() {
                         : ROUTES.MIS_SERVICIOS;
             
             window.location.href = redirectPath;
-        }
-    }, [isAuthenticated, user, router]);
+        };
+        
+        checkAndRedirect();
+    }, [isAuthenticated, user]);
 
     return <LoginForm />;
 }

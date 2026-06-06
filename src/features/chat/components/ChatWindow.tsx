@@ -43,14 +43,15 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
 
     const MEET_BASE = 'https://meet.jit.si';
     const handleStartVideoCall = () => {
-        const roomName = `VIRTUA-${orderId.slice(0, 8)}-${Date.now().toString(36)}`;
-        const meetUrl = `${MEET_BASE}/${roomName}`;
+        const roomName = `VIRTUA-${orderId.slice(0, 8)}`;
+        const displayName = user?.nombre || (user?.rol === 'ABOGADO' ? 'Abogado' : 'Admin');
+        const meetUrl = `${MEET_BASE}/${roomName}#config.prejoinPageEnabled=false&userInfo.displayName=${encodeURIComponent(displayName)}`;
         
         window.open(meetUrl, '_blank', 'noopener,noreferrer');
         
         if (sendMessage) {
             sendMessage({
-                content: `📹 Videollamada iniciada: ${meetUrl}`,
+                content: `📹 Videollamada iniciada: ${MEET_BASE}/${roomName}`,
                 senderId: user?.id || '',
             }).catch(() => {});
         }

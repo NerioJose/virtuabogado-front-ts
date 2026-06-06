@@ -136,8 +136,7 @@ export async function broadcastServiceUpdate(params: {
     const broadcasts: Promise<boolean>[] = [];
     broadcasts.push(sendBroadcast('app-updates', 'service-updated', payload));
 
-    // Fire-and-forget
-    Promise.all(broadcasts).catch((err) =>
+    await Promise.all(broadcasts).catch((err) =>
         console.warn('⚠️ [Broadcast] Error enviando broadcast de servicios:', err)
     );
 }

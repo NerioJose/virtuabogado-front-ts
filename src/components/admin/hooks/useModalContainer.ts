@@ -51,6 +51,15 @@ export const obtenerCamposPorSeccion = (seccion: string, tipo: string): CampoFor
         ] : [])
       ];
     case 'casos':
+      if (tipo === 'crear') {
+        return [
+          { key: 'email', label: 'Email del Cliente', type: 'email', required: true },
+          { key: 'nombre', label: 'Nombre (solo si el cliente es nuevo)', type: 'text', required: false },
+          { key: 'telefono', label: 'Teléfono', type: 'tel', required: false },
+          { key: 'servicio', label: 'Servicio (nombre o existente)', type: 'text', required: true },
+          { key: 'total', label: 'Monto Total (USD)', type: 'number', required: true },
+        ];
+      }
       return [
         { key: 'numericId', label: 'ID de Orden', type: 'number', required: false, readonly: true },
         { key: 'userName', label: 'Cliente', type: 'text', required: false, readonly: true },

@@ -155,6 +155,17 @@ export default function AdminPage() {
 							id,
 							data: { status: data.status }
 						});
+					} else if (tipoModal === 'crear') {
+						// Crear caso manualmente desde el admin
+						const res = await fetch('/api/orders/admin-create', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify(data)
+						});
+						if (!res.ok) {
+							const err = await res.json();
+							throw new Error(err.error || 'Error al crear el caso');
+						}
 					} else if (tipoModal === 'asignar' && id) {
 						// Usar la mutación de React Query para asignar abogado
 						// Actualizamos también el estado a "EN_PROGRESO" (PROCESSING)

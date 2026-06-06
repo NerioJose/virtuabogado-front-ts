@@ -17,13 +17,12 @@ export const useRealtimeSubscription = () => {
     const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>('CONNECTING');
 
     // ═══════════════════════════════════════════════
-    // POLLING FALLBACK MINIMIZADO - solo si broadcast falla
+    // POLLING FALLBACK MINIMIZADO - para TODOS los usuarios (incluye anónimos)
     // Con staleTimes largos + broadcast, esto casi nunca se ejecuta
-    // Stagger inicial por usuario para evitar picos sincronizados
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (!user?.id) return;
-        const startDelay = Math.abs(parseInt(user.id.slice(-8), 16) % 120_000); // 0-2min de stagger por usuario
+        const staggerKey = user?.id || 'anon';
+        const startDelay = Math.abs(parseInt(staggerKey.slice(-8), 16) % 120_000) || 30000;
         const timer = setTimeout(() => {
             const interval = setInterval(() => {
                 if (document.visibilityState === 'visible') {
@@ -43,10 +42,10 @@ export const useRealtimeSubscription = () => {
     // Las mutaciones via Prisma (PATCH/POST API) no disparan WAL events.
     // La API envía broadcasts manuales (global + personal) tras cada mutación.
     // Este listener escucha ambos canales y fuerza refetch inmediato en TODOS
-    // los usuarios conectados (abogado, cliente, admin).
+    // los usuarios conectados (abogado, cliente, admin) incluidos anónimos.
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (!user?.id || connectionStatus === 'DISCONNECTED') return;
+        if (connectionStatus === 'DISCONNECTED') return;
 
         const supabase = createClient();
         
@@ -89,18 +88,18 @@ export const useRealtimeSubscription = () => {
                 
             });
 
-        // Canal personal - notificaciones dirigidas (abogado asignado, cliente propietario)
-        const personalChannel = supabase.channel(`global_${user.id}`);
-        personalChannel
-            .on('broadcast', { event: 'order-updated' }, handleUpdate)
-            .on('broadcast', { event: 'payout-updated' }, handleUpdate)
-            .subscribe((status) => {
-                
-            });
+        // Canal personal - solo para usuarios autenticados
+        const personalChannel = user?.id ? supabase.channel(`global_${user.id}`) : null;
+        if (personalChannel) {
+            personalChannel
+                .on('broadcast', { event: 'order-updated' }, handleUpdate)
+                .on('broadcast', { event: 'payout-updated' }, handleUpdate)
+                .subscribe();
+        }
 
         return () => {
             supabase.removeChannel(globalChannel);
-            supabase.removeChannel(personalChannel);
+            if (personalChannel) supabase.removeChannel(personalChannel);
         };
     }, [queryClient, user?.id]);
 

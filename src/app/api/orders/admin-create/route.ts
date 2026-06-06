@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
@@ -7,6 +6,7 @@ import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
 import { serializeFinance } from '@/lib/finance';
 import { UserRole, OrderStatus } from '@/shared/types/entities.types';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function POST(request: Request) {
     try {
@@ -24,13 +24,29 @@ export async function POST(request: Request) {
         if (existingUser) {
             userId = existingUser.id;
         } else {
-            const hashedPassword = body.password ? await bcrypt.hash(String(body.password), 10) : null;
+            if (!body.password) {
+                return NextResponse.json({ error: 'Debe asignar una contraseña para el nuevo cliente' }, { status: 400 });
+            }
+            const supabaseAdmin = createAdminClient();
+            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+                email,
+                password: String(body.password),
+                email_confirm: true,
+                user_metadata: {
+                    nombre: nombre || email.split('@')[0],
+                    rol: UserRole.CLIENTE,
+                }
+            });
+            if (authError) {
+                console.error('Error creating auth user:', authError);
+                throw new Error(authError.message);
+            }
             const newUser = await prisma.user.create({
                 data: {
+                    id: authData.user.id,
                     email,
                     nombre: nombre || email.split('@')[0],
                     telefono: telefono || '',
-                    passwordHash: hashedPassword,
                     rol: UserRole.CLIENTE,
                     activo: true,
                 }

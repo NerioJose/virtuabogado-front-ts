@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
 	FiX,
@@ -11,6 +11,8 @@ import {
 	FiBriefcase,
 	FiDollarSign,
 	FiSettings,
+	FiEye,
+	FiEyeOff,
 } from 'react-icons/fi';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import { Abogado, Cliente, Caso, Transaccion } from '@/types/index';
@@ -71,6 +73,8 @@ export default function ModalContainer({
 		confirmarEliminacion,
 		campos,
 	} = useModalContainer(tipo, seccion, elemento as any, onClose, onSave);
+
+	const [showPassword, setShowPassword] = useState(false);
 
 	// Obtener título del modal según tipo y sección
 	const obtenerTitulo = () => {
@@ -195,6 +199,38 @@ export default function ModalContainer({
 							min="0"
 							step="0.01"
 						/>
+						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
+					</div>
+				);
+
+			case 'password':
+				return (
+					<div
+						key={campo.key}
+						className="space-y-1 relative">
+						<label className="block text-sm font-medium text-gray-700">
+							{campo.label}
+							{campo.required && <span className="text-red-500 ml-1">*</span>}
+						</label>
+						<div className="relative">
+							<input
+								title={campo.label}
+								placeholder={`Ingrese ${campo.label.toLowerCase()}`}
+								type={showPassword ? 'text' : 'password'}
+								value={value as string}
+								onChange={(e) => handleInputChange(campo.key, e.target.value)}
+								className={`${baseClasses} pr-10`}
+								readOnly={isReadonly}
+								required={campo.required}
+							/>
+							<button
+								type="button"
+								onClick={() => setShowPassword(!showPassword)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+							>
+								{showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+							</button>
+						</div>
 						{hasError && <p className="text-sm text-red-600">{hasError}</p>}
 					</div>
 				);

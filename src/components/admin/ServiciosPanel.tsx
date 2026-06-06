@@ -66,8 +66,8 @@ export default function ServiciosPanel() {
                                             <input 
                                                 type="number" 
                                                 step="0.01"
-                                                defaultValue={editForm.precio}
-                                                onBlur={e => setEditForm({...editForm, precio: parseFloat(e.target.value)})}
+                                                value={editForm.precio}
+                                                onChange={e => setEditForm({...editForm, precio: parseFloat(e.target.value) || 0})}
                                                 className="w-full p-2.5 pl-7 border border-gray-200 rounded-lg focus:ring-2 focus:ring-azul-primario outline-none"
                                             />
                                         </div>

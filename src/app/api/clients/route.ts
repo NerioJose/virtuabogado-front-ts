@@ -63,20 +63,37 @@ export async function GET(request: Request) {
             u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE'
         );
 
+        // Obtener todas las órdenes agrupadas por usuario para calcular datos reales
+        const allOrders = await prisma.order.findMany({
+            where: { activo: true },
+            select: { userId: true, total: true, id: true }
+        });
+
+        const orderStatsMap = new Map<string, { count: number; total: number }>();
+        for (const order of allOrders) {
+            const stats = orderStatsMap.get(order.userId) || { count: 0, total: 0 };
+            stats.count++;
+            stats.total += Number(order.total);
+            orderStatsMap.set(order.userId, stats);
+        }
+
         // Mapear al formato que espera el frontend
-        const formattedClients = clients.map((client: any) => ({
-            id: client.id,
-            nombre: client.nombre || 'Cliente Sin Nombre',
-            email: client.email || 'N/A',
-            telefono: client.telefono || undefined,
-            direccion: client.direccion || undefined,
-            dni: client.dni || undefined,
-            status: client.activo ? 'active' : 'inactive', 
-            createdAt: client.createdAt,
-            updatedAt: client.updatedAt,
-            serviciosContratados: 0, // Placeholder for stability
-            totalGastado: 0, // Placeholder for stability
-        }));
+        const formattedClients = clients.map((client: any) => {
+            const stats = orderStatsMap.get(client.id) || { count: 0, total: 0 };
+            return {
+                id: client.id,
+                nombre: client.nombre || 'Cliente Sin Nombre',
+                email: client.email || 'N/A',
+                telefono: client.telefono || undefined,
+                direccion: client.direccion || undefined,
+                dni: client.dni || undefined,
+                status: client.activo ? 'active' : 'inactive', 
+                createdAt: client.createdAt,
+                updatedAt: client.updatedAt,
+                serviciosContratados: stats.count,
+                totalGastado: stats.total,
+            };
+        });
 
         return NextResponse.json(serializeFinance(formattedClients));
     } catch (error) {

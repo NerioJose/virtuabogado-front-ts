@@ -56,6 +56,7 @@ export const obtenerCamposPorSeccion = (seccion: string, tipo: string): CampoFor
           { key: 'email', label: 'Email del Cliente', type: 'email', required: true },
           { key: 'nombre', label: 'Nombre (solo si el cliente es nuevo)', type: 'text', required: false },
           { key: 'telefono', label: 'Teléfono', type: 'tel', required: false },
+          { key: 'password', label: 'Contraseña inicial (solo si el cliente es nuevo)', type: 'password', required: false },
           { key: 'servicio', label: 'Servicio (nombre o existente)', type: 'text', required: true },
           { key: 'total', label: 'Monto Total (USD)', type: 'number', required: true },
         ];

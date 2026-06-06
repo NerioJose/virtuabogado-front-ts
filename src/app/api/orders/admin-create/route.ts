@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
@@ -23,11 +24,13 @@ export async function POST(request: Request) {
         if (existingUser) {
             userId = existingUser.id;
         } else {
+            const hashedPassword = body.password ? await bcrypt.hash(String(body.password), 10) : null;
             const newUser = await prisma.user.create({
                 data: {
                     email,
                     nombre: nombre || email.split('@')[0],
                     telefono: telefono || '',
+                    passwordHash: hashedPassword,
                     rol: UserRole.CLIENTE,
                     activo: true,
                 }

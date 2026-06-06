@@ -50,22 +50,10 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Servicio no encontrado' }, { status: 404 });
             }
         } else if (typeof servicio === 'string' && servicio.trim()) {
-            // Es un nombre personalizado — buscar o crear el servicio
+            // Es un nombre personalizado — usar el primer servicio disponible como referencia
             serviceName = servicio.trim();
-            const existing = await prisma.service.findFirst({ where: { titulo: serviceName } });
-            if (existing) {
-                serviceId = existing.id;
-            } else {
-                const newService = await prisma.service.create({
-                    data: {
-                        titulo: serviceName,
-                        descripcion: `Servicio creado por admin para caso manual`,
-                        precio: Number(total),
-                        activo: false, // No visible en catálogo público
-                    }
-                });
-                serviceId = newService.id;
-            }
+            const firstService = await prisma.service.findFirst({ orderBy: { id: 'asc' } });
+            serviceId = firstService?.id || 1;
         } else {
             return NextResponse.json({ error: 'Debe especificar un servicio válido' }, { status: 400 });
         }

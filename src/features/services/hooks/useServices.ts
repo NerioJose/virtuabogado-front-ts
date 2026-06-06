@@ -78,29 +78,16 @@ let invalidateTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUpdateService = () => {
     const queryClient = useQueryClient();
-    const updateServiceState = useServicesStore(state => state.updateServiceState);
     
     return useMutation({
         mutationFn: ({ id, ...data }: UpdateServiceRequest) => servicesService.update(id, data),
-        onMutate: async (variables) => {
-            // Optimistic update: actualiza el store INMEDIATAMENTE sin esperar al servidor
-            updateServiceState(variables.id, variables);
+        onSuccess: () => {
+            // Invalidar siempre después de guardar para garantizar datos frescos
+            queryClient.invalidateQueries({ queryKey: servicesKeys.all });
+            queryClient.invalidateQueries({ queryKey: servicesKeys.active });
+            notifyServiceChange();
         },
-        onSuccess: (updatedService) => {
-            // Sincronizar con la respuesta real del servidor
-            if (updatedService) {
-                updateServiceState(updatedService.id, updatedService);
-            }
-            // Debounce: solo invalida queries 500ms después del último toggle
-            if (invalidateTimer) clearTimeout(invalidateTimer);
-            invalidateTimer = setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: servicesKeys.all });
-                queryClient.invalidateQueries({ queryKey: servicesKeys.active });
-                notifyServiceChange(); // Notifica a otras pestañas
-            }, 500);
-        },
-        onError: (_err, variables) => {
-            // Revertir en caso de error: refrescar todo desde el servidor
+        onError: (_err) => {
             queryClient.invalidateQueries({ queryKey: servicesKeys.all });
             queryClient.invalidateQueries({ queryKey: servicesKeys.active });
         },

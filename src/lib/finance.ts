@@ -36,8 +36,7 @@ export function serializeFinance<T>(data: T): T {
 
     // Handle Prisma Decimal or any object with .toNumber()
     if ((data as any).toNumber && typeof (data as any).toNumber === 'function') {
-        const num = (data as any).toNumber();
-        return Math.round(num * 100) / 100;
+        return (data as any).toNumber();
     }
 
     // Batch process object entries

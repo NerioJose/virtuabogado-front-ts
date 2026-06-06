@@ -35,13 +35,39 @@ export async function POST(request: Request) {
             userId = newUser.id;
         }
 
-        // 2. Determinar el nombre del servicio
+        // 2. Resolver el servicio (ID existente o nombre personalizado)
+        let serviceId: number;
         let serviceName = 'Servicio personalizado';
-        if (typeof servicio === 'number' || !isNaN(Number(servicio))) {
-            const serviceRecord = await prisma.service.findUnique({ where: { id: Number(servicio) } });
-            if (serviceRecord) serviceName = serviceRecord.titulo;
+
+        const servicioNum = Number(servicio);
+        if (!isNaN(servicioNum) && servicioNum > 0) {
+            // Es un ID numérico de servicio existente
+            const serviceRecord = await prisma.service.findUnique({ where: { id: servicioNum } });
+            if (serviceRecord) {
+                serviceId = serviceRecord.id;
+                serviceName = serviceRecord.titulo;
+            } else {
+                return NextResponse.json({ error: 'Servicio no encontrado' }, { status: 404 });
+            }
         } else if (typeof servicio === 'string' && servicio.trim()) {
+            // Es un nombre personalizado — buscar o crear el servicio
             serviceName = servicio.trim();
+            const existing = await prisma.service.findFirst({ where: { titulo: serviceName } });
+            if (existing) {
+                serviceId = existing.id;
+            } else {
+                const newService = await prisma.service.create({
+                    data: {
+                        titulo: serviceName,
+                        descripcion: `Servicio creado por admin para caso manual`,
+                        precio: Number(total),
+                        activo: false, // No visible en catálogo público
+                    }
+                });
+                serviceId = newService.id;
+            }
+        } else {
+            return NextResponse.json({ error: 'Debe especificar un servicio válido' }, { status: 400 });
         }
 
         // 3. Obtener configuración financiera
@@ -71,7 +97,7 @@ export async function POST(request: Request) {
         const order = await prisma.order.create({
             data: {
                 userId,
-                serviceId: typeof servicio === 'number' || !isNaN(Number(servicio)) ? Number(servicio) : undefined,
+                serviceId,
                 total: Number(total),
                 status: finalStatus,
                 lawyerId: targetLawyerId,

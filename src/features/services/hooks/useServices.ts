@@ -19,7 +19,7 @@ export const useServices = (options?: any) => {
     const query = useQuery({
         queryKey: servicesKeys.active,
         queryFn: () => servicesService.getActive(),
-        staleTime: 30000, // 30 segundos
+        staleTime: 0, // Siempre refetchear al montar (broadcast + postgres_changes + revalidatePath garantizan datos frescos)
         refetchOnWindowFocus: true,
         ...options
     });
@@ -82,7 +82,9 @@ export const useUpdateService = () => {
     return useMutation({
         mutationFn: ({ id, ...data }: UpdateServiceRequest) => servicesService.update(id, data),
         onSuccess: () => {
-            // Invalidar siempre después de guardar para garantizar datos frescos
+            // Forzar refetch inmediato en ambas claves de servicios (activos e inactivos)
+            queryClient.refetchQueries({ queryKey: servicesKeys.all, type: 'active' });
+            queryClient.refetchQueries({ queryKey: servicesKeys.active, type: 'active' });
             queryClient.invalidateQueries({ queryKey: servicesKeys.all });
             queryClient.invalidateQueries({ queryKey: servicesKeys.active });
             notifyServiceChange();

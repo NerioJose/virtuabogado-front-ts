@@ -43,7 +43,7 @@ export async function sendBroadcast(
                 supabaseAdmin.removeChannel(channel);
                 resolve(false);
             }
-        }, 3000);
+        }, 15000);
 
         channel.subscribe(async (status: string) => {
             if (status === 'SUBSCRIBED') {

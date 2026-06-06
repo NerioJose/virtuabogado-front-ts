@@ -250,15 +250,17 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
                 >
                     <FiPaperclip size={20} />
                 </button>
-                <button
-                    type="button"
-                    onClick={handleStartVideoCall}
-                    disabled={isChatDisabled}
-                    className="p-2 text-gray-400 hover:text-vinotinto transition-colors"
-                    title="Iniciar videollamada"
-                >
-                    <FiVideo size={20} />
-                </button>
+                {(user?.rol === 'ABOGADO' || user?.rol === 'ADMIN') && (
+                    <button
+                        type="button"
+                        onClick={handleStartVideoCall}
+                        disabled={isChatDisabled}
+                        className="p-2 text-gray-400 hover:text-vinotinto transition-colors"
+                        title="Iniciar videollamada"
+                    >
+                        <FiVideo size={20} />
+                    </button>
+                )}
                 <input
                     type="text"
                     value={newMessage}

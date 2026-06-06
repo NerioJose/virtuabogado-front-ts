@@ -137,6 +137,7 @@ export function useChatViewModel(orderId: string) {
         handleFileSelect,
         handleDeleteClick,
         confirmDelete,
+        sendMessage,
         errorModalOpen,
         setErrorModalOpen,
         errorModalMessage,

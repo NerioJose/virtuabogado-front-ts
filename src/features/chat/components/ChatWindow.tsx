@@ -1,6 +1,6 @@
 'use client';
 
-import { FiSend, FiPaperclip, FiLock, FiVolume2, FiVolumeX, FiFileText, FiDownload, FiImage, FiTrash2, FiShield, FiX, FiCheck, FiClock } from 'react-icons/fi';
+import { FiSend, FiPaperclip, FiLock, FiVolume2, FiVolumeX, FiFileText, FiDownload, FiImage, FiTrash2, FiShield, FiX, FiCheck, FiClock, FiVideo } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useChatViewModel } from '../hooks/useChatViewModel';
 import { linkifyText, getMessageContentInfo } from '../utils/chatHelpers';
@@ -30,6 +30,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         handleFileSelect,
         handleDeleteClick,
         confirmDelete,
+        sendMessage,
         errorModalOpen,
         setErrorModalOpen,
         errorModalMessage,
@@ -39,6 +40,21 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         fileInputRef,
         audioRef
     } = useChatViewModel(orderId);
+
+    const MEET_BASE = 'https://meet.jit.si';
+    const handleStartVideoCall = () => {
+        const roomName = `VIRTUA-${orderId.slice(0, 8)}-${Date.now().toString(36)}`;
+        const meetUrl = `${MEET_BASE}/${roomName}`;
+        
+        window.open(meetUrl, '_blank', 'noopener,noreferrer');
+        
+        if (sendMessage) {
+            sendMessage({
+                content: `📹 Videollamada iniciada: ${meetUrl}`,
+                senderId: user?.id || '',
+            }).catch(() => {});
+        }
+    };
 
     // Helper para detectar si un mensaje es un archivo/imagen
     const renderMessageContent = (msg: any) => {
@@ -233,6 +249,15 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
                     title="Adjuntar archivo"
                 >
                     <FiPaperclip size={20} />
+                </button>
+                <button
+                    type="button"
+                    onClick={handleStartVideoCall}
+                    disabled={isChatDisabled}
+                    className="p-2 text-gray-400 hover:text-vinotinto transition-colors"
+                    title="Iniciar videollamada"
+                >
+                    <FiVideo size={20} />
                 </button>
                 <input
                     type="text"

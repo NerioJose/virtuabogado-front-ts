@@ -19,7 +19,7 @@ export function useServiciosClientPage() {
     const orders = (ordersResponse as any)?.data || [];
     
     const { isLoading: servicesLoading } = useServices(); 
-    useServicesRealtime(!!user);
+    useServicesRealtime(true); // Siempre activo (usa clave anónima pública, sin auth requerida)
     
     const { isLoading: settingsLoading } = useFinancialSettings({
         enabled: !!user

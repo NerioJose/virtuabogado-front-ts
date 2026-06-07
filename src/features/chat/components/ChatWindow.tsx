@@ -41,7 +41,7 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
         audioRef
     } = useChatViewModel(orderId);
 
-    const MEET_BASE = process.env.NEXT_PUBLIC_JITSI_MEET_URL || 'https://meet.jit.si';
+    const MEET_BASE = process.env.NEXT_PUBLIC_JITSI_MEET_URL;
     const handleStartVideoCall = () => {
         const roomName = `VIRTUA-${orderId.slice(0, 8)}`;
         const displayName = user?.nombre || (user?.rol === 'ABOGADO' ? 'Abogado' : 'Admin');

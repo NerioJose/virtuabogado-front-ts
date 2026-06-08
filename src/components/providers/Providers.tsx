@@ -56,7 +56,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             window.addEventListener('load', registerSW);
         }
 
-        // Limpiar badge de la app al abrir la página o enfocarla
+        // Escuchar mensajes del Service Worker (push notification recibida)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data?.type === 'set-badge' && 'setAppBadge' in navigator) {
+                    (navigator as any).setAppBadge(event.data.count || 1).catch(() => {});
+                }
+            });
+        }
+
+        // Limpiar badge al abrir la página o enfocarla
         const clearBadge = () => {
             if ('clearAppBadge' in navigator) {
                 (navigator as any).clearAppBadge().catch(() => {});

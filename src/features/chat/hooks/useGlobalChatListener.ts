@@ -234,6 +234,11 @@ export function useGlobalChatListener() {
                                 blinkTab('💬 Nuevo Mensaje');
                             }
                             useChatStore.getState().markAsUnread(newMessage.orderId);
+                            // Badge en icono del Home Screen
+                            if ('setAppBadge' in navigator) {
+                                const unread = useChatStore.getState().unreadOrders;
+                                navigator.setAppBadge(unread.length).catch(() => {});
+                            }
                         }
                     }
 

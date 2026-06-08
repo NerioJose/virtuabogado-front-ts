@@ -48,15 +48,17 @@ self.addEventListener('push', function (event) {
     ],
   };
 
-  // Mostrar notificación y actualizar badge en el icono del Home Screen
+  // event.waitUntil garantiza que el SW no muera hasta mostrar la notificación
   event.waitUntil(
     self.registration.showNotification(data.title, notificationOptions)
   );
 
-  // Badge: poner un indicador en el icono de la app (Home Screen)
-  if (self.navigator && 'setAppBadge' in self.navigator) {
-    self.navigator.setAppBadge(1).catch(() => {});
-  }
+  // Notificar a los clientes abiertos para que actualicen el badge
+  self.clients.matchAll({ type: 'window' }).then(function (clientList) {
+    clientList.forEach(function (client) {
+      client.postMessage({ type: 'set-badge', count: 1 });
+    });
+  });
 });
 
 // ─── NOTIFICATIONCLICK: Acción inteligente al tocar la notificación ──
@@ -66,18 +68,8 @@ self.addEventListener('notificationclick', function (event) {
   // Cerrar la notificación siempre primero
   event.notification.close();
 
-  // Si el usuario pulsó "Cerrar", no abrimos nada (pero limpiamos badge)
-  if (event.action === 'dismiss') {
-    if (self.navigator && 'clearAppBadge' in self.navigator) {
-      self.navigator.clearAppBadge().catch(() => {});
-    }
-    return;
-  }
-
-  // Limpiar badge al hacer clic en la notificación
-  if (self.navigator && 'clearAppBadge' in self.navigator) {
-    self.navigator.clearAppBadge().catch(() => {});
-  }
+  // Si el usuario pulsó "Cerrar", no abrimos nada
+  if (event.action === 'dismiss') return;
 
   const targetUrl = event.notification.data?.url || '/';
   const origin = self.location.origin;
@@ -115,6 +107,13 @@ self.addEventListener('notificationclose', function (event) {
   const tag = event.notification.tag || 'unknown';
   console.log(`📊 [SW ${SW_VERSION}] Notificación descartada. Tag: ${tag} | URL: ${url}`);
   // Aquí se puede integrar analytics en el futuro (ej. Amplitude, Sentry)
+});
+
+// ─── MESSAGE: Recibe mensajes del cliente (ventana) para gestionar badge ──
+self.addEventListener('message', function (event) {
+  if (event.data?.type === 'clear-badge') {
+    // Podríamos almacenar el estado aquí si hiciera falta
+  }
 });
 
 // ─── INSTALL: Activación inmediata sin esperar a cerrar pestañas ─────

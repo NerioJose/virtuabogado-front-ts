@@ -52,6 +52,15 @@ export function useChatViewModel(orderId: string) {
         }
 
         useChatStore.getState().markAsRead(orderId);
+        // Limpiar badge si no quedan mensajes sin leer
+        if ('clearAppBadge' in navigator) {
+            const remaining = useChatStore.getState().unreadOrders;
+            if (remaining.length === 0) {
+                (navigator as any).clearAppBadge().catch(() => {});
+            } else {
+                (navigator as any).setAppBadge(remaining.length).catch(() => {});
+            }
+        }
     }, [orderId]);
 
     const toggleSound = () => {

@@ -6,6 +6,7 @@ import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { initializeAuth } from '@/features/auth/store/authStore';
 import React, { useEffect, useState } from 'react';
 import UploadManager from '@/features/storage/components/UploadManager';
+import PWAInstallBanner from '@/components/ui/PWAInstallBanner';
 
 // Componente "dummy" para usar el hook de suscripción dentro del contexto de QueryClient
 const RealtimeSubscription = () => {
@@ -89,6 +90,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <RealtimeSubscription />
             {children}
             <UploadManager />
+            <PWAInstallBanner />
             <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
     );

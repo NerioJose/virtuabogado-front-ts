@@ -12,8 +12,8 @@ self.addEventListener('push', function (event) {
   let data = {
     title: 'VirtuAbogado ⚖️',
     body: 'Tienes una actualización importante.',
-    icon: '/logo/logo_sf_1.png',
-    badge: '/logo/logo_sf_1.png',
+    icon: self.location.origin + '/logo/logo_sf_1.png',
+    badge: self.location.origin + '/logo/logo_sf_1.png',
     url: '/',
     tag: 'general-' + Date.now(),
   };
@@ -31,8 +31,8 @@ self.addEventListener('push', function (event) {
 
   const notificationOptions = {
     body: data.body,
-    icon: data.icon || '/logo/logo_sf_1.png',
-    badge: '/logo/logo_sf_1.png',
+    icon: data.icon || self.location.origin + '/logo/logo_sf_1.png',
+    badge: self.location.origin + '/logo/logo_sf_1.png',
     vibrate: [200, 100, 200, 100, 200],
     tag: data.tag,
     renotify: true,         // Siempre vibrar/sonar aunque tenga el mismo tag

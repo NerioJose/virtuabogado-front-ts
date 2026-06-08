@@ -48,10 +48,15 @@ self.addEventListener('push', function (event) {
     ],
   };
 
-  // event.waitUntil garantiza que el SW no muera hasta mostrar la notificación
+  // Mostrar notificación y actualizar badge en el icono del Home Screen
   event.waitUntil(
     self.registration.showNotification(data.title, notificationOptions)
   );
+
+  // Badge: poner un indicador en el icono de la app (Home Screen)
+  if (self.navigator && 'setAppBadge' in self.navigator) {
+    self.navigator.setAppBadge(1).catch(() => {});
+  }
 });
 
 // ─── NOTIFICATIONCLICK: Acción inteligente al tocar la notificación ──
@@ -61,8 +66,18 @@ self.addEventListener('notificationclick', function (event) {
   // Cerrar la notificación siempre primero
   event.notification.close();
 
-  // Si el usuario pulsó "Cerrar", no abrimos nada
-  if (event.action === 'dismiss') return;
+  // Si el usuario pulsó "Cerrar", no abrimos nada (pero limpiamos badge)
+  if (event.action === 'dismiss') {
+    if (self.navigator && 'clearAppBadge' in self.navigator) {
+      self.navigator.clearAppBadge().catch(() => {});
+    }
+    return;
+  }
+
+  // Limpiar badge al hacer clic en la notificación
+  if (self.navigator && 'clearAppBadge' in self.navigator) {
+    self.navigator.clearAppBadge().catch(() => {});
+  }
 
   const targetUrl = event.notification.data?.url || '/';
   const origin = self.location.origin;

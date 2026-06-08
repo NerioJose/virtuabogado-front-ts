@@ -55,17 +55,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         } else {
             window.addEventListener('load', registerSW);
         }
-
-        // Limpiar badge de la app al abrir la página o enfocarla
-        const clearBadge = () => {
-            if ('clearAppBadge' in navigator) {
-                (navigator as any).clearAppBadge().catch(() => {});
-            }
-        };
-        clearBadge();
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') clearBadge();
-        });
     }, []);
 
     const [queryClient] = useState(

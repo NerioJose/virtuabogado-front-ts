@@ -13,24 +13,29 @@ export async function POST(request: NextRequest) {
 
         const normalizedEmail = email.toLowerCase().trim();
         const GMAIL_USER = process.env.GMAIL_USER;
+        const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
+
+        console.log(`📧 [Password Reset] Solicitud para: ${normalizedEmail}`);
+        console.log(`📧 [Password Reset] GMAIL_USER configurado: ${GMAIL_USER ? '✅' : '❌'}, GMAIL_APP_PASSWORD configurado: ${GMAIL_PASS ? '✅(' + GMAIL_PASS.slice(0, 4) + '...)' : '❌'}`);
 
         
 
         // 1. Verificar si el usuario existe y está ACTIVO (Case-Insensitive)
-        const user = await prisma.user.findFirst({
-            where: { 
-                email: {
-                    equals: normalizedEmail,
-                    mode: 'insensitive'
-                },
-                activo: true // Solo permitir recuperación a cuentas activas
-            }
+        const userByEmail = await prisma.user.findFirst({
+            where: { email: { equals: normalizedEmail, mode: 'insensitive' } }
         });
-
-        if (!user) {
-            console.warn(`⚠️ [Password Reset] Usuario no encontrado para: ${normalizedEmail}`);
+        
+        if (!userByEmail) {
+            console.log(`🔍 [Password Reset] Email no registrado: ${normalizedEmail}`);
             return NextResponse.json({ message: 'Si el correo está registrado, recibirás un enlace de recuperación pronto.' });
         }
+
+        if (!userByEmail.activo) {
+            console.log(`🔍 [Password Reset] Usuario inactivo: ${normalizedEmail}`);
+            return NextResponse.json({ message: 'Si el correo está registrado, recibirás un enlace de recuperación pronto.' });
+        }
+
+        const user = userByEmail;
 
         // 2. Generar Token Único
         const token = uuidv4();

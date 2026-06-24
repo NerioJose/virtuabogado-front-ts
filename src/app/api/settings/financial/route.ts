@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
+import { getCached, setCache, clearCache } from '@/lib/cache';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 /**
  * GET /api/settings/financial
@@ -11,10 +13,16 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
     try {
-        
+        // Caché en memoria de 30s para evitar queries repetidas en ráfagas
+        const cached = getCached<any>('financial-settings-ui');
+        if (cached) {
+            return NextResponse.json(cached, {
+                headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
+            });
+        }
+
         const supabase = await createClient();
 
-        // Configuración financiera pública para lectura (permite a Contacto y Checkout acceder sin sesión)
         const { data: { user } } = await supabase.auth.getUser();
 
         let isAdmin = false;
@@ -26,64 +34,51 @@ export async function GET(request: NextRequest) {
             isAdmin = dbUser?.rol === 'ADMIN';
         }
 
-        const getSettingsModel = () => {
-             const p = prisma as any;
-             return p.financialSettings || p.FinancialSettings || p['FinancialSettings'];
-        };
+        const model = (prisma as any).financialSettings || (prisma as any).FinancialSettings || (prisma as any)['FinancialSettings'];
 
-        const model = getSettingsModel();
+        let settings: any;
 
-        if (!model) {
-            
+        if (model) {
+            settings = await model.findUnique({ where: { id: FINANCIAL_SETTINGS_ID } });
+        }
+
+        if (!settings) {
             const rawResult = await prisma.$queryRaw<any[]>`SELECT * FROM "FinancialSettings" WHERE id = ${FINANCIAL_SETTINGS_ID} LIMIT 1`;
-            
             if (rawResult && rawResult.length > 0) {
-                return NextResponse.json({
-                    id: FINANCIAL_SETTINGS_ID,
-                    lawyerCommissionPercentage: isAdmin ? Number(rawResult[0].lawyer_commission_percentage) : 0,
-                    operationalCostsPercentage: isAdmin ? Number(rawResult[0].operational_costs_percentage) : 0,
-                    taxPercentage: Number(rawResult[0].tax_percentage),
-                    platformFeePercentage: isAdmin ? Number(rawResult[0].platform_fee_percentage) : 0,
-                    simulationBase: isAdmin ? Number(rawResult[0].simulation_base || 0) : 0,
-                    whatsappPhone: rawResult[0].whatsapp_phone || null,
-                    updatedAt: rawResult[0].updated_at || new Date(),
-                    updatedBy: isAdmin ? rawResult[0].updated_by : undefined,
-                });
+                settings = rawResult[0];
             }
         }
 
-        let settings = await model?.findUnique({
-            where: { id: FINANCIAL_SETTINGS_ID }
-        });
-
         if (!settings) {
-            
             settings = {
                 id: FINANCIAL_SETTINGS_ID,
-                lawyer_commission_percentage: (0 as any),
-                operational_costs_percentage: (0 as any),
-                tax_percentage: (0 as any),
-                platform_fee_percentage: (0 as any),
-                simulation_base: (0 as any),
+                lawyer_commission_percentage: 0,
+                operational_costs_percentage: 0,
+                tax_percentage: 0,
+                platform_fee_percentage: 0,
+                simulation_base: 0,
                 whatsappPhone: null,
                 updated_at: new Date(),
                 updated_by: 'system'
-            } as any;
+            };
         }
 
         const response = {
-            id: settings!.id,
-            lawyerCommissionPercentage: isAdmin ? Number(settings!.lawyer_commission_percentage) : 0,
-            operationalCostsPercentage: isAdmin ? Number(settings!.operational_costs_percentage) : 0,
-            taxPercentage: Number(settings!.tax_percentage),
-            platformFeePercentage: isAdmin ? Number(settings!.platform_fee_percentage) : 0,
-            simulationBase: isAdmin ? Number(settings!.simulation_base || 0) : 0,
-            whatsappPhone: (settings as any).whatsappPhone || null,
-            updatedAt: settings!.updated_at,
-            updatedBy: isAdmin ? settings!.updated_by : undefined,
+            id: FINANCIAL_SETTINGS_ID,
+            lawyerCommissionPercentage: isAdmin ? Number(settings.lawyer_commission_percentage) : 0,
+            operationalCostsPercentage: isAdmin ? Number(settings.operational_costs_percentage) : 0,
+            taxPercentage: Number(settings.tax_percentage),
+            platformFeePercentage: isAdmin ? Number(settings.platform_fee_percentage) : 0,
+            simulationBase: isAdmin ? Number(settings.simulation_base || 0) : 0,
+            whatsappPhone: (settings as any).whatsappPhone || (settings as any).whatsapp_phone || null,
+            updatedAt: settings.updated_at || settings.updatedAt || new Date(),
+            updatedBy: isAdmin ? settings.updated_by : undefined,
         };
 
-        return NextResponse.json(response);
+        setCache('financial-settings-ui', response, 30_000);
+        return NextResponse.json(response, {
+            headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
+        });
     } catch (error) {
         console.error('❌ [GET] Error inesperado:', error);
         return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
@@ -159,6 +154,11 @@ export async function PATCH(request: NextRequest) {
                 updated_by = EXCLUDED.updated_by,
                 updated_at = NOW()
         `);
+
+        // Invalidar caché
+        revalidatePath('/');
+        clearCache('financial-settings-ui');
+        clearCache('financial-settings');
 
         return NextResponse.json({ success: true, message: 'Configuración actualizada' });
     } catch (error: any) {

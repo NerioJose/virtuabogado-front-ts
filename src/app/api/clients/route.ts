@@ -10,30 +10,28 @@ export const revalidate = 0;
 
 export async function GET(request: Request) {
     try {
-        const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
 
-        // 1. Fallback: Check for Authorization header if cookies fail
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) {
-                    user = headerUser;
-                    
-                }
+        let user: any;
+        let userRole: string | undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: request.headers.get('x-user-email') || '' };
+            userRole = headerRole ?? undefined;
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (!supabaseUser) {
+                console.warn('⚠️ API GET /clients: User not found in session');
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
             }
+            user = supabaseUser;
+            userRole = user.user_metadata?.rol;
         }
 
-        if (!user) {
-            console.warn('⚠️ API GET /clients: User not found in session');
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
+        userRole = userRole?.toUpperCase();
 
-        // Obtener rol del usuario
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -107,15 +105,25 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient();
-        const { data: { user: adminUser } } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
 
-        if (!adminUser) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        let adminUser: any;
+        let userRole: string | undefined;
+
+        if (headerId) {
+            adminUser = { id: headerId, email: request.headers.get('x-user-email') || '' };
+            userRole = headerRole ?? undefined;
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (!supabaseUser) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+            }
+            adminUser = supabaseUser;
+            userRole = adminUser.user_metadata?.rol;
         }
 
-        // Verificar rol admin/abogado
-        let userRole = adminUser.user_metadata?.rol;
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: adminUser.id },

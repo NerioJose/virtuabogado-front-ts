@@ -11,25 +11,16 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    const supabase = await createClient();
-    
 
     try {
-        // Verificar autenticación
-        let { data: { user } } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
 
-        // Fallbacks
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) user = headerUser;
+        if (!headerId) {
+            const supabase = await createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
             }
-        }
-
-        if (!user) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
         // Determinar si buscamos por UUID o por numericId
@@ -82,25 +73,17 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const supabase = await createClient();
     const { id } = await params;
     const body = await request.json();
 
-    // Verificar autenticación
-    let { data: { user } } = await supabase.auth.getUser();
+    const headerId = request.headers.get('x-user-id');
 
-    // Fallbacks
-    if (!user) {
-        const authHeader = request.headers.get('Authorization');
-        if (authHeader?.startsWith('Bearer ')) {
-            const token = authHeader.split(' ')[1];
-            const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-            if (headerUser) user = headerUser;
+    if (!headerId) {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
-    }
-
-    if (!user) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     try {
@@ -201,24 +184,16 @@ export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const supabase = await createClient();
     const { id } = await params;
 
-    // Verificar autenticación
-    let { data: { user } } = await supabase.auth.getUser();
+    const headerId = request.headers.get('x-user-id');
 
-    // Fallbacks
-    if (!user) {
-        const authHeader = request.headers.get('Authorization');
-        if (authHeader?.startsWith('Bearer ')) {
-            const token = authHeader.split(' ')[1];
-            const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-            if (headerUser) user = headerUser;
+    if (!headerId) {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
-    }
-
-    if (!user) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     try {

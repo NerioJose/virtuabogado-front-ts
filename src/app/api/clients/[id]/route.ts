@@ -8,26 +8,28 @@ export async function PATCH(
 ) {
     try {
         const { id } = await params;
-        const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        // Fallbacks
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) user = headerUser;
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
+
+        let user: any;
+        let userRole: string | undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: request.headers.get('x-user-email') || '' };
+            userRole = headerRole ?? undefined;
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (!supabaseUser) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
             }
+            user = supabaseUser;
+            userRole = user.user_metadata?.rol;
         }
 
-        if (!user) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
+        userRole = userRole?.toUpperCase();
 
-        // Obtener rol del usuario
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -108,26 +110,28 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params;
-        const supabase = await createClient();
-        // Verificar autenticación
-        let { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        // Fallbacks
-        if (!user) {
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader?.startsWith('Bearer ')) {
-                const token = authHeader.split(' ')[1];
-                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
-                if (headerUser) user = headerUser;
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
+
+        let user: any;
+        let userRole: string | undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: request.headers.get('x-user-email') || '' };
+            userRole = headerRole ?? undefined;
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (!supabaseUser) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
             }
+            user = supabaseUser;
+            userRole = user.user_metadata?.rol;
         }
 
-        if (!user) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
+        userRole = userRole?.toUpperCase();
 
-        // Solo ADMIN puede borrar
-        let userRole: string | undefined = (user.user_metadata?.rol as string)?.toUpperCase();
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },

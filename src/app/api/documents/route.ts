@@ -8,6 +8,16 @@ export async function GET(request: Request) {
         const orderId = searchParams.get('orderId');
         const lawyerId = searchParams.get('lawyerId');
 
+        const headerId = request.headers.get('x-user-id');
+
+        if (!headerId) {
+            const supabase = await createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+            }
+        }
+
         const where: any = {};
         if (orderId) {
             where.orderId = orderId;
@@ -40,11 +50,23 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
 
-        if (!user) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        let user: any;
+        let userRole: string | undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: request.headers.get('x-user-email') || '' };
+            userRole = headerRole ?? undefined;
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (!supabaseUser) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+            }
+            user = supabaseUser;
+            userRole = user.user_metadata?.rol;
         }
 
         const body = await request.json();
@@ -67,7 +89,6 @@ export async function POST(request: Request) {
         const isOwner = order.userId === user.id;
         const isLawyer = order.lawyerId === user.id;
         
-        let userRole = user.user_metadata?.rol;
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },
@@ -101,11 +122,23 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const headerId = request.headers.get('x-user-id');
+        const headerRole = request.headers.get('x-user-role');
 
-        if (!user) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        let user: any;
+        let userRole: string | undefined;
+
+        if (headerId) {
+            user = { id: headerId, email: request.headers.get('x-user-email') || '' };
+            userRole = headerRole ?? undefined;
+        } else {
+            const supabase = await createClient();
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (!supabaseUser) {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+            }
+            user = supabaseUser;
+            userRole = user.user_metadata?.rol;
         }
 
         const { searchParams } = new URL(request.url);
@@ -125,7 +158,6 @@ export async function DELETE(request: Request) {
         }
 
         // Solo el uploader o un ADMIN pueden borrar
-        let userRole = user.user_metadata?.rol;
         if (!userRole) {
             const userData = await prisma.user.findUnique({
                 where: { id: user.id },

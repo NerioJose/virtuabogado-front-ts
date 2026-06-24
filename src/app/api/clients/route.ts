@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
@@ -147,7 +148,7 @@ export async function POST(request: Request) {
         let userId: string;
 
         // 1. Intentar crear en Supabase Auth
-        const tempPassword = body.password || `VirtuClient2024!_${Math.random().toString(36).slice(-4)}`;
+        const tempPassword = body.password || crypto.randomBytes(12).toString('hex');
         
         const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
             email,

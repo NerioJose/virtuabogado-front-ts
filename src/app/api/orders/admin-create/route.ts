@@ -10,6 +10,15 @@ import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function POST(request: Request) {
     try {
+        const headerRole = request.headers.get('x-user-role');
+        if (headerRole !== 'ADMIN') {
+            const supabase = await (await import('@/utils/supabase/server')).createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user || ((user.user_metadata?.rol as string) || '').toUpperCase() !== 'ADMIN') {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+            }
+        }
+
         const body = await request.json();
         const { email, nombre, telefono, servicio, total } = body;
 

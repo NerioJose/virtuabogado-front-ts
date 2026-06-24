@@ -12,14 +12,6 @@ export interface AuthUser {
 }
 
 export async function getAuthUser(request: Request): Promise<{ user: AuthUser; role: string } | { error: NextResponse }> {
-    const headerId = request.headers.get('x-user-id');
-    const headerEmail = request.headers.get('x-user-email');
-    const headerRole = request.headers.get('x-user-role');
-
-    if (headerId) {
-        return { user: { id: headerId, email: headerEmail || '' }, role: (headerRole || 'CLIENTE').toUpperCase() };
-    }
-
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

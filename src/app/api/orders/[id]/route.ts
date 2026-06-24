@@ -76,20 +76,25 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const headerId = request.headers.get('x-user-id');
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
 
-    if (!headerId) {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // Solo permitir actualizar campos específicos
+    const allowedFields = ['status', 'lawyerId', 'assignedAt', 'description'];
+    const dataToUpdate: Record<string, unknown> = {};
+    for (const key of Object.keys(body)) {
+        if (allowedFields.includes(key)) {
+            dataToUpdate[key] = body[key];
         }
     }
 
     try {
         const order = await prisma.order.update({
             where: { id },
-            data: body,
+            data: dataToUpdate,
             include: {
                 service: true,
                 user: {

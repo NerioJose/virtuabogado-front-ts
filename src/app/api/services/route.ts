@@ -38,7 +38,15 @@ export async function GET(req: Request) {
 // Para administración (todos los servicios)
 export async function POST(req: Request) {
     try {
-        // TODO: Validar sesión de admin aquí en el futuro real
+        const headerRole = req.headers.get('x-user-role');
+        if (headerRole !== 'ADMIN') {
+            const supabase = await (await import('@/utils/supabase/server')).createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user || ((user.user_metadata?.rol as string) || '').toUpperCase() !== 'ADMIN') {
+                return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+            }
+        }
+
         const body = await req.json();
         const { titulo, descripcion, precio, imagenUrl, activo } = body;
 

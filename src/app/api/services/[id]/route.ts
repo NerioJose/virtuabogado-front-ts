@@ -26,11 +26,22 @@ export async function GET(
     }
 }
 
+async function requireAdmin(req: Request): Promise<boolean> {
+    const headerRole = req.headers.get('x-user-role');
+    if (headerRole === 'ADMIN') return true;
+    const supabase = await (await import('@/utils/supabase/server')).createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return !!(user && ((user.user_metadata?.rol as string) || '').toUpperCase() === 'ADMIN');
+}
+
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        if (!(await requireAdmin(req))) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+        }
         const { id } = await params;
         const body = await req.json();
         
@@ -71,6 +82,9 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        if (!(await requireAdmin(req))) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+        }
         const { id } = await params;
         // Soft delete: just set activo to false
         const service = await prisma.service.update({

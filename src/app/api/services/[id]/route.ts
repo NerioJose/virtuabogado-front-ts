@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { broadcastServiceUpdate } from '@/lib/broadcast';
 import { serializeFinance } from '@/lib/finance';
+import { clearCache } from '@/lib/cache';
 
 export async function GET(
     req: Request,
@@ -53,9 +54,10 @@ export async function PATCH(
             eventType: 'updated',
         }).catch((e: unknown) => console.error('Broadcast error:', e));
 
-        // Invalidar caché ISR para que nuevos visitantes vean los cambios al instante
+        // Invalidar caché ISR y en memoria
         revalidatePath('/');
         revalidatePath('/servicios');
+        clearCache('services-');
 
         return NextResponse.json(serializeFinance(service));
     } catch (error) {
@@ -82,9 +84,10 @@ export async function DELETE(
             eventType: 'deleted',
         }).catch((e: unknown) => console.error('Broadcast error:', e));
 
-        // Invalidar caché ISR para que nuevos visitantes vean los cambios al instante
+        // Invalidar caché ISR y en memoria
         revalidatePath('/');
         revalidatePath('/servicios');
+        clearCache('services-');
 
         return NextResponse.json(serializeFinance({ message: 'Service deactivated successfully', service }));
     } catch (error) {

@@ -470,7 +470,7 @@ export async function POST(request: Request) {
     }
 }
 
-export async function PUT(request: Request) {
+export async function PATCH(request: Request) {
     try {
         const headerId = request.headers.get('x-user-id');
         const headerEmail = request.headers.get('x-user-email');

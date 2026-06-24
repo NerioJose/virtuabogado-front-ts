@@ -86,7 +86,7 @@ export const useOrdersStore = create<OrdersState>()(
             updateOrderStatus: async (orderId: string, status: OrderStatus, notes?: string) => {
                 try {
                     set({ isLoading: true, error: null });
-                    await apiClient.put(`/api/orders`, { id: orderId, status });
+                    await apiClient.patch(`/api/orders`, { id: orderId, status });
 
                     set((state) => ({
                         orders: state.orders.map((order) =>
@@ -118,7 +118,7 @@ export const useOrdersStore = create<OrdersState>()(
             assignLawyer: async (orderId: string, lawyerId: string) => {
                 try {
                     set({ isLoading: true, error: null });
-                    await apiClient.put(`/api/orders`, { id: orderId, lawyerId });
+                    await apiClient.patch(`/api/orders`, { id: orderId, lawyerId });
 
                     set((state) => ({
                         orders: state.orders.map((order) =>

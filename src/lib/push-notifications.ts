@@ -4,15 +4,16 @@ import { prisma } from './prisma';
 // Configurar VAPID (Keys deben estar en .env)
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
-const email = process.env.VAPID_EMAIL || 'mailto:virtuabogado.legal@gmail.com';
+const email = process.env.VAPID_EMAIL;
 
-if (publicKey && privateKey) {
+if (publicKey && privateKey && email) {
   
   webpush.setVapidDetails(email, publicKey, privateKey);
 } else {
   console.error('🚨 [Push Config] VAPID NO CONFIGURADO CORRECTAMENTE.');
   if (!publicKey) console.error('   ❌ Falta: NEXT_PUBLIC_VAPID_PUBLIC_KEY');
   if (!privateKey) console.error('   ❌ Falta: VAPID_PRIVATE_KEY');
+  if (!email) console.error('   ❌ Falta: VAPID_EMAIL');
 }
 
 interface PushNotificationOptions {

@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { ZenobankService } from '../services/zenobank.service';
 import { serializeFinance } from '@/lib/finance';
 import { UserRole, OrderStatus } from '@/shared/types/entities.types';
+import { syncUserIdentity } from '@/services/identity.service';
 
 interface ProcessPaymentParams {
     serviceId: number;
@@ -20,99 +21,11 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         throw new Error('Debe iniciar sesión para realizar la compra.');
     }
 
-    // 0. SINCRONIZACIÓN DE USUARIO (Identity Merge Strategy - No Deletion)
-    // Buscamos si el usuario ya existe por su email (Source of Truth por Identidad Humana)
+    // SINCRONIZACIÓN DE IDENTIDAD (Identity Merge Strategy - No Deletion)
     try {
-        const existingUserByEmail = await prisma.user.findUnique({
-            where: { email: user.email! }
+        await syncUserIdentity(user, {}, {
+            defaultName: user.email?.split('@')[0] || undefined,
         });
-
-        let finalName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
-        const updateData: any = { email: user.email!, activo: true };
-
-        if (existingUserByEmail && existingUserByEmail.id !== user.id) {
-            
-            
-            // 1. Rescate de Identidad
-            if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
-                finalName = existingUserByEmail.nombre;
-            }
-
-            // 2. Liberar el email del registro antiguo para permitir crear el nuevo ID
-            await prisma.user.update({
-                where: { id: existingUserByEmail.id },
-                data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
-            });
-
-            // 3. Crear o actualizar el nuevo usuario AHORA para evitar el error de Foreign Key
-            if (finalName) updateData.nombre = finalName;
-            
-            // 🛡️ PROTECCIÓN DE ROL: Mantener rol anterior si era ADMIN o ABOGADO
-            // O forzar ADMIN si es el correo maestro
-            const isMasterAdmin = user.email === process.env.EMAIL_MASTER_ADMIN; 
-            const roleToPreserve = isMasterAdmin ? 'ADMIN' : (existingUserByEmail.rol || 'CLIENTE');
-
-            await prisma.user.upsert({
-                where: { id: user.id },
-                update: { ...updateData, rol: roleToPreserve },
-                create: {
-                    id: user.id,
-                    email: user.email!,
-                    nombre: finalName || user.email!.split('@')[0],
-                    rol: roleToPreserve,
-                    activo: true,
-                }
-            });
-
-            // 4. Migrar relaciones al nuevo ID, el cual YA EXISTE en la base de datos
-            await prisma.$transaction([
-                prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
-                prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: user.id } }),
-                prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: user.id } }),
-                prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: user.id } }),
-                prisma.pushSubscription.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: user.id } }),
-            ]);
-            
-
-            // 5. Sincronizar metadatos con Supabase Auth para que el NavBar se actualice de inmediato
-            if (finalName) {
-                
-                await supabase.auth.updateUser({
-                    data: { nombre: finalName }
-                });
-            }
-        } else {
-            // Si no hay colisión, simplemente hacemos el upsert regular
-            if (finalName) {
-                updateData.nombre = finalName;
-                // Sincronizar también con Supabase Auth si el nombre local era vacío o genérico
-                if (user.user_metadata?.nombre !== finalName) {
-                    await supabase.auth.updateUser({
-                        data: { nombre: finalName }
-                    });
-                }
-            }
-            try {
-                // 🛡️ PROTECCIÓN DE ROL: Forzar ADMIN si es el correo maestro
-                const isMasterAdmin = user.email === process.env.EMAIL_MASTER_ADMIN;
-                const currentRole = isMasterAdmin ? 'ADMIN' : (updateData.rol || 'CLIENTE');
-
-                await prisma.user.upsert({
-                    where: { id: user.id },
-                    update: { ...updateData, rol: currentRole },
-                    create: {
-                        id: user.id,
-                        email: user.email!,
-                        nombre: finalName || user.email!.split('@')[0],
-                        rol: currentRole,
-                        activo: true,
-                    }
-                });
-            } catch (error: any) {
-                if (error.code === 'P2002') console.warn('⚠️ [Identity Sync] P2002 evitado. Otra petición paralela reconcilió.');
-                else throw error;
-            }
-        }
     } catch (error: any) {
         console.error('❌ Error Grave en Sincronización de Identidad:', error);
         throw error;

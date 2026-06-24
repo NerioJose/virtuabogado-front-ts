@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
 import { UserRole } from '@prisma/client';
+import { syncUserIdentity } from '@/services/identity.service';
 
 /**
  * API: /api/notifications/subscribe
@@ -34,37 +35,16 @@ export async function POST(request: Request) {
     const finalRole = (rol as string || 'CLIENTE').toUpperCase() as UserRole;
 
     try {
-      const existingUserByEmail = await prisma.user.findUnique({
-        where: { email: user.email! }
-      });
-
-      if (existingUserByEmail && existingUserByEmail.id !== user.id) {
-        
-        await prisma.user.update({
-          where: { id: existingUserByEmail.id },
-          data: { email: `legacy_${existingUserByEmail.id}_${user.email}` }
-        });
-      }
-
-      await prisma.user.upsert({
-        where: { id: user.id },
-        update: { 
-          email: user.email!,
-          rol: finalRole,
-          activo: true
-        },
-        create: {
-          id: user.id,
-          email: user.email!,
-          nombre: nombre || user.email?.split('@')[0] || 'Usuario Push',
-          rol: finalRole,
-          telefono: telefono || undefined,
-          activo: true
-        }
+      await syncUserIdentity(user, {
+        nombre: nombre || user.email?.split('@')[0] || 'Usuario Push',
+        rol: finalRole,
+        telefono,
+      }, {
+        skipMetadataSync: true,
+        skipRelationMigration: true,
       });
     } catch (upsertUserError) {
       console.warn('⚠️ [Push Subscribe] Error al sincronizar usuario (colisión ignorada):', upsertUserError);
-      // No bloqueamos la suscripción si falla esto, el fallback en push intentará de todos modos
     }
 
     // 3. LÓGICA DE UPSERT: Vinculamos la suscripción al usuario y al endpoint único.

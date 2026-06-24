@@ -6,6 +6,7 @@ import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 import { serializeFinance } from '@/lib/finance';
 import { calculateOrderFinances } from '@/services/finance.service';
+import { syncUserIdentity } from '@/services/identity.service';
 
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
@@ -328,70 +329,16 @@ export async function POST(request: Request) {
 
         
 
-        // 0. SINCRONIZACIÓN DE USUARIO (Identity Merge Strategy - No Deletion)
-        // Buscamos si el email ya existe con otro ID (Conflicto de Identidad Local)
+        // SINCRONIZACIÓN DE IDENTIDAD (Identity Merge Strategy)
         try {
-            const existingUserByEmail = await prisma.user.findUnique({
-                where: { email: user.email! }
+            const roleForOrder = isAdmin ? 'CLIENTE' : (userRole as UserRole);
+            await syncUserIdentity(user, { rol: roleForOrder }, {
+                targetUserId: finalUserId,
+                skipMetadataSync: true,
+                defaultName: 'Cliente Nuevo',
             });
-            let finalName = user.user_metadata?.nombre || user.user_metadata?.name || user.user_metadata?.full_name;
-            const updateData: any = { email: user.email!, activo: true };
-
-            if (existingUserByEmail && existingUserByEmail.id !== finalUserId) {
-                
-                
-                // 1. Rescate de Identidad: heredar el nombre si era válido
-                if (!finalName && existingUserByEmail.nombre && !existingUserByEmail.nombre.includes('@')) {
-                    finalName = existingUserByEmail.nombre;
-                    
-                }
-                
-                // 2. Liberar el email
-                await prisma.user.update({
-                    where: { id: existingUserByEmail.id },
-                    data: { email: `legacy_${existingUserByEmail.id}_${existingUserByEmail.email}` }
-                });
-
-                // 3. Upsert definitivo por ID estable
-                if (finalName) updateData.nombre = finalName;
-                await prisma.user.upsert({
-                    where: { id: finalUserId },
-                    update: updateData,
-                    create: {
-                        id: finalUserId,
-                        email: user.email || 'correo@pendiente.com',
-                        nombre: finalName || 'Cliente Nuevo',
-                        rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
-                    }
-                });
-
-                // 4. Migrar relaciones
-                await prisma.$transaction([
-                    prisma.order.updateMany({ where: { userId: existingUserByEmail.id }, data: { userId: finalUserId } }),
-                    prisma.order.updateMany({ where: { lawyerId: existingUserByEmail.id }, data: { lawyerId: finalUserId } }),
-                    prisma.message.updateMany({ where: { senderId: existingUserByEmail.id }, data: { senderId: finalUserId } }),
-                    prisma.document.updateMany({ where: { uploaderId: existingUserByEmail.id }, data: { uploaderId: finalUserId } })
-                ]);
-            } else {
-                if (finalName) updateData.nombre = finalName;
-                try {
-                    await prisma.user.upsert({
-                        where: { id: finalUserId },
-                        update: updateData,
-                        create: {
-                            id: finalUserId,
-                            email: user.email || 'correo@pendiente.com',
-                            nombre: finalName || 'Cliente Nuevo',
-                            rol: isAdmin ? 'CLIENTE' : (userRole as UserRole),
-                        }
-                    });
-                } catch (error: any) {
-                    if (error.code !== 'P2002') throw error;
-                }
-            }
         } catch (error: any) {
             console.error('❌ [API Sync Error]:', error);
-            // No bloqueamos el flujo si no es crítico, pero para órdenes queremos integridad
             throw error;
         }
 

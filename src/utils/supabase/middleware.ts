@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
     const protectedRoutes = [
         { path: '/admin', roles: ['ADMIN'] },
         { path: '/abogado', roles: ['ABOGADO'] },
+        { path: '/mis-servicios', roles: ['CLIENTE'] },
     ];
 
     const authRoutes = ['/login', '/register', '/auth/callback'];

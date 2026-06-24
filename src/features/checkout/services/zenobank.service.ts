@@ -19,7 +19,7 @@ interface ZenobankSessionRequest {
 export class ZenobankService {
     private static apiKey = process.env.ZENOBANK_API_KEY || '';
     private static webhookSecret = process.env.ZENOBANK_WEBHOOK_SECRET || '';
-    private static apiUrl = 'https://api.zenobank.io/api/v1/checkouts';
+    private static apiUrl = process.env.API_URL_ZENOBANK || '';
 
     /**
      * Crea una sesión de checkout en Zenobank v1 (Restauración Total)

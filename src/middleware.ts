@@ -48,6 +48,18 @@ export async function middleware(request: NextRequest) {
     }
 
     // 🛡️ NIVEL 3: SEGURIDAD (Rate Limiting Preventivo)
+    // Early return para API públicas (no necesitan sesión)
+    const publicApiPaths = ['/api/services', '/api/webhooks', '/api/payments'];
+    if (publicApiPaths.some(p => pathname.startsWith(p))) {
+        const res = NextResponse.next();
+        if (isAllowedOrigin) {
+            res.headers.set('Access-Control-Allow-Origin', origin!);
+            res.headers.set('Access-Control-Allow-Credentials', 'true');
+        }
+        return res;
+    }
+
+    // Early return para páginas que no requieren auth (login, register, auth/callback son manejados por el matcher)
     let response: NextResponse;
 
     if (AUTH_PATHS.some(path => pathname.startsWith(path))) {
@@ -72,14 +84,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
-         */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    ],
+    matcher: ['/admin/:path*', '/abogado/:path*', '/mis-servicios/:path*', '/api/:path*', '/login', '/register', '/auth/callback'],
 }

@@ -49,7 +49,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
             
             // 🛡️ PROTECCIÓN DE ROL: Mantener rol anterior si era ADMIN o ABOGADO
             // O forzar ADMIN si es el correo maestro
-            const isMasterAdmin = user.email === 'virtuabogado.legal@gmail.com';
+            const isMasterAdmin = user.email === process.env.EMAIL_MASTER_ADMIN; 
             const roleToPreserve = isMasterAdmin ? 'ADMIN' : (existingUserByEmail.rol || 'CLIENTE');
 
             await prisma.user.upsert({
@@ -94,7 +94,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
             }
             try {
                 // 🛡️ PROTECCIÓN DE ROL: Forzar ADMIN si es el correo maestro
-                const isMasterAdmin = user.email === 'virtuabogado.legal@gmail.com';
+                const isMasterAdmin = user.email === process.env.EMAIL_MASTER_ADMIN;
                 const currentRole = isMasterAdmin ? 'ADMIN' : (updateData.rol || 'CLIENTE');
 
                 await prisma.user.upsert({
@@ -200,7 +200,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
 
     // 5. LÓGICA POR PASARELA
     if (paymentMethod.identifier === 'zenobank') {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
         
         
 

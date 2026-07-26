@@ -20,7 +20,7 @@ export const useServices = (options?: any) => {
         queryKey: servicesKeys.active,
         queryFn: () => servicesService.getActive(),
         staleTime: 0,
-        refetchInterval: 10000, // 10s de respaldo por si el broadcast no llega
+        refetchInterval: 5000,
         refetchOnWindowFocus: true,
         ...options
     });
@@ -40,7 +40,7 @@ export const useAdminServices = () => {
     const query = useQuery({
         queryKey: servicesKeys.all,
         queryFn: () => servicesService.getAll(),
-        staleTime: 5000,
+        staleTime: 0,
         refetchOnWindowFocus: true,
     });
 

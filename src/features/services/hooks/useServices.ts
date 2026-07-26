@@ -67,52 +67,35 @@ export const useCreateService = () => {
     return useMutation({
         mutationFn: (data: CreateServiceRequest) => servicesService.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: servicesKeys.all });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.active });
-            notifyServiceChange(); // Notifica a otras pestañas
+            queryClient.invalidateQueries({ queryKey: servicesKeys.all, refetchType: 'all' });
+            notifyServiceChange();
         },
     });
 };
 
-// Debounce timer compartido para evitar múltiples refetches al hacer toggles rápidos
-let invalidateTimer: ReturnType<typeof setTimeout> | null = null;
-
 export const useUpdateService = () => {
     const queryClient = useQueryClient();
-    const updateServiceState = useServicesStore(state => state.updateServiceState);
     
     return useMutation({
         mutationFn: ({ id, ...data }: UpdateServiceRequest) => servicesService.update(id, data),
-        onSuccess: (updatedService) => {
-            // Actualizar store con la respuesta del servidor (valor exacto)
-            if (updatedService) {
-                updateServiceState((updatedService as any).id || (updatedService as any).id, updatedService as any);
-            }
-            // Forzar refetch en ambas claves
-            queryClient.refetchQueries({ queryKey: servicesKeys.active, type: 'active' });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.all });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.active });
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: servicesKeys.all, refetchType: 'all' });
             notifyServiceChange();
         },
         onError: (_err) => {
-            queryClient.invalidateQueries({ queryKey: servicesKeys.all });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.active });
+            queryClient.invalidateQueries({ queryKey: servicesKeys.all, refetchType: 'all' });
         },
     });
 };
 
 export const useDeactivateService = () => {
     const queryClient = useQueryClient();
-    const updateServiceState = useServicesStore(state => state.updateServiceState);
     
     return useMutation({
         mutationFn: (id: number) => servicesService.deactivate(id),
-        onSuccess: (_, id) => {
-            // Actualizar store global
-            updateServiceState(id, { activo: false });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.all });
-            queryClient.invalidateQueries({ queryKey: servicesKeys.active });
-            notifyServiceChange(); // Notifica a otras pestañas
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: servicesKeys.all, refetchType: 'all' });
+            notifyServiceChange();
         },
     });
 };

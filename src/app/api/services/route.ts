@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { broadcastServiceUpdate } from '@/lib/broadcast';
+import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
 import { getCached, setCache } from '@/lib/cache';
 
@@ -60,11 +60,10 @@ export async function POST(req: Request) {
             }
         });
 
-        // 📡 Broadcast a todos los usuarios (await = bloqueante, garantiza envío)
-        await broadcastServiceUpdate({
-            serviceId: service.id,
-            eventType: 'created',
-        }).catch((e: unknown) => console.error('Broadcast error:', e));
+        await emit({
+            type: 'service.updated',
+            data: { serviceId: service.id, eventType: 'updated' },
+        });
 
         return NextResponse.json(serializeFinance(service));
     } catch (error) {

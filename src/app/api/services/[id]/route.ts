@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { broadcastServiceUpdate } from '@/lib/broadcast';
+import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
-import { clearCache } from '@/lib/cache';
 
 export async function GET(
     req: Request,
@@ -59,16 +57,10 @@ export async function PATCH(
             data: updateData
         });
 
-        // 📡 Broadcast a todos los usuarios (await = bloqueante, garantiza envío)
-        await broadcastServiceUpdate({
-            serviceId: service.id,
-            eventType: 'updated',
-        }).catch((e: unknown) => console.error('Broadcast error:', e));
-
-        // Invalidar caché ISR y en memoria
-        revalidatePath('/');
-        revalidatePath('/servicios');
-        clearCache('services-');
+        await emit({
+            type: 'service.updated',
+            data: { serviceId: service.id, eventType: 'updated' },
+        });
 
         return NextResponse.json(serializeFinance(service));
     } catch (error) {
@@ -92,16 +84,10 @@ export async function DELETE(
             data: { activo: false }
         });
 
-        // 📡 Broadcast a todos los usuarios (await = bloqueante, garantiza envío)
-        await broadcastServiceUpdate({
-            serviceId: service.id,
-            eventType: 'deleted',
-        }).catch((e: unknown) => console.error('Broadcast error:', e));
-
-        // Invalidar caché ISR y en memoria
-        revalidatePath('/');
-        revalidatePath('/servicios');
-        clearCache('services-');
+        await emit({
+            type: 'service.deleted',
+            data: { serviceId: service.id, eventType: 'deleted' },
+        });
 
         return NextResponse.json(serializeFinance({ message: 'Service deactivated successfully', service }));
     } catch (error) {

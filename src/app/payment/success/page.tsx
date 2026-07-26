@@ -1,8 +1,8 @@
 'use client';
 
-import React, { use, useEffect, useState } from 'react';
+import React, { use, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCheckCircle, FiArrowRight, FiFileText, FiMessageSquare, FiLoader, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
+import { FiCheckCircle, FiArrowRight, FiFileText, FiMessageSquare, FiLoader, FiAlertCircle, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -16,55 +16,84 @@ export default function PaymentSuccessPage({
     searchParams: Promise<{ orderId: string }>
 }) {
     const { orderId } = use(searchParams);
-    
-    // Reactividad Global: useOrder está atado a ORDER_KEYS, que es invalidado/actualizado
-    // por el Global Reactivity Provider (useRealtimeSubscription) al recibir el signal.
-    const { data: order, isLoading } = useOrder(orderId);
+    const { data: order, isLoading, isError, error } = useOrder(orderId, {
+        refetchInterval: (query) => {
+            const status = query.state.data?.status;
+            if (!status || status === 'PAGO_PENDIENTE') return 3000;
+            return false;
+        },
+    });
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    // Estados de control de flujo estricto
     const [timeoutReached, setTimeoutReached] = useState(false);
 
-    // Evaluar Status basándonos en nombres actuales de virtuAbogado
     const currentStatus = order?.status;
     const isPendingApproval = currentStatus === 'PAGO_PENDIENTE';
-    
-    // ÉXITO: El pago fue validado. Ya sea que esté en PAID o EN_PROGRESO (auto-asignado)
+
     const isApproved = currentStatus && ['PAID', 'EN_PROGRESO', 'COMPLETADO'].includes(currentStatus);
-    
+
     const isFailed = ['PAGO_RECHAZADO', 'FALLIDO', 'CANCELADO'].includes(currentStatus || '');
-    // Cláusula de Salida (Cleanup / Timeout)
+
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
         if (isPendingApproval) {
             timeoutId = setTimeout(() => {
                 setTimeoutReached(true);
-            }, 30000); // 30 segundos límite para validación
+            }, 30000);
         }
         return () => {
             if (timeoutId) clearTimeout(timeoutId);
         };
     }, [isPendingApproval]);
 
-    // Redirección inmediata post-aprobación
     useEffect(() => {
         if (isApproved) {
-            
             router.push('/mis-servicios');
         }
     }, [isApproved, router]);
 
-    // Función de reintento
-    const handleRetry = () => {
+    const handleRetry = useCallback(() => {
         setTimeoutReached(false);
         queryClient.invalidateQueries({ queryKey: ORDER_KEYS.detail(orderId) });
-    };
+    }, [queryClient, orderId]);
 
-    if (isLoading) {
+    if (isLoading && !order) {
         return (
             <main className="min-h-[80vh] flex items-center justify-center p-4">
                 <FiLoader className="animate-spin text-azul-primario w-12 h-12" />
+            </main>
+        );
+    }
+
+    if (isError && !order) {
+        return (
+            <main className="min-h-[80vh] flex items-center justify-center p-4">
+                <div className="max-w-xl w-full text-center">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-amber-100">
+                        <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <FiAlertTriangle className="text-amber-600 w-12 h-12" />
+                        </div>
+                        <h1 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">
+                            Error de Conexión
+                        </h1>
+                        <p className="text-gray-600 mb-8 leading-relaxed">
+                            No pudimos verificar el estado de tu pago. Si tu pago fue exitoso, no te preocupes, tu servicio está siendo procesado.
+                        </p>
+                        <button
+                            onClick={handleRetry}
+                            className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md mb-4"
+                        >
+                            <FiRefreshCw />
+                            Reintentar
+                        </button>
+                        <Link href="/mis-servicios">
+                            <button className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all">
+                                Ir a Mis Servicios
+                            </button>
+                        </Link>
+                    </div>
+                </div>
             </main>
         );
     }
@@ -73,7 +102,6 @@ export default function PaymentSuccessPage({
         <main className="min-h-[80vh] flex items-center justify-center p-4">
             <div className="max-w-xl w-full">
                 <AnimatePresence mode="wait">
-                    {/* ESTADO 1: PENDING (Validando con Zenobank) */}
                     {isPendingApproval && (
                         <motion.div
                             key="pending"
@@ -99,7 +127,7 @@ export default function PaymentSuccessPage({
                                         Demora en la Verificación
                                     </h1>
                                     <p className="text-gray-600 mb-8 leading-relaxed">
-                                        Zenobank está tardando más de lo esperado en confirmar el estado de este pago. El pago podría estar aún en proceso en la red bancaria.
+                                        El pago fue procesado pero estamos esperando la confirmación de Zenobank. En la mayoría de los casos, la confirmación llega en segundos.
                                     </p>
                                     <button 
                                         onClick={handleRetry}
@@ -127,7 +155,6 @@ export default function PaymentSuccessPage({
                         </motion.div>
                     )}
 
-                    {/* ESTADO 2: FALLIDO */}
                     {isFailed && (
                         <motion.div
                             key="failed"
@@ -156,7 +183,6 @@ export default function PaymentSuccessPage({
                         </motion.div>
                     )}
 
-                    {/* ESTADO 3: PAID (Aprobado) - Source of truth de la base de datos alcanzado */}
                     {isApproved && (
                         <motion.div
                             key="approved"

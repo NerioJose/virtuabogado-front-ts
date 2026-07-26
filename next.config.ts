@@ -8,8 +8,8 @@ const nextConfig: NextConfig = {
     } : false,
   },
   experimental: {
-    // Partial Prerendering (PPR) is currently Canary-only in this version
-    // ppr: 'incremental',
+    webpackMemoryOptimizations: true,
+    optimizeServerReact: true,
   },
   eslint: {
     ignoreDuringBuilds: true,

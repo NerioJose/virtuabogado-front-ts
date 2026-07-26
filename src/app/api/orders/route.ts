@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { serializeFinance } from '@/lib/finance';
 import { calculateOrderFinances } from '@/services/finance.service';
 import { syncUserIdentity } from '@/services/identity.service';
-import { broadcastOrderUpdate } from '@/lib/broadcast';
+import { emit } from '@/events/eventBus';
 import { UserRole } from '@/shared/types/entities.types';
 import { getAuthUser, getCachedFinancialSettings, formatOrderResponse } from './orders.helpers';
 
@@ -137,8 +137,9 @@ export async function POST(request: Request) {
             include: { user: { select: { nombre: true } }, service: { select: { titulo: true } } },
         });
 
-        broadcastOrderUpdate({
-            orderId: order.id, userId: order.userId, status: 'PAGO_PENDIENTE', eventType: 'updated',
+        emit({
+            type: 'order.created',
+            data: { orderId: order.id, userId: finalUserId, serviceId: Number(serviceId), total: currentPrice, status: 'PAGO_PENDIENTE' },
         }).catch(() => {});
 
         return NextResponse.json(serializeFinance({ success: true, order }));
@@ -187,10 +188,21 @@ export async function PATCH(request: Request) {
             },
         });
 
-        broadcastOrderUpdate({
-            orderId: updatedOrder.id, userId: updatedOrder.userId, lawyerId: updatedOrder.lawyerId,
-            status: updatedOrder.status, eventType: 'updated', isNewAssignment: !!lawyerId,
-        });
+        const events: Promise<void>[] = [
+            emit({
+                type: 'order.status_changed',
+                data: { orderId: updatedOrder.id, from: existingOrder.status, to: updatedOrder.status, changedBy: user.id },
+            }),
+        ];
+
+        if (body.lawyerId) {
+            events.push(emit({
+                type: 'order.assigned',
+                data: { orderId: updatedOrder.id, lawyerId: body.lawyerId, userId: updatedOrder.userId },
+            }));
+        }
+
+        await Promise.all(events);
 
         return NextResponse.json(serializeFinance(updatedOrder));
     } catch (error) {

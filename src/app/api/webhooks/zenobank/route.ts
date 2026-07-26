@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma as prismaClient } from '@/lib/prisma';
 const prisma = prismaClient as any;
-import { OrderStatus, UserRole } from '@/shared/types/entities.types';
-import { broadcastOrderUpdate } from '@/lib/broadcast';
 import { Webhook } from 'svix';
-import { revalidatePath } from 'next/cache';
-import { notifyNewSale, notifyNewCase, notifyOrderStatusUpdate } from '@/lib/push-notifications';
+import { emit } from '@/events/eventBus';
 
 export async function POST(req: NextRequest) {
     const svixId = req.headers.get('svix-id');
@@ -40,110 +37,41 @@ export async function POST(req: NextRequest) {
     }
 
     const { type, data } = evt;
-    
-    // Robustez: Extraer orderId de múltiples fuentes posibles (Svix metadata, data root, order_id snake_case)
+
     const orderId = data?.orderId || data?.order_id || evt.orderId || evt.order_id || data?.metadata?.orderId;
     const paymentId = data?.id || evt.id;
 
-    
-    
-    if (process.env.NODE_ENV === 'development') {
-        
-    }
-
     try {
-        const currentOrder = await prisma.order.findUnique({
-            where: { id: orderId },
-            include: {
-                user: { select: { nombre: true } },
-                service: { select: { titulo: true } },
-            }
-        });
-
-        if (!currentOrder) {
-            console.warn(`⚠️ [Webhook] Orden ${orderId} no encontrada.`);
-            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-        }
-
-        if (currentOrder.status === 'PAID' || currentOrder.status === 'EN_PROGRESO') {
-            return NextResponse.json({ received: true, status: 'already_processed' });
-        }
-
         if (type === 'checkout.completed' || type === 'payment.succeeded') {
-
-            // ── PASO 1: Búsqueda de Abogado Único ANTES de la transacción ──
-            const activeLawyers = await (prisma.user as any).findMany({
-                where: { 
-                    rol: UserRole.ABOGADO,
-                    activo: true 
-                },
-                select: { id: true, nombre: true }
+            const currentOrder = await prisma.order.findUnique({
+                where: { id: orderId },
+                select: { status: true },
             });
 
-            
+            if (!currentOrder) {
+                console.warn(`⚠️ [Webhook] Orden ${orderId} no encontrada.`);
+                return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+            }
 
-            const isAutoAssign = activeLawyers.length === 1;
-            const targetLawyerId = isAutoAssign ? activeLawyers[0].id : currentOrder.lawyerId;
-            
-            // Forzado de Estado: Si hay abogado (manual o auto), SIEMPRE es EN_PROGRESO.
-            // Si no hay abogado (porque hay más de uno), el estado es PENDIENTE (esperando asignación).
-            const finalStatus = targetLawyerId ? OrderStatus.EN_PROGRESO : OrderStatus.PENDIENTE;
+            if (currentOrder.status === 'PAID' || currentOrder.status === 'EN_PROGRESO') {
+                return NextResponse.json({ received: true, status: 'already_processed' });
+            }
 
-            
-
-            // ── PASO 2: Transacción Atómica de Única Escritura ──
-            await prisma.$transaction(async (tx: any) => {
-                await tx.order.update({
-                    where: { id: orderId },
-                    data: {
-                        status: finalStatus,
-                        paymentId: paymentId,
-                        lawyerId: targetLawyerId,
-                        assignedAt: isAutoAssign ? new Date() : currentOrder.assignedAt
-                    }
-                });
+            await emit({
+                type: 'order.payment_received',
+                data: { orderId, paymentId, amount: data.amount || 0 },
+                metadata: { idempotencyKey: `${type}-${paymentId}` },
             });
-
-            // ── PASO 3: Reactividad y Notificaciones (Non-blocking) ──
-            (async () => {
-                // Broadcast para mover al cliente de la pantalla de "Casi listo"
-                await broadcastOrderUpdate({
-                    orderId: orderId,
-                    userId: currentOrder.userId,
-                    lawyerId: targetLawyerId,
-                    status: finalStatus,
-                    eventType: 'updated'
-                });
-
-                const clientName = currentOrder.user?.nombre || 'Cliente';
-                const serviceName = currentOrder.service?.titulo || 'Servicio Legal';
-
-                // Notificación al Admin
-                notifyNewSale(orderId, currentOrder.total.toString(), !targetLawyerId, clientName, serviceName)
-                    .then(res => console.log(`[Webhook] Push Admin: ${res.success ? '✅' : '❌'}`))
-                    .catch(e => console.error('Error push venta:', e));
-
-                // Notificación al Abogado (si hay uno)
-                if (targetLawyerId) {
-                    notifyNewCase(targetLawyerId, orderId, serviceName)
-                        .then(res => console.log(`[Webhook] Push Abogado: ${res.success ? '✅' : '❌'}`))
-                        .catch(e => console.error('Error push asignación:', e));
-                }
-
-                // Notificación al Cliente (¡NUEVO!)
-                notifyOrderStatusUpdate(currentOrder.userId, orderId, finalStatus, serviceName)
-                    .then(res => console.log(`[Webhook] Push Cliente: ${res.success ? '✅' : '❌'}`))
-                    .catch(e => console.error('Error push cliente:', e));
-            })();
-
-            revalidatePath('/', 'layout');
-            
-            
 
         } else if (['payment.failed', 'checkout.expired', 'checkout.canceled'].includes(type)) {
             await prisma.order.update({
                 where: { id: orderId },
                 data: { status: 'PAGO_RECHAZADO' }
+            });
+
+            await emit({
+                type: 'order.status_changed',
+                data: { orderId, from: 'PAGO_PENDIENTE', to: 'PAGO_RECHAZADO', changedBy: 'zenobank' },
             });
         }
 

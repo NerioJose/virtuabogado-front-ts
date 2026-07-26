@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { OrderStatus, UserRole } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
 import { calculateOrderFinances } from '@/services/finance.service';
-import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
+import { getFinancialSettingsCached } from '@/lib/getFinancialSettings';
 
 export interface GetOrdersFilters {
     status?: OrderStatus;
@@ -93,14 +93,7 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
                     lawyer: { select: { nombre: true } }
                 }
             }),
-            prisma.financialSettings.findUnique({
-                where: { id: FINANCIAL_SETTINGS_ID }
-            }) || {
-                lawyer_commission_percentage: 0,
-                operational_costs_percentage: 0,
-                tax_percentage: 0,
-                platform_fee_percentage: 0
-            }
+            getFinancialSettingsCached(),
         ]);
 
         // 5. Enrich with Financial Splits (Synchronous Math)

@@ -15,7 +15,7 @@ export function useFinanzasPanel(terminoBusqueda: string) {
         enabled: !!user
     });
 
-    const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 500 });
+    const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 100 });
     const orders = (response as any)?.data || [];
 
     const ordenesFiltradas = useMemo(() => {

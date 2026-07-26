@@ -133,19 +133,8 @@ export const useAuthStore = create<AuthState>()(
 
             checkAuth: async () => {
                 try {
-                    // Evitar ejecución en servidor si no es necesario, aunque authService maneja client
                     if (typeof window === 'undefined') return;
 
-                    // Si ya hay un usuario en el store, verificar sesión
-                    const state = get() as any;
-                    const currentUser = state.user;
-                    if (currentUser) {
-                        
-                        return;
-                    }
-                    // -------------------------------------------
-
-                    // set({ isLoading: true }); // Opcional: manejar loading global
                     const { authService } = await import('../services/auth.service');
                     const user = await authService.getCurrentUser();
 
@@ -156,14 +145,11 @@ export const useAuthStore = create<AuthState>()(
                             isLoading: false,
                         });
 
-                        // 🔄 SILENT SYNC: Garantizar que el usuario exista en Prisma para el Dashboard del Admin
                         try {
                                 fetch('/api/auth/sync', { method: 'POST' })
                                 .then(res => res.json())
                                 .then(syncData => {
                                     if (syncData.success && syncData.user) {
-                                        
-                                        // ACTUALIZACIÓN REACTIVA: Si el nombre en la DB es mejor que el de la sesión, actualizamos el store
                                         const currentState = get() as any;
                                         const needsUpdate: Partial<User> = {};
                                         
@@ -173,7 +159,6 @@ export const useAuthStore = create<AuthState>()(
 
                                         if (syncData.user.rol && currentState.user && currentState.user.rol !== syncData.user.rol) {
                                             needsUpdate.rol = syncData.user.rol;
-                                            
                                         }
 
                                         if (Object.keys(needsUpdate).length > 0 && currentState.updateUser) {
@@ -183,7 +168,6 @@ export const useAuthStore = create<AuthState>()(
                                 })
                                 .catch(err => console.warn('⚠️ [Auth Sync] Falló el intento de sincronización:', err));
                         } catch (e) {
-                            // Ignoramos errores de sync para no bloquear la app principal
                         }
                     } else {
                         set({

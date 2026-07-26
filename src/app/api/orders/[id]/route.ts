@@ -1,8 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { broadcastOrderUpdate } from '@/lib/broadcast';
-import { notifyNewCase, notifyOrderStatusUpdate, notifyCaseCompleted } from '@/lib/push-notifications';
+import { emit } from '@/events/eventBus';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +22,6 @@ export async function GET(
             }
         }
 
-        // Determinar si buscamos por UUID o por numericId
         const isNumeric = /^\d+$/.test(id);
         
         const includeConfig = {
@@ -36,7 +34,6 @@ export async function GET(
             }
         } as const;
 
-        // Usar Prisma para bypass de RLS
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereClause: any = isNumeric ? { numericId: parseInt(id) } : { id };
         const order = await prisma.order.findUnique({ where: whereClause, include: includeConfig });
@@ -46,7 +43,6 @@ export async function GET(
             return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
         }
 
-        // Formatear para que el frontend reciba lo que espera (con items)
         const formattedOrder = {
             ...order,
             userName: order.user?.nombre || 'Usuario',
@@ -82,7 +78,6 @@ export async function PATCH(
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Solo permitir actualizar campos específicos
     const allowedFields = ['status', 'lawyerId', 'assignedAt', 'description'];
     const dataToUpdate: Record<string, unknown> = {};
     for (const key of Object.keys(body)) {
@@ -92,6 +87,12 @@ export async function PATCH(
     }
 
     try {
+        // Capturar estado anterior antes del update
+        const orderBefore = await prisma.order.findUnique({
+            where: { id },
+            select: { status: true, lawyerId: true, commissionAmount: true },
+        });
+
         const order = await prisma.order.update({
             where: { id },
             data: dataToUpdate,
@@ -111,7 +112,6 @@ export async function PATCH(
             }
         });
 
-        // Formatear igual que el GET
         const formattedOrder = {
             ...order,
             userName: order.user.nombre,
@@ -126,57 +126,38 @@ export async function PATCH(
             total: Number(order.total),
         };
 
-        // 📡 Broadcast a todos los dashboards (admin, abogado, cliente)
-        const isNewAssignment = body.lawyerId && !order.lawyerId; // Esto no funciona bien porque 'order' es el objeto YA actualizado
+        const events: Promise<void>[] = [];
 
-        // Necesitamos el estado anterior para saber si es nueva asignación. 
-        // Pero el Administrador suele enviar lawyerId y status: 'EN_PROGRESO' juntos.
-        // Si el body trae lawyerId, asumimos que es una intención de asignación.
-        
-        broadcastOrderUpdate({
-            orderId: order.id,
-            userId: order.userId,
-            lawyerId: order.lawyerId,
-            status: order.status,
-            eventType: 'updated',
-            isNewAssignment: !!body.lawyerId // Si el Admin mandó un lawyerId en este PATCH, es una asignación
-        });
-
-        // 🔔 Enviar Notificación Push VAPID al abogado asignado
-        if (body.lawyerId && order.lawyerId) {
-            notifyNewCase(order.lawyerId, order.id, order.service.titulo)
-                .catch((e: Error | any) => console.error('Error enviando push de asignación:', e));
+        // Asignación de abogado
+        if (body.lawyerId && order.lawyerId && (!orderBefore?.lawyerId || orderBefore.lawyerId !== order.lawyerId)) {
+            events.push(emit({
+                type: 'order.assigned',
+                data: { orderId: order.id, lawyerId: order.lawyerId, userId: order.userId, serviceName: order.service.titulo },
+            }));
         }
 
-        // 🔔 Enviar Notificación Push VAPID al cliente si cambia el estado a relevante (Asignado/Completado)
-        if (body.status === 'EN_PROGRESO' || body.status === 'COMPLETADO' || body.lawyerId) {
-            notifyOrderStatusUpdate(order.userId, order.id, order.status, order.service.titulo)
-                .catch((e: Error | any) => console.error('Error enviando push al cliente:', e));
-        }
+        // Cambio de estado
+        if (body.status && orderBefore?.status !== body.status) {
+            events.push(emit({
+                type: 'order.status_changed',
+                data: { orderId: order.id, from: orderBefore?.status || 'unknown', to: body.status, changedBy: user.id },
+            }));
 
-        // ✅ Caso Completado: notificar a los admins + auto-crear liquidación si aplica
-        if (body.status === 'COMPLETADO' || order.status === 'COMPLETADO') {
-            const commissionAmount = Number(order.commissionAmount || 0);
-            notifyCaseCompleted(order.id, order.lawyer?.nombre, order.service.titulo, commissionAmount > 0 ? commissionAmount.toString() : undefined)
-                .catch((e: Error | any) => console.error('Error enviando push de caso completado:', e));
-
-            if (commissionAmount > 0 && order.lawyerId) {
-                prisma.lawyerPayout.create({
+            if (body.status === 'COMPLETADO') {
+                events.push(emit({
+                    type: 'order.completed',
                     data: {
+                        orderId: order.id,
                         lawyerId: order.lawyerId,
-                        amount: commissionAmount,
-                        status: 'PENDIENTE',
-                        method: 'Transferencia Bancaria',
-                    }
-                }).then(() => {
-                    
-                }).catch((e: Error | any) => {
-                    if (e.code !== 'P2002' && !e.message?.includes('Unique constraint')) {
-                        console.error('Error auto-creando liquidación:', e);
-                    }
-                });
+                        commissionAmount: Number(order.commissionAmount || 0),
+                        serviceName: order.service.titulo,
+                        lawyerName: order.lawyer?.nombre,
+                    },
+                }));
             }
         }
+
+        await Promise.all(events);
 
         return NextResponse.json(formattedOrder);
     } catch (error: any) {

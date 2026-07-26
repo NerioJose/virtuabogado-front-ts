@@ -29,7 +29,7 @@ export function useDashboardStats() {
     const user = useAuthStore(state => state.user);
     const { data: clients = [], isLoading: clientsLoading } = useClients();
     const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
-    const { data: response, isLoading: ordersLoading } = useOrders();
+    const { data: response, isLoading: ordersLoading } = useOrders({ limit: 50 });
     const orders = (response as any)?.data || [];
     
     const { data: summary, isLoading: financialLoading } = useQuery({

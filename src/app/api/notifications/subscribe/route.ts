@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
-import { UserRole } from '@prisma/client';
-import { syncUserIdentity } from '@/services/identity.service';
 
 /**
  * API: /api/notifications/subscribe
@@ -28,26 +26,7 @@ export async function POST(request: Request) {
 
     
 
-    // 2. ALINEACIÓN DE IDENTIDAD (Supabase -> Prisma):
-    // El error 500 ocurría porque el ID de Supabase no existía en Prisma.
-    // Realizamos un upsert robusto del usuario, resolviendo colisiones de email si existen.
-    const { nombre, rol, telefono } = user.user_metadata || {};
-    const finalRole = (rol as string || 'CLIENTE').toUpperCase() as UserRole;
-
-    try {
-      await syncUserIdentity(user, {
-        nombre: nombre || user.email?.split('@')[0] || 'Usuario Push',
-        rol: finalRole,
-        telefono,
-      }, {
-        skipMetadataSync: true,
-        skipRelationMigration: true,
-      });
-    } catch (upsertUserError) {
-      console.warn('⚠️ [Push Subscribe] Error al sincronizar usuario (colisión ignorada):', upsertUserError);
-    }
-
-    // 3. LÓGICA DE UPSERT: Vinculamos la suscripción al usuario y al endpoint único.
+    // 2. LÓGICA DE UPSERT: Vinculamos la suscripción al usuario y al endpoint único.
     // Usamos el id de Supabase (user.id) como userId en Prisma.
     // Si 'userId_endpoint' da error de lint (depende del prisma generate), 
     // usamos una transacción atómica para garantizar consistencia.

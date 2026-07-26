@@ -5,9 +5,9 @@ import { useLawyers } from '@/features/lawyers/hooks/useLawyers';
 import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 
 export function useDashboard() {
-    const { data: ordersResponse, isLoading: isLoadingOrders } = useOrders({ limit: 200 });
-    const { data: clients, isLoading: isLoadingClients } = useClients();
-    const { data: lawyers, isLoading: isLoadingLawyers } = useLawyers();
+    const { data: ordersResponse, isLoading: isLoadingOrders } = useOrders({ limit: 50 });
+    const { data: clients, isLoading: isLoadingClients } = useClients({ limit: 50 });
+    const { data: lawyers, isLoading: isLoadingLawyers } = useLawyers({ limit: 50 });
 
     const orders: Order[] = (ordersResponse as any)?.data || [];
     const clientList = Array.isArray(clients) ? clients : [];

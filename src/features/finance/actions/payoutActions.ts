@@ -2,9 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { PayoutStatus } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
-import { notifyPayoutCompleted } from '@/lib/push-notifications';
-import { broadcastPayoutUpdate } from '@/lib/broadcast';
+import { emit } from '@/events/eventBus';
 import { formatUSD, serializeFinance } from '@/lib/finance';
 
 /**
@@ -98,18 +96,11 @@ export async function createPayout(data: {
             return newPayout;
         });
 
-        // 3. Push notification to lawyer immediately
-        await notifyPayoutCompleted(
-            data.lawyerId,
-            payout.id,
-            formatUSD(data.amount)
-        ).catch(err => console.error('Error enviando push de liquidación:', err));
-
-        revalidatePath('/admin/finanzas');
-        revalidatePath('/abogado/finanzas');
-
-        broadcastPayoutUpdate({ payoutId: payout.id, lawyerId: data.lawyerId, eventType: 'created' })
-            .catch(err => console.error('Error enviando broadcast de liquidación:', err));
+        // 3. Emitir evento para broadcast y notificación push
+        await emit({
+            type: 'payout.created',
+            data: { payoutId: payout.id, lawyerId: data.lawyerId, amount: data.amount },
+        });
 
         return serializeFinance({ success: true, payout });
     } catch (error) {
@@ -141,22 +132,17 @@ export async function finalizePayout(payoutId: string, reference: string) {
             }
         });
 
-        // Notificar al abogado
+        // Notificar al abogado y hacer broadcast
         if (updatedPayout.lawyerId) {
-            await notifyPayoutCompleted(
-                updatedPayout.lawyerId, 
-                updatedPayout.id, 
-                formatUSD(Number(updatedPayout.amount))
-            ).catch(err => console.error('Error enviando push de liquidación:', err));
-        }
-
-        revalidatePath('/admin/finanzas');
-        revalidatePath('/abogado/finanzas');
-        revalidatePath('/api/orders', 'page');
-
-        if (updatedPayout.lawyerId) {
-            broadcastPayoutUpdate({ payoutId: updatedPayout.id, lawyerId: updatedPayout.lawyerId, eventType: 'finalized' })
-                .catch(err => console.error('Error enviando broadcast de liquidación:', err));
+            await emit({
+                type: 'payout.finalized',
+                data: {
+                    payoutId: updatedPayout.id,
+                    lawyerId: updatedPayout.lawyerId,
+                    reference,
+                    amount: Number(updatedPayout.amount),
+                },
+            });
         }
         
         return serializeFinance({ success: true, payout: updatedPayout });

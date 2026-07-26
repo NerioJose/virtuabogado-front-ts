@@ -211,3 +211,20 @@ model PushSubscription {
   @@index([userId])
   @@unique([userId, endpoint])
 }
+
+model EventLog {
+  id           String   @id @default(uuid())
+  type         String
+  payload      Json
+  status       String   @default("pending")
+  retries      Int      @default(0)
+  maxRetries   Int      @default(3)
+  error        String?
+  scheduledAt  DateTime?
+  createdAt    DateTime @default(now())
+  processedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([type, createdAt])
+  @@map("EventLog")
+}

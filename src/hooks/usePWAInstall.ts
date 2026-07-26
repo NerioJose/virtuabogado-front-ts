@@ -20,26 +20,28 @@ export function usePWAInstall(): PWAInstallState {
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
-        // Detectar iOS
         const ua = navigator.userAgent;
         const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         setIsIOS(isIOSDevice);
 
-        // Detectar modo standalone (ya instalada como PWA)
         const standalone = window.matchMedia('(display-mode: standalone)').matches
             || (window.navigator as any).standalone === true;
         setIsStandalone(standalone);
-        setIsInstalled(standalone);
 
-        // Capturar evento de instalación (Android)
+        // Persistir instalación en localStorage: si ya instaló antes, no mostrar banner
+        const installedFlag = localStorage.getItem('pwa_installed') === 'true';
+        if (installedFlag || standalone) {
+            setIsInstalled(true);
+        }
+
         const handleBeforeInstall = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e);
             setIsInstallable(true);
         };
 
-        // Detectar instalación exitosa
         const handleInstalled = () => {
+            localStorage.setItem('pwa_installed', 'true');
             setIsInstalled(true);
             setIsInstallable(false);
             setDeferredPrompt(null);

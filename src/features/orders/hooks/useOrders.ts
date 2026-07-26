@@ -32,12 +32,15 @@ export function useOrdersByUser(userId: string, options?: any) {
     return useOrders({ userId }, options);
 }
 
-export function useOrder(id: string) {
+export function useOrder(id: string, options?: Partial<{
+    refetchInterval: number | false | ((query: any) => number | false);
+}>) {
     return useQuery({
         queryKey: ORDER_KEYS.detail(id),
         queryFn: () => ordersService.getById(id),
-        enabled: !!id && id !== 'new', // Don't fetch for new orders
-        staleTime: 1000 * 60 * 5, // 5 minutes - individual order details change less frequently
+        enabled: !!id && id !== 'new',
+        staleTime: 1000 * 60 * 5,
+        ...options,
     });
 }
 

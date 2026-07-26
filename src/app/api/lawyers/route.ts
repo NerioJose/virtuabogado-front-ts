@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { UserRole } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
+import { getCached, setCache, clearCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,18 +52,26 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        
-        const allUsers = await prisma.user.findMany({
-            // Quitamos el filtro de activo: true para que el Admin pueda gestionar inactivos
-            orderBy: { createdAt: 'desc' }
-        });
+        const { searchParams } = new URL(request.url);
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
+        const skip = (page - 1) * limit;
+        const cacheKey = `lawyers-${page}-${limit}`;
 
-        const clients = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE');
+        const cached = getCached<any>(cacheKey);
+        if (cached) return NextResponse.json(cached);
+
+        const [allUsers, total] = await Promise.all([
+            prisma.user.findMany({
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.user.count(),
+        ]);
+
         const lawyers = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'ABOGADO' || u.rol === 'ABOGADO');
 
-        
-
-        // Mapear al formato que espera el frontend
         const formattedLawyers = lawyers.map((lawyer: any) => ({
             id: lawyer.id,
             nombre: lawyer.nombre || 'Abogado Sin Nombre',
@@ -72,14 +81,22 @@ export async function GET(request: Request) {
             status: lawyer.activo ? 'ACTIVO' : 'INACTIVO', 
             matricula: lawyer.matricula || undefined,
             experiencia: lawyer.experiencia || undefined,
-            casosActivos: 0, // Placeholder for stability
-            casosCompletados: 0, // Placeholder for stability
+            casosActivos: 0,
+            casosCompletados: 0,
             rating: 5,
             createdAt: lawyer.createdAt,
             updatedAt: lawyer.updatedAt,
         }));
 
-        return NextResponse.json(serializeFinance(formattedLawyers));
+        const response = serializeFinance({
+            data: formattedLawyers,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        });
+        setCache(cacheKey, response, 10_000);
+        return NextResponse.json(response);
     } catch (error) {
         console.error('❌ API Error fetching lawyers:', error);
         return NextResponse.json(

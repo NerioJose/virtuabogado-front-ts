@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { UserRole } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
+import { getCached, setCache, clearCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -52,21 +53,31 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
         }
 
-        
-        const allUsers = await prisma.user.findMany({
-            // Quitamos el filtro de activo: true para que el Admin pueda gestionar inactivos
-            orderBy: { createdAt: 'desc' }
-        });
+        const { searchParams } = new URL(request.url);
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
+        const skip = (page - 1) * limit;
+        const cacheKey = `clients-${page}-${limit}`;
+
+        const cached = getCached<any>(cacheKey);
+        if (cached) return NextResponse.json(cached);
+
+        const [allUsers, total, allOrders] = await Promise.all([
+            prisma.user.findMany({
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.user.count(),
+            prisma.order.findMany({
+                where: { activo: true },
+                select: { userId: true, total: true, id: true }
+            }),
+        ]);
 
         const clients = allUsers.filter((u: any) => 
             u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE'
         );
-
-        // Obtener todas las órdenes agrupadas por usuario para calcular datos reales
-        const allOrders = await prisma.order.findMany({
-            where: { activo: true },
-            select: { userId: true, total: true, id: true }
-        });
 
         const orderStatsMap = new Map<string, { count: number; total: number }>();
         for (const order of allOrders) {
@@ -76,7 +87,6 @@ export async function GET(request: Request) {
             orderStatsMap.set(order.userId, stats);
         }
 
-        // Mapear al formato que espera el frontend
         const formattedClients = clients.map((client: any) => {
             const stats = orderStatsMap.get(client.id) || { count: 0, total: 0 };
             return {
@@ -94,7 +104,15 @@ export async function GET(request: Request) {
             };
         });
 
-        return NextResponse.json(serializeFinance(formattedClients));
+        const response = serializeFinance({
+            data: formattedClients,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        });
+        setCache(cacheKey, response, 10_000);
+        return NextResponse.json(response);
     } catch (error) {
         console.error('❌ API Error fetching clients:', error);
         return NextResponse.json(

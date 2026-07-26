@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { UserRole, OrderStatus } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
 import { aggregateFinancials } from '@/services/finance.service';
-import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
+import { getFinancialSettingsCached } from '@/lib/getFinancialSettings';
 
 export interface FinancialSummaryFilters {
     lawyerId?: string;
@@ -18,15 +18,8 @@ export interface FinancialSummaryFilters {
 export async function getFinancialSummary(filters: FinancialSummaryFilters, user: { id: string, rol: UserRole }) {
     const { lawyerId, dateRange } = filters;
     
-    // 1. Fetch Dynamic Platform Settings (Blindaje: Default 0 if row missing, Admin strictly controls this)
-    const settings = await prisma.financialSettings.findUnique({
-        where: { id: FINANCIAL_SETTINGS_ID }
-    }) || {
-        lawyer_commission_percentage: 0,
-        operational_costs_percentage: 0,
-        tax_percentage: 0,
-        platform_fee_percentage: 0
-    };
+    // 1. Fetch Dynamic Platform Settings (con caché compartido, evita N+1 en dashboard)
+    const settings = await getFinancialSettingsCached();
 
     // 2. Build Date Filter
     let dateFilter: any = undefined;

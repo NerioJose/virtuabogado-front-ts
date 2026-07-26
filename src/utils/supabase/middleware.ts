@@ -49,10 +49,12 @@ export async function updateSession(request: NextRequest) {
 
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route.path));
     const isAuthRoute = authRoutes.some(route => currentPath.startsWith(route));
+    const isApiRoute = currentPath.startsWith('/api/');
 
     // ✅ OPTIMIZACIÓN CRÍTICA: Si la ruta es pública y el usuario no está intentando entrar/salir, 
     // no bloqueamos la navegación con getUser(). Esto elimina el delay de navegación.
-    if (!isProtectedRoute && !isAuthRoute) {
+    // Las rutas /api/ necesitan sesión, excepto las públicas ya manejadas en middleware.ts.
+    if (!isProtectedRoute && !isAuthRoute && !isApiRoute) {
         return supabaseResponse;
     }
 

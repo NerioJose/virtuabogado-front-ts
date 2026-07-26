@@ -57,6 +57,7 @@ export const useRealtimeSubscription = () => {
             const eventPayload = payload?.payload || payload;
             
             if (eventName === 'order-updated') {
+                queryClient.invalidateQueries({ queryKey: ['Order'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'], refetchType: 'all' });

@@ -3,11 +3,19 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSmartphone, FiDownload, FiX } from 'react-icons/fi';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PWAInstallBanner() {
     const { isInstalled, isInstallable, isIOS, isStandalone, promptInstall } = usePWAInstall();
-    const [dismissed, setDismissed] = useState(false);
+    const [dismissed, setDismissed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem('pwa_banner_dismissed') === 'true';
+    });
+
+    const handleDismiss = () => {
+        localStorage.setItem('pwa_banner_dismissed', 'true');
+        setDismissed(true);
+    };
 
     if (isInstalled || isStandalone || dismissed) return null;
 
@@ -34,7 +42,7 @@ export default function PWAInstallBanner() {
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setDismissed(true)} className="p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                        <button onClick={handleDismiss} className="p-1 hover:bg-slate-100 rounded-lg transition-colors">
                             <FiX size={16} className="text-slate-400" />
                         </button>
                     </div>

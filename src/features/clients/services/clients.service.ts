@@ -1,29 +1,34 @@
 import { apiClient } from '@/lib/apiClient';
-import { Client, ClientStatus, ClientsFilters } from '../types/clients.types';
+import { Client, ClientStatus, ClientsFilters, PaginatedResponse } from '../types/clients.types';
 
 export const clientsService = {
     getAll: async (filters?: ClientsFilters): Promise<Client[]> => {
         const params = new URLSearchParams();
         if (filters?.status) params.append('status', filters.status);
         if (filters?.searchQuery) params.append('search', filters.searchQuery);
+        if (filters?.page) params.append('page', filters.page.toString());
+        if (filters?.limit) params.append('limit', filters.limit.toString());
 
-        // TODO: Update API to support query params if not already supported
-        const response = await apiClient.get<Client[]>('/api/clients');
+        const queryString = params.toString();
+        const url = queryString ? `/api/clients?${queryString}` : '/api/clients';
+        const response = await apiClient.get<Client[] | PaginatedResponse<Client>>(url);
 
-        // Client-side filtering fallback until API supports it (to match previous behavior)
-        let clients = response;
-        if (filters?.status && filters.status !== 'ALL') { // Assuming 'ALL' isn't a valid ClientStatus but used in UI
-            clients = clients.filter(c => c.status === filters.status);
+        if (Array.isArray(response)) {
+            return response;
         }
-        if (filters?.searchQuery) {
-            const lowerQuery = filters.searchQuery.toLowerCase();
-            clients = clients.filter(c =>
-                c.nombre.toLowerCase().includes(lowerQuery) ||
-                c.email.toLowerCase().includes(lowerQuery)
-            );
-        }
+        return response.data;
+    },
 
-        return clients;
+    getAllPaginated: async (filters?: ClientsFilters): Promise<PaginatedResponse<Client>> => {
+        const params = new URLSearchParams();
+        if (filters?.status) params.append('status', filters.status);
+        if (filters?.searchQuery) params.append('search', filters.searchQuery);
+        if (filters?.page) params.append('page', filters.page.toString());
+        if (filters?.limit) params.append('limit', filters.limit.toString());
+
+        const queryString = params.toString();
+        const url = queryString ? `/api/clients?${queryString}` : '/api/clients';
+        return apiClient.get<PaginatedResponse<Client>>(url);
     },
 
     getById: async (id: string): Promise<Client> => {

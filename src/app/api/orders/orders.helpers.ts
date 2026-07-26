@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/prisma';
-import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
-import { getCached, setCache } from '@/lib/cache';
+import { getFinancialSettingsCached } from '@/lib/getFinancialSettings';
 import { serializeFinance } from '@/lib/finance';
 import { capitalizeName, formatLawyerName } from '@/utils/formatters';
 
@@ -22,21 +20,7 @@ export async function getAuthUser(request: Request): Promise<{ user: AuthUser; r
 }
 
 export function getCachedFinancialSettings(): Promise<any> {
-    return (async () => {
-        const cached = getCached<any>('financial-settings');
-        if (cached) return cached;
-        const settings = await prisma.financialSettings.findUnique({
-            where: { id: FINANCIAL_SETTINGS_ID }
-        });
-        const result = settings || {
-            lawyer_commission_percentage: 0,
-            operational_costs_percentage: 0,
-            tax_percentage: 0,
-            platform_fee_percentage: 0
-        };
-        setCache('financial-settings', result, 30_000);
-        return result;
-    })();
+    return getFinancialSettingsCached();
 }
 
 export function formatOrderResponse(order: any) {

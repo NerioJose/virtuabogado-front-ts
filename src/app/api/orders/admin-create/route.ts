@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
+import { getFinancialSettingsCached } from '@/lib/getFinancialSettings';
 import { calculateOrderFinances } from '@/services/finance.service';
-import { broadcastOrderUpdate } from '@/lib/broadcast';
-import { notifyNewSale, notifyNewCase } from '@/lib/push-notifications';
+import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
 import { UserRole, OrderStatus } from '@/shared/types/entities.types';
 import { createAdminClient } from '@/utils/supabase/admin';
@@ -101,15 +100,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Debe especificar un servicio válido' }, { status: 400 });
         }
 
-        // 3. Obtener configuración financiera
-        const settings = await prisma.financialSettings.findUnique({
-            where: { id: FINANCIAL_SETTINGS_ID }
-        }) || {
-            lawyer_commission_percentage: 70,
-            operational_costs_percentage: 10,
-            tax_percentage: 15,
-            platform_fee_percentage: 5,
-        };
+        // 3. Obtener configuración financiera (con caché compartido)
+        const settings = await getFinancialSettingsCached();
 
         // 4. Calcular split financiero
         const split = calculateOrderFinances(total, settings);
@@ -146,26 +138,22 @@ export async function POST(request: Request) {
             }
         });
 
-        // 7. Broadcast en tiempo real
-        broadcastOrderUpdate({
-            orderId: order.id,
-            userId: order.userId,
-            lawyerId: targetLawyerId || undefined,
-            status: finalStatus,
-            eventType: 'updated',
-        }).catch((e: unknown) => console.error('Broadcast error:', e));
-
-        // 8. Notificaciones push
-        const clientName = order.user?.nombre || 'Cliente';
-        const serviceDisplay = serviceName;
-
-        notifyNewSale(order.id, order.total.toString(), !targetLawyerId, clientName, serviceDisplay)
-            .catch((e: unknown) => console.error('Push error:', e));
+        // 7. Emitir eventos para broadcast y notificaciones
+        const events: Promise<void>[] = [
+            emit({
+                type: 'order.created',
+                data: { orderId: order.id, userId, serviceId, total: Number(total), status: finalStatus },
+            }),
+        ];
 
         if (targetLawyerId) {
-            notifyNewCase(targetLawyerId, order.id, serviceDisplay)
-                .catch((e: unknown) => console.error('Push error:', e));
+            events.push(emit({
+                type: 'order.assigned',
+                data: { orderId: order.id, lawyerId: targetLawyerId, userId, serviceName },
+            }));
         }
+
+        await Promise.all(events);
 
         return NextResponse.json(serializeFinance(order));
     } catch (error) {

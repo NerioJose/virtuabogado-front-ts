@@ -131,7 +131,7 @@ export default function RecentOrders({ abrirModal, onVerTodas }: RecentOrdersPro
                         </p>
                     </div>
                 </div>
-                <button 
+                <button type="button" 
                     onClick={onVerTodas}
                     className="text-sm text-vinotinto hover:text-vinotinto/80 font-medium"
                 >
@@ -169,7 +169,7 @@ export default function RecentOrders({ abrirModal, onVerTodas }: RecentOrdersPro
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="p-4 border border-gray-200 rounded-lg hover:border-azul-primario/30 hover:shadow-md transition-all"
+                                className="p-4 border border-gray-200 rounded-lg hover:border-azul-primario/30 hover:shadow-md transition"
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
@@ -217,18 +217,18 @@ export default function RecentOrders({ abrirModal, onVerTodas }: RecentOrdersPro
                                         {/* Botones de Acción Dashboard */}
                                         <div className="flex gap-2">
                                             {([OrderStatus.PAID, OrderStatus.PENDIENTE].includes(order.status as OrderStatus)) && !order.lawyerId && abrirModal && (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => abrirModal('asignar', order)}
-                                                    className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
+                                                    className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition"
                                                     title="Asignar Abogado Ahora"
                                                 >
                                                     <FiUserPlus size={16} />
                                                 </button>
                                             )}
                                             {abrirModal && (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => abrirModal('ver', order)}
-                                                    className="p-2 bg-azul-primario text-white rounded-lg shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all"
+                                                    className="p-2 bg-azul-primario text-white rounded-lg shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition"
                                                     title="Ver Expediente"
                                                 >
                                                     <FiEye size={16} />

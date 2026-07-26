@@ -133,7 +133,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 						{ label: 'Casos Finalizados', value: summary?.transactionCount || 0, icon: <FiCheck />, color: 'emerald-600', bg: 'bg-emerald-500/5', isAmount: false },
 						{ label: 'Saldo Disponible para Cobro', value: summary?.lawyerPendingBalance || 0, icon: <FiDollarSign />, color: 'azul-primario', bg: 'bg-azul-primario/5' }
 					].map((stat, i) => (stat && (
-						<div key={i} className={`${stat.bg} rounded-3xl p-6 border border-slate-50 shadow-sm transition-all hover:scale-[1.02]`}>
+						<div key={i} className={`${stat.bg} rounded-3xl p-6 border border-slate-50 shadow-sm transition hover:scale-[1.02]`}>
 							<div className="flex items-center gap-4 mb-4">
 								<div className={`w-10 h-10 rounded-xl flex items-center justify-center text-${stat.color} bg-white shadow-sm font-black`}>
 									{stat.icon}
@@ -180,10 +180,10 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 							{ id: 'liquidada', label: 'Transferidas', color: 'bg-emerald-500' },
 							{ id: 'pendientes', label: 'Pendientes', color: 'bg-slate-400' }
 						].map((btn) => (
-							<button
+							<button type="button"
 								key={btn.id}
 								onClick={() => setFiltroEstado(btn.id as any)}
-								className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filtroEstado === btn.id
+								className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${filtroEstado === btn.id
 									? `${btn.color} text-white shadow-md`
 									: 'bg-white text-slate-500 hover:text-azul-primario'
 									}`}>
@@ -234,22 +234,22 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 										<p className="text-[9px] text-slate-400 mt-1 font-bold">Total Bruto: {formatearImporte(factura.importeBruto)}</p>
 									</div>
 									<div className="flex gap-2">
-										<button
+										<button type="button"
 											onClick={() => setFacturaSeleccionada(factura)}
-											className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center transition-all active:scale-90"
+											className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center transition active:scale-90"
 										>
 											<FiEye size={18} />
 										</button>
-										<button
+										<button type="button"
 											onClick={() => handleDescargar(factura)}
-											className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center transition-all active:scale-90"
+											className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center transition active:scale-90"
 										>
 											<FiDownload size={18} />
 										</button>
 										{factura.estado === 'pendiente' && (
-											<button
+											<button type="button"
 												onClick={() => handleMarcarPagada(factura)}
-												className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center transition-all active:scale-90"
+												className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center transition active:scale-90"
 											>
 												<FiCheck size={18} />
 											</button>
@@ -311,23 +311,23 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 												</span>
 											</td>
 											<td className="px-8 py-6 whitespace-nowrap text-right">
-												<div className="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
-													<button
+												<div className="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition duration-300">
+													<button type="button"
 														onClick={() => setFacturaSeleccionada(factura)}
-														className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all flex items-center justify-center"
+														className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition flex items-center justify-center"
 													>
 														<FiEye size={18} />
 													</button>
-													<button
+													<button type="button"
 														onClick={() => handleDescargar(factura)}
-														className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition-all flex items-center justify-center"
+														className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition flex items-center justify-center"
 													>
 														<FiDownload size={18} />
 													</button>
 													{factura.estado === 'pendiente' && (
-														<button
+														<button type="button"
 															onClick={() => handleMarcarPagada(factura)}
-															className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center"
+															className="w-10 h-10 bg-white shadow-sm border border-slate-100 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition flex items-center justify-center"
 														>
 															<FiCheck size={18} />
 														</button>
@@ -359,9 +359,9 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 									</h3>
 									<p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Documento ID: {facturaSeleccionada.numero}</p>
 								</div>
-								<button
+								<button type="button"
 									onClick={() => setFacturaSeleccionada(null)}
-									className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all font-black"
+									className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition font-black"
 								>
 									<FiX size={20} />
 								</button>
@@ -399,9 +399,9 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 								</div>
 							</div>
 							<div className="bg-slate-50 px-10 py-6 flex gap-4">
-								<button
+								<button type="button"
 									onClick={() => handleDescargar(facturaSeleccionada)}
-									className="flex-1 bg-azul-primario text-white h-14 rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-azul-primario/25 transition-all flex items-center justify-center gap-3 shadow-lg shadow-azul-primario/20 active:scale-95"
+									className="flex-1 bg-azul-primario text-white h-14 rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-azul-primario/25 transition flex items-center justify-center gap-3 shadow-lg shadow-azul-primario/20 active:scale-95"
 								>
 									<FiDownload size={18} /> Descargar PDF
 								</button>

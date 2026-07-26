@@ -177,7 +177,7 @@ function RecuperarPasswordContent() {
                                             </div>
                                         )}
 
-                                        <button disabled={isLoading} className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all flex items-center justify-center gap-2">
+                                        <button disabled={isLoading} className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition flex items-center justify-center gap-2">
                                             {isLoading ? <FiLoader className="animate-spin" /> : 'Actualizar Contraseña'}
                                         </button>
                                     </form>
@@ -223,7 +223,7 @@ function RecuperarPasswordContent() {
                                             </div>
                                         )}
 
-                                        <button disabled={isLoading} className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all flex items-center justify-center gap-2">
+                                        <button disabled={isLoading} className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition flex items-center justify-center gap-2">
                                             {isLoading ? <FiLoader className="animate-spin" /> : 'Enviar Instrucciones'}
                                         </button>
                                     </form>

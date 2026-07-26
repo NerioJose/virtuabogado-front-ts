@@ -66,7 +66,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 					<motion.div 
 						key={idx}
 						variants={item}
-						className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-md transition-all"
+						className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-md transition"
 					>
 						<div className={`absolute top-0 right-0 w-24 h-24 ${kpi.bg}/30 rounded-full blur-3xl -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700`} />
 						
@@ -100,10 +100,10 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 						</div>
 						<div className="flex gap-1.5">
 							{(['hoy', 'semana', 'mes', 'año'] as const).map((p) => (
-								<button
+								<button type="button"
 									key={p}
 									onClick={() => setPeriodo(p)}
-									className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+									className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition ${
 										periodo === p
 											? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20 scale-105'
 											: 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
@@ -120,7 +120,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 					whileHover={{ scale: 1.02, y: -2 }}
 					whileTap={{ scale: 0.98 }}
 					onClick={() => window.print()}
-					className="w-full lg:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-white text-azul-primario border-2 border-azul-primario rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-azul-primario hover:text-white transition-all shadow-sm"
+					className="w-full lg:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-white text-azul-primario border-2 border-azul-primario rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-azul-primario hover:text-white transition shadow-sm"
 				>
 					<FiDownload size={18} />
 					Exportar Balance
@@ -129,9 +129,9 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 
             {/* TAB SELECTOR (Liquidaciones vs Operaciones) */}
             <div className="max-w-2xl mx-auto flex p-1.5 bg-slate-100 rounded-[2rem] border border-slate-200 mb-6">
-                <button 
+                <button type="button" 
                     onClick={() => setTabActiva('operaciones')}
-                    className={`flex-1 py-3 px-6 rounded-2xl text-[10px] uppercase font-black tracking-widest transition-all ${
+                    className={`flex-1 py-3 px-6 rounded-2xl text-[10px] uppercase font-black tracking-widest transition ${
                         tabActiva === 'operaciones' 
                         ? 'bg-white text-azul-primario shadow-lg' 
                         : 'text-slate-400 hover:text-slate-600'
@@ -139,9 +139,9 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
                 >
                     Libro de Operaciones
                 </button>
-                <button 
+                <button type="button" 
                     onClick={() => setTabActiva('liquidaciones')}
-                    className={`flex-1 py-3 px-6 rounded-2xl text-[10px] uppercase font-black tracking-widest transition-all ${
+                    className={`flex-1 py-3 px-6 rounded-2xl text-[10px] uppercase font-black tracking-widest transition ${
                         tabActiva === 'liquidaciones' 
                         ? 'bg-white text-azul-primario shadow-lg' 
                         : 'text-slate-400 hover:text-slate-600'
@@ -208,10 +208,10 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								</div>
 
 								<div className="flex gap-2">
-									<button onClick={() => abrirModal('ver', order as any)} className="flex-1 py-3 bg-slate-50 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario hover:text-white transition-all">
+									<button type="button" onClick={() => abrirModal('ver', order as any)} className="flex-1 py-3 bg-slate-50 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario hover:text-white transition">
 										Ver Detalle
 									</button>
-									<button onClick={() => abrirModal('editar', order as any)} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-indigo-500 hover:text-white transition-all">
+									<button type="button" onClick={() => abrirModal('editar', order as any)} className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-indigo-500 hover:text-white transition">
 										<FiDollarSign size={18} />
 									</button>
 								</div>

@@ -42,7 +42,7 @@ export default function PWAInstallBanner() {
                                 </p>
                             </div>
                         </div>
-                        <button onClick={handleDismiss} className="p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                        <button type="button" onClick={handleDismiss} className="p-1 hover:bg-slate-100 rounded-lg transition-colors">
                             <FiX size={16} className="text-slate-400" />
                         </button>
                     </div>
@@ -63,9 +63,9 @@ export default function PWAInstallBanner() {
                             <p className="text-xs text-slate-600 leading-relaxed">
                                 Instala la app en tu dispositivo para recibir notificaciones incluso con la aplicación cerrada.
                             </p>
-                            <button
+                            <button type="button"
                                 onClick={promptInstall}
-                                className="w-full py-3 bg-azul-primario text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-azul-primario/20"
+                                className="w-full py-3 bg-azul-primario text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition flex items-center justify-center gap-2 shadow-lg shadow-azul-primario/20"
                             >
                                 <FiDownload size={16} />
                                 Instalar App

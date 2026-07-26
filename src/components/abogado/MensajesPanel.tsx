@@ -82,7 +82,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 							<div
 								key={conv.id}
 								onClick={() => setConversacionActiva(conv.id)}
-								className={`p-5 mx-2 my-1 rounded-2xl cursor-pointer transition-all duration-200 group ${conversacionActiva === conv.id 
+								className={`p-5 mx-2 my-1 rounded-2xl cursor-pointer transition duration-200 group ${conversacionActiva === conv.id 
                                     ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25' 
                                     : 'hover:bg-slate-50'
 									} ${conv.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}>
@@ -117,9 +117,9 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 						{/* Cabecera del Chat */}
 						<div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-sm z-10 shadow-sm">
 							<div className="flex items-center gap-4">
-								<button 
+								<button type="button" 
 									onClick={() => setConversacionActiva(null)}
-								    className="md:hidden p-2.5 bg-slate-100 text-slate-500 rounded-xl active:scale-90 transition-all"
+								    className="md:hidden p-2.5 bg-slate-100 text-slate-500 rounded-xl active:scale-90 transition"
                                 >
                                     <FiArrowLeft size={20} />
                                 </button>
@@ -137,10 +137,10 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 							</div>
 
 							{conversacionActiva && ordenActual?.status !== OrderStatus.COMPLETADO && ordenActual?.status !== OrderStatus.CANCELADO && (
-								<button
+								<button type="button"
 									onClick={() => openConfirmModal(conversacionActiva)}
 									disabled={isUpdating}
-									className="px-4 py-2.5 text-[10px] font-black text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-500 hover:text-white transition-all duration-300 disabled:opacity-50 uppercase tracking-widest shadow-sm active:scale-95"
+									className="px-4 py-2.5 text-[10px] font-black text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-500 hover:text-white transition duration-300 disabled:opacity-50 uppercase tracking-widest shadow-sm active:scale-95"
 								>
 									{isUpdating ? 'Procesando...' : 'Finalizar Caso'}
 								</button>

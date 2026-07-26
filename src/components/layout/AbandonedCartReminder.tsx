@@ -59,7 +59,7 @@ export default function AbandonedCartReminder() {
 									¿Deseas continuar con tu compra?
 								</h3>
 							</div>
-							<button
+							<button type="button"
 								title="Cerrar recordatorio"
 								onClick={handleClose}
 								className="text-white hover:text-gray-200 transition-colors">
@@ -89,13 +89,13 @@ export default function AbandonedCartReminder() {
 							</div>
 
 							<div className="flex justify-between items-center">
-								<button
+								<button type="button"
 									onClick={handleClose}
 									className="text-gray-500 hover:text-gray-700 text-sm">
 									No, gracias
 								</button>
 								<Link href="/servicios">
-									<button
+									<button type="button"
 										onClick={handleContinue}
 										className="bg-azul-primario text-white px-4 py-2 rounded-md hover:bg-azul-primario/90 transition-colors flex items-center">
 										Continuar compra <FiArrowRight className="ml-2" />

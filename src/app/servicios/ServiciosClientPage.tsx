@@ -234,7 +234,7 @@ export default function ServiciosClientPage() {
 							<Link href="/contacto" className="btn-secondary px-10 py-4 font-bold">
 								Contactar Asesor
 							</Link>
-							<Link href="/contacto#faq" className="bg-white/10 hover:bg-white/20 text-white px-10 py-4 rounded-full transition-all flex items-center justify-center font-bold text-center">
+							<Link href="/contacto#faq" className="bg-white/10 hover:bg-white/20 text-white px-10 py-4 rounded-full transition flex items-center justify-center font-bold text-center">
 								Ver Preguntas Frecuentes
 							</Link>
 						</div>

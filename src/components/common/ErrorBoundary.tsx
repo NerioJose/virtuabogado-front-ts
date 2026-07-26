@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
               ? 'Hubo un problema al cargar una parte de la aplicación. Esto suele ocurrir tras una actualización.'
               : 'Ha ocurrido un error inesperado al renderizar esta sección.'}
           </p>
-          <button
+          <button type="button"
             onClick={this.handleReset}
             className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >

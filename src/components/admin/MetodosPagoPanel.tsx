@@ -56,7 +56,7 @@ export default function MetodosPagoPanel() {
                     </p>
                 </div>
                 <div className="relative z-10 mt-6 md:mt-0 w-full md:w-auto text-right">
-                    <button 
+                    <button type="button" 
                         onClick={openCreateModal}
                         className="bg-white text-azul-primario font-bold px-6 py-3 rounded-xl hover:shadow-lg transition flex items-center gap-2 w-full md:w-auto justify-center"
                     >
@@ -73,7 +73,7 @@ export default function MetodosPagoPanel() {
                         key={method.id}
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className={`bg-white rounded-2xl shadow-md border-2 transition-all p-6 relative group ${
+                        className={`bg-white rounded-2xl shadow-md border-2 transition p-6 relative group ${
                             method.isActive ? 'border-azul-primario/20' : 'border-gray-100 grayscale'
                         }`}
                     >
@@ -104,7 +104,7 @@ export default function MetodosPagoPanel() {
                             {/* Acciones en Header */}
                             <div className="flex flex-col items-end gap-3">
                                 {/* Toggle Switch */}
-                                <button
+                                <button type="button"
                                     onClick={() => handleToggle(method.id, method.isActive)}
                                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-azul-primario focus:ring-offset-2 ${
                                         method.isActive ? 'bg-azul-primario' : 'bg-gray-300'
@@ -120,14 +120,14 @@ export default function MetodosPagoPanel() {
 
                                 {/* Mini Toolbar */}
                                 <div className="flex gap-2">
-                                    <button 
+                                    <button type="button" 
                                         onClick={() => openEditModal(method)}
                                         className="p-2 bg-gray-50 text-gray-500 rounded-lg hover:bg-azul-50 hover:text-azul-primario transition shadow-sm border border-gray-100"
                                         title="Configurar Nombre"
                                     >
                                         <FiEdit2 size={14} />
                                     </button>
-                                    <button 
+                                    <button type="button" 
                                         onClick={() => handleDelete(method.id)}
                                         className="p-2 bg-gray-50 text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-500 transition shadow-sm border border-gray-100"
                                         title="Eliminar lógicamente"
@@ -173,7 +173,7 @@ export default function MetodosPagoPanel() {
                                     <FiSettings className="text-gray-400" />
                                     {editingMethod ? 'Ajustes de Pasarela' : 'Registrar Pasarela'}
                                 </h3>
-                                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
                                     <FiX size={24} />
                                 </button>
                             </div>

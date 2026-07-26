@@ -80,10 +80,10 @@ export function PaymentSelectorModal({ serviceId, isOpen, onClose, onSuccess }: 
                         ) : (
                             <div className="space-y-4">
                                 {methods?.map((method: PaymentMethodDB) => (
-                                    <button
+                                    <button type="button"
                                         key={method.id}
                                         onClick={() => handlePayment(method.id)}
-                                        className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-gray-100 hover:border-azul-primario hover:bg-azul-claro/20 transition-all duration-300 group"
+                                        className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-gray-100 hover:border-azul-primario hover:bg-azul-claro/20 transition duration-300 group"
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-azul-claro rounded-xl flex items-center justify-center text-azul-primario group-hover:scale-110 transition-transform">
@@ -98,7 +98,7 @@ export function PaymentSelectorModal({ serviceId, isOpen, onClose, onSuccess }: 
                                     </button>
                                 ))}
                                 
-                                <button 
+                                <button type="button" 
                                     onClick={onClose}
                                     className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
                                 >

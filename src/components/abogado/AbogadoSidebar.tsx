@@ -57,7 +57,7 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
             const Icon = item.icon;
             return (
               <li key={item.id}>
-                <button
+                <button type="button"
                   onClick={() => onSeccionChange(item.id as SeccionAbogado)}
                   className={`w-full flex items-center px-6 py-3 text-left transition-colors ${
                     seccionActiva === item.id
@@ -74,7 +74,7 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
           
           {/* Botón de Notificación / Toggle Constante */}
           <li className="px-4 py-2 mt-2">
-            <button
+            <button type="button"
               onClick={async () => {
                 if (isSubscribed) {
                    const success = await unsubscribe();
@@ -87,7 +87,7 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
                 }
               }}
               disabled={isPending}
-              className={`w-full flex items-center px-4 py-3 rounded-xl transition-all border
+              className={`w-full flex items-center px-4 py-3 rounded-xl transition border
                 ${isPending ? 'opacity-40 cursor-wait bg-gray-50' : 'hover:scale-[1.02] active:scale-[0.98]'}
                 ${isSubscribed 
                   ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
@@ -112,7 +112,7 @@ export default function AbogadoSidebar({ abogado, seccionActiva, onSeccionChange
       </nav>
 
       <div className="p-4 border-t border-gray-200 shrink-0">
-        <button
+        <button type="button"
           onClick={handleLogout}
           className="w-full flex items-center px-4 py-3 text-left text-red-600 hover:bg-red-50 rounded-xl transition-colors font-bold text-sm"
         >

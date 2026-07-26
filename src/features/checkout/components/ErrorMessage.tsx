@@ -23,7 +23,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onDismiss }
                     <p className="text-sm text-red-800">{message}</p>
                 </div>
                 {onDismiss && (
-                    <button
+                    <button type="button"
                         onClick={onDismiss}
                         className="text-red-600 hover:text-red-800 transition-colors"
                     >

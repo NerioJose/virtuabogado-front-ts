@@ -78,8 +78,16 @@ export function useGlobalChatListener() {
     const [showPushBanner, setShowPushBanner] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [toastMessage, setToastMessage] = useState<any>(null);
+    const [isIOS, setIsIOS] = useState(false);
     const toastSetterRef = useRef(setToastMessage);
-    toastSetterRef.current = setToastMessage;
+
+    useEffect(() => {
+        toastSetterRef.current = setToastMessage;
+    }, [setToastMessage]);
+
+    useEffect(() => {
+        setIsIOS(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+    }, []);
 
     useEffect(() => {
         if (!user) return;
@@ -293,5 +301,6 @@ export function useGlobalChatListener() {
         handleSubscribe,
         permission,
         router,
+        isIOS,
     };
 }

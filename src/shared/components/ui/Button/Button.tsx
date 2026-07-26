@@ -51,7 +51,7 @@ export function Button({
             whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
             whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
             className={cn(
-                'rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2',
+                'rounded-lg font-medium transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2',
                 variantStyles[variant],
                 sizeStyles[size],
                 className

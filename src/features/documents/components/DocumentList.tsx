@@ -77,16 +77,16 @@ export default function DocumentList({
 
             {showActions && (
               <div className="mt-5 pt-4 border-t border-slate-50 flex gap-2">
-                <button
+                <button type="button"
                   onClick={() => onDescargar(doc)}
-                  className="flex-1 py-2.5 bg-slate-50 text-azul-primario rounded-xl font-black text-[11px] flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition-all active:scale-95"
+                  className="flex-1 py-2.5 bg-slate-50 text-azul-primario rounded-xl font-black text-[11px] flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition active:scale-95"
                 >
                   <FiDownload size={14} />
                   DESCARGAR
                 </button>
-                <button
+                <button type="button"
                   onClick={() => onEliminar(doc)}
-                  className="w-12 h-[42px] bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+                  className="w-12 h-[42px] bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition active:scale-95"
                 >
                   <FiTrash2 size={16} />
                 </button>
@@ -138,16 +138,16 @@ export default function DocumentList({
                 {showActions && (
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <div className="flex justify-end space-x-2">
-                      <button
+                      <button type="button"
                         onClick={() => onDescargar(documento)}
-                        className="w-10 h-10 bg-slate-50 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                        className="w-10 h-10 bg-slate-50 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition duration-300 flex items-center justify-center shadow-sm"
                         title="Descargar / Ver"
                       >
                         <FiDownload size={18} />
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => onEliminar(documento)}
-                        className="w-10 h-10 bg-slate-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                        className="w-10 h-10 bg-slate-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition duration-300 flex items-center justify-center shadow-sm"
                         title="Eliminar"
                       >
                         <FiTrash2 size={18} />

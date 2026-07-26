@@ -80,15 +80,15 @@ export default function PaymentSuccessPage({
                         <p className="text-gray-600 mb-8 leading-relaxed">
                             No pudimos verificar el estado de tu pago. Si tu pago fue exitoso, no te preocupes, tu servicio está siendo procesado.
                         </p>
-                        <button
+                        <button type="button"
                             onClick={handleRetry}
-                            className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md mb-4"
+                            className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 transition shadow-md mb-4"
                         >
                             <FiRefreshCw />
                             Reintentar
                         </button>
                         <Link href="/mis-servicios">
-                            <button className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all">
+                            <button type="button" className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition">
                                 Ir a Mis Servicios
                             </button>
                         </Link>
@@ -129,9 +129,9 @@ export default function PaymentSuccessPage({
                                     <p className="text-gray-600 mb-8 leading-relaxed">
                                         El pago fue procesado pero estamos esperando la confirmación de Zenobank. En la mayoría de los casos, la confirmación llega en segundos.
                                     </p>
-                                    <button 
+                                    <button type="button" 
                                         onClick={handleRetry}
-                                        className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md"
+                                        className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 transition shadow-md"
                                     >
                                         <FiRefreshCw />
                                         Volver a intentar validación
@@ -176,7 +176,7 @@ export default function PaymentSuccessPage({
                                 Lamentablemente, la transacción no pudo ser procesada o fue rechazada por Zenobank.
                             </p>
                             <Link href="/servicios">
-                                <button className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all">
+                                <button type="button" className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition">
                                     Regresar al Catálogo
                                 </button>
                             </Link>
@@ -236,7 +236,7 @@ export default function PaymentSuccessPage({
 
                             <div className="flex flex-col gap-4">
                                 <Link href={`/detalle-servicio/${orderId}`} className="group">
-                                    <button className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 group-hover:gap-4 transition-all">
+                                    <button type="button" className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 group-hover:gap-4 transition">
                                         Ir al Panel del Servicio
                                         <FiArrowRight />
                                     </button>

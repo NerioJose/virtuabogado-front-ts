@@ -51,7 +51,7 @@ export const UserDataStep: React.FC = () => {
                             value={email}
                             onChange={handleEmailChange}
                             disabled={hasChecked || isLoading}
-                            className={`w-full pl-11 pr-12 py-4 bg-white border-2 rounded-2xl transition-all duration-300 outline-none
+                            className={`w-full pl-11 pr-12 py-4 bg-white border-2 rounded-2xl transition duration-300 outline-none
                                 ${hasChecked 
                                     ? 'border-green-100 bg-green-50/30 text-gray-700' 
                                     : 'border-gray-100 focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5'
@@ -97,7 +97,7 @@ export const UserDataStep: React.FC = () => {
                             exit={{ opacity: 0, height: 0 }}
                             className="space-y-5 overflow-hidden pt-2"
                         >
-                            <div className={`p-4 rounded-2xl border flex items-center gap-3 mb-2 transition-all duration-500 ${isExistingUser ? 'bg-azul-primario/5 border-azul-primario/10' : 'bg-vinotinto/5 border-vinotinto/10'}`}>
+                            <div className={`p-4 rounded-2xl border flex items-center gap-3 mb-2 transition duration-500 ${isExistingUser ? 'bg-azul-primario/5 border-azul-primario/10' : 'bg-vinotinto/5 border-vinotinto/10'}`}>
                                 <div className="text-xl">
                                     {isExistingUser ? '👋' : '✨'}
                                 </div>
@@ -130,7 +130,7 @@ export const UserDataStep: React.FC = () => {
                                             autoComplete="name"
                                             value={formData.name}
                                             onChange={handleInputChange}
-                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition outline-none"
                                             placeholder="Ej: Juan Pérez"
                                             required
                                         />
@@ -173,7 +173,7 @@ export const UserDataStep: React.FC = () => {
                                         autoComplete={isExistingUser ? "current-password" : "new-password"}
                                         value={formData.password}
                                         onChange={handleInputChange}
-                                        className="w-full pl-11 pr-12 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
+                                        className="w-full pl-11 pr-12 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition outline-none"
                                         placeholder="••••••••"
                                         required
                                     />
@@ -205,7 +205,7 @@ export const UserDataStep: React.FC = () => {
                                             autoComplete="tel"
                                             value={formData.phone}
                                             onChange={handleInputChange}
-                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition-all outline-none"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition outline-none"
                                             placeholder="+58 412..."
                                         />
                                     </div>
@@ -218,7 +218,7 @@ export const UserDataStep: React.FC = () => {
                                 whileTap={{ scale: 0.99 }}
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-4 bg-azul-primario text-white rounded-2xl font-bold shadow-lg shadow-azul-primario/25 hover:bg-azul-oscuro transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-4 bg-azul-primario text-white rounded-2xl font-bold shadow-lg shadow-azul-primario/25 hover:bg-azul-oscuro transition flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? (
                                     <>

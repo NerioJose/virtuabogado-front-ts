@@ -75,7 +75,7 @@ export default function NuestroEquipoSection() {
 							whileInView={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.5, delay: index * 0.1 }}
 							viewport={{ once: true }}
-							className="group bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-slate-100 hover:border-azul-primario/20 hover:shadow-2xl hover:shadow-azul-primario/10 transition-all duration-500"
+							className="group bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-8 border border-slate-100 hover:border-azul-primario/20 hover:shadow-2xl hover:shadow-azul-primario/10 transition duration-500"
                         >
 							{/* Icon Area */}
 							<div className={`relative w-20 h-20 mb-8 rounded-2xl bg-gradient-to-br ${miembro.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-500`}>
@@ -92,7 +92,7 @@ export default function NuestroEquipoSection() {
                                     </h3>
                                     <p className="text-azul-primario text-sm font-bold uppercase tracking-wider">{miembro.cargo}</p>
                                 </div>
-								<div className="h-0.5 w-10 bg-azul-primario/20 group-hover:w-full transition-all duration-700"></div>
+								<div className="h-0.5 w-10 bg-azul-primario/20 group-hover:w-full transition duration-700"></div>
 								<p className="text-slate-500 text-sm leading-relaxed">
 									{miembro.descripcion}
 								</p>

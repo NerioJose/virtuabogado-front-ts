@@ -55,7 +55,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 	return (
 		<div className="relative">
 			{/* Botón del usuario */}
-			<button
+			<button type="button"
 				onClick={() => setIsDropdownOpen(!isDropdownOpen)}
 				className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors"
 			>
@@ -158,7 +158,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 
 							{/* Cerrar sesión */}
 							<div className="border-t border-gray-100 pt-2">
-								<button
+								<button type="button"
 									onClick={() => {
 										setIsDropdownOpen(false);
 										onLogout();
@@ -252,7 +252,7 @@ const Navbar = () => {
 						>
 							<Link
 								href="/admin"
-								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-all duration-300">
+								className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition duration-300">
 								Dashboard
 							</Link>
 							<motion.span
@@ -297,10 +297,10 @@ const Navbar = () => {
 
 				{/* Botón menú móvil */}
 				<div className="md:hidden">
-					<button
+					<button type="button"
 						title="Toggle navigation menu"
 						onClick={() => setIsOpen(!isOpen)}
-						className="text-azul-primario p-2 rounded-lg hover:bg-gray-800/10 transition-all duration-300">
+						className="text-azul-primario p-2 rounded-lg hover:bg-gray-800/10 transition duration-300">
 						<svg
 							className="w-6 h-6"
 							fill="none"
@@ -414,7 +414,7 @@ const Navbar = () => {
 										Admin Dashboard
 									</Link>
 								)}
-								<button
+								<button type="button"
 									onClick={handleLogout}
 									className="w-full btn-primary hover:bg-vinotinto-light px-4 py-2 text-left">
 									Cerrar sesión

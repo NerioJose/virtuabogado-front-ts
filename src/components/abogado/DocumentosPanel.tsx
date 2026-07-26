@@ -65,9 +65,9 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
           Mis Documentos
         </h2>
 
-        <button 
+        <button type="button" 
           onClick={() => setShowUploadModal(true)}
-          className="w-full sm:w-auto bg-azul-primario text-white px-5 py-2.5 rounded-2xl hover:bg-azul-primario/90 transition-all flex items-center justify-center shadow-lg shadow-azul-primario/25 font-bold text-sm active:scale-95">
+          className="w-full sm:w-auto bg-azul-primario text-white px-5 py-2.5 rounded-2xl hover:bg-azul-primario/90 transition flex items-center justify-center shadow-lg shadow-azul-primario/25 font-bold text-sm active:scale-95">
           <FiUpload className="mr-2" size={18} />
           Subir documento
         </button>
@@ -88,9 +88,9 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
                   <h3 className="text-xl font-black text-azul-primario tracking-tight">Cargar Archivo</h3>
                   <p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Sincronización con expediente</p>
                 </div>
-                <button 
+                <button type="button" 
                   onClick={() => setShowUploadModal(false)} 
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition"
                 >
                   <FiX size={20} />
                 </button>
@@ -101,7 +101,7 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
                   <select 
                     value={selectedOrderId}
                     onChange={(e) => setSelectedOrderId(e.target.value)}
-                    className="w-full h-12 px-4 rounded-2xl border-slate-100 bg-slate-50 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-azul-primario focus:border-azul-primario transition-all"
+                    className="w-full h-12 px-4 rounded-2xl border-slate-100 bg-slate-50 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-azul-primario focus:border-azul-primario transition"
                   >
                     <option value="">Seleccione un caso activo...</option>
                     {orders.map(order => (
@@ -116,7 +116,7 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Expediente Digital</label>
                   <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                    className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition duration-300 ${
                       selectedFile ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-100 hover:border-azul-primario hover:bg-azul-primario/[0.02]'
                     }`}
                   >
@@ -141,16 +141,16 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <button 
+                  <button type="button" 
                     onClick={() => setShowUploadModal(false)}
-                    className="flex-1 h-14 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs hover:bg-slate-100 transition-all uppercase tracking-widest"
+                    className="flex-1 h-14 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs hover:bg-slate-100 transition uppercase tracking-widest"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button type="button" 
                     disabled={!selectedFile || !selectedOrderId || loading}
                     onClick={processUpload}
-                    className="flex-[2] h-14 bg-azul-primario text-white rounded-2xl font-black text-xs hover:shadow-xl hover:shadow-azul-primario/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest shadow-lg shadow-azul-primario/20"
+                    className="flex-[2] h-14 bg-azul-primario text-white rounded-2xl font-black text-xs hover:shadow-xl hover:shadow-azul-primario/25 transition disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest shadow-lg shadow-azul-primario/20"
                   >
                     {loading ? 'Sincronizando...' : 'Subir Expediente'}
                   </button>
@@ -182,10 +182,10 @@ export default function DocumentosPanel({ abogadoId }: DocumentosPanelProps) {
               { id: 'pdf', label: 'PDFs', color: 'bg-rose-500' },
               { id: 'doc', label: 'Word', color: 'bg-blue-500' }
             ].map((f) => (
-              <button
+              <button type="button"
                 key={f.id}
                 onClick={() => setFiltroTipo(f.id as any)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all ${filtroTipo === f.id
+                className={`px-4 py-1.5 rounded-xl text-xs font-black transition ${filtroTipo === f.id
                   ? `${f.color} text-white shadow-md`
                   : 'bg-white text-slate-500 hover:text-azul-primario'
                   }`}

@@ -49,7 +49,7 @@ const StatCard = memo(
 	({ title, value, icon, bgColor, iconColor, subtitle }: StatCardProps) => (
 		<motion.div 
 			whileHover={{ y: -5 }}
-			className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-6 hover:shadow-xl hover:shadow-azul-primario/5 transition-all duration-300 group"
+			className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-6 hover:shadow-xl hover:shadow-azul-primario/5 transition duration-300 group"
 		>
 			<div className="flex items-center justify-between">
 				<div>

@@ -69,9 +69,9 @@ export default function ConfirmModal({
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">{title}</h2>
                 </div>
-                <button
+                <button type="button"
                     onClick={onClose}
-                    className="p-2 text-gray-400 rounded-full hover:bg-gray-100 hover:text-gray-600 transition-all focus:outline-none"
+                    className="p-2 text-gray-400 rounded-full hover:bg-gray-100 hover:text-gray-600 transition focus:outline-none"
                     aria-label="Cerrar modal"
                     disabled={isLoading}
                 >
@@ -93,7 +93,7 @@ export default function ConfirmModal({
                         type="button"
                         onClick={onClose}
                         disabled={isLoading}
-                        className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
+                        className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
                     >
                         {cancelText}
                     </button>
@@ -102,7 +102,7 @@ export default function ConfirmModal({
                     type="button"
                     onClick={onConfirm}
                     disabled={isLoading}
-                    className={`w-full sm:w-auto px-8 py-2.5 text-sm font-bold text-white transition-all ${theme.btnBg} rounded-xl shadow-lg shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`w-full sm:w-auto px-8 py-2.5 text-sm font-bold text-white transition ${theme.btnBg} rounded-xl shadow-lg shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                     {isLoading ? 'Procesando...' : confirmText}
                 </button>

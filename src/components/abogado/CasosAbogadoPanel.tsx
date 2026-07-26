@@ -46,7 +46,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => setCasoSeleccionado(null)}
             className="flex items-center text-gray-600 hover:text-azul-primario transition-colors"
           >
@@ -90,7 +90,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
             {/* Nuevo botón para completar caso */}
             {caso?.status !== OrderStatus.COMPLETADO && caso?.status !== OrderStatus.CANCELADO && (
               <div className="pt-4 mt-6 border-t border-gray-100">
-                <button
+                <button type="button"
                   onClick={() => caso && openConfirmModal(caso.id)}
                   disabled={isUpdating}
                   className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex justify-center items-center shadow-sm disabled:opacity-50"
@@ -149,10 +149,10 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                 { id: OrderStatus.REVISION, label: 'Revisión', color: 'bg-purple-500' },
                 { id: OrderStatus.COMPLETADO, label: 'Completados', color: 'bg-emerald-500' }
               ].map((f) => (
-                <button
+                <button type="button"
                   key={f.id}
                   onClick={() => setFiltroEstado(f.id as any)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${filtroEstado === f.id
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${filtroEstado === f.id
                     ? `${f.color} text-white shadow-sm`
                     : 'text-slate-500 hover:bg-white hover:text-slate-700'
                     }`}
@@ -177,7 +177,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
           </div>
         ) : (
           casosFiltrados.map((caso: any) => (
-            <div key={caso.id} className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98] relative overflow-hidden group">
+            <div key={caso.id} className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm hover:shadow-md transition active:scale-[0.98] relative overflow-hidden group">
               {/* Status Badge - Top Right */}
               <div className="absolute top-5 right-5">
                 <span className={`px-3 py-1.5 text-[9px] font-black rounded-xl uppercase tracking-tighter shadow-sm border ${
@@ -224,14 +224,14 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
 
               {/* Footer Actions */}
               <div className="flex gap-3 mt-6">
-                <button
-                  className="flex-1 h-11 rounded-2xl bg-slate-50 text-slate-500 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition-all"
+                <button type="button"
+                  className="flex-1 h-11 rounded-2xl bg-slate-50 text-slate-500 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-azul-primario hover:text-white transition"
                   onClick={() => setCasoSeleccionado(caso.id)}
                 >
                   <FiEye size={16} /> Ver Detalles
                 </button>
-                <button
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                <button type="button"
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition ${
                     unreadOrders.includes(caso.id) 
                     ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200' 
                     : 'bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white'
@@ -287,7 +287,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                   <tr key={caso.id} className={`hover:bg-slate-50/80 transition-colors group ${caso.status === OrderStatus.COMPLETADO ? 'opacity-60 grayscale-[0.2]' : ''}`}>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-4">
-                         <div className="w-11 h-11 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition-all duration-300 shadow-sm">
+                         <div className="w-11 h-11 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition duration-300 shadow-sm">
                             <FiBriefcase size={20} />
                          </div>
                          <div>
@@ -335,15 +335,15 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-right text-sm">
                       <div className="flex justify-end gap-2.5">
-                        <button
-                          className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                        <button type="button"
+                          className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white transition duration-300 flex items-center justify-center shadow-sm"
                           title="Ver detalles"
                           onClick={() => setCasoSeleccionado(caso.id)}
                         >
                           <FiEye size={18} />
                         </button>
-                        <button
-                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm ${
+                        <button type="button"
+                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition duration-300 shadow-sm ${
                             unreadOrders.includes(caso.id) 
                             ? 'bg-red-500 text-white animate-pulse' 
                             : 'bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white'

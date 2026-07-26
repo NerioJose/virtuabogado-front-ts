@@ -52,27 +52,27 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
     <div className="mt-8 border-t pt-6">
       {/* Tab Switcher Professional */}
       <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8 w-fit mx-auto border border-slate-200">
-        <button
+        <button type="button"
           onClick={() => setActiveTab('info')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition-all ${
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition ${
             activeTab === 'info' ? 'bg-white text-azul-primario shadow-md' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           <FiBriefcase size={14} />
           Servicios
         </button>
-        <button
+        <button type="button"
           onClick={() => setActiveTab('chat')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition-all ${
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition ${
             activeTab === 'chat' ? 'bg-white text-azul-primario shadow-md' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           <FiMessageSquare size={14} />
           Chat
         </button>
-        <button
+        <button type="button"
           onClick={() => setActiveTab('docs')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition-all ${
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition ${
             activeTab === 'docs' ? 'bg-white text-azul-primario shadow-md' : 'text-slate-500 hover:text-slate-700'
           }`}
         >

@@ -44,7 +44,7 @@ export default function UploadManager() {
                     </div>
                     <div className="flex items-center gap-3">
                         {!isOnline && <FiWifiOff className="text-amber-300 animate-pulse" title="Conexión Perdida: Pausado" />}
-                        <button className="text-white/80 hover:text-white">
+                        <button type="button" className="text-white/80 hover:text-white">
                             {isExpanded ? <FiChevronDown /> : <FiChevronUp />}
                         </button>
                     </div>
@@ -78,7 +78,7 @@ export default function UploadManager() {
                                             {/* Acciones segun Estado */}
                                             <div className="flex items-center gap-2">
                                                 {upload.status === 'uploading' && (
-                                                    <button 
+                                                    <button type="button" 
                                                         onClick={() => removeUpload(upload.id)}
                                                         className="text-gray-400 hover:text-red-500 transition-colors"
                                                         title="Cancelar subida"
@@ -101,7 +101,7 @@ export default function UploadManager() {
                                                 <motion.div 
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${upload.progress}%` }}
-                                                    className={`h-full transition-all duration-300 ${
+                                                    className={`h-full transition duration-300 ${
                                                         upload.status === 'error' ? 'bg-red-500' :
                                                         upload.status === 'success' ? 'bg-green-500' :
                                                         'bg-azul-primario'
@@ -131,7 +131,7 @@ export default function UploadManager() {
 
                                         {/* Botón para remover si finalizó */}
                                         {(upload.status === 'success' || upload.status === 'error' || upload.status === 'canceled') && (
-                                            <button 
+                                            <button type="button" 
                                                 onClick={() => removeUpload(upload.id)}
                                                 className="w-full mt-2 py-1 text-[10px] font-bold text-gray-400 hover:text-azul-primario transition-colors border-t border-gray-50 pt-2"
                                             >

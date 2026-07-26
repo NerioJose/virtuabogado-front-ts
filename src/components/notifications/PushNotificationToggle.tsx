@@ -22,11 +22,11 @@ export default function PushNotificationToggle({ className = '' }: PushNotificat
 
   return (
     <div className={`w-full ${className}`}>
-      <button
+      <button type="button"
         onClick={handleToggle}
         disabled={isPending}
         className={`
-          w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-300 relative overflow-hidden group
+          w-full flex items-center px-4 py-3.5 rounded-2xl transition duration-300 relative overflow-hidden group
           ${isPending ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
           ${isSubscribed 
             ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm' 

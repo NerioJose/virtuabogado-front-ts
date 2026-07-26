@@ -41,7 +41,7 @@ export const CasiListo: React.FC<CasiListoProps> = ({ orderId }) => {
                     
                     <Link 
                         href="/mis-servicios" 
-                        className="bg-azul-primario hover:bg-azul-claro text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl active:scale-95 text-center"
+                        className="bg-azul-primario hover:bg-azul-claro text-white font-bold py-4 px-6 rounded-2xl transition shadow-lg hover:shadow-xl active:scale-95 text-center"
                     >
                         Ir a Mis Servicios
                     </Link>

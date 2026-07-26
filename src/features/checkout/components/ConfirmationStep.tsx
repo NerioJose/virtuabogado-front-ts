@@ -116,7 +116,7 @@ export const ConfirmationStep: React.FC = () => {
                        />
                    </div>
                 )}
-                <button
+                <button type="button"
                     onClick={handleClose}
                     className="text-gray-400 hover:text-gray-600 text-sm transition-colors py-2"
                 >

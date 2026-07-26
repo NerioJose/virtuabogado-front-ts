@@ -145,10 +145,10 @@ function FinancialSettingsSection() {
 							</div>
 						)}
 
-						<button
+						<button type="button"
 							onClick={handleSave}
 							disabled={!validation.isValid || isSaving}
-							className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-azul-primario text-white font-bold rounded-lg hover:bg-azul-primario/90 transition-all disabled:opacity-50 shadow-md">
+							className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-azul-primario text-white font-bold rounded-lg hover:bg-azul-primario/90 transition disabled:opacity-50 shadow-md">
 							{isSaving ? 'Guardando...' : <><FiSave /> Guardar Configuración</>}
 						</button>
 					</div>
@@ -175,19 +175,19 @@ function FinancialSettingsSection() {
                         </div>
 						
 						<div className="space-y-2 pt-2">
-							<div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-blue-50/30">
+							<div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition hover:bg-blue-50/30">
 								<span className="text-sm text-gray-500">Para Abogados ({lawyerCommission}%)</span>
 								<span className="font-bold text-blue-600">${previewData.lawyerPayments?.toFixed(2)}</span>
 							</div>
-							<div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-orange-50/30">
+							<div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition hover:bg-orange-50/30">
 								<span className="text-sm text-gray-500">Gastos Op. ({operationalCosts}%)</span>
 								<span className="font-bold text-orange-600">${previewData.operationalCosts?.toFixed(2)}</span>
 							</div>
-                            <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-red-50/30">
+                            <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition hover:bg-red-50/30">
 								<span className="text-sm text-gray-500">Impuestos ({taxPercentage}%)</span>
 								<span className="font-bold text-red-500">${previewData.taxAmount?.toFixed(2)}</span>
 							</div>
-                            <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:bg-indigo-50/30">
+                            <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-100 shadow-sm transition hover:bg-indigo-50/30">
 								<span className="text-sm text-gray-500">Fee Plataforma ({platformFee}%)</span>
 								<span className="font-bold text-indigo-600">${previewData.platformFee?.toFixed(2)}</span>
 							</div>
@@ -220,9 +220,9 @@ export default function ConfiguracionPanel() {
 		<div className="space-y-8">
 			<div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 				<div className="flex border-b border-gray-100">
-					<button
+					<button type="button"
 						onClick={() => handleTabChange('servicios')}
-						className={`px-8 py-5 text-sm font-bold transition-all flex items-center gap-3 border-r border-gray-50 ${
+						className={`px-8 py-5 text-sm font-bold transition flex items-center gap-3 border-r border-gray-50 ${
 							activeTab === 'servicios' 
 								? 'bg-azul-primario text-white' 
 								: 'text-gray-500 hover:bg-azul-claro/20'
@@ -231,9 +231,9 @@ export default function ConfiguracionPanel() {
 						<FiShield size={20} /> Catálogo de Servicios
 					</button>
 
-					<button
+					<button type="button"
 						onClick={() => handleTabChange('financiero')}
-						className={`px-8 py-5 text-sm font-bold transition-all flex items-center gap-3 border-r border-gray-50 ${
+						className={`px-8 py-5 text-sm font-bold transition flex items-center gap-3 border-r border-gray-50 ${
 							activeTab === 'financiero' 
 								? 'bg-azul-primario text-white' 
 								: 'text-gray-500 hover:bg-azul-claro/20'
@@ -242,9 +242,9 @@ export default function ConfiguracionPanel() {
 						<FiCreditCard size={20} /> Configuración de Pagos
 					</button>
 
-					<button
+					<button type="button"
 						onClick={() => handleTabChange('perfil')}
-						className={`px-8 py-5 text-sm font-bold transition-all flex items-center gap-3 ${
+						className={`px-8 py-5 text-sm font-bold transition flex items-center gap-3 ${
 							activeTab === 'perfil' 
 								? 'bg-azul-primario text-white' 
 								: 'text-gray-500 hover:bg-azul-claro/20'

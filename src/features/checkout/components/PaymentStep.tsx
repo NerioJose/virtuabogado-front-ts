@@ -93,11 +93,11 @@ export const PaymentStep: React.FC = () => {
                 </p>
 
                 {methods.map((method: any) => (
-                    <button
+                    <button type="button"
                         key={method.id}
                         onClick={() => handlePayment(method.identifier)}
                         disabled={isProcessingPayment}
-                        className={`w-full group flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 disabled:opacity-50 shadow-sm hover:shadow-md bg-white ${
+                        className={`w-full group flex items-center justify-between p-4 rounded-2xl border-2 transition duration-300 disabled:opacity-50 shadow-sm hover:shadow-md bg-white ${
                             method.identifier === 'zenobank'
                                 ? 'border-azul-primario shadow-azul-primario/5' 
                                 : 'border-gray-100 hover:border-azul-primario hover:bg-azul-claro/5'
@@ -116,7 +116,7 @@ export const PaymentStep: React.FC = () => {
                                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Encriptación de Punto a Punto</p>
                             </div>
                         </div>
-                        <FiArrowRight className="text-gray-300 group-hover:text-azul-primario group-hover:translate-x-1 transition-all" size={20} />
+                        <FiArrowRight className="text-gray-300 group-hover:text-azul-primario group-hover:translate-x-1 transition" size={20} />
                     </button>
                 ))}
             </div>
@@ -125,7 +125,7 @@ export const PaymentStep: React.FC = () => {
             <div className="flex flex-col items-center gap-6 py-8 px-4 border border-slate-100 rounded-[2.5rem] bg-slate-50/30 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-azul-primario/5 to-transparent" />
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2">Pasarelas Seguras & Trust Badges</p>
-                <div className="flex items-center justify-center gap-8 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                <div className="flex items-center justify-center gap-8 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition duration-700">
                     <SiVisa size={32} />
                     <SiMastercard size={32} />
                     <SiAmericanexpress size={30} />
@@ -141,7 +141,7 @@ export const PaymentStep: React.FC = () => {
                 type="button"
                 onClick={() => setStep(1)}
                 disabled={isProcessingPayment}
-                className="w-full py-3 text-gray-400 hover:text-azul-primario text-[10px] font-black transition-all uppercase tracking-[0.2em] hover:bg-azul-claro/5 rounded-xl flex items-center justify-center gap-2"
+                className="w-full py-3 text-gray-400 hover:text-azul-primario text-[10px] font-black transition uppercase tracking-[0.2em] hover:bg-azul-claro/5 rounded-xl flex items-center justify-center gap-2"
             >
                 ← Modificar mis datos personales
             </button>

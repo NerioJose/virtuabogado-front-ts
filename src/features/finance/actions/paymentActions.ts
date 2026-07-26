@@ -3,10 +3,16 @@
 import { prisma } from '@/lib/prisma';
 import { OrderStatus } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
+import { createClient } from '@/utils/supabase/server';
+
+async function getAuthUser() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+}
 
 /**
  * Payment and Order Database Service (Server-side Only)
- * Blindaje arquitectónico para evitar fugas de Prisma al frontend.
  */
 export async function createOrderInDB(data: {
     userId: string;
@@ -16,6 +22,9 @@ export async function createOrderInDB(data: {
     lawyerId?: string;
     status?: OrderStatus;
 }) {
+    const user = await getAuthUser();
+    if (!user) throw new Error('No autorizado');
+
     try {
         const order = await prisma.order.create({
             data: {
@@ -33,7 +42,6 @@ export async function createOrderInDB(data: {
             }
         });
 
-        // Retornamos data serializada (Segura para el cliente)
         return serializeFinance(order);
     } catch (error) {
         console.error('❌ [PaymentService] Error al crear orden:', error);
@@ -42,6 +50,9 @@ export async function createOrderInDB(data: {
 }
 
 export async function updateOrderPaymentStatus(orderId: string, status: OrderStatus, paymentId?: string) {
+    const user = await getAuthUser();
+    if (!user) throw new Error('No autorizado');
+
     try {
         const order = await prisma.order.update({
             where: { id: orderId },

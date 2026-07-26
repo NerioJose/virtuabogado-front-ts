@@ -86,15 +86,15 @@ export default function ClientPanel({
       />
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-72 min-h-screen flex flex-col transition-all duration-500 min-w-0 overflow-x-hidden">
+      <div className="flex-1 lg:ml-72 min-h-screen flex flex-col transition duration-500 min-w-0 overflow-x-hidden">
         
         {/* Top Header responsivo */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60 transition-all">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60 transition">
           <div className="px-4 md:px-10 h-20 flex items-center justify-between max-w-[1600px] mx-auto w-full">
             <div className="flex items-center gap-4">
-              <button 
+              <button type="button" 
                 onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden w-11 h-11 flex items-center justify-center bg-azul-primario/5 text-azul-primario rounded-2xl active:scale-95 transition-all"
+                className="lg:hidden w-11 h-11 flex items-center justify-center bg-azul-primario/5 text-azul-primario rounded-2xl active:scale-95 transition"
               >
                 <FiMenu size={24} />
               </button>
@@ -117,14 +117,14 @@ export default function ClientPanel({
                   placeholder="Buscar..." 
                   value={terminoBusqueda}
                   onChange={(e) => setTerminoBusqueda(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-slate-100/50 border-transparent border focus:border-azul-primario focus:bg-white rounded-2xl focus:outline-none transition-all w-32 sm:w-48 md:w-64 font-medium text-xs md:text-sm shadow-sm md:shadow-none"
+                  className="pl-10 pr-4 py-2 bg-slate-100/50 border-transparent border focus:border-azul-primario focus:bg-white rounded-2xl focus:outline-none transition w-32 sm:w-48 md:w-64 font-medium text-xs md:text-sm shadow-sm md:shadow-none"
                 />
               </div>
               <Link href="/servicios">
                 <motion.button
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 bg-azul-primario text-white rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest shadow-lg shadow-azul-primario/25 transition-all"
+                  className="flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 bg-azul-primario text-white rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest shadow-lg shadow-azul-primario/25 transition"
                 >
                   <FiPlus className="md:size-4" />
                   <span className="hidden md:inline">Contratar Servicio</span>
@@ -152,9 +152,9 @@ export default function ClientPanel({
                 {/* Selector de Pestañas Premium */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                   <div className="bg-white/50 backdrop-blur-sm p-1.5 rounded-[2rem] border border-slate-200/60 shadow-sm flex gap-1 w-fit">
-                    <button
+                    <button type="button"
                       onClick={() => setTabActivo('activos')}
-                      className={`px-8 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${
+                      className={`px-8 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition ${
                         tabActivo === 'activos'
                           ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 scale-[1.02]'
                           : 'text-slate-400 hover:text-slate-600'
@@ -167,9 +167,9 @@ export default function ClientPanel({
                         </span>
                       )}
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => setTabActivo('historial')}
-                      className={`px-8 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all ${
+                      className={`px-8 py-3 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition ${
                         tabActivo === 'historial'
                           ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 scale-[1.02]'
                           : 'text-slate-400 hover:text-slate-600'
@@ -190,10 +190,10 @@ export default function ClientPanel({
                       ? (['todos', 'pendiente', 'programado', 'revision'] as const)
                       : (['todos', 'completado', 'cancelado'] as const)
                     ).map((estado) => (
-                      <button
+                      <button type="button"
                         key={estado}
                         onClick={() => setFiltroEstado(estado as any)}
-                        className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                        className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition whitespace-nowrap ${
                           filtroEstado === estado
                             ? 'bg-slate-800 text-white'
                             : 'bg-white text-slate-400 border border-slate-100'
@@ -242,7 +242,7 @@ export default function ClientPanel({
                           key={servicio.id}
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm p-6 relative overflow-hidden group hover:shadow-xl hover:shadow-azul-primario/5 transition-all"
+                          className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm p-6 relative overflow-hidden group hover:shadow-xl hover:shadow-azul-primario/5 transition"
                         >
                           {isUnread && (
                             <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-16 -mt-16 animate-pulse" />
@@ -312,7 +312,7 @@ export default function ClientPanel({
                                 <motion.button
                                   whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
-                                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition ${
                                     isUnread ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20'
                                   }`}
                                 >
@@ -323,7 +323,7 @@ export default function ClientPanel({
                                 <motion.button
                                   whileHover={{ scale: 1.05, x: 2 }}
                                   whileTap={{ scale: 0.95 }}
-                                  className="p-3 bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all shadow-sm"
+                                  className="p-3 bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition shadow-sm"
                                   title="Ver Detalles"
                                 >
                                   <FiEye size={20} />
@@ -374,7 +374,7 @@ export default function ClientPanel({
                                 <td className="px-8 py-5 text-right">
                                   <div className="flex justify-end gap-2">
                                     <Link href={`/detalle-servicio/${servicio.id}`}>
-                                      <button className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-azul-primario hover:text-white transition-all shadow-sm">
+                                      <button type="button" className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-azul-primario hover:text-white transition shadow-sm">
                                         <FiEye size={18} />
                                       </button>
                                     </Link>
@@ -408,7 +408,7 @@ export default function ClientPanel({
                             </div>
                           </div>
                           <Link href={`/detalle-servicio/${servicio.id}`}>
-                            <button className="w-12 h-12 bg-slate-100 text-slate-500 rounded-2xl flex items-center justify-center active:bg-azul-primario active:text-white transition-all">
+                            <button type="button" className="w-12 h-12 bg-slate-100 text-slate-500 rounded-2xl flex items-center justify-center active:bg-azul-primario active:text-white transition">
                               <FiEye size={20} />
                             </button>
                           </Link>
@@ -429,7 +429,7 @@ export default function ClientPanel({
                 className="w-full"
               >
                 <div className="flex items-center gap-3 mb-6">
-                  <button onClick={() => setSeccionActiva('servicios')} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                  <button type="button" onClick={() => setSeccionActiva('servicios')} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
                     <FiArrowLeft size={20} className="text-slate-500" />
                   </button>
                   <div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center text-azul-primario">
@@ -447,7 +447,7 @@ export default function ClientPanel({
                     </div>
                   ) : (
                     servicios.map((servicio) => (
-                      <div key={servicio.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                      <div key={servicio.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-10 h-10 rounded-xl bg-azul-primario/10 flex items-center justify-center shrink-0">
@@ -507,7 +507,7 @@ export default function ClientPanel({
                   </div>
                   <div className="p-8 border-2 border-dashed border-slate-100 rounded-[2.5rem] text-center">
                     <p className="text-sm font-bold text-slate-400 mb-4">¿Deseas actualizar tus datos personales?</p>
-                    <button className="px-8 py-3 bg-white border-2 border-azul-primario text-azul-primario rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario hover:text-white transition-all">
+                    <button type="button" className="px-8 py-3 bg-white border-2 border-azul-primario text-azul-primario rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario hover:text-white transition">
                       Editar Perfil
                     </button>
                   </div>
@@ -543,7 +543,7 @@ export default function ClientPanel({
                           value={passwords.actual}
                           onChange={(e) => setPasswords({...passwords, actual: e.target.value})}
                           placeholder="••••••••"
-                          className="w-full pl-12 pr-4 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition-all font-bold text-sm"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition font-bold text-sm"
                         />
                       </div>
                     </div>
@@ -557,7 +557,7 @@ export default function ClientPanel({
                           value={passwords.nueva}
                           onChange={(e) => setPasswords({...passwords, nueva: e.target.value})}
                           placeholder="••••••••"
-                          className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition-all font-bold text-sm"
+                          className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition font-bold text-sm"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -568,7 +568,7 @@ export default function ClientPanel({
                           value={passwords.confirmar}
                           onChange={(e) => setPasswords({...passwords, confirmar: e.target.value})}
                           placeholder="••••••••"
-                          className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition-all font-bold text-sm"
+                          className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-azul-primario focus:bg-white rounded-[1.5rem] focus:outline-none transition font-bold text-sm"
                         />
                       </div>
                     </div>
@@ -578,7 +578,7 @@ export default function ClientPanel({
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         disabled={cambiandopassword}
-                        className="w-full py-5 bg-azul-primario text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-azul-primario/20 hover:shadow-azul-primario/40 transition-all disabled:opacity-50"
+                        className="w-full py-5 bg-azul-primario text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-azul-primario/20 hover:shadow-azul-primario/40 transition disabled:opacity-50"
                       >
                         {cambiandopassword ? 'Procesando...' : 'Actualizar Credenciales'}
                       </motion.button>

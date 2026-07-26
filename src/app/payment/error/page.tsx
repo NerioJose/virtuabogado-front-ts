@@ -77,7 +77,7 @@ export default function PaymentErrorPage({
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-4">
                         <Link href="/mis-servicios" className="group">
-                            <button className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 bg-vinotinto/90 hover:bg-vinotinto transition-all">
+                            <button type="button" className="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 bg-vinotinto/90 hover:bg-vinotinto transition">
                                 <FiRefreshCw className="animate-spin-slow" />
                                 Intentar con otro método
                             </button>

@@ -55,10 +55,10 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
             { id: 'reciente', label: 'Recientes', color: 'bg-emerald-500' },
             { id: 'inactivo', label: 'Históricos', color: 'bg-slate-500' }
           ].map((btn) => (
-            <button
+            <button type="button"
               key={btn.id}
               onClick={() => setFiltroActividad(btn.id as any)}
-              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition duration-300 ${
                 filtroActividad === btn.id
                   ? `${btn.color} text-white shadow-lg scale-105`
                   : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
@@ -125,20 +125,20 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
 
                 <div className="flex items-center justify-between pt-5 border-t border-slate-100">
                   <div className="flex gap-2">
-                    <a href={`mailto:${cliente.email}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-azul-primario hover:text-white transition-all shadow-sm">
+                    <a href={`mailto:${cliente.email}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-azul-primario hover:text-white transition shadow-sm">
                       <FiMail size={16} />
                     </a>
                     {cliente.telefono && (
-                      <a href={`tel:${cliente.telefono}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                      <a href={`tel:${cliente.telefono}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-emerald-500 hover:text-white transition shadow-sm">
                         <FiPhone size={16} />
                       </a>
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => abrirModal('ver', cliente as any)} className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-azul-primario hover:text-white transition-all">
+                    <button type="button" onClick={() => abrirModal('ver', cliente as any)} className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-azul-primario hover:text-white transition">
                       <FiEye size={16} />
                     </button>
-                    <button onClick={() => abrirModal('editar', cliente as any)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-azul-primario hover:text-white transition-all">
+                    <button type="button" onClick={() => abrirModal('editar', cliente as any)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-azul-primario hover:text-white transition">
                       <FiEdit size={16} />
                     </button>
                   </div>
@@ -227,7 +227,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('ver', cliente as any)} 
-                            className="p-2.5 bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all font-black"
+                            className="p-2.5 bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition font-black"
                             title="Ver Expediente"
                           >
                             <FiEye size={18} />
@@ -235,7 +235,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('editar', cliente as any)} 
-                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all font-black"
+                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition font-black"
                             title="Editar Perfil"
                           >
                             <FiEdit size={18} />
@@ -243,7 +243,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('eliminar', cliente as any)} 
-                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all font-black"
+                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition font-black"
                             title="Eliminar Cliente"
                           >
                             <FiTrash2 size={18} />

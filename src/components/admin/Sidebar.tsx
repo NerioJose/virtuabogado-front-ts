@@ -64,7 +64,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
               />
             </Link>
           </motion.div>
-          <button 
+          <button type="button" 
             onClick={onClose}
             className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
           >
@@ -111,7 +111,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 setSeccionActiva(item.id as SeccionAdmin);
                 onClose?.();
               }}
-              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group
+              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition duration-300 group
                 ${seccionActiva === item.id 
                   ? 'bg-white text-azul-primario font-black shadow-lg shadow-black/10 translate-x-1' 
                   : 'text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1'
@@ -144,7 +144,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 }
               }}
               disabled={isPending}
-              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition-all duration-300 group border
+              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition duration-300 group border
                 ${isPending ? 'opacity-50 cursor-wait' : 'hover:translate-x-1'}
                 ${isSubscribed 
                   ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' 
@@ -173,9 +173,9 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
 
         {/* Footer del Sidebar siempre visible abajo */}
         <div className="pt-4 border-t border-white/10 shrink-0 mt-2">
-          <button 
+          <button type="button" 
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full p-3.5 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all duration-300 font-black text-xs uppercase tracking-widest group shadow-sm active:scale-95"
+            className="flex items-center space-x-3 w-full p-3.5 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition duration-300 font-black text-xs uppercase tracking-widest group shadow-sm active:scale-95"
           >
             <FiLogOut className="text-lg group-hover:rotate-12 transition-transform" />
             <span>Cerrar sesión</span>

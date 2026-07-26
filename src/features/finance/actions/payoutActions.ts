@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { PayoutStatus } from '@prisma/client';
 import { emit } from '@/events/eventBus';
 import { formatUSD, serializeFinance } from '@/lib/finance';
+import { createClient } from '@/utils/supabase/server';
 
 /**
  * Gets a summary of pending amounts to be paid to each lawyer.
@@ -113,6 +114,11 @@ export async function createPayout(data: {
  * Marks a payout as completed and records the payment reference.
  */
 export async function finalizePayout(payoutId: string, reference: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || ((user.user_metadata?.rol as string) || '').toUpperCase() !== 'ADMIN') {
+        return { success: false, error: 'No autorizado' };
+    }
     try {
         const updatedPayout = await (prisma as any).lawyerPayout.update({
             where: { id: payoutId },

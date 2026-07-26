@@ -70,10 +70,10 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
               { id: OrderStatus.COMPLETADO, label: 'Completados', count: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length },
               { id: OrderStatus.CANCELADO, label: 'Cancelados', count: orders.filter((o: any) => o.status === OrderStatus.CANCELADO).length },
             ].map((btn) => (
-              <button
+              <button type="button"
                 key={btn.id}
                 onClick={() => setFiltroEstado(btn.id as any)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition ${
                   filtroEstado === btn.id
                     ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20 scale-105'
                     : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
@@ -159,15 +159,15 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                 </div>
 
                 <div className="mt-6 flex gap-2">
-                  <button onClick={() => abrirModal('ver', order as any)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                  <button type="button" onClick={() => abrirModal('ver', order as any)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition ${
                     isUnread ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20'
                   }`}>
                     {isUnread ? <FiMessageSquare /> : <FiEye />} {isUnread ? 'NUEVO MENSAJE' : 'EXPEDIENTE'}
                   </button>
-                  <button onClick={() => abrirModal('asignar', order as any)} className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                  <button type="button" onClick={() => abrirModal('asignar', order as any)} className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-emerald-500 hover:text-white transition shadow-sm">
                     <FiUserPlus size={18} />
                   </button>
-                  <button onClick={() => abrirModal('editar', order as any)} className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-amber-500 hover:text-white transition-all shadow-sm">
+                  <button type="button" onClick={() => abrirModal('editar', order as any)} className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-amber-500 hover:text-white transition shadow-sm">
                     <FiEdit size={18} />
                   </button>
                 </div>
@@ -249,7 +249,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('asignar', order as any)} 
-                            className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all"
+                            className="p-2.5 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition"
                             title="Asignar Abogado"
                           >
                             <FiUserPlus size={18} />
@@ -257,7 +257,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('ver', order as any)} 
-                            className={`p-2.5 rounded-xl transition-all shadow-lg ${isUnread ? 'bg-rose-500 text-white animate-pulse' : 'bg-azul-primario text-white shadow-azul-primario/20 hover:bg-azul-primario/90'}`}
+                            className={`p-2.5 rounded-xl transition shadow-lg ${isUnread ? 'bg-rose-500 text-white animate-pulse' : 'bg-azul-primario text-white shadow-azul-primario/20 hover:bg-azul-primario/90'}`}
                             title={isUnread ? 'Mensaje Nuevo' : 'Ver Expediente'}
                           >
                             {isUnread ? <FiMessageSquare size={18} /> : <FiEye size={18} />}
@@ -265,7 +265,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('editar', order as any)} 
-                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
+                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition"
                             title="Cambiar Estado"
                           >
                             <FiEdit size={18} />
@@ -273,7 +273,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('eliminar', order as any)} 
-                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all font-black"
+                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition font-black"
                             title="Eliminar Caso"
                           >
                             <FiTrash2 size={18} />

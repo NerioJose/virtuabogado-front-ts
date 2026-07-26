@@ -70,10 +70,10 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
               { id: 'reciente', label: 'Recientes', color: 'bg-emerald-500' },
               { id: 'inactivo', label: 'Inactivos', color: 'bg-slate-500' }
             ].map((f) => (
-              <button
+              <button type="button"
                 key={f.id}
                 onClick={() => setFiltroActividad(f.id as any)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all ${filtroActividad === f.id
+                className={`px-4 py-1.5 rounded-xl text-xs font-black transition ${filtroActividad === f.id
                   ? `${f.color} text-white shadow-md`
                   : 'bg-white text-slate-500 hover:text-azul-primario'
                   }`}
@@ -97,7 +97,7 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
           </div>
         ) : (
           clientesFiltrados.map((cliente) => (
-            <div key={cliente.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300 group overflow-hidden">
+            <div key={cliente.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition duration-300 group overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="relative shrink-0">
@@ -143,16 +143,16 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
                 </div>
 
                 <div className="flex gap-2">
-                  <button 
+                  <button type="button" 
                     onClick={() => onNavigateToCasos?.(cliente.id)}
-                    className="flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario hover:text-white transition-all active:scale-95 shadow-sm"
+                    className="flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario hover:text-white transition active:scale-95 shadow-sm"
                   >
                     <FiFileText size={14} />
                     Ver Casos
                   </button>
-                  <button 
+                  <button type="button" 
                     onClick={() => onNavigateToMensajes?.(cliente.id)}
-                    className="w-12 h-12 flex items-center justify-center bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all active:scale-95"
+                    className="w-12 h-12 flex items-center justify-center bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition active:scale-95"
                   >
                     <FiMessageSquare size={18} />
                   </button>

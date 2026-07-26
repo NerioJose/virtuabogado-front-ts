@@ -3,8 +3,24 @@
 import { prisma as prismaClient } from '@/lib/prisma';
 const prisma = prismaClient as any;
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/utils/supabase/server';
+
+async function requireAdmin(): Promise<boolean> {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+        const role = ((user.user_metadata?.rol as string) || '').toUpperCase();
+        return role === 'ADMIN';
+    } catch {
+        return false;
+    }
+}
 
 export async function getPaymentMethodsAction(adminView: boolean = false) {
+    if (adminView && !(await requireAdmin())) {
+        return [];
+    }
     try {
         const methods = await prisma.paymentMethod.findMany({
             where: adminView ? {} : { isActive: true },
@@ -18,6 +34,9 @@ export async function getPaymentMethodsAction(adminView: boolean = false) {
 }
 
 export async function togglePaymentMethodAction(id: string, isActive: boolean) {
+    if (!(await requireAdmin())) {
+        return { success: false, message: 'No autorizado' };
+    }
     try {
         await prisma.paymentMethod.update({
             where: { id },
@@ -37,6 +56,9 @@ export async function createPaymentMethodAction(data: {
     isActive: boolean;
     icon?: string;
 }) {
+    if (!(await requireAdmin())) {
+        return { success: false, message: 'No autorizado' };
+    }
     try {
         if (!data.identifier || !data.name) {
             return { success: false, message: 'El identificador técnico y el nombre comercial son requeridos.' };
@@ -64,6 +86,9 @@ export async function updatePaymentMethodAction(id: string, data: {
     isActive?: boolean;
     icon?: string;
 }) {
+    if (!(await requireAdmin())) {
+        return { success: false, message: 'No autorizado' };
+    }
     try {
         const method = await prisma.paymentMethod.update({
             where: { id },
@@ -82,6 +107,9 @@ export async function updatePaymentMethodAction(id: string, data: {
 }
 
 export async function deletePaymentMethodAction(id: string) {
+    if (!(await requireAdmin())) {
+        return { success: false, message: 'No autorizado' };
+    }
     try {
         await prisma.paymentMethod.delete({
             where: { id }

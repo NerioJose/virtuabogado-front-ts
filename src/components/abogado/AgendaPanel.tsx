@@ -48,9 +48,9 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
           </div>
 
           <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-[2rem] border border-slate-100 self-center md:self-auto">
-             <button
+             <button type="button"
                onClick={() => cambiarDia(-1)}
-               className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-azul-primario hover:shadow-md transition-all active:scale-90"
+               className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-azul-primario hover:shadow-md transition active:scale-90"
              >
                <FiChevronLeft size={20} />
              </button>
@@ -64,9 +64,9 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
                 </p>
              </div>
 
-             <button
+             <button type="button"
                onClick={() => cambiarDia(1)}
-               className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-azul-primario hover:shadow-md transition-all active:scale-90"
+               className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-azul-primario hover:shadow-md transition active:scale-90"
              >
                <FiChevronRight size={20} />
              </button>
@@ -104,9 +104,9 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
                   {/* Punto en la línea de tiempo */}
                   <div className="absolute -left-[13px] md:-left-[21px] top-8 w-6 h-6 bg-white border-4 border-azul-primario rounded-full shadow-lg shadow-azul-primario/25 z-10" />
 
-                  <div className="group bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-azul-primario/20 transition-all cursor-default">
+                  <div className="group bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-azul-primario/20 transition cursor-default">
                     <div className="flex flex-col md:flex-row gap-6">
-                      <div className="shrink-0 flex items-center justify-center w-16 h-16 bg-azul-primario/5 rounded-2xl text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition-all duration-500">
+                      <div className="shrink-0 flex items-center justify-center w-16 h-16 bg-azul-primario/5 rounded-2xl text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition duration-500">
                         <FiBriefcase size={28} />
                       </div>
 
@@ -159,9 +159,9 @@ export default function AgendaPanel({ abogadoId, onVerDetalles }: AgendaPanelPro
                             {caso.status}
                            </span>
                            
-                           <button 
+                           <button type="button" 
                              onClick={() => onVerDetalles?.(caso.id)}
-                             className="group/btn flex items-center gap-2 text-xs font-black text-azul-primario uppercase tracking-widest hover:gap-3 transition-all active:scale-95"
+                             className="group/btn flex items-center gap-2 text-xs font-black text-azul-primario uppercase tracking-widest hover:gap-3 transition active:scale-95"
                            >
                              Expediente Digital
                              <FiArrowRight />

@@ -25,7 +25,7 @@ export default function CallToAction() {
 							<motion.button
 								whileHover={{ scale: 1.05 }}
 								whileTap={{ scale: 0.95 }}
-								className="px-8 py-4 bg-white text-vinotinto font-bold rounded-xl shadow-lg hover:bg-azul-claro transition-all duration-300">
+								className="px-8 py-4 bg-white text-vinotinto font-bold rounded-xl shadow-lg hover:bg-azul-claro transition duration-300">
 								Comenzar ahora
 							</motion.button>
 						</Link>

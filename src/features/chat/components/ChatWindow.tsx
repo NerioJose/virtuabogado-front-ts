@@ -194,9 +194,9 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
                                     } max-w-[85%] lg:max-w-[70%] xl:max-w-[60%] shadow-sm`}
                                 >
                                     {(isMe || user?.rol === 'ADMIN') && (
-                                        <button
+                                        <button type="button"
                                             onClick={() => handleDeleteClick(msg.id)}
-                                            className={`absolute ${isMe ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover/msg:opacity-100 transition-all focus:outline-none`}
+                                            className={`absolute ${isMe ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover/msg:opacity-100 transition focus:outline-none`}
                                             title="Eliminar mensaje"
                                         >
                                             <FiTrash2 size={16} />

@@ -133,7 +133,7 @@ export default function ServiciosDestacados() {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.6, delay: index * 0.1 }}
                                     viewport={{ once: true }}
-                                    className="w-full md:w-[calc(50%-1.25rem)] lg:w-[calc(33.333%-1.875rem)] group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:-translate-y-2 relative overflow-hidden"
+                                    className="w-full md:w-[calc(50%-1.25rem)] lg:w-[calc(33.333%-1.875rem)] group bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition duration-500 border border-gray-100 hover:-translate-y-2 relative overflow-hidden"
                                 >
                                     <div className="absolute top-0 left-0 w-2 h-full bg-azul-primario scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-500"></div>
                                     
@@ -148,7 +148,7 @@ export default function ServiciosDestacados() {
                                     </p>
                                     <Link
                                         href="/servicios"
-                                        className="inline-flex items-center gap-2 text-azul-primario font-black hover:gap-4 transition-all"
+                                        className="inline-flex items-center gap-2 text-azul-primario font-black hover:gap-4 transition"
                                     >
                                         Explorar servicio
                                         <svg

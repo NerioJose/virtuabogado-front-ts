@@ -59,7 +59,7 @@ export default function VirtuStudents() {
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                         viewport={{ once: true }}
-                        className="group bg-white rounded-[40px] shadow-xl hover:shadow-2xl transition-all duration-700 border border-gray-100 relative overflow-hidden flex flex-col lg:flex-row items-stretch"
+                        className="group bg-white rounded-[40px] shadow-xl hover:shadow-2xl transition duration-700 border border-gray-100 relative overflow-hidden flex flex-col lg:flex-row items-stretch"
                     >
                         <div className="absolute top-0 left-0 w-2 h-full bg-vinotinto scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-700"></div>
 

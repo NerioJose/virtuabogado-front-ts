@@ -14,7 +14,7 @@
 	}
 
 	.btn-primary {
-		@apply bg-vinotinto hover:bg-vinotinto-light text-white font-medium py-3 px-6 rounded-xl transition-all duration-300;
+		@apply bg-vinotinto hover:bg-vinotinto-light text-white font-medium py-3 px-6 rounded-xl transition duration-300;
 	}
 
 	.text-vinotinto {

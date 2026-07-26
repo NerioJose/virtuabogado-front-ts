@@ -54,7 +54,7 @@ export function OrdersHistoryTable({ user }: Props) {
                     <input 
                         type="text" 
                         placeholder="Buscar por ID, servicio o cliente..."
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
                         value={filters.search}
                         onChange={(e) => handleFilterChange('search', e.target.value)}
                     />
@@ -107,7 +107,7 @@ export function OrdersHistoryTable({ user }: Props) {
                         const StatusIcon = status.icon;
                         
                         return (
-                            <div key={order.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all">
+                            <div key={order.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition">
                                 {/* Header: ID & Status */}
                                 <div className="flex justify-between items-start mb-4">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{formatOrderId(order.numericId, order.createdAt)}</span>
@@ -253,20 +253,20 @@ export function OrdersHistoryTable({ user }: Props) {
                             Mostrando <span className="text-slate-900">{((filters.page - 1) * (filters.limit || 10)) + 1}</span> - <span className="text-slate-900">{Math.min(filters.page * (filters.limit || 10), data.total)}</span> de <span className="text-slate-900">{data.total}</span>
                         </p>
                         <div className="flex items-center gap-2 order-1 sm:order-2">
-                            <button 
+                            <button type="button" 
                                 onClick={() => handlePageChange(filters.page - 1)}
                                 disabled={filters.page === 1}
-                                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm active:scale-95"
                             >
                                 <ChevronLeft className="size-4" />
                             </button>
                             <span className="text-xs font-black text-slate-600 px-3 py-1.5 bg-white border border-slate-100 rounded-lg shadow-inner">
                                 {filters.page} / {data.totalPages}
                             </span>
-                            <button 
+                            <button type="button" 
                                 onClick={() => handlePageChange(filters.page + 1)}
                                 disabled={filters.page === data.totalPages}
-                                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm active:scale-95"
                             >
                                 <ChevronRight className="size-4" />
                             </button>

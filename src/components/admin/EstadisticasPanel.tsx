@@ -27,7 +27,7 @@ function EstadisticasPanel() {
           <span className="text-gray-700 font-medium mr-3">Período:</span>
           <div className="flex gap-2">
             {(['mes', 'trimestre', 'año'] as PeriodoEstadistica[]).map((p) => (
-              <button
+              <button type="button"
                 key={p}
                 onClick={() => setPeriodo(p)}
                 className={`px-3 py-1 rounded-full text-sm ${periodo === p
@@ -43,11 +43,11 @@ function EstadisticasPanel() {
         </div>
 
         <div className="flex gap-2">
-          <button className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+          <button type="button" className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
             <FiDownload className="text-gray-500" />
             <span>PDF</span>
           </button>
-          <button className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+          <button type="button" className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
             <FiDownload className="text-gray-500" />
             <span>Excel</span>
           </button>

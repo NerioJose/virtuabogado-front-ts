@@ -43,7 +43,7 @@ export default function ServiciosPanel() {
                     <motion.div 
                         key={service.id}
                         layout
-                        className={`bg-white border rounded-xl overflow-hidden shadow-sm transition-all ${
+                        className={`bg-white border rounded-xl overflow-hidden shadow-sm transition ${
                             !service.activo ? 'opacity-75 bg-gray-50' : 'hover:border-azul-primario/30'
                         }`}
                     >
@@ -109,16 +109,16 @@ export default function ServiciosPanel() {
                                 </div>
 
                                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                                    <button 
+                                    <button type="button" 
                                         onClick={handleCancel}
-                                        className="px-5 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl transition-all flex items-center gap-2 font-medium"
+                                        className="px-5 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl transition flex items-center gap-2 font-medium"
                                     >
                                         <FiX size={18} /> Cancelar
                                     </button>
-                                    <button 
+                                    <button type="button" 
                                         onClick={handleSave}
                                         disabled={isUpdating}
-                                        className="px-5 py-2.5 bg-azul-primario text-white rounded-xl hover:bg-azul-primario/90 shadow-md shadow-azul-primario/20 transition-all flex items-center gap-2 font-medium"
+                                        className="px-5 py-2.5 bg-azul-primario text-white rounded-xl hover:bg-azul-primario/90 shadow-md shadow-azul-primario/20 transition flex items-center gap-2 font-medium"
                                     >
                                         {isUpdating ? 'Guardando...' : <><FiCheck size={18} /> Guardar Cambios</>}
                                     </button>
@@ -161,16 +161,16 @@ export default function ServiciosPanel() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0">
-                                    <button 
+                                    <button type="button" 
                                         onClick={() => handleEdit(service)}
-                                        className="p-2 text-gray-400 hover:text-azul-primario hover:bg-azul-claro/30 rounded-lg transition-all"
+                                        className="p-2 text-gray-400 hover:text-azul-primario hover:bg-azul-claro/30 rounded-lg transition"
                                         title="Editar detalles"
                                     >
                                         <FiEdit2 size={20} />
                                     </button>
-                                    <button 
+                                    <button type="button" 
                                         onClick={() => toggleStatus(service)}
-                                        className={`p-2 rounded-lg transition-all ${
+                                        className={`p-2 rounded-lg transition ${
                                             service.activo 
                                             ? 'text-green-500 hover:bg-green-50' 
                                             : 'text-gray-400 hover:bg-gray-100'

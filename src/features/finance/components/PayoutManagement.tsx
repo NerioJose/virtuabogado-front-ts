@@ -72,7 +72,7 @@ export default function PayoutManagement() {
                                 key={idx}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-md transition-all group"
+                                className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-md transition group"
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="w-12 h-12 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario">
@@ -93,10 +93,10 @@ export default function PayoutManagement() {
                                         <span className="text-azul-primario">{item.orderCount} Expedientes</span>
                                     </div>
                                 </div>
-                                <button 
+                                <button type="button" 
                                     onClick={() => handleCreatePayout(item)}
                                     disabled={isProcessing}
-                                    className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all shadow-lg shadow-azul-primario/25 flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition shadow-lg shadow-azul-primario/25 flex items-center justify-center gap-2"
                                 >
                                     {isProcessing ? <FiLoader className="animate-spin" /> : <FiPlus />}
                                     Autorizar Liquidación
@@ -173,9 +173,9 @@ export default function PayoutManagement() {
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             {payout.status === 'PENDIENTE' && (
-                                                <button 
+                                                <button type="button" 
                                                     onClick={() => handleFinalize(payout)}
-                                                    className="px-4 py-2 bg-azul-primario text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario/90 transition-all shadow-md shadow-azul-primario/10"
+                                                    className="px-4 py-2 bg-azul-primario text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-azul-primario/90 transition shadow-md shadow-azul-primario/10"
                                                 >
                                                     Confirmar Pago
                                                 </button>
@@ -224,21 +224,21 @@ export default function PayoutManagement() {
                                         value={reference}
                                         onChange={(e) => setReference(e.target.value)}
                                         placeholder="Ej: TRX-123456789"
-                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-azul-primario outline-none font-bold text-slate-700 placeholder:text-slate-300 transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-azul-primario outline-none font-bold text-slate-700 placeholder:text-slate-300 transition"
                                     />
                                 </div>
 
                                 <div className="flex gap-4 pt-4">
-                                    <button 
+                                    <button type="button" 
                                         onClick={closeModal}
-                                        className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                                        className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition"
                                     >
                                         Cancelar
                                     </button>
-                                    <button 
+                                    <button type="button" 
                                         onClick={confirmFinalize}
                                         disabled={!reference || isProcessing}
-                                        className="flex-1 py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition-all shadow-lg shadow-azul-primario/25 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                                        className="flex-1 py-4 bg-azul-primario text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-azul-primario/90 transition shadow-lg shadow-azul-primario/25 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
                                     >
                                         {isProcessing ? <FiLoader className="animate-spin" /> : <FiCheckCircle />}
                                         Finalizar Pago

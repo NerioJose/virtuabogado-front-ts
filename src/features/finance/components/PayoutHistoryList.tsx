@@ -50,7 +50,7 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                    className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition group relative overflow-hidden"
                 >
                     <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                         <FiCheckCircle size={60} />

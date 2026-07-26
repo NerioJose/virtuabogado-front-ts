@@ -237,14 +237,14 @@ function ErrorPagoContent() {
 						<motion.button
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}
-							className="px-6 py-3 bg-white text-azul-primario border border-azul-primario rounded-xl hover:bg-azul-claro transition-all duration-300 flex items-center justify-center">
+							className="px-6 py-3 bg-white text-azul-primario border border-azul-primario rounded-xl hover:bg-azul-claro transition duration-300 flex items-center justify-center">
 							<FiArrowLeft className="mr-2" /> Volver al resumen
 						</motion.button>
 					</Link>
 				</div>
 
 				<div className="text-center mt-6">
-					<button
+					<button type="button"
 						onClick={solicitarAyuda}
 						className="text-azul-primario hover:underline text-sm">
 						¿Necesitas ayuda? Contacta con nuestro equipo de soporte

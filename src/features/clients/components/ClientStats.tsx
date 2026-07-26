@@ -54,7 +54,7 @@ export default function ClientStats({ stats, isLoading }: ClientStatsProps) {
         <motion.div
           key={idx}
           variants={item}
-          className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-azul-primario/5 transition-all"
+          className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-azul-primario/5 transition"
         >
           <div className={`absolute top-0 right-0 w-24 h-24 ${card.bg} rounded-full blur-3xl -mr-8 -mt-8 opacity-50 group-hover:scale-150 transition-transform duration-700`} />
           

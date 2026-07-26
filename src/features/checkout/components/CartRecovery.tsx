@@ -119,9 +119,9 @@ export const CartRecovery = () => {
                                     <h4 className="font-bold text-slate-900 text-base truncate">
                                         ¿Continuar asesoría?
                                     </h4>
-                                    <button
+                                    <button type="button"
                                         onClick={handleDiscard}
-                                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
                                         title="Cerrar"
                                     >
                                         <FiX className="text-lg" />
@@ -148,7 +148,7 @@ export const CartRecovery = () => {
                                         <span>Retomar compra</span>
                                     </motion.button>
                                     
-                                    <button
+                                    <button type="button"
                                         onClick={handleDiscard}
                                         className="text-xs font-bold text-slate-400 hover:text-slate-600 px-2 py-1 transition-colors"
                                     >

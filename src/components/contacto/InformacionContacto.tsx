@@ -114,7 +114,7 @@ const InformacionContacto = React.memo(() => {
     return (
       <a
         href={link.href}
-        className="w-10 h-10 bg-azul-claro rounded-full flex items-center justify-center text-azul-primario hover:bg-azul-primario hover:text-white transition-all duration-300"
+        className="w-10 h-10 bg-azul-claro rounded-full flex items-center justify-center text-azul-primario hover:bg-azul-primario hover:text-white transition duration-300"
         aria-label={link.label}
       >
         {link.icon}

@@ -35,14 +35,14 @@ const SeccionMapa = React.memo(() => {
           <div className="flex flex-col items-center justify-center z-10">
             <div
               onClick={() => setMapLoaded(true)}
-              className="bg-white p-6 rounded-full shadow-md mb-4 text-azul-primario group-hover:scale-110 group-hover:bg-azul-primario group-hover:text-white transition-all duration-300 cursor-pointer"
+              className="bg-white p-6 rounded-full shadow-md mb-4 text-azul-primario group-hover:scale-110 group-hover:bg-azul-primario group-hover:text-white transition duration-300 cursor-pointer"
             >
               <FiMapPin className="w-10 h-10" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Visítanos en Carabobo</h3>
-            <button
+            <button type="button"
               onClick={() => setMapLoaded(true)}
-              className="bg-vinotinto hover:bg-vinotinto-light text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-lg mt-2"
+              className="bg-vinotinto hover:bg-vinotinto-light text-white font-medium py-3 px-6 rounded-xl transition duration-300 shadow-lg mt-2"
             >
               Cargar Mapa Interactivo
             </button>

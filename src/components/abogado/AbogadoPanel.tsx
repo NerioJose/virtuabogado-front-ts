@@ -108,7 +108,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</h2>
 						<p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Panel de Gestión</p>
 					</Link>
-					<button 
+					<button type="button" 
 						onClick={() => setIsSidebarOpen(false)}
 						className="lg:hidden p-2 text-slate-400 hover:text-red-500 transition-colors"
 					>
@@ -129,9 +129,9 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							{ id: 'historial', label: 'Historial', icon: <FiClock /> },
 						].map((item) => (
 							<li key={item.id} className={item.divider ? 'pt-4 mt-4 border-t border-slate-100' : ''}>
-								<button
+								<button type="button"
 									onClick={() => { handleNavClick(item.id); setIsSidebarOpen(false); }}
-									className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group ${seccionActiva === item.id
+									className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition duration-200 group ${seccionActiva === item.id
 										? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 translate-x-2'
 										: 'text-slate-500 hover:bg-slate-50 hover:text-azul-primario'
 										}`}>
@@ -148,9 +148,9 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</li>
 						
 						<li className="mt-4 mb-6">
-							<button
+							<button type="button"
 								onClick={handleLogout}
-								className="w-full flex items-center px-4 py-4 text-red-500 hover:bg-red-50 rounded-2xl transition-all group font-black text-sm">
+								className="w-full flex items-center px-4 py-4 text-red-500 hover:bg-red-50 rounded-2xl transition group font-black text-sm">
 								<FiLogOut className="mr-3 group-hover:-translate-x-1 transition-transform text-lg" />
 								<span>Cerrar Sesión</span>
 							</button>
@@ -160,12 +160,12 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 			</motion.div>
 
 			{/* Main Content Area */}
-			<div className="lg:ml-72 flex-1 min-h-screen flex flex-col transition-all duration-500 bg-slate-50/50 overflow-x-hidden w-full max-w-full">
+			<div className="lg:ml-72 flex-1 min-h-screen flex flex-col transition duration-500 bg-slate-50/50 overflow-x-hidden w-full max-w-full">
 				{/* Móvil Header / Top Bar */}
 				<header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 lg:hidden px-4 h-16 flex items-center justify-between">
-					<button 
+					<button type="button" 
 						onClick={() => setIsSidebarOpen(true)}
-						className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl active:scale-90 transition-all"
+						className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl active:scale-90 transition"
 					>
                         <FiMenu size={24} />
 					</button>
@@ -213,7 +213,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							<motion.div
 								initial={{ opacity: 0, y: 15 }}
 								animate={{ opacity: 1, y: 0 }}
-								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all group relative overflow-hidden">
+								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-blue-500/5 transition group relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                                     <FiBriefcase size={80} />
                                 </div>
@@ -238,7 +238,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 								initial={{ opacity: 0, y: 15 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: 0.1 }}
-								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-purple-500/5 transition-all group relative overflow-hidden">
+								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-purple-500/5 transition group relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                                     <FiCalendar size={80} />
                                 </div>
@@ -263,7 +263,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 								initial={{ opacity: 0, y: 15 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: 0.2 }}
-								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-green-500/5 transition-all group relative overflow-hidden sm:col-span-2 lg:col-span-1">
+								className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl hover:shadow-green-500/5 transition group relative overflow-hidden sm:col-span-2 lg:col-span-1">
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                                     <FiDollarSign size={80} />
                                 </div>

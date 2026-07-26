@@ -137,7 +137,7 @@ export const CheckoutModal: React.FC = () => {
                             <h2 className="text-2xl font-bold text-azul-primario">
                                 {step === 3 ? '¡Compra Completada!' : 'Finalizar Compra'}
                             </h2>
-                            <button
+                            <button type="button"
                                 onClick={handleClose}
                                 disabled={isLoading}
                                 className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"

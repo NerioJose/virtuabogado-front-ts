@@ -56,7 +56,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
           <select
-            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm font-bold text-slate-600 appearance-none shadow-sm transition-all"
+            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm font-bold text-slate-600 appearance-none shadow-sm transition"
             value={especialidadFilter}
             onChange={(e) => setEspecialidadFilter(e.target.value)}
           >
@@ -67,7 +67,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
           </select>
 
           <select
-            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm font-bold text-slate-600 appearance-none shadow-sm transition-all"
+            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-azul-primario/5 text-sm font-bold text-slate-600 appearance-none shadow-sm transition"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -140,10 +140,10 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                     <FiBriefcase /> {casosEnProceso} CARGA
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => abrirModal('editar', lawyer as any)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-azul-primario hover:text-white transition-all">
+                    <button type="button" onClick={() => abrirModal('editar', lawyer as any)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-azul-primario hover:text-white transition">
                       <FiEdit2 size={18} />
                     </button>
-                    <button onClick={() => abrirModal('ver', lawyer as any)} className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition-all">
+                    <button type="button" onClick={() => abrirModal('ver', lawyer as any)} className="p-2.5 bg-azul-primario/5 text-azul-primario rounded-xl hover:bg-azul-primario hover:text-white transition">
                       <FiUserCheck size={18} />
                     </button>
                   </div>
@@ -222,7 +222,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('ver', lawyer as any)} 
-                            className="p-2.5 bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition-all"
+                            className="p-2.5 bg-azul-primario text-white rounded-xl shadow-lg shadow-azul-primario/20 hover:bg-azul-primario/90 transition"
                             title="Ver Detalle"
                           >
                             <FiUserCheck size={18} />
@@ -230,7 +230,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('editar', lawyer as any)} 
-                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
+                            className="p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition"
                             title="Editar Perfil"
                           >
                             <FiEdit2 size={18} />
@@ -238,7 +238,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('eliminar', lawyer as any)} 
-                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all"
+                            className="p-2.5 bg-rose-500 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition"
                             title="Eliminar"
                           >
                             <FiTrash2 size={18} />

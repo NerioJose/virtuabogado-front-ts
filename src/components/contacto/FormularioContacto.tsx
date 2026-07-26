@@ -236,7 +236,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             name="nombre"
             value={formData.nombre}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${errors.nombre ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
+            className={`w-full px-4 py-3 border ${errors.nombre ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition duration-200`}
             placeholder="Tu nombre"
           />
           {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>}
@@ -252,7 +252,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
+            className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition duration-200`}
             placeholder="tu@ejemplo.com"
           />
           {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
@@ -268,7 +268,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             name="telefono"
             value={formData.telefono}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${errors.telefono ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
+            className={`w-full px-4 py-3 border ${errors.telefono ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition duration-200`}
             placeholder="+58 XXX XXX XXX"
           />
           {errors.telefono && <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>}
@@ -283,7 +283,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             name="asunto"
             value={formData.asunto}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${errors.asunto ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
+            className={`w-full px-4 py-3 border ${errors.asunto ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition duration-200`}
           >
             {asuntoOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -304,7 +304,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             rows={5}
             value={formData.mensaje}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${errors.mensaje ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition-all duration-200`}
+            className={`w-full px-4 py-3 border ${errors.mensaje ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition duration-200`}
             placeholder="Escribe tu mensaje aquí..."
           ></textarea>
           {errors.mensaje && <p className="mt-1 text-sm text-red-600">{errors.mensaje}</p>}

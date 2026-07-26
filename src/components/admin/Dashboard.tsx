@@ -139,7 +139,7 @@ export default function Dashboard() {
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-azul-primario">Casos Recientes</h2>
-          <button className="text-sm text-azul-primario hover:underline">Ver todos</button>
+          <button type="button" className="text-sm text-azul-primario hover:underline">Ver todos</button>
         </div>
         
         <div className="overflow-x-auto -mx-6 px-6">

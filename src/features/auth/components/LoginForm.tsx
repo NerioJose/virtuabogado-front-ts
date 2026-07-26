@@ -170,7 +170,7 @@ export function LoginForm() {
                             type="button"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="w-full px-6 py-3 bg-gradient-to-r from-azul-primario to-vinotinto text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                            className="w-full px-6 py-3 bg-gradient-to-r from-azul-primario to-vinotinto text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition duration-300">
                             Ver servicios disponibles
                         </motion.button>
                     </Link>

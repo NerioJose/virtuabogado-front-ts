@@ -20,6 +20,7 @@ export default function GlobalChatListener() {
         handleSubscribe,
         permission,
         router,
+        isIOS,
     } = useGlobalChatListener();
 
     return (
@@ -33,7 +34,7 @@ export default function GlobalChatListener() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9, x: 100 }}
                             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                            className={`pointer-events-auto w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/60 overflow-hidden flex flex-col cursor-pointer hover:bg-white transition-all active:scale-95
+                            className={`pointer-events-auto w-80 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/60 overflow-hidden flex flex-col cursor-pointer hover:bg-white transition active:scale-95
                                 ${toastMessage.type === 'sale' ? 'ring-2 ring-amber-400' : 
                                   toastMessage.type === 'case' ? 'ring-2 ring-emerald-400' : ''}
                             `}
@@ -59,7 +60,7 @@ export default function GlobalChatListener() {
                                      <FiMessageCircle className="animate-bounce" />}
                                     <span>{toastMessage.title || 'Notificación'}</span>
                                 </div>
-                                <button 
+                                <button type="button" 
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setToastMessage(null);
@@ -113,7 +114,7 @@ export default function GlobalChatListener() {
                                 <div className="p-2 bg-white/20 rounded-lg">
                                     <FiBell />
                                 </div>
-                                <button 
+                                <button type="button" 
                                     onClick={handleDismissBanner}
                                     className="p-1 hover:bg-white/10 rounded-full transition-colors"
                                 >
@@ -127,17 +128,17 @@ export default function GlobalChatListener() {
                                 <p className="text-sm opacity-90 leading-relaxed">
                                     {permission === 'denied' 
                                         ? 'Has bloqueado las notificaciones. Haz clic en el candado en la barra de URL para permitir el acceso.' 
-                                        : typeof window !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent) && !(window.navigator as any).standalone
+                                        : isIOS && !(typeof window !== 'undefined' && (window.navigator as any).standalone)
                                             ? '📲 En iPhone, primero debes "Añadir a Inicio" (botón compartir) para poder activar las notificaciones.'
                                             : 'Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.'}
                                 </p>
                             </div>
                             <div className="relative z-10 flex flex-col gap-2">
                                 {permission !== 'denied' ? (
-                                    <button
+                                    <button type="button"
                                         onClick={handleSubscribe}
                                         disabled={isSubscribing}
-                                        className={`w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl transition-all active:scale-95 shadow-lg border border-vinotinto/20 ${
+                                        className={`w-full bg-white text-vinotinto font-bold py-2.5 rounded-xl transition active:scale-95 shadow-lg border border-vinotinto/20 ${
                                             isSubscribing ? 'opacity-50 cursor-wait' : 'hover:bg-gray-100'
                                         }`}
                                     >

@@ -60,7 +60,7 @@ export default function ClientSidebar({
             <p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Portal de Cliente</p>
           </div>
         </Link>
-        <button 
+        <button type="button" 
           onClick={onClose}
           className="lg:hidden p-2 text-slate-400 hover:text-rose-500 transition-colors"
         >
@@ -91,16 +91,16 @@ export default function ClientSidebar({
           {navItems.map((item) => (
             <li key={item.id} className={item.divider ? 'pt-6 mt-4 border-t border-slate-100' : ''}>
               {item.href ? (
-                <Link href={item.href} className="flex items-center px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-azul-primario transition-all group">
+                <Link href={item.href} className="flex items-center px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-azul-primario transition group">
                   <span className="text-lg mr-3 text-slate-400 group-hover:scale-110 transition-transform">
                     {ICON_MAP[item.icon]}
                   </span>
                   <span className="font-bold text-sm tracking-tight">{item.label}</span>
                 </Link>
               ) : (
-                <button
+                <button type="button"
                   onClick={() => handleNavItemClick(item.id)}
-                  className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
+                  className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition duration-200 group ${
                     seccionActiva === item.id
                       ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 translate-x-2'
                       : 'text-slate-500 hover:bg-slate-50 hover:text-azul-primario'
@@ -122,9 +122,9 @@ export default function ClientSidebar({
       <div className="p-4 px-6 border-t border-slate-50 shrink-0 space-y-3">
         <PushNotificationToggle />
         
-        <button
+        <button type="button"
           onClick={handleLogout}
-          className="w-full flex items-center px-6 py-4 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-[2rem] transition-all group font-black text-xs uppercase tracking-widest shadow-sm"
+          className="w-full flex items-center px-6 py-4 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-[2rem] transition group font-black text-xs uppercase tracking-widest shadow-sm"
         >
           <FiLogOut className="mr-3 group-hover:-translate-x-1 transition-transform text-lg" />
           <span>Cerrar Sesión</span>

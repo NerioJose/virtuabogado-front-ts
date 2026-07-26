@@ -75,14 +75,14 @@ export default function PerfilAbogadoPanel({
 				<h2 className="text-xl font-bold text-gray-800">Mi Perfil</h2>
 
 				{!editando ? (
-					<button
+					<button type="button"
 						onClick={() => setEditando(true)}
 						className="flex items-center px-4 py-2 bg-azul-primario text-white rounded-lg hover:bg-azul-primario/90 transition-colors">
 						<FiEdit className="mr-2" />
 						Editar perfil
 					</button>
 				) : (
-					<button
+					<button type="button"
 						onClick={guardarCambios}
 						disabled={guardando}
 						className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -124,7 +124,7 @@ export default function PerfilAbogadoPanel({
 								/>
 							</div>
 
-							<button 
+							<button type="button" 
 								onClick={handleFotoClick}
 								className="text-sm text-azul-primario hover:underline">
 								Cambiar foto
@@ -332,7 +332,7 @@ export default function PerfilAbogadoPanel({
 							<button
 								type="submit"
 								disabled={cambiandopassword}
-								className="px-6 py-2.5 bg-rose-600 text-white rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 disabled:opacity-50"
+								className="px-6 py-2.5 bg-rose-600 text-white rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-rose-700 transition shadow-lg shadow-rose-100 disabled:opacity-50"
 							>
 								{cambiandopassword ? 'Actualizando...' : 'Actualizar contraseña'}
 							</button>

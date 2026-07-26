@@ -276,7 +276,7 @@ export default function ModalContainer({
 							{obtenerTitulo()}
 						</h2>
 					</div>
-					<button
+					<button type="button"
 						onClick={onClose}
 						className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-azul-primario rounded-md p-1"
 						aria-label="Cerrar modal">

@@ -100,20 +100,23 @@ const CaseProgressBar = memo(
 				<div className="h-6 bg-slate-100 rounded-2xl overflow-hidden p-1 shadow-inner">
 					<div className="flex h-full rounded-xl overflow-hidden">
 						<motion.div
-							initial={{ width: 0 }}
-							animate={{ width: `${percentageActivos}%` }}
+							initial={{ flex: 0 }}
+							animate={{ flex: percentageActivos }}
+							transition={{ duration: 0.6, ease: 'easeOut' }}
 							className="bg-azul-primario h-full relative group cursor-help"
 							title={`Activos: ${casosActivos}`}
 						/>
 						<motion.div
-							initial={{ width: 0 }}
-							animate={{ width: `${percentagePendientes}%` }}
+							initial={{ flex: 0 }}
+							animate={{ flex: percentagePendientes }}
+							transition={{ duration: 0.6, ease: 'easeOut' }}
 							className="bg-amber-500 h-full relative group cursor-help border-l border-white/20"
 							title={`Pendientes: ${casosPendientes}`}
 						/>
 						<motion.div
-							initial={{ width: 0 }}
-							animate={{ width: `${percentageCompletados}%` }}
+							initial={{ flex: 0 }}
+							animate={{ flex: percentageCompletados }}
+							transition={{ duration: 0.6, ease: 'easeOut' }}
 							className="bg-emerald-500 h-full relative group cursor-help border-l border-white/20"
 							title={`Completados: ${casosCompletados}`}
 						/>

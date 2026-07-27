@@ -92,9 +92,10 @@ export const UserDataStep: React.FC = () => {
                 <AnimatePresence mode="wait">
                     {hasChecked && (
                         <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
+                            initial={{ opacity: 0, scaleY: 0 }}
+                            animate={{ opacity: 1, scaleY: 1 }}
+                            exit={{ opacity: 0, scaleY: 0 }}
+                            style={{ transformOrigin: 'top' }}
                             className="space-y-5 overflow-hidden pt-2"
                         >
                             <div className={`p-4 rounded-2xl border flex items-center gap-3 mb-2 transition duration-500 ${isExistingUser ? 'bg-azul-primario/5 border-azul-primario/10' : 'bg-vinotinto/5 border-vinotinto/10'}`}>

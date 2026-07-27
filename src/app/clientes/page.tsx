@@ -205,7 +205,7 @@ export default function ClientesPage() {
 					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center">
 						{[1, 2, 3, 4, 5, 6].map((num, index) => (
 							<motion.div
-								key={index}
+								key={num}
 								initial={{ opacity: 0 }}
 								whileInView={{ opacity: 1 }}
 								transition={{ duration: 0.2 }}

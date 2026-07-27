@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePaymentMethods } from '../hooks/usePaymentMethods';
 import { processPaymentAction } from '../actions/processPaymentAction';
@@ -19,16 +19,9 @@ export function PaymentSelectorModal({ serviceId, isOpen, onClose, onSuccess }: 
     const { data: methods, isLoading } = usePaymentMethods();
     const [isProcessing, setIsProcessing] = useState(false);
     const [shouldAutoSelect, setShouldAutoSelect] = useState(true);
+    const mountedRef = useRef(true);
 
-    // Lógica: Si solo hay 1 método, saltar directamente al pago (Skip Selection)
-    useEffect(() => {
-        if (!isLoading && methods && methods.length === 1 && shouldAutoSelect && isOpen) {
-            handlePayment(methods[0].id);
-            setShouldAutoSelect(false); // Evitar loop
-        }
-    }, [methods, isLoading, isOpen, shouldAutoSelect]);
-
-    const handlePayment = async (paymentMethodId: string) => {
+    const handlePayment = useCallback(async (paymentMethodId: string) => {
         setIsProcessing(true);
         try {
             const result = await processPaymentAction({ serviceId, paymentMethodId });
@@ -45,9 +38,19 @@ export function PaymentSelectorModal({ serviceId, isOpen, onClose, onSuccess }: 
         } catch (error: any) {
             toast.error(error.message || 'Error al procesar el pago');
         } finally {
-            setIsProcessing(false);
+            if (mountedRef.current) setIsProcessing(false);
         }
-    };
+    }, [serviceId, onSuccess, onClose]);
+
+    // Lógica: Si solo hay 1 método, saltar directamente al pago (Skip Selection)
+    useEffect(() => {
+        mountedRef.current = true;
+        if (!isLoading && methods && methods.length === 1 && shouldAutoSelect && isOpen) {
+            handlePayment(methods[0].id);
+            setShouldAutoSelect(false); // Evitar loop
+        }
+        return () => { mountedRef.current = false; };
+    }, [methods, isLoading, isOpen, shouldAutoSelect, handlePayment]);
 
     if (!isOpen) return null;
 

@@ -21,7 +21,6 @@ export function useChatViewModel(orderId: string) {
     } = useChat(orderId);
 
     const { data: response, isLoading: ordersLoading } = useOrders();
-    const orders = (response as any)?.data || [];
     const { user } = useAuthStore();
     
     const [newMessage, setNewMessage] = useState('');
@@ -36,7 +35,10 @@ export function useChatViewModel(orderId: string) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const prevMessagesLengthRef = useRef(0);
 
-    const order = useMemo(() => orders.find((o: any) => o.id === orderId), [orders, orderId]);
+    const order = useMemo(() => {
+        const orders = (response as any)?.data || [];
+        return orders.find((o: any) => o.id === orderId);
+    }, [response, orderId]);
     const isChatDisabled = order?.status === OrderStatus.COMPLETADO || order?.status === OrderStatus.CANCELADO;
 
     useEffect(() => {

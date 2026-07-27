@@ -59,6 +59,7 @@ const SeccionMapa = React.memo(() => {
             referrerPolicy="no-referrer-when-downgrade"
             title="Mapa de Carabobo, Venezuela"
             className="absolute inset-0"
+            sandbox="allow-scripts allow-same-origin"
           />
         )}
       </motion.div>

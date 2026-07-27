@@ -104,7 +104,7 @@ export default function VirtuStudents() {
                                     'Tutorías personalizadas senior',
                                     'Material de apoyo exclusivo'
                                 ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-gray-700 font-medium text-sm">
+                                    <li key={item} className="flex items-center gap-3 text-gray-700 font-medium text-sm">
                                         <FiCheckCircle className="text-vinotinto" /> {item}
                                     </li>
                                 ))}

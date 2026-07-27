@@ -184,7 +184,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
       console.error('Error al procesar el contacto:', error);
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, onSubmitSuccess, (settings as any)?.whatsappPhone]);
+  }, [formData, validateForm, onSubmitSuccess, settings]);
 
   const asuntoOptions = useMemo(() => [
     { value: '', label: 'Selecciona un asunto' },

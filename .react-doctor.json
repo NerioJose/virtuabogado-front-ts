@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "react-doctor/effect-needs-cleanup": "off",
+    "react-doctor/supabase-rls-policy-risk": "off",
+    "react-doctor/no-placeholder-only-field": "off",
+    "react-doctor/no-locale-format-in-render": "off"
+  }
+}

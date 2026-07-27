@@ -141,7 +141,7 @@ function FinancialSettingsSection() {
 
 						{validation.errors.length > 0 && (
 							<div className="bg-red-50 rounded-lg p-3 text-xs text-red-600 border border-red-100 space-y-1">
-								{validation.errors.map((error, idx) => (<div key={idx} className="flex gap-2"><FiAlertCircle className="mt-0.5" /> {error}</div>))}
+								{validation.errors.map((error, idx) => (<div key={`error-${idx}`} className="flex gap-2"><FiAlertCircle className="mt-0.5" /> {error}</div>))}
 							</div>
 						)}
 

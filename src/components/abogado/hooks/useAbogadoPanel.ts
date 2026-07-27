@@ -32,7 +32,6 @@ export function useAbogadoPanel(abogadoId?: string) {
     }, [searchParams]);
 
     const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(currentAbogadoId);
-    const orders = (response as any)?.data || [];
 
     const { data: summary } = useQuery({
         queryKey: ['FinancialSummary', currentAbogadoId],
@@ -64,6 +63,7 @@ export function useAbogadoPanel(abogadoId?: string) {
     }, [userAuth]);
 
     const estadisticas = useMemo(() => {
+        const orders = (response as any)?.data || [];
         if (!orders.length) return { casosActivos: 0, casosPendientes: 0, casosCompletados: 0, clientesActivos: 0, proximaCita: new Date().toISOString(), ingresosMes: 0 };
         
         const uniqueClients = new Set();
@@ -79,7 +79,7 @@ export function useAbogadoPanel(abogadoId?: string) {
             proximaCita: new Date().toISOString(),
             ingresosMes: summary?.lawyerPendingBalance || 0,
         };
-    }, [orders, summary]);
+    }, [response, summary]);
 
     const handleNavClick = (id: string) => {
         setSeccionActiva(id);

@@ -133,7 +133,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 						{ label: 'Casos Finalizados', value: summary?.transactionCount || 0, icon: <FiCheck />, color: 'emerald-600', bg: 'bg-emerald-500/5', isAmount: false },
 						{ label: 'Saldo Disponible para Cobro', value: summary?.lawyerPendingBalance || 0, icon: <FiDollarSign />, color: 'azul-primario', bg: 'bg-azul-primario/5' }
 					].map((stat, i) => (stat && (
-						<div key={i} className={`${stat.bg} rounded-3xl p-6 border border-slate-50 shadow-sm transition hover:scale-[1.02]`}>
+						<div key={stat.label} className={`${stat.bg} rounded-3xl p-6 border border-slate-50 shadow-sm transition hover:scale-[1.02]`}>
 							<div className="flex items-center gap-4 mb-4">
 								<div className={`w-10 h-10 rounded-xl flex items-center justify-center text-${stat.color} bg-white shadow-sm font-black`}>
 									{stat.icon}

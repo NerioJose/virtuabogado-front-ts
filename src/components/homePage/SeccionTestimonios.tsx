@@ -43,7 +43,7 @@ export default function SectionTestimonios() {
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 					{testimonios.map((testimonial, index) => (
 						<motion.div
-							key={index}
+							key={testimonial.name}
 							initial={{ opacity: 0, scale: 0.95 }}
 							whileInView={{ opacity: 1, scale: 1 }}
 							transition={{ duration: 0.2 }}

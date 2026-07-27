@@ -80,9 +80,10 @@ export default function PushNotificationToggle({ className = '' }: PushNotificat
       <AnimatePresence>
         {lastError && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ scaleY: 0, opacity: 0 }}
+            animate={{ scaleY: 1, opacity: 1 }}
+            exit={{ scaleY: 0, opacity: 0 }}
+            style={{ transformOrigin: 'top' }}
             className="overflow-hidden"
           >
             <div className="mt-2 p-2 px-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2">

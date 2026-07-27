@@ -198,7 +198,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalles del Pedido</h3>
                             <div className="bg-gray-50 rounded-lg p-4">
                                 {order.items?.length ? order.items.map((item, index) => (
-                                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-2 border-b border-gray-100 last:border-0">
+                                    <div key={item.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-2 border-b border-gray-100 last:border-0">
                                         <div className="min-w-0">
                                             <p className="font-bold text-gray-900 truncate">{item.serviceName || 'Servicio'}</p>
                                             <p className="text-sm text-gray-600">Cantidad: {item.quantity || 1}</p>

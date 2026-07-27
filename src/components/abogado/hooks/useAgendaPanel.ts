@@ -3,7 +3,6 @@ import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 
 export function useAgendaPanel(abogadoId: string) {
     const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-    const orders = (response as any)?.data || [];
     const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
 
     const formatearFecha = (fecha: Date): string => {
@@ -22,6 +21,8 @@ export function useAgendaPanel(abogadoId: string) {
     };
 
     const casosDelDia = useMemo(() => {
+        const orders = (response as any)?.data || [];
+
         const getStatusPriority = (status: string) => {
             const activeStates = ['PENDIENTE', 'EN_PROGRESO', 'REVISION'];
             return activeStates.includes(status) ? 0 : 1;
@@ -42,7 +43,7 @@ export function useAgendaPanel(abogadoId: string) {
                 
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             });
-    }, [orders, fechaSeleccionada]);
+    }, [response, fechaSeleccionada]);
 
     return {
         fechaSeleccionada,

@@ -64,7 +64,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 					{ label: 'Ganancia Proyectada', value: summary?.realProfit || 0, icon: <FiActivity />, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
 				].map((kpi, idx) => (
 					<motion.div 
-						key={idx}
+						key={kpi.label}
 						variants={item}
 						className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-md transition"
 					>

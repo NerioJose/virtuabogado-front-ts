@@ -4,7 +4,6 @@ import { OrderStatus } from '@/features/orders/types/orders.types';
 
 export function useMensajesPanel(abogadoId: string, initialClienteId?: string | null) {
     const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-    const orders = (response as any)?.data || [];
     const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
     const [busqueda, setBusqueda] = useState('');
     const [modalAbierto, setModalAbierto] = useState(false);
@@ -35,6 +34,7 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
     };
 
     const conversaciones = useMemo(() => {
+        const orders = (response as any)?.data || [];
         return orders
             .filter((order: any) => {
                 if (initialClienteId && order.userId !== initialClienteId) return false;
@@ -53,7 +53,7 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
                 caso: order.items?.[0]?.serviceName || 'Servicio Legal',
                 status: order.status
             }));
-    }, [orders, busqueda, initialClienteId]);
+    }, [response, busqueda, initialClienteId]);
 
     const formatearFecha = (fecha: string | Date): string => {
         const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FiUsers, 
@@ -26,6 +26,11 @@ export default function Dashboard() {
     lawyerListLength,
   } = useDashboard();
 
+  const [fechaActual, setFechaActual] = useState('');
+  useEffect(() => {
+    setFechaActual(new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -40,7 +45,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-azul-primario">Dashboard</h1>
         <div className="flex items-center space-x-2">
           <FiCalendar className="text-gray-500" />
-          <span className="text-gray-500">{new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          <span className="text-gray-500">{fechaActual}</span>
         </div>
       </div>
       

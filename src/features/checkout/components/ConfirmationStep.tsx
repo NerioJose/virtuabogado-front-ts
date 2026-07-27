@@ -108,12 +108,13 @@ export const ConfirmationStep: React.FC = () => {
             >
                 {!isPendingConfirmation && (
                    <div className="w-full bg-gray-100 rounded-full h-1 mb-4 overflow-hidden">
-                       <motion.div 
-                           className="bg-green-500 h-full"
-                           initial={{ width: '0%' }}
-                           animate={{ width: '100%' }}
-                           transition={{ duration: 5, ease: 'linear' }}
-                       />
+                        <motion.div 
+                            className="bg-green-500 h-full w-full"
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            style={{ transformOrigin: 'left' }}
+                            transition={{ duration: 5, ease: 'linear' }}
+                        />
                    </div>
                 )}
                 <button type="button"

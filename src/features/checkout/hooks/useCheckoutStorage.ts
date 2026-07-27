@@ -52,7 +52,7 @@ export const useCheckoutStorage = () => {
                 console.error('Error saving to localStorage:', error);
             }
         }
-    }, [service, userData, step, isOpen]);
+    }, [service, userData, step, isOpen, orderId, isWaitingForWebhook]);
 
     // Recuperar del localStorage al montar
     useEffect(() => {

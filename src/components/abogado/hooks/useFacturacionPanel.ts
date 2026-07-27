@@ -23,7 +23,6 @@ export type PeriodoFacturacion = 'mes' | 'trimestre' | 'año';
 export function useFacturacionPanel(abogadoId: string) {
     const user = useAuthStore(state => state.user);
     const { data: response, isLoading: isLoadingOrders } = useOrdersByLawyer(abogadoId);
-    const orders = (response as any)?.data || [];
     const updateOrder = useUpdateOrder();
     
     const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
@@ -58,6 +57,7 @@ export function useFacturacionPanel(abogadoId: string) {
     }, [payoutHistory]);
 
     const facturas: Factura[] = useMemo(() => {
+        const orders = (response as any)?.data || [];
         return orders
             .filter((o: any) => ['PENDIENTE', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(o.status))
             .map((o: any) => {
@@ -87,7 +87,7 @@ export function useFacturacionPanel(abogadoId: string) {
                     estado
                 };
             });
-    }, [orders, payoutStatusMap]);
+    }, [response, payoutStatusMap]);
 
     const facturasFiltradas = facturas.filter((factura) => {
         if (filtroEstado === 'todas') return true;

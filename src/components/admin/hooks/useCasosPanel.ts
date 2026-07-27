@@ -5,7 +5,7 @@ import { useChatStore } from '@/features/chat/store/chatStore';
 
 export function useCasosPanel(terminoBusqueda: string) {
     const { data: response, isLoading } = useOrders({ limit: 100 });
-    const orders = (response as any)?.data || [];
+    const orders = useMemo(() => (response as any)?.data || [], [response]);
     const unreadOrders = useChatStore((state) => state.unreadOrders);
 
     const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');

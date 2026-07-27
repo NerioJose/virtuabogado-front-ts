@@ -19,8 +19,12 @@ export const metadata: Metadata = {
 // Revalidación cada 1 hora para el Home
 export const revalidate = 3600;
 
+function getQueryClient() {
+    return new QueryClient();
+}
+
 export default async function HomePage() {
-    const queryClient = new QueryClient();
+    const queryClient = getQueryClient();
 
     // Pre-fetch de servicios para que todo el Home cargue sin loaders
     await queryClient.prefetchQuery({

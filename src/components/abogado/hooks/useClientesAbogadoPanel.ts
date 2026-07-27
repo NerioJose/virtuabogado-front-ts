@@ -16,11 +16,11 @@ export interface ClienteRecord {
 
 export function useClientesAbogadoPanel(abogadoId: string) {
     const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-    const orders = (response as any)?.data || [];
     const [busqueda, setBusqueda] = useState('');
     const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
 
     const clientes: ClienteRecord[] = useMemo(() => {
+        const orders = (response as any)?.data || [];
         if (!orders) return [];
 
         const clientMap = new Map<string, ClienteRecord>();
@@ -55,7 +55,7 @@ export function useClientesAbogadoPanel(abogadoId: string) {
         });
 
         return Array.from(clientMap.values());
-    }, [orders]);
+    }, [response]);
 
     const esClienteReciente = (ultimaActividad: string) => {
         const fechaActividad = new Date(ultimaActividad);

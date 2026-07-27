@@ -15,8 +15,12 @@ export const metadata: Metadata = {
 // Forzar revalidación cada hora para mantener datos frescos sin saturar el servidor
 export const revalidate = 3600;
 
+function getQueryClient() {
+    return new QueryClient();
+}
+
 export default async function ServiciosPage() {
-    const queryClient = new QueryClient();
+    const queryClient = getQueryClient();
 
     // Pre-fetch de servicios directamente desde la DB en el servidor
     await queryClient.prefetchQuery({

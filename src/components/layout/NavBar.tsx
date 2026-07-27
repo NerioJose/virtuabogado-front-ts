@@ -227,22 +227,22 @@ const Navbar = () => {
 					{/* Links de Navegación */}
 					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
 						<Link href="/nosotros" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Nosotros</Link>
-						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto origin-left" initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} transition={{ duration: 0.3 }} />
 					</motion.div>
 
 					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
 						<Link href="/servicios" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Servicios</Link>
-						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto origin-left" initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} transition={{ duration: 0.3 }} />
 					</motion.div>
 
 					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
 						<Link href="/contacto" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Contacto</Link>
-						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto origin-left" initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} transition={{ duration: 0.3 }} />
 					</motion.div>
 
 					<motion.div className="relative group" whileHover={{ scale: 1.05 }}>
 						<Link href="/clientes" className="text-azul-primario hover:text-vinotinto text-lg font-medium relative z-10 transition-colors">Clientes</Link>
-						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto" initial={{ width: 0 }} whileHover={{ width: '100%' }} />
+						<motion.span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto origin-left" initial={{ scaleX: 0 }} whileHover={{ scaleX: 1 }} transition={{ duration: 0.3 }} />
 					</motion.div>
 
 					{user?.rol === UserRole.ADMIN && (
@@ -272,9 +272,9 @@ const Navbar = () => {
 								Mi Panel
 							</Link>
 							<motion.span
-								className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto"
-								initial={{ width: 0 }}
-								animate={{ width: '100%' }}
+								className="absolute bottom-0 left-0 w-full h-0.5 bg-vinotinto origin-left"
+								initial={{ scaleX: 0 }}
+								animate={{ scaleX: 1 }}
 								transition={{ duration: 0.5 }}
 							/>
 						</motion.div>
@@ -331,9 +331,10 @@ const Navbar = () => {
 			<AnimatePresence>
 				{isOpen && (
 					<motion.div
-						initial={{ opacity: 0, height: 0 }}
-						animate={{ opacity: 1, height: 'auto' }}
-						exit={{ opacity: 0, height: 0 }}
+						initial={{ opacity: 0, scaleY: 0 }}
+						animate={{ opacity: 1, scaleY: 1 }}
+						exit={{ opacity: 0, scaleY: 0 }}
+						style={{ transformOrigin: 'top' }}
 						className="md:hidden fixed top-16 left-0 right-0 bg-white shadow-2xl overflow-hidden border-t border-gray-100 z-40">
 						<div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
 						{navItems.map((item) => (

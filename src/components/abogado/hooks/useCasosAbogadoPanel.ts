@@ -5,7 +5,7 @@ import { OrderStatus } from '@/features/orders/types/orders.types';
 
 export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: string | null, initialCasoId?: string | null) {
     const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-    const misCasos = (response as any)?.data || [];
+    const misCasos = useMemo(() => (response as any)?.data || [], [response]);
 
     const unreadOrders = useChatStore((state) => state.unreadOrders);
     const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');

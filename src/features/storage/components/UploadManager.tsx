@@ -54,9 +54,10 @@ export default function UploadManager() {
                 <AnimatePresence>
                     {isExpanded && (
                         <motion.div 
-                            initial={{ height: 0 }}
-                            animate={{ height: 'auto' }}
-                            exit={{ height: 0 }}
+                            initial={{ scaleY: 0 }}
+                            animate={{ scaleY: 1 }}
+                            exit={{ scaleY: 0 }}
+                            style={{ transformOrigin: 'top' }}
                             className="max-h-80 overflow-y-auto bg-slate-50/50"
                         >
                             <div className="p-2 space-y-2">
@@ -99,13 +100,14 @@ export default function UploadManager() {
                                         <div className="space-y-1">
                                             <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                                 <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${upload.progress}%` }}
-                                                    className={`h-full transition duration-300 ${
+                                                    initial={{ scaleX: 0 }}
+                                                    animate={{ scaleX: upload.progress / 100 }}
+                                                    className={`h-full w-full transition duration-300 ${
                                                         upload.status === 'error' ? 'bg-red-500' :
                                                         upload.status === 'success' ? 'bg-green-500' :
                                                         'bg-azul-primario'
                                                     }`}
+                                                    style={{ transformOrigin: 'left' }}
                                                 />
                                             </div>
                                             <div className="flex justify-between items-center">

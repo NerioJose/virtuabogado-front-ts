@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { documentsService, DocumentoItem } from '@/features/documents';
 import { ordersService, Order } from '@/features/orders';
 import { capitalizeName } from '@/utils/formatters';
@@ -37,10 +37,11 @@ export function useDocumentosPanel(abogadoId: string) {
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mountedRef = useRef(true);
 
   const { startUpload } = useResumableUpload();
 
-  const fetchDocumentos = async () => {
+  const fetchDocumentos = useCallback(async () => {
     if (!abogadoId) {
       setLoading(false);
       return;
@@ -49,6 +50,7 @@ export function useDocumentosPanel(abogadoId: string) {
     try {
       setLoading(true);
       const response = await fetch(`/api/documents?lawyerId=${abogadoId}`);
+      if (!response.ok) throw new Error(`Error ${response.status} al obtener documentos`);
       const docs = await response.json();
       
       if (!Array.isArray(docs)) {
@@ -80,29 +82,34 @@ export function useDocumentosPanel(abogadoId: string) {
         };
       });
       
+      if (!mountedRef.current) return;
       setDocumentos(mappedDocs);
     } catch (error) {
       console.error('Error fetching documents:', error);
+      if (!mountedRef.current) return;
       setNotificacion({ tipo: 'error', mensaje: 'Error al cargar los documentos' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [abogadoId]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!abogadoId) return;
     try {
       const response = await ordersService.getAll({ lawyerId: abogadoId });
+      if (!mountedRef.current) return;
       setOrders(response.data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
     }
-  };
+  }, [abogadoId]);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchDocumentos();
     fetchOrders();
-  }, [abogadoId]);
+    return () => { mountedRef.current = false; };
+  }, [abogadoId, fetchDocumentos, fetchOrders]);
 
   useEffect(() => {
     if (notificacion) {
@@ -150,7 +157,7 @@ export function useDocumentosPanel(abogadoId: string) {
   };
 
   const handleDescargar = (doc: DocumentoItem) => {
-    window.open(doc.url, '_blank');
+    window.open(doc.url, '_blank', 'noopener');
   };
 
   const confirmarEliminacion = async () => {

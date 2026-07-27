@@ -24,7 +24,7 @@ export const linkifyText = (text: string, isMe: boolean, azulPrimarioClass: stri
                 : `https://${cleanUrl.startsWith('www.') ? cleanUrl : cleanUrl}`;
 
             return (
-                <span key={i}>
+                <span key={`part-${i}`}>
                     <a 
                         href={href} 
                         target="_blank" 

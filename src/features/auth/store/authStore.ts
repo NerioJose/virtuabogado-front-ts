@@ -147,7 +147,10 @@ export const useAuthStore = create<AuthState>()(
 
                         try {
                                 fetch('/api/auth/sync', { method: 'POST' })
-                                .then(res => res.json())
+                                .then(res => {
+                                    if (!res.ok) return;
+                                    return res.json();
+                                })
                                 .then(syncData => {
                                     if (syncData.success && syncData.user) {
                                         const currentState = get() as any;

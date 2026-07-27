@@ -134,7 +134,7 @@ export default function CompraExitosaPage() {
 
               <div className="space-y-4">
                 {pasosSiguientes.map((paso, index) => (
-                  <div key={index} className="flex">
+                  <div key={paso.titulo} className="flex">
                     <div className="flex-shrink-0 h-10 w-10 rounded-full bg-azul-claro/30 flex items-center justify-center mr-4">
                       {paso.icono}
                     </div>

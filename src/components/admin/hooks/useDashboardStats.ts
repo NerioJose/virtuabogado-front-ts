@@ -30,7 +30,7 @@ export function useDashboardStats() {
     const { data: clients = [], isLoading: clientsLoading } = useClients();
     const { data: lawyers = [], isLoading: lawyersLoading } = useLawyers();
     const { data: response, isLoading: ordersLoading } = useOrders({ limit: 50 });
-    const orders = (response as any)?.data || [];
+
     
     const { data: summary, isLoading: financialLoading } = useQuery({
         queryKey: ['FinanceSummaryDashboard', user?.id],
@@ -41,6 +41,7 @@ export function useDashboardStats() {
     const isLoading = clientsLoading || lawyersLoading || ordersLoading || financialLoading;
 
     const stats = useMemo((): DashboardStatsData => {
+        const orders = (response as any)?.data || [];
         const totalAbogados = lawyers.length;
         const abogadosPendientes = lawyers.filter(l => l.status === LawyerStatus.PENDING).length;
         const totalClientes = clients.length;
@@ -67,7 +68,7 @@ export function useDashboardStats() {
             pagosAbogados: summary?.pendingLawyerPayments || 0,
             totalCasos: ordenesActive + ordenesPaidUnassigned + ordenesCompleted,
         };
-    }, [clients, lawyers, orders, summary]);
+    }, [clients, lawyers, response, summary]);
 
     return {
         stats,

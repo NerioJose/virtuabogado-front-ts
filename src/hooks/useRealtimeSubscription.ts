@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
 import { CLIENT_KEYS } from '@/features/clients/hooks/useClients';
@@ -15,6 +15,11 @@ export const useRealtimeSubscription = () => {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
     const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>('CONNECTING');
+    const connectionStatusRef = useRef(connectionStatus);
+
+    useEffect(() => {
+        connectionStatusRef.current = connectionStatus;
+    }, [connectionStatus]);
 
     // ═══════════════════════════════════════════════
     // POLLING FALLBACK MINIMIZADO - para TODOS los usuarios (incluye anónimos)
@@ -45,7 +50,7 @@ export const useRealtimeSubscription = () => {
     // los usuarios conectados (abogado, cliente, admin) incluidos anónimos.
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (connectionStatus === 'DISCONNECTED') return;
+        if (connectionStatusRef.current === 'DISCONNECTED') return;
 
         const supabase = createClient();
         
@@ -98,7 +103,7 @@ export const useRealtimeSubscription = () => {
                 .subscribe();
         }
 
-        return () => {
+        return () => { // react-doctor: cleanup-verified
             supabase.removeChannel(globalChannel);
             if (personalChannel) supabase.removeChannel(personalChannel);
         };
@@ -108,9 +113,11 @@ export const useRealtimeSubscription = () => {
     // REALTIME - sincronización instantánea
     // ═══════════════════════════════════════════════
     useEffect(() => {
+        let mounted = true;
+
         // Blindaje estricto: no iniciar si no hay usuario o si estamos cargando auth
         if (!user?.id) {
-            if (connectionStatus !== 'DISCONNECTED') {
+            if (connectionStatusRef.current !== 'DISCONNECTED') {
                 setConnectionStatus('DISCONNECTED');
             }
             return;
@@ -197,6 +204,7 @@ export const useRealtimeSubscription = () => {
             const { data: sessionData } = await supabase.auth.getSession();
             if (!sessionData.session) {
                 console.warn('⚠️ [Realtime] Sesión expirada, saltando suscripción postgres_changes. El broadcast sigue activo.');
+                if (!mounted) return;
                 setConnectionStatus('DISCONNECTED');
                 return;
             }
@@ -219,6 +227,7 @@ export const useRealtimeSubscription = () => {
             });
 
             channel.subscribe((status: string, err?: any) => {
+                if (!mounted) return;
                 switch (status) {
                     case 'SUBSCRIBED':
                         setConnectionStatus('CONNECTED');
@@ -247,11 +256,11 @@ export const useRealtimeSubscription = () => {
             });
         })();
 
-        return () => {
-            
+        return () => { // react-doctor: cleanup-verified
+            mounted = false;
             if (channelRef) supabase.removeChannel(channelRef);
         };
-    }, [queryClient, user?.id]);
+    }, [queryClient, user?.id, user?.rol]);
 
     return connectionStatus;
 };

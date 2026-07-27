@@ -9,9 +9,9 @@ export function useDashboard() {
     const { data: clients, isLoading: isLoadingClients } = useClients({ limit: 50 });
     const { data: lawyers, isLoading: isLoadingLawyers } = useLawyers({ limit: 50 });
 
-    const orders: Order[] = (ordersResponse as any)?.data || [];
-    const clientList = Array.isArray(clients) ? clients : [];
-    const lawyerList = Array.isArray(lawyers) ? lawyers : [];
+    const orders: Order[] = useMemo(() => (ordersResponse as any)?.data || [], [ordersResponse]);
+    const clientList = useMemo(() => Array.isArray(clients) ? clients : [], [clients]);
+    const lawyerList = useMemo(() => Array.isArray(lawyers) ? lawyers : [], [lawyers]);
 
     const stats = useMemo(() => {
         const activosStates = [OrderStatus.PAID, OrderStatus.EN_PROGRESO, OrderStatus.REVISION, OrderStatus.PENDIENTE];

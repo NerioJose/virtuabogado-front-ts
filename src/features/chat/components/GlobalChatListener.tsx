@@ -21,6 +21,7 @@ export default function GlobalChatListener() {
         permission,
         router,
         isIOS,
+        isStandalone,
     } = useGlobalChatListener();
 
     return (
@@ -128,7 +129,7 @@ export default function GlobalChatListener() {
                                 <p className="text-sm opacity-90 leading-relaxed">
                                     {permission === 'denied' 
                                         ? 'Has bloqueado las notificaciones. Haz clic en el candado en la barra de URL para permitir el acceso.' 
-                                        : isIOS && !(typeof window !== 'undefined' && (window.navigator as any).standalone)
+                                        : isIOS && !isStandalone
                                             ? '📲 En iPhone, primero debes "Añadir a Inicio" (botón compartir) para poder activar las notificaciones.'
                                             : 'Recibe alertas de ventas y nuevos casos directamente en tu teléfono, incluso si no estás en la App.'}
                                 </p>

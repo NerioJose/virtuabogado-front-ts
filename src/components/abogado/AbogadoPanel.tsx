@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -66,6 +66,11 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		handleLogout,
 		currentAbogadoId,
 	} = useAbogadoPanel(abogadoId);
+
+	const [fechaActual, setFechaActual] = useState('');
+	useEffect(() => {
+		setFechaActual(new Date().toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }));
+	}, []);
 
 	// 🔥 REALTIME REACTIVITY: Escuchar cambios en órdenes y mensajes
 	// Esto invalida la caché de TanStack Query instantáneamente
@@ -246,7 +251,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 									<div>
 										<p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Próxima Acceso</p>
 										<h3 className="text-xl font-black text-slate-900 mt-2">
-											{new Date().toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+											{fechaActual}
 										</h3>
 									</div>
 									<div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform shadow-inner">

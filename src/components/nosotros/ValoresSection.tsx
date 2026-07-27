@@ -135,7 +135,7 @@ export default function ValoresSection() {
 							},
 						].map((valor, index) => (
 							<motion.div
-								key={index}
+								key={valor.titulo}
 								initial={{ opacity: 0, y: 20 }}
 								whileInView={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.2 }}

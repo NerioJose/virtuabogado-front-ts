@@ -10,7 +10,7 @@ export function useEstadisticasPanel() {
     const [periodo, setPeriodo] = useState<PeriodoEstadistica>('mes');
 
     const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 100 });
-    const orders = (response as any)?.data || [];
+    const orders = useMemo(() => (response as any)?.data || [], [response]);
     const { data: clients = [] } = useClients();
     const { data: lawyers = [] } = useLawyers();
 

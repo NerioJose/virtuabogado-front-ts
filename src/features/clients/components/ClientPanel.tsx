@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiSearch, 
@@ -62,6 +62,11 @@ export default function ClientPanel({
     historial,
     handlePasswordChange,
   } = useClientPanel(servicios);
+
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    setNow(Date.now());
+  }, []);
 
   const container = {
     hidden: { opacity: 0 },
@@ -234,7 +239,7 @@ export default function ClientPanel({
                     {activos.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => {
                       const isUnread = unreadOrders.includes(servicio.id);
                       // Determinar si es "Reciente" (creado en las últimas 48 horas)
-                      const isRecent = servicio.createdAt && (Date.now() - new Date(servicio.createdAt).getTime()) < 48 * 60 * 60 * 1000;
+                      const isRecent = servicio.createdAt && (now - new Date(servicio.createdAt).getTime()) < 48 * 60 * 60 * 1000;
                       
                       return (
                         <motion.div

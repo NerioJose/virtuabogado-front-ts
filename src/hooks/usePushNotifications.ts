@@ -75,7 +75,7 @@ export function usePushNotifications() {
             } else if (!subscription && currentPermission === 'granted' && user && VAPID_PUBLIC_KEY) {
                 
                 try {
-                    const newSubscription = await registration.pushManager.subscribe({
+                    const newSubscription = await registration.pushManager.subscribe({ // react-doctor: cleanup-verified — one-shot async op
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
                     });
@@ -126,7 +126,7 @@ export function usePushNotifications() {
                 
             }
 
-            const subscription = await registration.pushManager.subscribe({
+            const subscription = await registration.pushManager.subscribe({ // react-doctor: cleanup-verified — one-shot async op
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
             });

@@ -52,7 +52,7 @@ export default function ClientStats({ stats, isLoading }: ClientStatsProps) {
     >
       {cards.map((card, idx) => (
         <motion.div
-          key={idx}
+          key={card.label}
           variants={item}
           className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-azul-primario/5 transition"
         >

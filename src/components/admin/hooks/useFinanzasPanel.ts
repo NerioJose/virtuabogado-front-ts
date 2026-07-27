@@ -16,17 +16,9 @@ export function useFinanzasPanel(terminoBusqueda: string) {
     });
 
     const { data: response, isLoading: isLoadingOrders } = useOrders({ limit: 100 });
-    const orders = (response as any)?.data || [];
 
     const ordenesFiltradas = useMemo(() => {
-        const filtradas = orders.filter((order: any) => {
-            if (!terminoBusqueda) return true;
-            return (
-                order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-                order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
-                (order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
-            );
-        });
+        const orders = (response as any)?.data || [];
 
         const getStatusPriority = (status: string): number => {
             switch (status) {
@@ -45,6 +37,15 @@ export function useFinanzasPanel(terminoBusqueda: string) {
             }
         };
 
+        const filtradas = orders.filter((order: any) => {
+            if (!terminoBusqueda) return true;
+            return (
+                order.userName?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+                order.userEmail?.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+                (order.numericId?.toString() || order.id.toString()).includes(terminoBusqueda)
+            );
+        });
+
         return [...filtradas].sort((a: any, b: any) => {
             const priorityA = getStatusPriority(a.status);
             const priorityB = getStatusPriority(b.status);
@@ -54,7 +55,7 @@ export function useFinanzasPanel(terminoBusqueda: string) {
             }
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
-    }, [orders, terminoBusqueda]);
+    }, [response, terminoBusqueda]);
 
     const isLoading = isLoadingSummary || isLoadingOrders;
 

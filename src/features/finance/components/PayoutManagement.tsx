@@ -69,7 +69,7 @@ export default function PayoutManagement() {
                     ) : (
                         pending.map((item, idx) => (
                             <motion.div 
-                                key={idx}
+                                key={item.lawyer.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-md transition group"

@@ -53,7 +53,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         if (document.readyState === 'complete') {
             registerSW();
         } else {
-            window.addEventListener('load', registerSW);
+            const onLoad = () => registerSW();
+            window.addEventListener('load', onLoad);
+            return () => window.removeEventListener('load', onLoad);
         }
     }, []);
 

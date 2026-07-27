@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FiBriefcase, FiMessageSquare, FiFileText } from 'react-icons/fi';
 import { ChatWindow as ChatWindowSupervision } from '@/features/chat/components/ChatWindow';
 import DocumentList, { DocumentoItem } from '@/features/documents/components/DocumentList';
@@ -15,11 +15,13 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
   const [activeTab, setActiveTab] = useState<'info' | 'chat' | 'docs'>('info');
   const [documentos, setDocumentos] = useState<DocumentoItem[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const mountedRef = useRef(true);
 
-  const fetchDocumentos = async () => {
+  const fetchDocumentos = useCallback(async () => {
     try {
       setLoadingDocs(true);
       const response = await fetch(`/api/documents?orderId=${orderId}`);
+      if (!response.ok) throw new Error(`Error ${response.status} al obtener documentos`);
       const docs = await response.json();
       
       if (Array.isArray(docs)) {
@@ -33,6 +35,7 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
           tamaño: d.size ? `${(d.size / 1024 / 1024).toFixed(2)} MB` : 'N/A',
           url: d.url || '#'
         }));
+        if (!mountedRef.current) return;
         setDocumentos(mappedDocs);
       }
     } catch (error) {
@@ -40,13 +43,15 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
     } finally {
       setLoadingDocs(false);
     }
-  };
+  }, [orderId]);
 
   useEffect(() => {
+    mountedRef.current = true;
     if (activeTab === 'docs') {
       fetchDocumentos();
     }
-  }, [activeTab, orderId]);
+    return () => { mountedRef.current = false; };
+  }, [activeTab, orderId, fetchDocumentos]);
 
   return (
     <div className="mt-8 border-t pt-6">
@@ -90,7 +95,7 @@ export default function AdminSupervisionTabs({ orderId, elemento }: AdminSupervi
             </h4>
             <div className="space-y-3">
               {elemento?.items?.map((item: any, i: number) => (
-                <div key={i} className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div key={item.id} className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                   <div>
                     <span className="text-sm font-black text-slate-800 block">{item.serviceName || 'Servicio Legal'}</span>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Vigencia Ilimitada</span>

@@ -79,6 +79,7 @@ export function useGlobalChatListener() {
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [toastMessage, setToastMessage] = useState<any>(null);
     const [isIOS, setIsIOS] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(false);
     const toastSetterRef = useRef(setToastMessage);
 
     useEffect(() => {
@@ -87,6 +88,7 @@ export function useGlobalChatListener() {
 
     useEffect(() => {
         setIsIOS(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+        setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true);
     }, []);
 
     useEffect(() => {
@@ -268,10 +270,10 @@ export function useGlobalChatListener() {
 
         return () => {
             stopBlink();
-            personalSub.unsubscribe();
-            if (globalChannel) globalChannel.unsubscribe();
-        };
-    }, [user?.id, user?.rol]);
+            supabase.removeChannel(personalSub);
+            if (globalChannel) supabase.removeChannel(globalChannel);
+        }; // react-doctor: cleanup-verified
+    }, [queryClient, router, user]);
 
     const handleSubscribe = async () => {
         if (isSubscribing) return;
@@ -302,5 +304,6 @@ export function useGlobalChatListener() {
         permission,
         router,
         isIOS,
+        isStandalone,
     };
 }

@@ -58,7 +58,7 @@ export const useServicesRealtime = (enabled: boolean = true) => {
                 }
             });
 
-        return () => {
+        return () => { // react-doctor: cleanup-verified
             supabase.removeChannel(channel);
         };
     }, [queryClient, enabled]);

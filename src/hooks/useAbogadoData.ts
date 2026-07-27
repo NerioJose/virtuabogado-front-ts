@@ -60,13 +60,12 @@ export function useAbogadoData(abogadoId?: string): UseAbogadoDataReturn {
 				proximaCita: new Date().toISOString(),
 				ingresosMes: summary.lawyerPendingBalance || 0,
 			});
-
-			if (mountedRef.current) setLoading(false);
 		} catch (error) {
 			console.error('❌ Error al cargar datos reales del abogado:', error);
+		} finally {
 			if (mountedRef.current) setLoading(false);
 		}
-	}, [user?.id, user?.rol]);
+	}, [user]);
 
 	useEffect(() => {
 		cargarDatosReales();

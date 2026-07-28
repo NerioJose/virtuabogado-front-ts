@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         const limit = parseInt(searchParams.get('limit') || '50');
         const skip = (page - 1) * limit;
 
-        const where: any = { activo: true };
+        const where: any = { activo: { not: false } };
         const isAdmin = role === 'ADMIN';
 
         if (!isAdmin) {

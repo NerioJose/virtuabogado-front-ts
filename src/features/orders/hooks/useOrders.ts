@@ -61,6 +61,27 @@ export const useCreateOrder = () => {
     });
 };
 
+export const useCreateOrderByAdmin = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: {
+            email: string;
+            nombre?: string;
+            telefono?: string;
+            password?: string;
+            servicio: string;
+            total: number;
+        }) => ordersService.createAdmin(data),
+        onError: (err) => {
+            console.error('❌ Error creating order from admin:', err);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ORDER_KEYS.lists() });
+        },
+    });
+};
+
 export const useUpdateOrder = () => {
     const queryClient = useQueryClient();
 

@@ -48,19 +48,47 @@ export const ordersService = {
     },
 
     /**
-     * Crear una nueva orden
+     * Crear una nueva orden (checkout público)
      */
     async create(orderData: CreateOrderRequest): Promise<Order> {
         try {
-            // TODO: Implementar con API real
-            
-
-            // Mock: retornar orden simulada
-            throw new Error('Not implemented yet');
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData),
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || 'Error al crear la orden');
+            }
+            return response.json();
         } catch (error) {
             console.error('Error creating order:', error);
             throw error;
         }
+    },
+
+    /**
+     * Crear una orden desde el panel admin
+     */
+    async createAdmin(data: {
+        email: string;
+        nombre?: string;
+        telefono?: string;
+        password?: string;
+        servicio: string;
+        total: number;
+    }): Promise<Order> {
+        const res = await fetch('/api/orders/admin-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Error al crear el caso');
+        }
+        return res.json();
     },
 
     async updateStatus(data: UpdateOrderStatusRequest): Promise<Order> {

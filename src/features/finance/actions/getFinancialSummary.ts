@@ -48,6 +48,7 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
 
     // 3. Base Query Filter (Removing status filter to handle legcay casing in-memory)
     const where: any = {
+        activo: true,
         createdAt: dateFilter,
     };
 

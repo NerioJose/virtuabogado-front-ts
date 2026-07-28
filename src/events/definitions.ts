@@ -2,6 +2,7 @@ export type BusinessEventType =
   | 'order.created'
   | 'order.payment_received'
   | 'order.assigned'
+  | 'order.reassigned'
   | 'order.status_changed'
   | 'order.completed'
   | 'payout.created'
@@ -38,6 +39,16 @@ export type OrderPaymentReceived = {
 export type OrderAssigned = {
   orderId: string
   lawyerId: string
+  userId: string
+  serviceName?: string
+}
+
+export type OrderReassigned = {
+  orderId: string
+  fromLawyerId: string | null
+  toLawyerId: string
+  reassignedBy: string
+  reason?: string
   userId: string
   serviceName?: string
 }

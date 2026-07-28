@@ -181,6 +181,21 @@ export async function notifyNewCase(lawyerId: string, orderId: string, serviceNa
 }
 
 /**
+ * 🔄 Caso Reasignado — notifica al abogado anterior que perdió el caso
+ */
+export async function notifyCaseUnassigned(lawyerId: string, orderId: string, serviceName?: string) {
+  const serviceDisplay = serviceName || `Expediente #${orderId.slice(0, 8)}`;
+
+  return await sendPushNotification(lawyerId, {
+    title: '🔄 Caso Reasignado',
+    body: `El caso ${serviceDisplay} ya no está asignado a ti. Ha sido transferido a otro abogado.`,
+    url: '/abogado',
+    tag: `unassigned-${orderId}`,
+    icon: '/logo/logo_sf_1.png',
+  });
+}
+
+/**
  * 💬 Nuevo Mensaje de Chat
  * URL diferenciada según el rol del destinatario
  */

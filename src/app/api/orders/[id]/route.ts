@@ -80,7 +80,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const allowedFields = ['status', 'lawyerId', 'assignedAt', 'description'];
+    const allowedFields = ['status', 'reason', 'description'];
     const dataToUpdate: Record<string, unknown> = {};
     for (const key of Object.keys(body)) {
         if (allowedFields.includes(key)) {
@@ -94,6 +94,23 @@ export async function PATCH(
             where: { id },
             select: { status: true, lawyerId: true, commissionAmount: true },
         });
+
+        if (!orderBefore) {
+            return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+        }
+
+        // Manejar asignación/reasignación de abogado
+        if (body.lawyerId && body.lawyerId !== orderBefore.lawyerId) {
+            // Asignación inicial (no tenía abogado antes)
+            if (!orderBefore.lawyerId) {
+                dataToUpdate.lawyerId = body.lawyerId;
+                dataToUpdate.assignedAt = new Date();
+            // Reasignación (cambiar de abogado)
+            } else {
+                dataToUpdate.lawyerId = body.lawyerId;
+                dataToUpdate.reassignedAt = new Date();
+            }
+        }
 
         const order = await prisma.order.update({
             where: { id },
@@ -130,11 +147,38 @@ export async function PATCH(
 
         const events: Promise<void>[] = [];
 
-        // Asignación de abogado
-        if (body.lawyerId && order.lawyerId && (!orderBefore?.lawyerId || orderBefore.lawyerId !== order.lawyerId)) {
+        // Asignación inicial de abogado
+        if (body.lawyerId && !orderBefore.lawyerId && order.lawyerId) {
             events.push(emit({
                 type: 'order.assigned',
                 data: { orderId: order.id, lawyerId: order.lawyerId, userId: order.userId, serviceName: order.service.titulo },
+            }));
+        }
+
+        // Reasignación de abogado (cambió de un abogado a otro)
+        if (body.lawyerId && orderBefore.lawyerId && body.lawyerId !== orderBefore.lawyerId) {
+            // Crear registro de auditoría
+            await prisma.orderAssignmentLog.create({
+                data: {
+                    orderId: order.id,
+                    fromLawyerId: orderBefore.lawyerId,
+                    toLawyerId: body.lawyerId,
+                    reassignedBy: user.id,
+                    reason: body.reason,
+                }
+            });
+
+            events.push(emit({
+                type: 'order.reassigned',
+                data: {
+                    orderId: order.id,
+                    fromLawyerId: orderBefore.lawyerId,
+                    toLawyerId: body.lawyerId,
+                    reassignedBy: user.id,
+                    reason: body.reason,
+                    userId: order.userId,
+                    serviceName: order.service.titulo,
+                },
             }));
         }
 
@@ -202,28 +246,22 @@ export async function DELETE(
             uuid = order.id;
         }
 
-        // Eliminar en cascada manualmente para evitar errores de Foreign Key
-        await prisma.$transaction([
-            prisma.message.deleteMany({ where: { orderId: uuid } }),
-            prisma.document.deleteMany({ where: { orderId: uuid } }),
-            prisma.review.deleteMany({ where: { orderId: uuid } }),
-            prisma.order.delete({ where: { id: uuid } })
-        ]);
-        
-        
+        // Soft delete: preservar historial financiero y de auditoría
+        await prisma.order.update({
+            where: { id: uuid },
+            data: { activo: false, deletedAt: new Date() }
+        });
+
         return NextResponse.json({ 
             success: true,
-            message: 'Caso y todo su historial de mensajes/documentos han sido eliminados correctamente.' 
+            message: 'Caso archivado correctamente. Todos los datos históricos se han preservado.' 
         });
     } catch (error: any) {
-        console.error(`❌ [Order DELETE API] Error deleting order ${id}:`, error);
+        console.error(`❌ [Order DELETE API] Error archiving order ${id}:`, error);
         
-        // Mensaje contextual para el administrador según el tipo de error
-        let errorMessage = 'No se pudo eliminar el caso.';
+        let errorMessage = 'No se pudo archivar el caso.';
         if (error.code === 'P2003') {
-            errorMessage = 'Este caso tiene dependencias activas en otras tablas que impiden su eliminación directa. Por favor, asegúrate de que no haya pagos pendientes vinculados.';
-        } else if (error.message?.includes('foreign key constraint')) {
-            errorMessage = 'Error de integridad: El caso tiene registros vinculados que no pudieron ser eliminados en cascada.';
+            errorMessage = 'Este caso tiene dependencias activas que impiden su archivado.';
         } else {
             errorMessage = `Error interno: ${error.message || 'Consulte los logs del servidor'}`;
         }

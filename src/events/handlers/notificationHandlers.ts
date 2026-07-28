@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import {
   notifyNewSale,
   notifyNewCase,
+  notifyCaseUnassigned,
   notifyOrderStatusUpdate,
   notifyCaseCompleted,
   notifyPayoutCompleted,
@@ -52,6 +53,35 @@ on('order.assigned', async (event) => {
 
   notifyNewSale(data.orderId, order.total.toString(), false, order.user?.nombre, serviceName)
     .catch((e) => console.error('[Event] Error push venta:', e))
+})
+
+on('order.reassigned', async (event) => {
+  const data = event.data as {
+    orderId: string; fromLawyerId: string | null; toLawyerId: string
+    userId: string; serviceName?: string; reason?: string
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: data.orderId },
+    select: {
+      service: { select: { titulo: true } },
+    },
+  })
+
+  if (!order) return
+
+  const serviceName = data.serviceName || order.service?.titulo || 'Servicio Legal'
+
+  notifyNewCase(data.toLawyerId, data.orderId, serviceName)
+    .catch((e) => console.error('[Event] Error push nuevo abogado:', e))
+
+  if (data.fromLawyerId) {
+    notifyCaseUnassigned(data.fromLawyerId, data.orderId, serviceName)
+      .catch((e) => console.error('[Event] Error push abogado anterior:', e))
+  }
+
+  notifyOrderStatusUpdate(data.userId, data.orderId, 'EN_PROGRESO', serviceName)
+    .catch((e) => console.error('[Event] Error push cliente:', e))
 })
 
 on('order.status_changed', async (event) => {

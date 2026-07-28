@@ -159,14 +159,12 @@ export default function AdminPage() {
 					} else if (tipoModal === 'crear') {
 						await createOrderByAdminMutation.mutateAsync(data);
 					} else if (tipoModal === 'asignar' && id) {
-						// Usar la mutación de React Query para asignar abogado
-						// Actualizamos también el estado a "EN_PROGRESO" (PROCESSING)
 						await updateOrderMutation.mutateAsync({
 							id,
 							data: {
 								lawyerId: data.lawyerId,
 								status: OrderStatus.EN_PROGRESO,
-								assignedAt: new Date().toISOString()
+								reason: data.reason,
 							}
 						});
 					}

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { on } from '@/events/registry'
 import { broadcastOrderUpdate } from '@/lib/broadcast'
 import { OrderStatus, UserRole } from '@/shared/types/entities.types'
+import type { OrderReassigned } from '@/events/definitions'
 
 on('order.payment_received', async (event) => {
   const { orderId, paymentId } = event.data as { orderId: string; paymentId: string }
@@ -78,6 +79,28 @@ on('order.assigned', async (event) => {
     status: OrderStatus.EN_PROGRESO,
     eventType: 'updated',
     isNewAssignment: true,
+  })
+})
+
+on('order.reassigned', async (event) => {
+  const data = event.data as OrderReassigned
+
+  const [toLawyer, fromLawyer] = await Promise.all([
+    prisma.user.findUnique({ where: { id: data.toLawyerId }, select: { nombre: true } }),
+    data.fromLawyerId ? prisma.user.findUnique({ where: { id: data.fromLawyerId }, select: { nombre: true } }) : null,
+  ])
+
+  const toName = toLawyer?.nombre || 'Nuevo abogado'
+  const fromName = fromLawyer?.nombre || 'Abogado anterior'
+
+  // Mensaje de sistema en el chat informando la reasignación
+  await prisma.message.create({
+    data: {
+      orderId: data.orderId,
+      senderId: data.reassignedBy,
+      content: `Caso reasignado de ${fromName} a ${toName}`,
+      isSystem: true,
+    },
   })
 })
 

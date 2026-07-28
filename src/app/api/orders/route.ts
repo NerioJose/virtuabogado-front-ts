@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         const limit = parseInt(searchParams.get('limit') || '50');
         const skip = (page - 1) * limit;
 
-        const where: any = {};
+        const where: any = { activo: true };
         const isAdmin = role === 'ADMIN';
 
         if (!isAdmin) {
@@ -226,13 +226,12 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
         }
 
-        await prisma.$transaction([
-            prisma.message.deleteMany({ where: { orderId: id } }),
-            prisma.document.deleteMany({ where: { orderId: id } }),
-            prisma.order.delete({ where: { id } }),
-        ]);
+        await prisma.order.update({
+            where: { id },
+            data: { activo: false, deletedAt: new Date() }
+        });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, message: 'Caso archivado correctamente.' });
     } catch (error) {
         console.error('❌ API Error deleting order:', error);
         return NextResponse.json({ error: 'Error al eliminar la orden' }, { status: 500 });

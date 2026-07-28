@@ -61,6 +61,7 @@ export async function getOrdersHistory(filters: GetOrdersFilters, user: { id: st
     // 3. Search Logic & Status Filtering
     const where: any = {
         ...roleWhere,
+        activo: true,
         createdAt: dateFilter,
         OR: search ? [
             { id: { contains: search, mode: 'insensitive' } },

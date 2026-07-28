@@ -112,7 +112,7 @@ export function useGlobalChatListener() {
 
         const supabase = createClient();
         const personalChannel = supabase.channel(`global_${user.id}`);
-        const globalChannel = user.rol === 'ADMIN' ? supabase.channel('app-updates') : null;
+        const globalChannel = supabase.channel('app-updates');
 
         const handleOrderUpdate = (payload: { payload: any }) => {
             const data = payload.payload;
@@ -261,23 +261,21 @@ export function useGlobalChatListener() {
             .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
             .subscribe();
 
-        if (globalChannel) {
-            globalChannel
-                .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
-                .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
-                .on('broadcast', { event: 'new_message' }, (payload: any) => {
-                    const data = payload.payload;
-                    if (data.new && data.new.senderId !== user.id) {
-                        useChatStore.getState().markAsUnread(data.new.orderId);
-                    }
-                })
-                .subscribe();
-        }
+        globalChannel
+            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
+            .on('broadcast', { event: 'new_message' }, (payload: any) => {
+                const data = payload.payload;
+                if (data.new && data.new.senderId !== user.id) {
+                    useChatStore.getState().markAsUnread(data.new.orderId);
+                }
+            })
+            .subscribe();
 
         return () => {
             stopBlink();
             supabase.removeChannel(personalSub);
-            if (globalChannel) supabase.removeChannel(globalChannel);
+            supabase.removeChannel(globalChannel);
         }; // react-doctor: cleanup-verified
     }, [queryClient, router, user]);
 

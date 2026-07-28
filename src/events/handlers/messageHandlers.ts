@@ -44,7 +44,14 @@ on('message.sent', async (event) => {
   broadcastPromises.push(sendBroadcast(`chat_${data.orderId}`, 'new_message', { new: newMessage }))
   broadcastPromises.push(sendBroadcast('app-updates', 'new_message', { new: newMessage }))
 
-  await Promise.allSettled(broadcastPromises)
+  const results = await Promise.allSettled(broadcastPromises)
+  results.forEach((r) => {
+    if (r.status === 'fulfilled' && r.value === false) {
+      console.warn(`[messageHandlers] Broadcast falló para mensaje ${data.messageId}`)
+    } else if (r.status === 'rejected') {
+      console.error(`[messageHandlers] Error en broadcast para mensaje ${data.messageId}:`, r.reason)
+    }
+  })
 })
 
 on('message.deleted', async (event) => {

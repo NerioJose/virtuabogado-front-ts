@@ -51,8 +51,6 @@ export const useRealtimeSubscription = () => {
     // los usuarios conectados (abogado, cliente, admin) incluidos anónimos.
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (connectionStatusRef.current === 'DISCONNECTED') return;
-
         const supabase = createClient();
         
 
@@ -183,12 +181,14 @@ export const useRealtimeSubscription = () => {
                     queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
                     break;
                 case 'Message':
-                    
                     if (payload.new && 'orderId' in payload.new) {
                         queryClient.refetchQueries({
                             queryKey: ['Message', payload.new.orderId],
                             type: 'active'
                         });
+                        if (payload.new.senderId !== user?.id) {
+                            useChatStore.getState().markAsUnread(payload.new.orderId);
+                        }
                     }
                     queryClient.invalidateQueries({ queryKey: ['Message'] });
                     break;

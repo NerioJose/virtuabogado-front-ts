@@ -131,6 +131,14 @@ export const useChatStore = create<ChatStore>()(
             name: 'chat-unread-storage',
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({ unreadOrders: state.unreadOrders, unreadCounts: state.unreadCounts }),
+            merge: (persisted, current) => ({
+                ...current,
+                ...(persisted as object),
+                unreadCounts: {
+                    ...(persisted as any).unreadCounts,
+                    ...current.unreadCounts,
+                },
+            }),
         }
     )
 );

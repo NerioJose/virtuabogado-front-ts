@@ -76,6 +76,9 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         }
     };
 
+    const orders = useMemo(() => (response as any)?.data || [], [response]);
+    const ordenActual = useMemo(() => orders.find((o: any) => o.id === conversacionActiva), [orders, conversacionActiva]);
+
     return {
         conversacionActiva,
         setConversacionActiva,
@@ -89,6 +92,6 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         handleConfirmarCompletar,
         formatearFecha,
         isUpdating: updateOrder.isPending,
-        ordenActual: orders.find((o: any) => o.id === conversacionActiva)
+        ordenActual
     };
 }

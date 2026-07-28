@@ -147,12 +147,9 @@ export const useAuthStore = create<AuthState>()(
 
                         try {
                                 fetch('/api/auth/sync', { method: 'POST' })
-                                .then(res => {
-                                    if (!res.ok) return;
-                                    return res.json();
-                                })
+                                .then(res => res.ok ? res.json() : null)
                                 .then(syncData => {
-                                    if (syncData.success && syncData.user) {
+                                    if (syncData?.success && syncData?.user) {
                                         const currentState = get() as any;
                                         const needsUpdate: Partial<User> = {};
                                         

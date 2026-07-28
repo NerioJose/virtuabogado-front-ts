@@ -64,12 +64,12 @@ export async function GET(request: Request) {
 
         const [clients, total, allOrders] = await Promise.all([
             prisma.user.findMany({
-                where: { rol: UserRole.CLIENTE },
+                where: { rol: 'CLIENTE' },
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.user.count({ where: { rol: UserRole.CLIENTE } }),
+            prisma.user.count({ where: { rol: 'CLIENTE' } }),
             prisma.order.findMany({
                 where: { activo: true },
                 select: { userId: true, total: true, id: true }

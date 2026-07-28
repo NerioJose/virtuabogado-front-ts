@@ -94,13 +94,17 @@ export async function syncUserIdentity(
         (roleToPreserve && currentRoleInMetadata !== roleToPreserve);
 
       if (needsMetadataSync) {
-        const supabase = await createClient();
-        await supabase.auth.updateUser({
-          data: {
-            ...(finalName && { nombre: finalName }),
-            ...(roleToPreserve && { rol: roleToPreserve }),
-          },
-        });
+        try {
+          const supabase = await createClient();
+          await supabase.auth.updateUser({
+            data: {
+              ...(finalName && { nombre: finalName }),
+              ...(roleToPreserve && { rol: roleToPreserve }),
+            },
+          });
+        } catch (metaError) {
+          console.warn('⚠️ [Identity Sync] Metadata sync no fatal:', metaError);
+        }
       }
     }
   } else {
@@ -117,13 +121,17 @@ export async function syncUserIdentity(
         (currentRole && currentRoleInMetadata !== currentRole);
 
       if (needsMetadataSync) {
-        const supabase = await createClient();
-        await supabase.auth.updateUser({
-          data: {
-            ...(finalName && { nombre: finalName }),
-            ...(currentRole && { rol: currentRole }),
-          },
-        });
+        try {
+          const supabase = await createClient();
+          await supabase.auth.updateUser({
+            data: {
+              ...(finalName && { nombre: finalName }),
+              ...(currentRole && { rol: currentRole }),
+            },
+          });
+        } catch (metaError) {
+          console.warn('⚠️ [Identity Sync] Metadata sync no fatal:', metaError);
+        }
       }
     }
 

@@ -63,12 +63,12 @@ export async function GET(request: Request) {
 
         const [lawyers, total] = await Promise.all([
             prisma.user.findMany({
-                where: { rol: UserRole.ABOGADO },
+                where: { rol: 'ABOGADO' },
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.user.count({ where: { rol: UserRole.ABOGADO } }),
+            prisma.user.count({ where: { rol: 'ABOGADO' } }),
         ]);
 
         const formattedLawyers = lawyers.map((lawyer: any) => ({

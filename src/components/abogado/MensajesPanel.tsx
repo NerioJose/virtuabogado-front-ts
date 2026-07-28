@@ -35,7 +35,9 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 		handleConfirmarCompletar,
 		formatearFecha,
 		isUpdating,
-		ordenActual
+		ordenActual,
+		unreadOrders,
+		unreadCounts
 	} = useMensajesPanel(abogadoId, initialClienteId);
 
 	if (isLoading) {
@@ -87,12 +89,22 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
                                     : 'hover:bg-slate-50'
 									} ${conv.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}>
 								<div className="flex justify-between items-start mb-1.5">
-									<h3 className={`text-sm font-black truncate pr-2 ${conversacionActiva === conv.id ? 'text-white' : 'text-slate-800'}`}>
+									<h3 className={`text-sm font-black truncate pr-2 flex items-center gap-2 ${conversacionActiva === conv.id ? 'text-white' : 'text-slate-800'}`}>
 										{conv.participante}
+										{unreadCounts[conv.id] > 0 && (
+											<span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-red-500/40">
+												{unreadCounts[conv.id] > 99 ? '99+' : unreadCounts[conv.id]}
+											</span>
+										)}
 									</h3>
-									<span className={`text-[10px] font-bold whitespace-nowrap uppercase tracking-tighter ${conversacionActiva === conv.id ? 'text-white/70' : 'text-slate-400'}`}>
-										{formatearFecha(conv.fechaUltimoMensaje)}
-									</span>
+									<div className="flex items-center gap-2 shrink-0">
+										{unreadOrders.includes(conv.id) && (
+											<span className="w-2 h-2 bg-red-500 rounded-full animate-pulse ring-2 ring-red-300" />
+										)}
+										<span className={`text-[10px] font-bold whitespace-nowrap uppercase tracking-tighter ${conversacionActiva === conv.id ? 'text-white/70' : 'text-slate-400'}`}>
+											{formatearFecha(conv.fechaUltimoMensaje)}
+										</span>
+									</div>
 								</div>
 								<p className={`text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${conversacionActiva === conv.id ? 'text-white/90' : 'text-azul-primario'}`}>
 									{conv.status === OrderStatus.COMPLETADO && <FiLock size={10} className={conversacionActiva === conv.id ? 'text-white' : 'text-slate-400'} />}

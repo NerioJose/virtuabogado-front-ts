@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
+import { useChatStore } from '@/features/chat/store/chatStore';
 
 export function useMensajesPanel(abogadoId: string, initialClienteId?: string | null) {
     const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
@@ -79,6 +80,9 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
     const orders = useMemo(() => (response as any)?.data || [], [response]);
     const ordenActual = useMemo(() => orders.find((o: any) => o.id === conversacionActiva), [orders, conversacionActiva]);
 
+    const unreadOrders = useChatStore((state) => state.unreadOrders);
+    const unreadCounts = useChatStore((state) => state.unreadCounts);
+
     return {
         conversacionActiva,
         setConversacionActiva,
@@ -92,6 +96,8 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         handleConfirmarCompletar,
         formatearFecha,
         isUpdating: updateOrder.isPending,
-        ordenActual
+        ordenActual,
+        unreadOrders,
+        unreadCounts
     };
 }

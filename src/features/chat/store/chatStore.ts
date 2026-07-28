@@ -9,6 +9,7 @@ interface ChatStore {
     activeOrderId: string | null;
     subscription: any | null;
     unreadOrders: string[];
+    unreadCounts: Record<string, number>;
     setActiveOrder: (orderId: string) => void;
     loadMessages: (orderId: string) => Promise<void>;
     addMessage: (message: Message) => void;
@@ -27,6 +28,7 @@ export const useChatStore = create<ChatStore>()(
             activeOrderId: null,
             subscription: null,
             unreadOrders: [],
+            unreadCounts: {},
 
             setActiveOrder: (orderId) => {
                 set({ activeOrderId: orderId });
@@ -98,17 +100,25 @@ export const useChatStore = create<ChatStore>()(
 
             markAsUnread: (orderId) => {
                 set((state) => {
-                    if (state.unreadOrders.includes(orderId)) return state;
-                    if (state.activeOrderId === orderId) return state; // No marcar si estamos viéndolo
-                    return { unreadOrders: [...state.unreadOrders, orderId] };
+                    if (state.activeOrderId === orderId) return state;
+                    const newOrders = state.unreadOrders.includes(orderId)
+                        ? state.unreadOrders
+                        : [...state.unreadOrders, orderId];
+                    return {
+                        unreadOrders: newOrders,
+                        unreadCounts: {
+                            ...state.unreadCounts,
+                            [orderId]: (state.unreadCounts[orderId] || 0) + 1
+                        }
+                    };
                 });
             },
 
             markAsRead: (orderId) => {
-                set((state) => {
-                    if (!state.unreadOrders.includes(orderId)) return state;
-                    return { unreadOrders: state.unreadOrders.filter(id => id !== orderId) };
-                });
+                set((state) => ({
+                    unreadOrders: state.unreadOrders.filter(id => id !== orderId),
+                    unreadCounts: { ...state.unreadCounts, [orderId]: 0 }
+                }));
             },
 
             cleanup: () => {
@@ -120,7 +130,7 @@ export const useChatStore = create<ChatStore>()(
         {
             name: 'chat-unread-storage',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({ unreadOrders: state.unreadOrders }), // Solo persistir lo relevante
+            partialize: (state) => ({ unreadOrders: state.unreadOrders, unreadCounts: state.unreadCounts }),
         }
     )
 );

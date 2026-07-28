@@ -60,13 +60,15 @@ const toastState = {
     setter: null as ((msg: any) => void) | null,
 };
 
-function showToast(setter: typeof toastState.setter, msg: any) {
+function showToast(setter: ((msg: any) => void) | null, msg: any) {
+    if (!setter) return;
     toastState.setter = setter;
     if (toastState.timer) clearTimeout(toastState.timer);
     setter(msg);
     toastState.timer = setTimeout(() => {
-        setter(null);
+        const s = toastState.setter;
         toastState.timer = null;
+        if (s) s(null);
     }, 5000);
 }
 

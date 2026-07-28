@@ -51,7 +51,6 @@ export const useRealtimeSubscription = () => {
     // ═══════════════════════════════════════════════
     useEffect(() => {
         const supabase = createClient();
-        
 
         const handleUpdate = (payload: any) => {
             const eventName = payload?.event || (payload?.payload as any)?.event;
@@ -212,7 +211,6 @@ export const useRealtimeSubscription = () => {
         (async () => {
             const { data: sessionData } = await supabase.auth.getSession();
             if (!sessionData.session) {
-                console.warn('⚠️ [Realtime] Sesión expirada, saltando suscripción postgres_changes. El broadcast sigue activo.');
                 if (!mounted) return;
                 setConnectionStatus('DISCONNECTED');
                 return;
@@ -247,11 +245,6 @@ export const useRealtimeSubscription = () => {
                         // Silenciar: el CHANNEL_ERROR ocurre cuando RLS bloquea la suscripción WAL.
                         // El broadcast (order-updates + global_{id}) ya cubre la reactividad.
                         setConnectionStatus('ERROR');
-                        if (err && Object.keys(err).length > 0) {
-                            console.warn(`⚠️ [Realtime] Canal con error RLS. Broadcast activo como fallback.`, JSON.stringify(err));
-                        } else {
-                            console.info(`ℹ️ [Realtime] postgres_changes bloqueado por RLS (esperado). Broadcast activo.`);
-                        }
                         break;
                     case 'TIMED_OUT':
                         setConnectionStatus('ERROR');

@@ -8,6 +8,7 @@ import { LAWYER_KEYS } from '@/features/lawyers/hooks/useLawyers';
 import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { FINANCIAL_SETTINGS_KEYS } from '@/features/financial-settings/hooks/useFinancialSettings';
+import { useChatStore } from '@/features/chat/store/chatStore';
 
 export type RealtimeConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
 
@@ -56,8 +57,6 @@ export const useRealtimeSubscription = () => {
         
 
         const handleUpdate = (payload: any) => {
-            // Este handler ahora solo se encarga de actualizaciones de servicios
-            // ya que las órdenes las maneja el GlobalChatListener
             const eventName = payload?.event || (payload?.payload as any)?.event;
             const eventPayload = payload?.payload || payload;
             
@@ -69,7 +68,6 @@ export const useRealtimeSubscription = () => {
             }
             
             if (eventName === 'service-updated') {
-                // Invalidar TODAS las queries de servicios (activos, inactivos, detalle)
                 queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['Service', 'active'], refetchType: 'all' });
             }
@@ -84,12 +82,23 @@ export const useRealtimeSubscription = () => {
             }
         };
 
+        const handleNewMessage = (payload: any) => {
+            const data = payload.payload;
+            if (data.new) {
+                queryClient.invalidateQueries({ queryKey: ['chat', 'messages', data.new.orderId] });
+                if (data.new.senderId !== user?.id) {
+                    useChatStore.getState().markAsUnread(data.new.orderId);
+                }
+            }
+        };
+
         // Canal global - todos los administradores y usuarios lo reciben
         const globalChannel = supabase.channel('app-updates');
         globalChannel
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
             .on('broadcast', { event: 'payout-updated' }, handleUpdate)
+            .on('broadcast', { event: 'new_message' }, handleNewMessage)
             .subscribe((status) => {
                 
             });
@@ -100,6 +109,7 @@ export const useRealtimeSubscription = () => {
             personalChannel
                 .on('broadcast', { event: 'order-updated' }, handleUpdate)
                 .on('broadcast', { event: 'payout-updated' }, handleUpdate)
+                .on('broadcast', { event: 'new_message' }, handleNewMessage)
                 .subscribe();
         }
 

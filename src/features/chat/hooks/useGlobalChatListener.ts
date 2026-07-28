@@ -265,6 +265,12 @@ export function useGlobalChatListener() {
             globalChannel
                 .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
                 .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
+                .on('broadcast', { event: 'new_message' }, (payload: any) => {
+                    const data = payload.payload;
+                    if (data.new && data.new.senderId !== user.id) {
+                        useChatStore.getState().markAsUnread(data.new.orderId);
+                    }
+                })
                 .subscribe();
         }
 

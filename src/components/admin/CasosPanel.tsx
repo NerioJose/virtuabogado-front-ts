@@ -17,6 +17,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
       orders,
       ordenesFiltradas,
       unreadOrders,
+      unreadCounts,
       isLoading,
       filtroEstado,
       setFiltroEstado,
@@ -102,7 +103,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
           {ordenesFiltradas.map((order) => {
             const config = getStatusConfig(order.status as OrderStatus);
             const icon = statusIcons[order.status] || <FiClock />;
-            const isUnread = unreadOrders.includes(order.id);
+            const count = unreadCounts[order.id] || 0;
+            const isUnread = count > 0;
             
             return (
               <motion.div
@@ -122,7 +124,9 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-black text-azul-primario tracking-tighter bg-azul-primario/5 px-2 py-1 rounded-lg">#{order.numericId}</span>
                       {isUnread && (
-                        <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-bounce" />
+                        <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-rose-500/40 ring-2 ring-white">
+                          {count > 99 ? '99+' : count}
+                        </span>
                       )}
                     </div>
                     <p className="text-[10px] font-bold text-slate-400">{new Date(order.createdAt).toLocaleDateString()}</p>
@@ -162,7 +166,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                   <button type="button" onClick={() => abrirModal('ver', order as any)} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition ${
                     isUnread ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20'
                   }`}>
-                    {isUnread ? <FiMessageSquare /> : <FiEye />} {isUnread ? 'NUEVO MENSAJE' : 'EXPEDIENTE'}
+                    {isUnread ? <FiMessageSquare /> : <FiEye />} {isUnread ? `NUEVO MENSAJE (${count})` : 'EXPEDIENTE'}
                   </button>
                   <button type="button" onClick={() => abrirModal('asignar', order as any)} className="p-3 bg-slate-100 text-slate-600 rounded-2xl hover:bg-emerald-500 hover:text-white transition shadow-sm">
                     <FiUserPlus size={18} />
@@ -197,7 +201,8 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                 {ordenesFiltradas.map((order) => {
                   const config = getStatusConfig(order.status as OrderStatus);
                   const icon = statusIcons[order.status] || <FiClock />;
-                  const isUnread = unreadOrders.includes(order.id);
+                  const count = unreadCounts[order.id] || 0;
+                  const isUnread = count > 0;
                   
                   return (
                     <motion.tr 
@@ -209,10 +214,9 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-azul-primario bg-azul-primario/5 px-3 py-1 rounded-xl">#{order.numericId}</span>
                           {isUnread && (
-                            <div className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                            </div>
+                            <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-rose-500/40 ring-2 ring-white">
+                              {count > 99 ? '99+' : count}
+                            </span>
                           )}
                         </div>
                       </td>
@@ -257,9 +261,14 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 
                             onClick={() => abrirModal('ver', order as any)} 
-                            className={`p-2.5 rounded-xl transition shadow-lg ${isUnread ? 'bg-rose-500 text-white animate-pulse' : 'bg-azul-primario text-white shadow-azul-primario/20 hover:bg-azul-primario/90'}`}
+                            className={`p-2.5 rounded-xl transition shadow-lg relative ${isUnread ? 'bg-rose-500 text-white animate-pulse' : 'bg-azul-primario text-white shadow-azul-primario/20 hover:bg-azul-primario/90'}`}
                             title={isUnread ? 'Mensaje Nuevo' : 'Ver Expediente'}
                           >
+                            {isUnread && (
+                              <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-white text-rose-500 text-[7px] font-black rounded-full flex items-center justify-center leading-none shadow-sm border border-rose-200">
+                                {count > 99 ? '99+' : count}
+                              </span>
+                            )}
                             {isUnread ? <FiMessageSquare size={18} /> : <FiEye size={18} />}
                           </motion.button>
                           <motion.button 

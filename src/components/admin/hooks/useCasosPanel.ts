@@ -7,6 +7,7 @@ export function useCasosPanel(terminoBusqueda: string) {
     const { data: response, isLoading } = useOrders({ limit: 100 });
     const orders = useMemo(() => (response as any)?.data || [], [response]);
     const unreadOrders = useChatStore((state) => state.unreadOrders);
+    const unreadCounts = useChatStore((state) => state.unreadCounts);
 
     const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
 
@@ -74,6 +75,7 @@ export function useCasosPanel(terminoBusqueda: string) {
         orders,
         ordenesFiltradas,
         unreadOrders,
+        unreadCounts,
         isLoading,
         filtroEstado,
         setFiltroEstado,

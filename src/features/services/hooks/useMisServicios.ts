@@ -11,6 +11,7 @@ export function useMisServicios() {
     const router = useRouter();
     const { user, isAuthenticated, isLoading: authLoading, logout: authLogout, checkAuth } = useAuth();
     const unreadOrders = useChatStore((state) => state.unreadOrders);
+    const unreadCounts = useChatStore((state) => state.unreadCounts);
     
     const { data: response, isLoading: ordersLoading } = useOrdersByUser(user?.id || '', {
         enabled: !!user?.id
@@ -66,6 +67,7 @@ export function useMisServicios() {
         user,
         servicios,
         unreadOrders,
+        unreadCounts,
         isLoading,
         ordersLoading,
         handleLogout,

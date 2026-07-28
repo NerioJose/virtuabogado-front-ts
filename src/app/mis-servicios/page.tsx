@@ -18,6 +18,7 @@ export default function MisServiciosPage() {
     user,
     servicios,
     unreadOrders,
+    unreadCounts,
     isLoading,
     ordersLoading,
     handleLogout,
@@ -48,6 +49,7 @@ export default function MisServiciosPage() {
       user={user}
       servicios={servicios}
       unreadOrders={unreadOrders}
+      unreadCounts={unreadCounts}
       isLoading={ordersLoading}
       handleLogout={handleLogout}
     />

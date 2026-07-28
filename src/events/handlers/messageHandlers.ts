@@ -45,6 +45,10 @@ on('message.sent', async (event) => {
   broadcastPromises.push(sendBroadcast('app-updates', 'new_message', { new: newMessage }))
 
   const results = await Promise.allSettled(broadcastPromises)
+  const successes = results.filter(r => r.status === 'fulfilled' && r.value === true).length
+  const failures = results.filter(r => r.status === 'fulfilled' && r.value === false).length
+  const errors = results.filter(r => r.status === 'rejected').length
+  console.log(`[messageHandlers] Mensaje ${data.messageId}: ${successes} éxitos, ${failures} fallos, ${errors} errores de ${broadcastPromises.length} broadcasts`)
   results.forEach((r) => {
     if (r.status === 'fulfilled' && r.value === false) {
       console.warn(`[messageHandlers] Broadcast falló para mensaje ${data.messageId}`)

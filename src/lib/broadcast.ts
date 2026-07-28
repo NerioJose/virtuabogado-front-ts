@@ -29,42 +29,100 @@ function getAdminClient(): SupabaseClient {
 }
 
 /**
- * Envía un broadcast a un canal específico de forma confiable.
- * Espera a que el canal esté suscrito antes de enviar.
+ * Envía un broadcast a través de la API REST de Supabase Realtime.
+ * Más confiable que WebSocket para entornos serverless, no requiere suscripción.
+ */
+async function sendBroadcastViaRest(
+    channelName: string,
+    event: string,
+    payload: Record<string, unknown>
+): Promise<boolean> {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) return false;
+
+    try {
+        const response = await fetch(
+            `${supabaseUrl}/realtime/v1/api/broadcast`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: serviceKey,
+                    Authorization: `Bearer ${serviceKey}`,
+                },
+                body: JSON.stringify({
+                    messages: [{
+                        topic: channelName,
+                        event,
+                        payload,
+                    }],
+                }),
+            }
+        );
+        if (response.status === 202 || response.ok) {
+            return true;
+        }
+        console.warn(`[broadcast] REST falló (${response.status}) canal=${channelName} evento=${event}`);
+        const text = await response.text().catch(() => '');
+        if (text) console.warn(`[broadcast] Respuesta: ${text.substring(0, 200)}`);
+        return false;
+    } catch (err) {
+        console.warn(`[broadcast] REST error canal=${channelName} evento=${event}:`, err);
+        return false;
+    }
+}
+
+/**
+ * Envía un broadcast a un canal específico.
  */
 export async function sendBroadcast(
     channelName: string,
     event: string,
     payload: Record<string, unknown>
 ): Promise<boolean> {
+    const start = Date.now();
+
+    // Intentar primero vía REST API (más confiable en serverless)
+    const restOk = await sendBroadcastViaRest(channelName, event, payload);
+    if (restOk) {
+        console.log(`[broadcast] ✅ REST: canal=${channelName} evento=${event} (${Date.now() - start}ms)`);
+        return true;
+    }
+
+    // Fallback: WebSocket con canal efímero
     const supabaseAdmin = getAdminClient();
     const channel = supabaseAdmin.channel(channelName);
 
     return new Promise((resolve) => {
         let isDone = false;
-
         const timeout = setTimeout(() => {
             if (!isDone) {
                 isDone = true;
                 supabaseAdmin.removeChannel(channel);
+                console.warn(`[broadcast] ⏰ WS timeout: canal=${channelName} evento=${event}`);
                 resolve(false);
             }
-        }, 15000);
+        }, 10000);
 
         channel.subscribe(async (status: string) => {
+            const elapsed = Date.now() - start;
+            if (isDone) return;
             if (status === 'SUBSCRIBED') {
                 isDone = true;
                 clearTimeout(timeout);
-                await channel.send({
-                    type: 'broadcast',
-                    event,
-                    payload,
-                });
+                try {
+                    await channel.send({ type: 'broadcast', event, payload });
+                    console.log(`[broadcast] ✅ WS: canal=${channelName} evento=${event} (${elapsed}ms)`);
+                } catch (err) {
+                    console.error(`[broadcast] ❌ WS error: canal=${channelName} evento=${event}`, err);
+                }
                 supabaseAdmin.removeChannel(channel);
                 resolve(true);
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                 isDone = true;
                 clearTimeout(timeout);
+                console.warn(`[broadcast] ⚠️ ${status}: canal=${channelName} evento=${event} (${elapsed}ms)`);
                 supabaseAdmin.removeChannel(channel);
                 resolve(false);
             }

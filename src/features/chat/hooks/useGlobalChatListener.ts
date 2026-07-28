@@ -96,8 +96,11 @@ export function useGlobalChatListener() {
         if (isSubscribed && permission === 'granted') return;
 
         if (user.rol === 'ADMIN' || user.rol === 'ABOGADO') {
-            const timer = setTimeout(() => setShowPushBanner(true), 3000);
-            return () => clearTimeout(timer);
+            const showTimer = setTimeout(() => {
+                setShowPushBanner(true);
+                setTimeout(() => setShowPushBanner(false), 12000);
+            }, 3000);
+            return () => clearTimeout(showTimer);
         }
     }, [user, isSubscribed, permission]);
 
@@ -219,6 +222,17 @@ export function useGlobalChatListener() {
             }
         };
 
+        let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+        function showChatToast(msg: any) {
+            if (toastTimer) clearTimeout(toastTimer);
+            setToastMessage(msg);
+            toastTimer = setTimeout(() => {
+                setToastMessage(null);
+                toastTimer = null;
+            }, 6000);
+        }
+
         const personalSub = personalChannel
             .on(
                 'broadcast' as any,
@@ -240,7 +254,7 @@ export function useGlobalChatListener() {
                             const activeOrder = useChatStore.getState().activeOrderId;
                             if (activeOrder !== newMessage.orderId) {
                                 playSound();
-                                setToastMessage({ ...newMessage, type: 'chat' });
+                                showChatToast({ ...newMessage, type: 'chat' });
                                 blinkTab('💬 Nuevo Mensaje');
                             }
                             useChatStore.getState().markAsUnread(newMessage.orderId, newMessage.id);
@@ -273,6 +287,7 @@ export function useGlobalChatListener() {
             .subscribe();
 
         return () => {
+            if (toastTimer) clearTimeout(toastTimer);
             stopBlink();
             supabase.removeChannel(personalSub);
             supabase.removeChannel(globalChannel);

@@ -243,7 +243,7 @@ export function useGlobalChatListener() {
                                 setToastMessage({ ...newMessage, type: 'chat' });
                                 blinkTab('💬 Nuevo Mensaje');
                             }
-                            useChatStore.getState().markAsUnread(newMessage.orderId);
+                            useChatStore.getState().markAsUnread(newMessage.orderId, newMessage.id);
                         }
                     }
 
@@ -267,7 +267,7 @@ export function useGlobalChatListener() {
             .on('broadcast', { event: 'new_message' }, (payload: any) => {
                 const data = payload.payload;
                 if (data.new && data.new.senderId !== user.id) {
-                    useChatStore.getState().markAsUnread(data.new.orderId);
+                    useChatStore.getState().markAsUnread(data.new.orderId, data.new.id);
                 }
             })
             .subscribe();

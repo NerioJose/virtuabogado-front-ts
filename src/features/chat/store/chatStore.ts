@@ -3,6 +3,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Message } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 
+const processedMessageIds = new Set<string>();
+const MAX_PROCESSED = 5000;
+
 interface ChatStore {
     messages: Message[];
     isLoading: boolean;
@@ -15,7 +18,7 @@ interface ChatStore {
     addMessage: (message: Message) => void;
     sendMessage: (content: string, senderId: string) => Promise<void>;
     sendFile: (file: File, senderId: string) => Promise<void>;
-    markAsUnread: (orderId: string) => void;
+    markAsUnread: (orderId: string, messageId?: string) => void;
     markAsRead: (orderId: string) => void;
     cleanup: () => void;
 }
@@ -98,7 +101,16 @@ export const useChatStore = create<ChatStore>()(
                 }
             },
 
-            markAsUnread: (orderId) => {
+            markAsUnread: (orderId, messageId) => {
+                if (messageId) {
+                    if (processedMessageIds.has(messageId)) return;
+                    processedMessageIds.add(messageId);
+                    if (processedMessageIds.size > MAX_PROCESSED) {
+                        const entries = [...processedMessageIds];
+                        processedMessageIds.clear();
+                        entries.slice(-MAX_PROCESSED / 2).forEach(id => processedMessageIds.add(id));
+                    }
+                }
                 set((state) => {
                     if (state.activeOrderId === orderId) return state;
                     const newOrders = state.unreadOrders.includes(orderId)

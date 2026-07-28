@@ -9,7 +9,6 @@ import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { FINANCIAL_SETTINGS_KEYS } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { useChatStore } from '@/features/chat/store/chatStore';
-
 export type RealtimeConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
 
 export const useRealtimeSubscription = () => {
@@ -85,7 +84,7 @@ export const useRealtimeSubscription = () => {
             if (data.new) {
                 queryClient.invalidateQueries({ queryKey: ['chat', 'messages', data.new.orderId] });
                 if (data.new.senderId !== user?.id) {
-                    useChatStore.getState().markAsUnread(data.new.orderId);
+                    useChatStore.getState().markAsUnread(data.new.orderId, data.new.id);
                 }
             }
         };
@@ -187,7 +186,7 @@ export const useRealtimeSubscription = () => {
                             type: 'active'
                         });
                         if (payload.new.senderId !== user?.id) {
-                            useChatStore.getState().markAsUnread(payload.new.orderId);
+                            useChatStore.getState().markAsUnread(payload.new.orderId, payload.new.id);
                         }
                     }
                     queryClient.invalidateQueries({ queryKey: ['Message'] });

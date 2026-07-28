@@ -9,6 +9,7 @@
  */
 
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
+import { WebSocket } from 'ws';
 
 let adminClient: SupabaseClient | null = null;
 
@@ -16,7 +17,12 @@ function getAdminClient(): SupabaseClient {
     if (!adminClient) {
         adminClient = createSupabaseClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                realtime: {
+                    transport: WebSocket as any,
+                },
+            }
         );
     }
     return adminClient;

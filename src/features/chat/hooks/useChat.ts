@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useResumableUpload } from '@/features/storage/hooks/useResumableUpload';
 import { compressImage } from '@/utils/imageCompression';
 import { documentsService } from '@/features/documents/services/documents.service';
+import { useChatStore } from '../store/chatStore';
 
 export const chatKeys = {
     all: ['chat'] as const,
@@ -24,6 +25,12 @@ export function useChat(orderId: string) {
         enabled: !!orderId,
         retry: false
     });
+
+    useEffect(() => {
+        if (!orderId || isLoading) return;
+        useChatStore.setState({ activeOrderId: orderId });
+        useChatStore.getState().markAsRead(orderId);
+    }, [orderId, isLoading]);
 
     // 2. Suscripción LOCAL para esta ventana de chat específica
     useEffect(() => {

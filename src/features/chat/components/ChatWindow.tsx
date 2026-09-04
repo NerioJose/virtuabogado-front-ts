@@ -183,6 +183,18 @@ export const ChatWindow = ({ orderId, className }: ChatWindowProps) => {
                     <p className="text-center text-gray-500 my-10">No hay mensajes aún. ¡Inicia la conversación!</p>
                 ) : (
                     messages.map((msg) => {
+                        if (msg.isSystem) {
+                            return (
+                                <div key={msg.id} className="flex justify-center">
+                                    <div className="relative max-w-[90%] lg:max-w-[75%] px-4 py-2.5 rounded-2xl text-xs italic text-gray-500 bg-gray-50 border border-gray-100 text-center shadow-sm leading-relaxed whitespace-pre-wrap">
+                                        {msg.content}
+                                        <span className="block mt-1 text-[10px] text-gray-400 not-italic">
+                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        }
                         const isMe = msg.senderId === user?.id;
                         return (
                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>

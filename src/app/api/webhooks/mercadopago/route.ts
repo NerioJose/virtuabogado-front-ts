@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
                 },
                 metadata: { idempotencyKey: `mercadopago-webhook-${payment.id}` },
             });
-        } else if (['rejected', 'cancelled', 'charged_back'].includes(payment.status)) {
+        } else if (payment.status && ['rejected', 'cancelled', 'charged_back'].includes(payment.status)) {
             await prisma.order.update({
                 where: { id: orderId },
                 data: { status: 'PAGO_RECHAZADO' },

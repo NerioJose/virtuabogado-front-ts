@@ -7,37 +7,53 @@ const MEDIA_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'do
 
 export const linkifyText = (text: string, isMe: boolean, azulPrimarioClass: string) => {
     const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.(?:com|net|org|edu|gov|io|co|es|cl|mx|ar|pe|co\.ve)(?:\/[^\s]*)?)/gi;
-    const parts = text.split(urlRegex);
-    
-    return parts.map((part, i) => {
-        if (part && part.match(urlRegex)) {
-            let cleanUrl = part;
-            let suffix = '';
-            const lastChar = cleanUrl.slice(-1);
-            if (['.', ',', ')', '!', '?', ';'].includes(lastChar)) {
-                suffix = lastChar;
-                cleanUrl = cleanUrl.slice(0, -1);
+
+    const renderWithUrls = (segment: string, keyBase: string) => {
+        const parts = segment.split(urlRegex);
+        return parts.map((part, i) => {
+            if (part && part.match(urlRegex)) {
+                let cleanUrl = part;
+                let suffix = '';
+                const lastChar = cleanUrl.slice(-1);
+                if (['.', ',', ')', '!', '?', ';'].includes(lastChar)) {
+                    suffix = lastChar;
+                    cleanUrl = cleanUrl.slice(0, -1);
+                }
+
+                const href = cleanUrl.startsWith('http') 
+                    ? cleanUrl 
+                    : `https://${cleanUrl.startsWith('www.') ? cleanUrl : cleanUrl}`;
+
+                return (
+                    <span key={`${keyBase}-url-${i}`}>
+                        <a 
+                            href={href} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className={`${isMe ? 'text-white underline hover:text-blue-100' : `${azulPrimarioClass} underline hover:text-azul-primario/80`} transition-opacity break-all font-medium`}
+                        >
+                            {cleanUrl}
+                        </a>
+                        {suffix}
+                    </span>
+                );
             }
+            return part;
+        });
+    };
 
-            const href = cleanUrl.startsWith('http') 
-                ? cleanUrl 
-                : `https://${cleanUrl.startsWith('www.') ? cleanUrl : cleanUrl}`;
-
+    const boldParts = text.split(/(\*\*[^*]+\*\*)/g);
+    return boldParts.map((part, i) => {
+        if (!part) return null;
+        if (part.startsWith('**') && part.endsWith('**')) {
+            const inner = part.slice(2, -2);
             return (
-                <span key={`part-${i}`}>
-                    <a 
-                        href={href} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className={`${isMe ? 'text-white underline hover:text-blue-100' : `${azulPrimarioClass} underline hover:text-azul-primario/80`} transition-opacity break-all font-medium`}
-                    >
-                        {cleanUrl}
-                    </a>
-                    {suffix}
-                </span>
+                <strong key={`${i}-bold`} className="font-bold">
+                    {renderWithUrls(inner, `b-${i}`)}
+                </strong>
             );
         }
-        return part;
+        return <span key={`${i}-text`}>{renderWithUrls(part, `t-${i}`)}</span>;
     });
 };
 

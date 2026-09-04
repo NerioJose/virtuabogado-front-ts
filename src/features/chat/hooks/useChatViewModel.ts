@@ -53,7 +53,14 @@ export function useChatViewModel(orderId: string) {
             document.cookie = "chatSoundEnabled=true; path=/; max-age=31536000";
         }
 
+        useChatStore.setState({ activeOrderId: orderId });
         useChatStore.getState().markAsRead(orderId);
+
+        return () => {
+            useChatStore.setState((state) =>
+                state.activeOrderId === orderId ? { activeOrderId: null } : state
+            );
+        };
     }, [orderId]);
 
     const toggleSound = () => {

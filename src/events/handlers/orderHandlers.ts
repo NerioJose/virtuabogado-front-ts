@@ -1,8 +1,20 @@
 import { prisma } from '@/lib/prisma'
 import { on } from '@/events/registry'
 import { broadcastOrderUpdate } from '@/lib/broadcast'
+import { getSystemUserId } from '@/lib/systemUser'
 import { OrderStatus, UserRole } from '@/shared/types/entities.types'
 import type { OrderReassigned } from '@/events/definitions'
+import { emit } from '@/events/eventBus'
+
+async function notifyChat(orderId: string, senderId: string, content: string, isSystem: boolean) {
+  const message = await prisma.message.create({
+    data: { orderId, senderId, content, read: false, isSystem },
+  })
+  await emit({
+    type: 'message.sent',
+    data: { messageId: message.id, orderId, senderId, content },
+  })
+}
 
 on('order.payment_received', async (event) => {
   const { orderId, paymentId } = event.data as { orderId: string; paymentId: string }
@@ -44,6 +56,7 @@ on('order.payment_received', async (event) => {
   })
 
   const serviceName = currentOrder.service?.titulo || 'Servicio Legal'
+  const userName = currentOrder.user?.nombre || 'usuario'
 
   await broadcastOrderUpdate({
     orderId,
@@ -53,8 +66,15 @@ on('order.payment_received', async (event) => {
     eventType: 'updated',
   })
 
-  const { emit } = await import('@/events/eventBus')
-  if (targetLawyerId) {
+  if (!targetLawyerId) {
+    const systemUserId = await getSystemUserId()
+    await notifyChat(
+      orderId,
+      systemUserId,
+      `¡Hola, ${userName}! 🙌 Gracias por confiar en nosotros.\n\nTu pago fue recibido correctamente ✅ y estamos asignando un abogado para atender tu caso "${serviceName}".\n\nEn cuanto sea asignado, te avisaremos aquí mismo.`,
+      true,
+    )
+  } else {
     await emit({
       type: 'order.assigned',
       data: { orderId, lawyerId: targetLawyerId, userId: currentOrder.userId, serviceName },
@@ -72,6 +92,11 @@ on('order.assigned', async (event) => {
 
   if (!order) return
 
+  const lawyer = await prisma.user.findUnique({
+    where: { id: lawyerId },
+    select: { nombre: true },
+  })
+
   await broadcastOrderUpdate({
     orderId,
     userId: order.userId,
@@ -80,6 +105,13 @@ on('order.assigned', async (event) => {
     eventType: 'updated',
     isNewAssignment: true,
   })
+
+  await notifyChat(
+    orderId,
+    lawyerId,
+    `¡Hola, ${order.user?.nombre || 'usuario'}! 👋\n\nMe presento: soy **${lawyer?.nombre || 'tu abogado'}**, y seré quien atienda tu caso **"${serviceName || 'Servicio Legal'}"** de ahora en adelante.\n\nEn breve te enviaré el enlace para comenzar nuestra **videollamada**, donde revisaremos tu caso y resolveremos todas tus dudas. 🎥\n\nSi necesitas algo mientras tanto, escríbeme aquí mismo, estoy para ayudarte.`,
+    false,
+  )
 })
 
 on('order.reassigned', async (event) => {

@@ -1,4 +1,11 @@
 import crypto from 'crypto';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
+import type { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes';
+
+/**
+ * Método de pago aceptado por el servicio.
+ */
+type PaymentMethod = 'card' | 'yape';
 
 interface MercadoPagoCreatePaymentRequest {
     orderId: string;
@@ -19,102 +26,54 @@ interface MercadoPagoCreatePaymentRequest {
     bin?: string;
 }
 
-interface MercadoPagoPaymentResult {
-    id: number;
-    status: string;
-    status_detail: string;
-    transaction_amount: number;
-    currency_id: string;
-    external_reference: string;
-    installments?: number;
-    payer?: {
-        id?: string;
-        email?: string;
-        type?: string;
-        identification?: {
-            type?: string;
-            number?: string;
-        };
-    };
-    transaction_details?: {
-        net_received_amount?: number;
-        total_paid_amount?: number;
-    };
-    fee_details?: Array<{
-        type?: string;
-        amount?: string;
-        fee_payer?: string;
-    }>;
-}
-
-const MP_API_BASE = 'https://api.mercadopago.com';
-
 /**
- * Servicio de integración con MercadoPago (Checkout Bricks / Card Payment).
+ * Servicio de integración con MercadoPago usando la SDK oficial de Node
+ * (`mercadopago` v3). Aplica tanto a tarjeta (Card Payment Brick) como a
+ * Yape (Checkout API — celular + OTP → token Yape).
  *
  * IMPORTANTE — Seguridad:
  *  - El monto (transaction_amount) SIEMPRE se calcula server-side a partir del
  *    order.total (USD) convertido a PEN con el tipo de cambio del día.
  *    Nunca se debe confiar en un monto enviado por el cliente.
+ *  - Los datos de tarjeta jamás tocan el servidor: el Brick los captura en
+ *    secure fields y solo se envía el payment_token (PCI SAQ-A).
  */
 export class MercadoPagoService {
     private static accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
     private static webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET || '';
 
-    private static async request<T>(path: string, init?: RequestInit): Promise<T> {
+    private static payment: Payment | null = null;
+
+    /**
+     * Cliente de la SDK inicializado una sola vez con el access token.
+     */
+    private static getPaymentClient(): Payment {
         if (!this.accessToken) {
             console.error('❌ [MercadoPago] Missing MERCADOPAGO_ACCESS_TOKEN');
             throw new Error('Configuración de pago incompleta en el servidor.');
         }
-
-        const extraHeaders: Record<string, string> = {};
-        if (init?.headers) {
-            const h = init.headers as Record<string, string>;
-            if (h['X-Idempotency-Key']) {
-                extraHeaders['X-Idempotency-Key'] = h['X-Idempotency-Key'];
-            }
-        }
-
-        const res = await fetch(`${MP_API_BASE}${path}`, {
-            ...init,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${this.accessToken}`,
-                ...extraHeaders,
-                ...(init?.headers as Record<string, string>),
-            },
-            cache: 'no-store',
-        });
-
-        const text = await res.text();
-        let body: any;
-        try {
-            body = text ? JSON.parse(text) : null;
-        } catch {
-            body = text;
-        }
-
-        if (!res.ok) {
-            console.error('🛑 [MercadoPago] Error de API:', {
-                status: res.status,
-                path,
-                error: typeof body === 'object' ? body : text,
+        if (!this.payment) {
+            const config = new MercadoPagoConfig({
+                accessToken: this.accessToken,
+                options: {
+                    timeout: 15000,
+                    // Identificador de integrador certificado (mejora calidad/seguridad).
+                    integratorId: process.env.MERCADOPAGO_INTEGRATOR_ID || undefined,
+                },
             });
-            throw new Error(
-                `MercadoPago API Error: ${res.status} - ${
-                    typeof body === 'object' ? JSON.stringify(body) : text
-                }`
-            );
+            this.payment = new Payment(config);
         }
-
-        return body as T;
+        return this.payment;
     }
 
     /**
-     * Crea un pago con el payment_token generado por el Card Payment Brick.
+     * Construye el body de creación de pago compartido por tarjeta y Yape,
+     * marcando la diferencia por el método elegido.
      */
-    static async createPayment(request: MercadoPagoCreatePaymentRequest): Promise<MercadoPagoPaymentResult> {
-        // Payer enriquecido: nombre (first/last) y teléfono si están disponibles.
+    private static buildPaymentBody(
+        request: MercadoPagoCreatePaymentRequest,
+        method: PaymentMethod
+    ): Record<string, unknown> {
         const payer: Record<string, unknown> = {
             email: request.payerEmail,
         };
@@ -135,6 +94,23 @@ export class MercadoPagoService {
             notification_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/webhooks/mercadopago`,
         };
 
+        if (method === 'yape') {
+            body.payment_method_id = 'yape';
+        } else {
+            // payment_method_id/payment_type_id SOLO si el SDK entrega valores reales
+            // (ej. 'visa', 'master'). Nunca 'card': MP lo rechaza. Si no vienen,
+            // MP infiere el método desde el token.
+            if (request.paymentMethodId && request.paymentMethodId !== 'card') {
+                body.payment_method_id = request.paymentMethodId;
+            }
+            if (request.paymentTypeId) {
+                body.payment_type_id = request.paymentTypeId;
+            }
+            if (request.issuerId) {
+                body.issuer_id = request.issuerId;
+            }
+        }
+
         // Datos del ítem (additional_info) para mejorar la aprobación de pagos.
         if (request.itemTitle) {
             body.additional_info = {
@@ -150,32 +126,53 @@ export class MercadoPagoService {
             };
         }
 
-        // payment_method_id/payment_type_id SOLO si el SDK entrega valores reales
-        // (ej. 'visa', 'master'). Nunca 'card': MP lo rechaza con "Invalid parameters
-        // for payment_method API". Si no vienen, MP infiere el método desde el token.
-        if (request.paymentMethodId && request.paymentMethodId !== 'card') {
-            body.payment_method_id = request.paymentMethodId;
-        }
-        if (request.paymentTypeId) {
-            body.payment_type_id = request.paymentTypeId;
-        }
-        if (request.issuerId) {
-            body.issuer_id = request.issuerId;
-        }
+        return body;
+    }
 
-        const headers: Record<string, string> = { 'X-Idempotency-Key': `${request.orderId}-${request.paymentToken}` };
-        // Device ID (X-meli-session-id) para mejorar la evaluación antifraude.
+    /**
+     * Crea un pago (tarjeta o Yape) usando la SDK oficial de MercadoPago.
+     *
+     * El Device ID (`MP_DEVICE_SESSION_ID` generado con security.js para
+     * antifraude) se envía de forma nativa a través de `options.meliSessionId`,
+     * que la SDK serializa como header `X-Meli-Session-Id`.
+     */
+    private static async create(request: MercadoPagoCreatePaymentRequest, method: PaymentMethod): Promise<PaymentResponse> {
+        const body = this.buildPaymentBody(request, method);
+        const requestOptions: Record<string, unknown> = {
+            idempotencyKey: `${request.orderId}-${request.paymentToken}`,
+        };
         if (request.deviceId) {
-            headers['X-meli-session-id'] = request.deviceId;
+            requestOptions.meliSessionId = request.deviceId;
         }
 
-        const result = await this.request<MercadoPagoPaymentResult>('/v1/payments', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-        });
+        try {
+            const result = await this.getPaymentClient().create({
+                body,
+                requestOptions,
+            });
+            return result;
+        } catch (error: any) {
+            // La SDK lanza errores tipados; aquí expone el detalle de la API
+            // (p. ej. 1004 invalid parameters). Registramos y re-lanzamos.
+            const apiError = error?.cause ?? error;
+            console.error('🛑 [MercadoPago] Error creando pago (SDK):', {
+                method,
+                status: apiError?.status,
+                message: apiError?.message,
+                cause: apiError?.cause ?? apiError,
+            });
+            throw new Error(
+                (apiError?.message as string) ||
+                'Error al procesar el pago con MercadoPago.'
+            );
+        }
+    }
 
-        return result;
+    /**
+     * Crea un pago con tarjeta (Card Payment Brick → payment token).
+     */
+    static async createPayment(request: MercadoPagoCreatePaymentRequest): Promise<PaymentResponse> {
+        return this.create(request, 'card');
     }
 
     /**
@@ -185,60 +182,28 @@ export class MercadoPagoService {
      * `mp.yape.create({ otp, phoneNumber })`. Aquí se crea el pago con
      * `payment_method_id: "yape"`. El monto se cobra en PEN (cálculo server-side).
      */
-    static async createYapePayment(request: MercadoPagoCreatePaymentRequest): Promise<MercadoPagoPaymentResult> {
-        const payer: Record<string, unknown> = {
-            email: request.payerEmail,
-        };
-        if (request.payerFirstName) payer.first_name = request.payerFirstName;
-        if (request.payerLastName) payer.last_name = request.payerLastName;
-        if (request.payerPhone) {
-            payer.phone = { number: request.payerPhone };
-        }
-
-        const body: Record<string, unknown> = {
-            token: request.paymentToken,
-            transaction_amount: request.amountPen,
-            installments: 1,
-            payment_method_id: 'yape',
-            payer,
-            description: request.description,
-            external_reference: request.orderId,
-            notification_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/webhooks/mercadopago`,
-        };
-
-        if (request.itemTitle) {
-            body.additional_info = {
-                items: [
-                    {
-                        id: request.orderId,
-                        title: request.itemTitle,
-                        ...(request.itemDescription ? { description: request.itemDescription } : {}),
-                        quantity: 1,
-                        unit_price: request.amountPen,
-                    },
-                ],
-            };
-        }
-
-        const headers: Record<string, string> = { 'X-Idempotency-Key': `${request.orderId}-${request.paymentToken}` };
-        if (request.deviceId) {
-            headers['X-meli-session-id'] = request.deviceId;
-        }
-
-        const result = await this.request<MercadoPagoPaymentResult>('/v1/payments', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-        });
-
-        return result;
+    static async createYapePayment(request: MercadoPagoCreatePaymentRequest): Promise<PaymentResponse> {
+        return this.create(request, 'yape');
     }
 
     /**
      * Consulta el detalle de un pago por su ID.
      */
-    static async getPayment(paymentId: string): Promise<MercadoPagoPaymentResult> {
-        return this.request<MercadoPagoPaymentResult>(`/v1/payments/${paymentId}`);
+    static async getPayment(paymentId: string): Promise<PaymentResponse> {
+        try {
+            return await this.getPaymentClient().get({ id: paymentId });
+        } catch (error: any) {
+            const apiError = error?.cause ?? error;
+            console.error('🛑 [MercadoPago] Error consultando pago (SDK):', {
+                paymentId,
+                status: apiError?.status,
+                message: apiError?.message,
+            });
+            throw new Error(
+                (apiError?.message as string) ||
+                'Error al consultar el pago con MercadoPago.'
+            );
+        }
     }
 
     /**

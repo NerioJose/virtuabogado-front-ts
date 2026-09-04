@@ -84,10 +84,16 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 							<div
 								key={conv.id}
 								onClick={() => setConversacionActiva(conv.id)}
-								className={`p-5 mx-2 my-1 rounded-2xl cursor-pointer transition duration-200 group ${conversacionActiva === conv.id 
-                                    ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25' 
-                                    : 'hover:bg-slate-50'
-									} ${conv.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}>
+								className={`p-5 mx-2 my-1 rounded-2xl cursor-pointer transition duration-200 group relative ${
+									conversacionActiva === conv.id 
+										? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25' 
+										: (unreadCounts[conv.id] || 0) > 0 || unreadOrders.includes(conv.id)
+											? 'bg-rose-50/70 border border-rose-200 hover:bg-rose-100'
+											: 'hover:bg-slate-50'
+								} ${conv.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}>
+								{(unreadCounts[conv.id] || 0) > 0 && (
+									<span className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-2xl" />
+								)}
 								<div className="flex justify-between items-start mb-1.5">
 									<h3 className={`text-sm font-black truncate pr-2 flex items-center gap-2 ${conversacionActiva === conv.id ? 'text-white' : 'text-slate-800'}`}>
 										{conv.participante}
@@ -111,8 +117,8 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 									{conv.caso}
 								</p>
 								<div className="flex items-center gap-1.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${conversacionActiva === conv.id ? 'bg-white' : 'bg-slate-300'}`} />
-                                    <p className={`text-xs truncate font-medium ${conversacionActiva === conv.id ? 'text-white/80' : 'text-slate-400 italic'}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${conversacionActiva === conv.id ? 'bg-white' : (unreadCounts[conv.id] || 0) > 0 ? 'bg-red-500' : 'bg-slate-300'}`} />
+                                    <p className={`text-xs truncate font-medium ${conversacionActiva === conv.id ? 'text-white/80' : (unreadCounts[conv.id] || 0) > 0 ? 'text-slate-700 font-bold' : 'text-slate-400 italic'}`}>
                                         {conv.ultimoMensaje}
                                     </p>
                                 </div>

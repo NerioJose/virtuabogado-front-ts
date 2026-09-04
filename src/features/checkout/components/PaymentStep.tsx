@@ -6,8 +6,10 @@ import { FiShield, FiCreditCard, FiArrowRight, FiCheckCircle } from 'react-icons
 import { SiBitcoin, SiVisa, SiMastercard, SiAmericanexpress } from 'react-icons/si';
 import { FaCcPaypal } from 'react-icons/fa';
 import { FiLoader } from 'react-icons/fi';
+import Image from 'next/image';
 import { usePaymentStep } from '../hooks/usePaymentStep';
 import { MercadoPagoCardStep } from './MercadoPagoCardStep';
+import { YapeStep } from './YapeStep';
 
 export const PaymentStep: React.FC = () => {
     const {
@@ -24,8 +26,18 @@ export const PaymentStep: React.FC = () => {
         handlePayment,
     } = usePaymentStep();
 
-    // Si se seleccionó MercadoPago, mostramos el Brick de tarjeta embebido
+    // Si se seleccionó un pago inline de MercadoPago (tarjeta o Yape), mostramos el paso embebido.
     if (activeMercadoPago && !isWaitingForWebhook) {
+        if (activeMercadoPago.mode === 'yape') {
+            return (
+                <YapeStep
+                    orderId={activeMercadoPago.orderId}
+                    amountUsd={activeMercadoPago.amountUsd}
+                    amountPen={activeMercadoPago.amountPen}
+                    payerEmail={activeMercadoPago.payerEmail || ''}
+                />
+            );
+        }
         return (
             <MercadoPagoCardStep
                 orderId={activeMercadoPago.orderId}
@@ -126,7 +138,16 @@ export const PaymentStep: React.FC = () => {
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform border ${
                                 isSelected ? 'bg-azul-primario text-white border-azul-primario' : 'bg-gray-50 text-azul-primario group-hover:scale-110 border-gray-100'
                             }`}>
-                                {method.identifier === 'zenobank' ? (
+                                {method.identifier === 'yape' ? (
+                                    <Image
+                                        src="/images/yape-logo.png"
+                                        alt="Yape"
+                                        width={28}
+                                        height={28}
+                                        className="object-contain"
+                                        style={{ filter: isSelected ? 'brightness(0) invert(1)' : 'none' }}
+                                    />
+                                ) : method.identifier === 'zenobank' ? (
                                     <SiBitcoin size={24} className="group-hover:text-[#f7931a]" />
                                 ) : (
                                     <FiCreditCard size={24} />

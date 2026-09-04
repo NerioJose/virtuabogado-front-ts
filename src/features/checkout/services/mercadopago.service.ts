@@ -179,6 +179,62 @@ export class MercadoPagoService {
     }
 
     /**
+     * Crea un pago con Yape (Checkout API — celular + OTP → token Yape).
+     *
+     * El token Yape es de un solo uso por compra y se genera en el cliente con
+     * `mp.yape.create({ otp, phoneNumber })`. Aquí se crea el pago con
+     * `payment_method_id: "yape"`. El monto se cobra en PEN (cálculo server-side).
+     */
+    static async createYapePayment(request: MercadoPagoCreatePaymentRequest): Promise<MercadoPagoPaymentResult> {
+        const payer: Record<string, unknown> = {
+            email: request.payerEmail,
+        };
+        if (request.payerFirstName) payer.first_name = request.payerFirstName;
+        if (request.payerLastName) payer.last_name = request.payerLastName;
+        if (request.payerPhone) {
+            payer.phone = { number: request.payerPhone };
+        }
+
+        const body: Record<string, unknown> = {
+            token: request.paymentToken,
+            transaction_amount: request.amountPen,
+            installments: 1,
+            payment_method_id: 'yape',
+            payer,
+            description: request.description,
+            external_reference: request.orderId,
+            notification_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/webhooks/mercadopago`,
+        };
+
+        if (request.itemTitle) {
+            body.additional_info = {
+                items: [
+                    {
+                        id: request.orderId,
+                        title: request.itemTitle,
+                        ...(request.itemDescription ? { description: request.itemDescription } : {}),
+                        quantity: 1,
+                        unit_price: request.amountPen,
+                    },
+                ],
+            };
+        }
+
+        const headers: Record<string, string> = { 'X-Idempotency-Key': `${request.orderId}-${request.paymentToken}` };
+        if (request.deviceId) {
+            headers['X-meli-session-id'] = request.deviceId;
+        }
+
+        const result = await this.request<MercadoPagoPaymentResult>('/v1/payments', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+        });
+
+        return result;
+    }
+
+    /**
      * Consulta el detalle de un pago por su ID.
      */
     static async getPayment(paymentId: string): Promise<MercadoPagoPaymentResult> {

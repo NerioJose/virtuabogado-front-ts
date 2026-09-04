@@ -147,5 +147,17 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         };
     }
 
+    // LÓGICA YAPE (Checkout API — celular + OTP embebido)
+    // La orden queda en PAGO_PENDIENTE. El front muestra el formulario Yape
+    // (celular + OTP), genera el token y lo envía a /api/payments/yape.
+    if (paymentMethod.identifier === 'yape') {
+        return {
+            success: true,
+            message: 'Complete el pago con Yape.',
+            order: { id: order.id, status: order.status },
+            yape: true,
+        };
+    }
+
     throw new Error('Pasarela de pago no soportada.');
 }

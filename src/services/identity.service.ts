@@ -16,7 +16,7 @@ interface SyncOptions {
 }
 
 export async function syncUserIdentity(
-  supabaseUser: { id: string; email: string | null; user_metadata?: Record<string, any> | null },
+  supabaseUser: { id: string; email?: string | null; user_metadata?: Record<string, any> | null },
   extraData: ExtraData = {},
   options: SyncOptions = {},
 ) {

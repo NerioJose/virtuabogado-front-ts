@@ -37,6 +37,8 @@ export interface Order {
     total: number;
     status: OrderStatus;
     paymentMethod: PaymentMethod;
+    paymentMethodIdentifier?: string | null;
+    paymentMethodName?: string | null;
     transactionId?: string;
     createdAt: string | Date;
     updatedAt: string | Date;

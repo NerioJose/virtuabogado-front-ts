@@ -315,7 +315,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                 
                 const result = await processPaymentAction({
                     serviceId: state.service.id,
-                    paymentMethodId: state.paymentMethod === 'card' ? 'mock' : state.paymentMethod // Ajuste temporal según IDENTIFIER
+                    paymentMethodId: state.paymentMethod === 'card' ? 'mercadopago' : state.paymentMethod
                 });
 
                 if (!result.success) {

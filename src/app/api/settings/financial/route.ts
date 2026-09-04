@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
                 tax_percentage: 0,
                 platform_fee_percentage: 0,
                 simulation_base: 0,
+                usd_pen_fallback_rate: null,
                 whatsappPhone: null,
                 updated_at: new Date(),
                 updated_by: 'system'
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
             taxPercentage: Number(settings.tax_percentage),
             platformFeePercentage: isAdmin ? Number(settings.platform_fee_percentage) : 0,
             simulationBase: isAdmin ? Number(settings.simulation_base || 0) : 0,
+            usdPenFallbackRate: isAdmin ? Number(settings.usd_pen_fallback_rate ?? null) : null,
             whatsappPhone: (settings as any).whatsappPhone || (settings as any).whatsapp_phone || null,
             updatedAt: settings.updated_at || settings.updatedAt || new Date(),
             updatedBy: isAdmin ? settings.updated_by : undefined,
@@ -114,6 +116,7 @@ export async function PATCH(request: NextRequest) {
         if (body.taxPercentage !== undefined) updates.tax_percentage = parseFloat(body.taxPercentage);
         if (body.platformFeePercentage !== undefined) updates.platform_fee_percentage = parseFloat(body.platformFeePercentage);
         if (body.simulationBase !== undefined) updates.simulation_base = parseFloat(body.simulationBase);
+        if (body.usdPenFallbackRate !== undefined) updates.usd_pen_fallback_rate = body.usdPenFallbackRate === null ? null : parseFloat(body.usdPenFallbackRate);
         if (body.whatsappPhone !== undefined) updates.whatsappPhone = body.whatsappPhone;
 
         const getSettingsModel = () => {

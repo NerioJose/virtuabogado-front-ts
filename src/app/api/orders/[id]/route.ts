@@ -31,6 +31,12 @@ export async function GET(
                     nombre: true,
                     email: true
                 }
+            },
+            paymentMethod: {
+                select: {
+                    identifier: true,
+                    name: true
+                }
             }
         } as const;
 
@@ -47,6 +53,8 @@ export async function GET(
             ...order,
             userName: order.user?.nombre || 'Usuario',
             userEmail: order.user?.email || '',
+            paymentMethodIdentifier: order.paymentMethod?.identifier || null,
+            paymentMethodName: order.paymentMethod?.name || null,
             items: [{
                 id: order.service.id,
                 serviceId: order.service.id,

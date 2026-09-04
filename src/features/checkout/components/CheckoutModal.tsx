@@ -40,7 +40,7 @@ const ZenobankTacticalAlert: React.FC<{ total: number }> = ({ total }) => {
                     Requisito de Activación Inmediata
                 </p>
                 <p className="text-[10px] text-amber-900 leading-tight font-medium">
-                    Al usar <span className="font-bold">Zenobank</span>, debes transferir el monto <span className="font-bold underline text-amber-800 uppercase tracking-tighter">EXACTO</span> incluyendo todos los decimales para evitar rechazos:
+                    Al pagar con <span className="font-bold">Criptomonedas</span>, debes transferir el monto <span className="font-bold underline text-amber-800 uppercase tracking-tighter">EXACTO</span> incluyendo todos los decimales para evitar rechazos:
                 </p>
                 <div className="bg-white/40 px-3 py-1.5 rounded-lg border border-amber-200 flex justify-between items-center mt-2">
                     <span className="text-[9px] font-bold text-amber-900/60 uppercase">Importe Requerido:</span>

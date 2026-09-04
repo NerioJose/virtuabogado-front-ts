@@ -396,7 +396,7 @@ export default function ModalContainer({
 							</form>
 
 							{/* TABS DE SUPERVISIÓN PARA ADMIN (SOLO EN MODO VER) */}
-							{tipo === 'ver' && (seccion === 'casos' || seccion === 'finanzas' || seccion === 'dashboard') && (elemento as any)?.id && (
+							{tipo === 'ver' && (seccion === 'casos' || seccion === 'finanzas') && (elemento as any)?.id && (
 								<AdminSupervisionTabs orderId={(elemento as any).id} elemento={elemento} />
 							)}
 						</div>

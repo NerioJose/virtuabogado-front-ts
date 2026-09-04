@@ -82,6 +82,11 @@ export const useRealtimeSubscription = () => {
                 queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
             }
+
+            if (eventName === 'payment-method-updated') {
+                // Tiempo real: la lista de pasarelas aparece/desaparece sin refrescar.
+                queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
+            }
         };
 
         // Canal global - todos los administradores y usuarios lo reciben
@@ -90,6 +95,7 @@ export const useRealtimeSubscription = () => {
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
             .on('broadcast', { event: 'payout-updated' }, handleUpdate)
+            .on('broadcast', { event: 'payment-method-updated' }, handleUpdate)
             .subscribe((status) => {
                 
             });

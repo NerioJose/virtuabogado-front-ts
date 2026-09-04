@@ -89,6 +89,6 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         handleConfirmarCompletar,
         formatearFecha,
         isUpdating: updateOrder.isPending,
-        ordenActual: orders.find((o: any) => o.id === conversacionActiva)
+        ordenActual: ((response as any)?.data || []).find((o: any) => o.id === conversacionActiva)
     };
 }

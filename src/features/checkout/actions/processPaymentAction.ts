@@ -5,7 +5,6 @@ const prisma = prismaClient as any;
 import { createClient } from '@/utils/supabase/server';
 import { ZenobankService } from '../services/zenobank.service';
 import { serializeFinance } from '@/lib/finance';
-import { UserRole, OrderStatus } from '@/shared/types/entities.types';
 import { syncUserIdentity } from '@/services/identity.service';
 
 interface ProcessPaymentParams {
@@ -71,23 +70,9 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
     */
     let order: any = null;
 
-    // 👨‍⚖️ AUTO-ASSIGNMENT: Si solo hay un abogado activo, asignar automáticamente
-    const activeLawyers = await prisma.user.findMany({
-        where: {
-            rol: UserRole.ABOGADO,
-            activo: true
-        },
-        select: { id: true }
-    });
-
-    let autoAssignedLawyerId: string | null = null;
-    let assignedAt: Date | null = null;
-
-    if (activeLawyers.length === 1) {
-        autoAssignedLawyerId = activeLawyers[0].id;
-        assignedAt = new Date();
-        
-    }
+    // NOTA PESIMISTA: NO se asigna abogado aquí. La asignación (auto o manual) solo
+    // ocurre cuando la pasarela confirma el pago ('order.payment_received' → orderHandlers).
+    // Así, una orden en PAGO_PENDIENTE/PAGO_RECHAZADO jamás tiene abogado/caso asociado.
 
     if (false) { // Bloque de reutilización deshabilitado (forzar nueva orden)
         // ... logic
@@ -104,8 +89,6 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 taxAmount: taxes,
                 platformFeeAmount: platformFee,
                 netProfitAmount: platformFee,
-                lawyerId: autoAssignedLawyerId,
-                assignedAt
             }
         });
         
@@ -150,20 +133,17 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         }
     }
 
-    // LÓGICA MOCK y STRIPE (Simulada por ahora)
-    if (paymentMethod.identifier === 'mock' || paymentMethod.identifier === 'stripe') {
-         const finalOrder = await prisma.order.update({
-            where: { id: order.id },
-            data: { 
-                status: 'COMPLETADO',
-                paymentId: `MOCK-${Date.now()}`
-            }
-        });
-
-        return { 
-            success: true, 
-            message: 'Pago completado con éxito.',
-            order: { id: finalOrder.id, status: finalOrder.status }
+    // LÓGICA MERCADOPAGO (Checkout Bricks — tarjeta embebida)
+    // La orden ya quedó en PAGO_PENDIENTE. No redirigimos: el front muestra el
+    // Brick de tarjeta y envía el payment_token a /api/payments/mercadopago.
+    // La asignación de casos se dispara vía evento order.payment_received (igual que Zenobank).
+    if (paymentMethod.identifier === 'mercadopago') {
+        return {
+            success: true,
+            message: 'Complete el pago con su tarjeta.',
+            order: { id: order.id, status: order.status },
+            // sin redirectUrl: flujo inline
+            mercadopago: true,
         };
     }
 

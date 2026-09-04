@@ -2,13 +2,14 @@
 
 import React, { use, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCheckCircle, FiArrowRight, FiFileText, FiMessageSquare, FiLoader, FiAlertCircle, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
+import { FiCheckCircle, FiArrowRight, FiFileText, FiMessageSquare, FiLoader, FiAlertCircle, FiRefreshCw, FiAlertTriangle, FiCreditCard } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import { useQueryClient } from '@tanstack/react-query';
 import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
+import { cleanupCheckoutAfterPayment } from '@/features/checkout/utils/checkoutCleanup';
 
 export default function PaymentSuccessPage({
     searchParams
@@ -26,6 +27,11 @@ export default function PaymentSuccessPage({
     const queryClient = useQueryClient();
     const router = useRouter();
 
+    // Seguridad: al llegar a la página de resultado, el checkout no debe reabrirse.
+    useEffect(() => {
+        cleanupCheckoutAfterPayment();
+    }, []);
+
     const [timeoutReached, setTimeoutReached] = useState(false);
 
     const currentStatus = order?.status;
@@ -34,6 +40,9 @@ export default function PaymentSuccessPage({
     const isApproved = currentStatus && ['PAID', 'EN_PROGRESO', 'COMPLETADO'].includes(currentStatus);
 
     const isFailed = ['PAGO_RECHAZADO', 'FALLIDO', 'CANCELADO'].includes(currentStatus || '');
+
+    // Para dinamizar textos/logo según el método de pago de la orden.
+    const isCard = order?.paymentMethodIdentifier === 'mercadopago';
 
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
@@ -48,9 +57,12 @@ export default function PaymentSuccessPage({
     }, [isPendingApproval]);
 
     useEffect(() => {
-        if (isApproved) {
+        if (!isApproved) return;
+        // Mostrar la notificación de éxito ~3s antes de redirigir al panel.
+        const timer = setTimeout(() => {
             router.push('/mis-servicios');
-        }
+        }, 3000);
+        return () => clearTimeout(timer);
     }, [isApproved, router]);
 
     const handleRetry = useCallback(() => {
@@ -127,7 +139,9 @@ export default function PaymentSuccessPage({
                                         Demora en la Verificación
                                     </h1>
                                     <p className="text-gray-600 mb-8 leading-relaxed">
-                                        El pago fue procesado pero estamos esperando la confirmación de Zenobank. En la mayoría de los casos, la confirmación llega en segundos.
+                                        {isCard
+                                            ? 'El pago fue procesado pero estamos esperando la confirmación de la pasarela de pago. En la mayoría de los casos, la confirmación llega en segundos.'
+                                            : 'El pago fue procesado pero estamos esperando la confirmación de Zenobank. En la mayoría de los casos, la confirmación llega en segundos.'}
                                     </p>
                                     <button type="button" 
                                         onClick={handleRetry}
@@ -142,10 +156,14 @@ export default function PaymentSuccessPage({
                                     <div className="w-24 h-24 mx-auto mb-6 relative flex items-center justify-center">
                                         <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
                                         <div className="absolute inset-0 rounded-full border-4 border-azul-primario border-t-transparent animate-spin"></div>
-                                        <Image src="/images/zenobank-logo.png" alt="Zenobank" width={32} height={32} className="opacity-50" />
+                                        {isCard ? (
+                                            <FiCreditCard className="text-azul-primario" size={28} />
+                                        ) : (
+                                            <Image src="/images/zenobank-logo.png" alt="Zenobank" width={32} height={32} className="opacity-50" />
+                                        )}
                                     </div>
                                     <h1 className="text-2xl font-black text-azul-primario mb-4 tracking-tight animate-pulse">
-                                        Validando con Zenobank...
+                                        {isCard ? 'Validando pago con tarjeta...' : 'Validando pago con criptomonedas...'}
                                     </h1>
                                     <p className="text-gray-500 mb-8 leading-relaxed text-sm">
                                         Por favor espera un momento mientras establecemos comunicación segura con la pasarela financiera. Refrescando automáticamente.
@@ -173,7 +191,9 @@ export default function PaymentSuccessPage({
                                 Pago Rechazado
                             </h1>
                             <p className="text-gray-600 mb-8 leading-relaxed">
-                                Lamentablemente, la transacción no pudo ser procesada o fue rechazada por Zenobank.
+                                {isCard
+                                    ? 'Lamentablemente, la transacción con tu tarjeta no pudo ser procesada o fue rechazada.'
+                                    : 'Lamentablemente, la transacción no pudo ser procesada o fue rechazada por Zenobank.'}
                             </p>
                             <Link href="/servicios">
                                 <button type="button" className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition">

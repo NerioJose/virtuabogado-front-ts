@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import { FiShield, FiCreditCard, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { SiBitcoin, SiVisa, SiMastercard, SiAmericanexpress } from 'react-icons/si';
 import { FaCcPaypal } from 'react-icons/fa';
+import { FiLoader } from 'react-icons/fi';
 import { usePaymentStep } from '../hooks/usePaymentStep';
+import { MercadoPagoCardStep } from './MercadoPagoCardStep';
 
 export const PaymentStep: React.FC = () => {
     const {
@@ -15,9 +17,24 @@ export const PaymentStep: React.FC = () => {
         isPaid,
         showFallbackButton,
         isProcessingPayment,
+        activeMercadoPago,
+        selectedMethod,
+        selectMethod,
         setStep,
-        handlePayment
+        handlePayment,
     } = usePaymentStep();
+
+    // Si se seleccionó MercadoPago, mostramos el Brick de tarjeta embebido
+    if (activeMercadoPago && !isWaitingForWebhook) {
+        return (
+            <MercadoPagoCardStep
+                orderId={activeMercadoPago.orderId}
+                amountUsd={activeMercadoPago.amountUsd}
+                amountPen={activeMercadoPago.amountPen}
+                payerEmail={activeMercadoPago.payerEmail || ''}
+            />
+        );
+    }
 
     if (isLoadingMethods) {
         return (
@@ -72,7 +89,7 @@ export const PaymentStep: React.FC = () => {
                 {/* No mostramos botón de rescate si el pago está confirmado o si preferimos flujo 100% automático */}
                 {showFallbackButton && !isPaid && (
                    <div className="pt-4 text-xs text-slate-400 italic font-medium animate-pulse">
-                     Sincronizando con Zenobank... un momento por favor.
+                     Sincronizando con la pasarela... un momento por favor.
                    </div>
                 )}
             </motion.div>
@@ -92,21 +109,25 @@ export const PaymentStep: React.FC = () => {
                     Selecciona tu Método de Pago Blindado
                 </p>
 
-                {methods.map((method: any) => (
+                {methods.map((method: any) => {
+                    const isSelected = selectedMethod === method.identifier;
+                    return (
                     <button type="button"
                         key={method.id}
-                        onClick={() => handlePayment(method.identifier)}
+                        onClick={() => selectMethod(method.identifier)}
                         disabled={isProcessingPayment}
                         className={`w-full group flex items-center justify-between p-4 rounded-2xl border-2 transition duration-300 disabled:opacity-50 shadow-sm hover:shadow-md bg-white ${
-                            method.identifier === 'zenobank'
-                                ? 'border-azul-primario shadow-azul-primario/5' 
+                            isSelected
+                                ? 'border-azul-primario bg-azul-claro/5 shadow-azul-primario/5' 
                                 : 'border-gray-100 hover:border-azul-primario hover:bg-azul-claro/5'
                         }`}
                     >
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-azul-primario group-hover:scale-110 transition-transform border border-gray-100">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform border ${
+                                isSelected ? 'bg-azul-primario text-white border-azul-primario' : 'bg-gray-50 text-azul-primario group-hover:scale-110 border-gray-100'
+                            }`}>
                                 {method.identifier === 'zenobank' ? (
-                                    <SiBitcoin size={24} className="text-[#f7931a]" />
+                                    <SiBitcoin size={24} className="group-hover:text-[#f7931a]" />
                                 ) : (
                                     <FiCreditCard size={24} />
                                 )}
@@ -116,9 +137,40 @@ export const PaymentStep: React.FC = () => {
                                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Encriptación de Punto a Punto</p>
                             </div>
                         </div>
-                        <FiArrowRight className="text-gray-300 group-hover:text-azul-primario group-hover:translate-x-1 transition" size={20} />
+                        {isSelected ? (
+                            <FiCheckCircle className="text-azul-primario shrink-0" size={20} />
+                        ) : (
+                            <FiArrowRight className="text-gray-300 group-hover:text-azul-primario group-hover:translate-x-1 transition" size={20} />
+                        )}
                     </button>
-                ))}
+                    );
+                })}
+
+                {/* Botón de pago: solo disponible tras seleccionar un método */}
+                <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => handlePayment(selectedMethod!)}
+                    disabled={!selectedMethod || isProcessingPayment}
+                    className={`w-full py-4 rounded-2xl font-bold shadow-lg transition flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed ${
+                        selectedMethod
+                            ? 'bg-azul-primario text-white shadow-azul-primario/25 hover:bg-azul-oscuro'
+                            : 'bg-gray-200 text-gray-500'
+                    }`}
+                >
+                    {isProcessingPayment ? (
+                        <>
+                            <FiLoader className="animate-spin" />
+                            <span>Procesando...</span>
+                        </>
+                    ) : (
+                        <>
+                            <span>{selectedMethod ? 'Pagar ahora' : 'Selecciona un método de pago'}</span>
+                            <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+                        </>
+                    )}
+                </motion.button>
             </div>
 
             {/* --- BARRA DE CONFIANZA: SEGURIDAD GARANTIZADA --- */}

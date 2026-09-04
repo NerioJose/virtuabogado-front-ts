@@ -9,6 +9,7 @@ export interface FinancialSettings {
     taxPercentage: number;
     platformFeePercentage: number;
     simulationBase: number;
+    usdPenFallbackRate?: number | null;
     whatsappPhone?: string;
     updatedAt: string;
     updatedBy?: string;
@@ -20,6 +21,7 @@ export interface UpdateFinancialSettingsRequest {
     taxPercentage?: number;
     platformFeePercentage?: number;
     simulationBase?: number;
+    usdPenFallbackRate?: number | null;
     whatsappPhone?: string;
 }
 

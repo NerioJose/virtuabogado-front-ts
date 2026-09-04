@@ -14,16 +14,16 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   const methods = [
     {
-      identifier: 'mock',
-      name: 'Tarjeta de Crédito / Débito',
-      isActive: true,
-      icon: 'FiCreditCard'
-    },
-    {
       identifier: 'zenobank',
       name: 'Criptomonedas',
       isActive: true,
       icon: 'SiBitcoin'
+    },
+    {
+      identifier: 'mercadopago',
+      name: 'Tarjeta de Crédito / Débito',
+      isActive: true,
+      icon: 'FiCreditCard'
     }
   ];
 

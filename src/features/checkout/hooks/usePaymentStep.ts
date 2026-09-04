@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
@@ -6,6 +6,7 @@ import { useOrderStatus } from '../hooks/useOrderStatus';
 import { useCheckout } from '../hooks/useCheckout';
 import { usePaymentMethods } from '../hooks/usePaymentMethods';
 import { processPaymentAction } from '../actions/processPaymentAction';
+import { cleanupCheckoutAfterPayment } from '../utils/checkoutCleanup';
 import { toast } from 'sonner';
 
 export const usePaymentStep = () => {
@@ -30,6 +31,17 @@ export const usePaymentStep = () => {
     }, []);
 
     const [showFallbackButton, setShowFallbackButton] = useState(false);
+    const [activeMercadoPago, setActiveMercadoPago] = useState<{
+        orderId: string;
+        amountUsd: number;
+        amountPen: number;
+        payerEmail?: string;
+    } | null>(null);
+    const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+    const selectMethod = (identifier: string) => {
+        setSelectedMethod(identifier);
+    };
 
     // Persistance cache
     useEffect(() => {
@@ -101,10 +113,46 @@ export const usePaymentStep = () => {
                     setOrderId(result.order.id);
                 }
 
+                // MERCADOPAGO (inline): mostrar el Brick de tarjeta en lugar de redirigir
+                if ((result as any)?.mercadopago && result.order?.id) {
+                    toast.success('Complete el pago con su tarjeta.', { id: loadingToast });
+                    try {
+                        const amountRes = await fetch(
+                            `/api/payments/mercadopago?orderId=${result.order.id}`,
+                            { cache: 'no-store' }
+                        );
+                        const amountData = await amountRes.json().catch(() => ({}));
+                        if (!amountRes.ok) {
+                            throw new Error(amountData?.error || 'No se pudo calcular el monto del pago.');
+                        }
+                        const amountPen = Number(amountData?.amountPen ?? 0);
+                        const amountUsd = Number(amountData?.amountUsd ?? 0);
+                        if (!(amountPen > 0)) {
+                            throw new Error('No se pudo calcular el monto del pago en soles (S/). Intente de nuevo.');
+                        }
+                        setActiveMercadoPago({
+                            orderId: result.order.id,
+                            amountUsd,
+                            amountPen,
+                            payerEmail: amountData?.payerEmail || '',
+                        });
+                    } catch (e: any) {
+                        setIsProcessingPayment(false);
+                        if (checkoutWindow) checkoutWindow.close();
+                        toast.error(e?.message || 'No se pudo calcular el monto del pago.', { id: loadingToast });
+                        return;
+                    }
+                    setIsProcessingPayment(false);
+                    if (checkoutWindow) checkoutWindow.close();
+                    return;
+                }
+
                 if (result.redirectUrl) {
                     toast.success('Sesión de pago iniciada. Redirigiendo...', { id: loadingToast });
                     setIsWaitingForWebhook(true);
-                    
+                    // Limpiar el checkout para que no se reabra al volver de la pasarela.
+                    cleanupCheckoutAfterPayment();
+
                     if (checkoutWindow) {
                         checkoutWindow.location.href = result.redirectUrl;
                     } else {
@@ -128,6 +176,13 @@ export const usePaymentStep = () => {
         }
     };
 
+    const handleMercadoPagoRedirect = useCallback((paidOrderId: string) => {
+        // MP ahora redirige a /payment/success|error desde el propio MercadoPagoCardStep.
+        // Este helper se mantiene por si algún flujo requiere volver a la espera.
+        setOrderId(paidOrderId);
+        setActiveMercadoPago(null);
+    }, [setOrderId, setActiveMercadoPago]);
+
     return {
         methods,
         isLoadingMethods,
@@ -135,7 +190,11 @@ export const usePaymentStep = () => {
         isPaid,
         showFallbackButton,
         isProcessingPayment,
+        activeMercadoPago,
+        selectedMethod,
+        selectMethod,
         setStep,
-        handlePayment
+        handlePayment,
+        handleMercadoPagoRedirect,
     };
 };

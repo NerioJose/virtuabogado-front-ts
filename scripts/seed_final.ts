@@ -90,6 +90,7 @@ async function main() {
       operational_costs_percentage: 10,
       tax_percentage: 15,
       platform_fee_percentage: 5,
+      usd_pen_fallback_rate: 3.5,
     }
   });
   console.log('✅ Configuración financiera inicializada.');

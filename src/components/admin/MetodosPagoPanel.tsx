@@ -85,7 +85,9 @@ export default function MetodosPagoPanel() {
                                     {method.identifier === 'zenobank' ? <FiActivity size={28} /> : <FiCreditCard size={28} />}
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-azul-primario">{method.name}</h3>
+                                    <h3 className="text-xl font-bold text-azul-primario flex items-center gap-2">
+                                        {method.name}
+                                    </h3>
                                     <div className="flex items-center gap-2 mt-1">
                                         {method.isActive ? (
                                             <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase tracking-wider">

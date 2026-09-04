@@ -63,9 +63,9 @@ const toastState = {
 function showToast(setter: typeof toastState.setter, msg: any) {
     toastState.setter = setter;
     if (toastState.timer) clearTimeout(toastState.timer);
-    setter(msg);
+    if (setter) setter(msg);
     toastState.timer = setTimeout(() => {
-        setter(null);
+        if (setter) setter(null);
         toastState.timer = null;
     }, 5000);
 }

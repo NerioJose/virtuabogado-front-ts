@@ -17,6 +17,12 @@ async function main() {
       name: 'Criptomonedas',
       isActive: true,
       icon: 'SiBitcoin'
+    },
+    {
+      identifier: 'mercadopago',
+      name: 'MercadoPago',
+      isActive: true,
+      icon: 'FiCreditCard'
     }
   ];
 

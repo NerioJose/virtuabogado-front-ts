@@ -153,3 +153,27 @@ export async function broadcastPayoutUpdate(params: {
     broadcasts.push(sendBroadcast(`global_${lawyerId}`, 'payout-updated', payload));
     await Promise.allSettled(broadcasts);
 }
+
+/**
+ * Notifica a todos los clientes conectados sobre un cambio en los métodos de pago
+ * (activar/desactivar/crear/editar/eliminar pasarela).
+ * Permite que la lista de pasarelas aparezca/desaparezca en tiempo real en el
+ * selector de pago sin necesidad de refrescar la página.
+ */
+export async function broadcastPaymentMethodUpdate(params: {
+    methodId: string;
+    identifier?: string | null;
+    eventType?: 'created' | 'updated' | 'deleted';
+}): Promise<void> {
+    const { methodId, identifier, eventType = 'updated' } = params;
+
+    const payload = {
+        methodId,
+        identifier,
+        eventType,
+        timestamp: new Date().toISOString(),
+    };
+
+    // Canal global de actualizaciones - escuchado por useRealtimeSubscription
+    await sendBroadcast('app-updates', 'payment-method-updated', payload);
+}

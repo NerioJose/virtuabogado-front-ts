@@ -33,8 +33,8 @@ interface PushNotificationOptions {
  * - Auto-limpieza de suscripciones expiradas (410/404)
  */
 export async function sendPushNotification(userId: string, options: PushNotificationOptions) {
-  if (!publicKey || !privateKey) {
-    const missing = !publicKey ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : 'VAPID_PRIVATE_KEY';
+  if (!publicKey || !privateKey || !email) {
+    const missing = !publicKey ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : !privateKey ? 'VAPID_PRIVATE_KEY' : 'VAPID_EMAIL';
     console.error(`🚨 [Push] Abortando envío. Falta variable de entorno: ${missing}`);
     return {
       success: false,

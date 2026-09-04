@@ -4,6 +4,7 @@ import { prisma as prismaClient } from '@/lib/prisma';
 const prisma = prismaClient as any;
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
+import { broadcastPaymentMethodUpdate } from '@/lib/broadcast';
 
 async function requireAdmin(): Promise<boolean> {
     try {
@@ -43,6 +44,7 @@ export async function togglePaymentMethodAction(id: string, isActive: boolean) {
             data: { isActive }
         });
         revalidatePath('/servicios');
+        await broadcastPaymentMethodUpdate({ methodId: id, eventType: 'updated' });
         return { success: true };
     } catch (error) {
         console.error('❌ Error toggling payment method:', error);
@@ -73,6 +75,7 @@ export async function createPaymentMethodAction(data: {
             }
         });
         revalidatePath('/servicios');
+        await broadcastPaymentMethodUpdate({ methodId: method.id, identifier: method.identifier, eventType: 'created' });
         return { success: true, method };
     } catch (error: any) {
         console.error('❌ Error creating payment method:', error);
@@ -99,6 +102,7 @@ export async function updatePaymentMethodAction(id: string, data: {
             }
         });
         revalidatePath('/servicios');
+        await broadcastPaymentMethodUpdate({ methodId: id, identifier: method.identifier, eventType: 'updated' });
         return { success: true, method };
     } catch (error) {
         console.error('❌ Error updating payment method:', error);
@@ -115,6 +119,7 @@ export async function deletePaymentMethodAction(id: string) {
             where: { id }
         });
         revalidatePath('/servicios');
+        await broadcastPaymentMethodUpdate({ methodId: id, eventType: 'deleted' });
         return { success: true };
     } catch (error) {
         console.error('❌ Error deleting payment method:', error);

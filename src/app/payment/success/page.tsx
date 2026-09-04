@@ -43,6 +43,7 @@ export default function PaymentSuccessPage({
 
     // Para dinamizar textos/logo según el método de pago de la orden.
     const isCard = order?.paymentMethodIdentifier === 'mercadopago';
+    const isYape = order?.paymentMethodIdentifier === 'yape';
 
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
@@ -141,7 +142,9 @@ export default function PaymentSuccessPage({
                                     <p className="text-gray-600 mb-8 leading-relaxed">
                                         {isCard
                                             ? 'El pago fue procesado pero estamos esperando la confirmación de la pasarela de pago. En la mayoría de los casos, la confirmación llega en segundos.'
-                                            : 'El pago fue procesado pero estamos esperando la confirmación de Zenobank. En la mayoría de los casos, la confirmación llega en segundos.'}
+                                            : isYape
+                                                ? 'El pago fue procesado pero estamos esperando la confirmación de Yape. En la mayoría de los casos, la confirmación llega en segundos.'
+                                                : 'El pago fue procesado pero estamos esperando la confirmación de Zenobank. En la mayoría de los casos, la confirmación llega en segundos.'}
                                     </p>
                                     <button type="button" 
                                         onClick={handleRetry}
@@ -158,12 +161,14 @@ export default function PaymentSuccessPage({
                                         <div className="absolute inset-0 rounded-full border-4 border-azul-primario border-t-transparent animate-spin"></div>
                                         {isCard ? (
                                             <FiCreditCard className="text-azul-primario" size={28} />
+                                        ) : isYape ? (
+                                            <Image src="/images/yape-logo.png" alt="Yape" width={32} height={32} />
                                         ) : (
                                             <Image src="/images/zenobank-logo.png" alt="Zenobank" width={32} height={32} className="opacity-50" />
                                         )}
                                     </div>
                                     <h1 className="text-2xl font-black text-azul-primario mb-4 tracking-tight animate-pulse">
-                                        {isCard ? 'Validando pago con tarjeta...' : 'Validando pago con criptomonedas...'}
+                                        {isCard ? 'Validando pago con tarjeta...' : isYape ? 'Validando pago con Yape...' : 'Validando pago con criptomonedas...'}
                                     </h1>
                                     <p className="text-gray-500 mb-8 leading-relaxed text-sm">
                                         Por favor espera un momento mientras establecemos comunicación segura con la pasarela financiera. Refrescando automáticamente.
@@ -193,7 +198,9 @@ export default function PaymentSuccessPage({
                             <p className="text-gray-600 mb-8 leading-relaxed">
                                 {isCard
                                     ? 'Lamentablemente, la transacción con tu tarjeta no pudo ser procesada o fue rechazada.'
-                                    : 'Lamentablemente, la transacción no pudo ser procesada o fue rechazada por Zenobank.'}
+                                    : isYape
+                                        ? 'Lamentablemente, la transacción con Yape no pudo ser procesada o fue rechazada.'
+                                        : 'Lamentablemente, la transacción no pudo ser procesada o fue rechazada por Zenobank.'}
                             </p>
                             <Link href="/servicios">
                                 <button type="button" className="w-full py-4 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition">

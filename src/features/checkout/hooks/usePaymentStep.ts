@@ -36,6 +36,7 @@ export const usePaymentStep = () => {
         amountUsd: number;
         amountPen: number;
         payerEmail?: string;
+        mode?: 'card' | 'yape';
     } | null>(null);
     const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
@@ -113,9 +114,15 @@ export const usePaymentStep = () => {
                     setOrderId(result.order.id);
                 }
 
-                // MERCADOPAGO (inline): mostrar el Brick de tarjeta en lugar de redirigir
-                if ((result as any)?.mercadopago && result.order?.id) {
-                    toast.success('Complete el pago con su tarjeta.', { id: loadingToast });
+                // MERCADOPAGO (inline): tarjeta (Brick) o Yape (celular+OTP).
+                // Ambos muestran un paso embebido; solo cambia el componente final.
+                const inlineFlow = (result as any)?.mercadopago || (result as any)?.yape;
+                if (inlineFlow && result.order?.id) {
+                    const isYape = !!(result as any)?.yape;
+                    toast.success(
+                        isYape ? 'Complete el pago con Yape.' : 'Complete el pago con su tarjeta.',
+                        { id: loadingToast }
+                    );
                     try {
                         const amountRes = await fetch(
                             `/api/payments/mercadopago?orderId=${result.order.id}`,
@@ -135,6 +142,7 @@ export const usePaymentStep = () => {
                             amountUsd,
                             amountPen,
                             payerEmail: amountData?.payerEmail || '',
+                            mode: isYape ? 'yape' : 'card',
                         });
                     } catch (e: any) {
                         setIsProcessingPayment(false);

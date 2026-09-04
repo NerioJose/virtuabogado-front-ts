@@ -21,6 +21,7 @@ export default function PaymentErrorPage({
     const { data: order, isLoading, isError } = useOrder(orderId);
 
     const isCard = order?.paymentMethodIdentifier === 'mercadopago';
+    const isYape = order?.paymentMethodIdentifier === 'yape';
 
     // Mapeo de status_detail de MercadoPago a mensajes claros y accionables.
     const getCardErrorMessage = (raw?: string): string => {
@@ -162,7 +163,9 @@ export default function PaymentErrorPage({
                     <p className="text-gray-600 mb-8 leading-relaxed max-w-sm mx-auto">
                         {isCard
                             ? 'Lo sentimos, no pudimos procesar el pago con tu tarjeta. No se ha realizado ningún cargo a tu cuenta.'
-                            : 'Lo sentimos, Zenobank no pudo procesar tu transacción. No se ha realizado ningún cargo a tu cuenta.'}
+                            : isYape
+                                ? 'Lo sentimos, no pudimos procesar el pago con Yape. No se ha realizado ningún cargo a tu cuenta.'
+                                : 'Lo sentimos, Zenobank no pudo procesar tu transacción. No se ha realizado ningún cargo a tu cuenta.'}
                     </p>
 
                     {/* Error Details */}
@@ -175,6 +178,8 @@ export default function PaymentErrorPage({
                         <div className="mt-1 flex-shrink-0">
                             {isCard ? (
                                 <FiCreditCard className="text-red-500" size={24} />
+                            ) : isYape ? (
+                                <Image src="/images/yape-logo.png" alt="Yape" width={24} height={24} />
                             ) : (
                                 <SiBitcoin className="text-red-500" size={24} />
                             )}
@@ -184,7 +189,9 @@ export default function PaymentErrorPage({
                             <p className="text-xs text-red-600 font-medium leading-relaxed">
                                 {isCard
                                     ? (cardDetailMessage || 'La transacción con tu tarjeta fue rechazada o cancelada. Verifica los datos de tu tarjeta e intenta de nuevo.')
-                                    : (error || 'La transacción fue rechazada o cancelada por el usuario. Por favor verifica tus fondos e intenta de nuevo.')}
+                                    : isYape
+                                        ? (error || 'El pago con Yape fue rechazado o cancelado. Revisa tu celular Yape e intenta de nuevo.')
+                                        : (error || 'La transacción fue rechazada o cancelada por el usuario. Por favor verifica tus fondos e intenta de nuevo.')}
                             </p>
                             <div className="mt-3">
                                 <span className="text-[10px] text-red-400 font-mono">Ref: {orderId}</span>

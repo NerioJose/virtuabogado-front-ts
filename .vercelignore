@@ -15,3 +15,9 @@ test_trigger.js
 .vscode/
 .next_dev_log.txt
 tsconfig.tsbuildinfo
+
+# Herramientas de análisis locales (no deben subirse a Vercel)
+.codegraph/
+graphify-out/
+.graphifyignore
+.gitattributes

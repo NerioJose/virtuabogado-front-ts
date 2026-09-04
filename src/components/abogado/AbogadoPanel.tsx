@@ -30,6 +30,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useAbogadoPanel } from './hooks/useAbogadoPanel';
+import { useChatStore } from '@/features/chat/store/chatStore';
 
 // OPTIMIZACIÓN (Dynamic Imports): Cargamos solo lo crítico (Casos) y el resto bajo demanda
 const CasosAbogadoPanel = dynamic(() => import('./CasosAbogadoPanel'), { 
@@ -66,6 +67,12 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		handleLogout,
 		currentAbogadoId,
 	} = useAbogadoPanel(abogadoId);
+
+	const unreadCounts = useChatStore((state) => state.unreadCounts);
+	const totalUnread = useMemo(
+		() => Object.values(unreadCounts).reduce((acc, n) => acc + (Number(n) || 0), 0),
+		[unreadCounts]
+	);
 
 	const [fechaActual, setFechaActual] = useState('');
 	useEffect(() => {
@@ -144,6 +151,15 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
                                         {item.icon}
                                     </span>
 									<span className="font-bold text-sm">{item.label}</span>
+									{(item.id === 'mensajes' || item.id === 'casos') && totalUnread > 0 && (
+										<span className={`ml-auto min-w-[20px] h-[20px] px-1.5 text-[10px] font-black rounded-full flex items-center justify-center leading-none shadow-sm ${
+											seccionActiva === item.id
+												? 'bg-white text-red-500'
+												: 'bg-red-500 text-white'
+										}`}>
+											{totalUnread > 99 ? '99+' : totalUnread}
+										</span>
+									)}
 								</button>
 							</li>
 						))}

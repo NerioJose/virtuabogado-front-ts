@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserRole } from '@/shared/types/entities.types';
 // import { initializeOrders } from '@/features/orders';
-import { useUpdateOrder, useDeleteOrder } from '@/features/orders/hooks/useOrders';
+import { useUpdateOrder, useDeleteOrder, useCreateOrderByAdmin } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 // import { initializeClients, useClientsStore } from '@/features/clients';
 // import { initializeLawyers, useLawyersStore } from '@/features/lawyers';
@@ -117,6 +117,7 @@ export default function AdminPage() {
 	const createLawyerMutation = useCreateLawyer();
 	const updateOrderMutation = useUpdateOrder();
 	const deleteOrderMutation = useDeleteOrder();
+	const createOrderByAdminMutation = useCreateOrderByAdmin();
 
 	// Manejador para guardar o eliminar datos desde el modal
 	const handleSave = async (data: any) => {
@@ -156,25 +157,14 @@ export default function AdminPage() {
 							data: { status: data.status }
 						});
 					} else if (tipoModal === 'crear') {
-						// Crear caso manualmente desde el admin
-						const res = await fetch('/api/orders/admin-create', {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify(data)
-						});
-						if (!res.ok) {
-							const err = await res.json();
-							throw new Error(err.error || 'Error al crear el caso');
-						}
+						await createOrderByAdminMutation.mutateAsync(data);
 					} else if (tipoModal === 'asignar' && id) {
-						// Usar la mutación de React Query para asignar abogado
-						// Actualizamos también el estado a "EN_PROGRESO" (PROCESSING)
 						await updateOrderMutation.mutateAsync({
 							id,
 							data: {
 								lawyerId: data.lawyerId,
 								status: OrderStatus.EN_PROGRESO,
-								assignedAt: new Date().toISOString()
+								reason: data.reason,
 							}
 						});
 					}

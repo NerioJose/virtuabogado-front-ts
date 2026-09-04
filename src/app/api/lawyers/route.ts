@@ -61,16 +61,15 @@ export async function GET(request: Request) {
         const cached = getCached<any>(cacheKey);
         if (cached) return NextResponse.json(cached);
 
-        const [allUsers, total] = await Promise.all([
+        const [lawyers, total] = await Promise.all([
             prisma.user.findMany({
+                where: { rol: 'ABOGADO' },
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.user.count(),
+            prisma.user.count({ where: { rol: 'ABOGADO' } }),
         ]);
-
-        const lawyers = allUsers.filter((u: any) => u.rol?.toUpperCase() === 'ABOGADO' || u.rol === 'ABOGADO');
 
         const formattedLawyers = lawyers.map((lawyer: any) => ({
             id: lawyer.id,

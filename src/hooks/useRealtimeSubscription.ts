@@ -8,7 +8,7 @@ import { LAWYER_KEYS } from '@/features/lawyers/hooks/useLawyers';
 import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { FINANCIAL_SETTINGS_KEYS } from '@/features/financial-settings/hooks/useFinancialSettings';
-
+import { useChatStore } from '@/features/chat/store/chatStore';
 export type RealtimeConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
 
 export const useRealtimeSubscription = () => {
@@ -50,14 +50,9 @@ export const useRealtimeSubscription = () => {
     // los usuarios conectados (abogado, cliente, admin) incluidos anónimos.
     // ═══════════════════════════════════════════════
     useEffect(() => {
-        if (connectionStatusRef.current === 'DISCONNECTED') return;
-
         const supabase = createClient();
-        
 
         const handleUpdate = (payload: any) => {
-            // Este handler ahora solo se encarga de actualizaciones de servicios
-            // ya que las órdenes las maneja el GlobalChatListener
             const eventName = payload?.event || (payload?.payload as any)?.event;
             const eventPayload = payload?.payload || payload;
             
@@ -69,7 +64,6 @@ export const useRealtimeSubscription = () => {
             }
             
             if (eventName === 'service-updated') {
-                // Invalidar TODAS las queries de servicios (activos, inactivos, detalle)
                 queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['Service', 'active'], refetchType: 'all' });
             }
@@ -82,10 +76,15 @@ export const useRealtimeSubscription = () => {
                 queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ORDER_KEYS.all, refetchType: 'all' });
             }
+        };
 
-            if (eventName === 'payment-method-updated') {
-                // Tiempo real: la lista de pasarelas aparece/desaparece sin refrescar.
-                queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
+        const handleNewMessage = (payload: any) => {
+            const data = payload.payload;
+            if (data.new) {
+                queryClient.invalidateQueries({ queryKey: ['chat', 'messages', data.new.orderId] });
+                if (data.new.senderId !== user?.id) {
+                    useChatStore.getState().markAsUnread(data.new.orderId, data.new.id);
+                }
             }
         };
 
@@ -95,7 +94,7 @@ export const useRealtimeSubscription = () => {
             .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
             .on('broadcast', { event: 'payout-updated' }, handleUpdate)
-            .on('broadcast', { event: 'payment-method-updated' }, handleUpdate)
+            .on('broadcast', { event: 'new_message' }, handleNewMessage)
             .subscribe((status) => {
                 
             });
@@ -106,6 +105,7 @@ export const useRealtimeSubscription = () => {
             personalChannel
                 .on('broadcast', { event: 'order-updated' }, handleUpdate)
                 .on('broadcast', { event: 'payout-updated' }, handleUpdate)
+                .on('broadcast', { event: 'new_message' }, handleNewMessage)
                 .subscribe();
         }
 
@@ -179,12 +179,14 @@ export const useRealtimeSubscription = () => {
                     queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
                     break;
                 case 'Message':
-                    
                     if (payload.new && 'orderId' in payload.new) {
                         queryClient.refetchQueries({
                             queryKey: ['Message', payload.new.orderId],
                             type: 'active'
                         });
+                        if (payload.new.senderId !== user?.id) {
+                            useChatStore.getState().markAsUnread(payload.new.orderId, payload.new.id);
+                        }
                     }
                     queryClient.invalidateQueries({ queryKey: ['Message'] });
                     break;
@@ -209,7 +211,6 @@ export const useRealtimeSubscription = () => {
         (async () => {
             const { data: sessionData } = await supabase.auth.getSession();
             if (!sessionData.session) {
-                console.warn('⚠️ [Realtime] Sesión expirada, saltando suscripción postgres_changes. El broadcast sigue activo.');
                 if (!mounted) return;
                 setConnectionStatus('DISCONNECTED');
                 return;
@@ -244,11 +245,6 @@ export const useRealtimeSubscription = () => {
                         // Silenciar: el CHANNEL_ERROR ocurre cuando RLS bloquea la suscripción WAL.
                         // El broadcast (order-updates + global_{id}) ya cubre la reactividad.
                         setConnectionStatus('ERROR');
-                        if (err && Object.keys(err).length > 0) {
-                            console.warn(`⚠️ [Realtime] Canal con error RLS. Broadcast activo como fallback.`, JSON.stringify(err));
-                        } else {
-                            console.info(`ℹ️ [Realtime] postgres_changes bloqueado por RLS (esperado). Broadcast activo.`);
-                        }
                         break;
                     case 'TIMED_OUT':
                         setConnectionStatus('ERROR');

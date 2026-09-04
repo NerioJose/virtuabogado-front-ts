@@ -3,18 +3,22 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Message } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 
+const processedMessageIds = new Set<string>();
+const MAX_PROCESSED = 5000;
+
 interface ChatStore {
     messages: Message[];
     isLoading: boolean;
     activeOrderId: string | null;
     subscription: any | null;
     unreadOrders: string[];
+    unreadCounts: Record<string, number>;
     setActiveOrder: (orderId: string) => void;
     loadMessages: (orderId: string) => Promise<void>;
     addMessage: (message: Message) => void;
     sendMessage: (content: string, senderId: string) => Promise<void>;
     sendFile: (file: File, senderId: string) => Promise<void>;
-    markAsUnread: (orderId: string) => void;
+    markAsUnread: (orderId: string, messageId?: string) => void;
     markAsRead: (orderId: string) => void;
     cleanup: () => void;
 }
@@ -27,6 +31,7 @@ export const useChatStore = create<ChatStore>()(
             activeOrderId: null,
             subscription: null,
             unreadOrders: [],
+            unreadCounts: {},
 
             setActiveOrder: (orderId) => {
                 set({ activeOrderId: orderId });
@@ -96,19 +101,36 @@ export const useChatStore = create<ChatStore>()(
                 }
             },
 
-            markAsUnread: (orderId) => {
+            markAsUnread: (orderId, messageId) => {
+                if (messageId) {
+                    if (processedMessageIds.has(messageId)) return;
+                    processedMessageIds.add(messageId);
+                    if (processedMessageIds.size > MAX_PROCESSED) {
+                        const entries = [...processedMessageIds];
+                        processedMessageIds.clear();
+                        entries.slice(-MAX_PROCESSED / 2).forEach(id => processedMessageIds.add(id));
+                    }
+                }
                 set((state) => {
-                    if (state.unreadOrders.includes(orderId)) return state;
-                    if (state.activeOrderId === orderId) return state; // No marcar si estamos viéndolo
-                    return { unreadOrders: [...state.unreadOrders, orderId] };
+                    if (state.activeOrderId === orderId) return state;
+                    const newOrders = state.unreadOrders.includes(orderId)
+                        ? state.unreadOrders
+                        : [...state.unreadOrders, orderId];
+                    return {
+                        unreadOrders: newOrders,
+                        unreadCounts: {
+                            ...state.unreadCounts,
+                            [orderId]: (state.unreadCounts[orderId] || 0) + 1
+                        }
+                    };
                 });
             },
 
             markAsRead: (orderId) => {
-                set((state) => {
-                    if (!state.unreadOrders.includes(orderId)) return state;
-                    return { unreadOrders: state.unreadOrders.filter(id => id !== orderId) };
-                });
+                set((state) => ({
+                    unreadOrders: state.unreadOrders.filter(id => id !== orderId),
+                    unreadCounts: { ...state.unreadCounts, [orderId]: 0 }
+                }));
             },
 
             cleanup: () => {
@@ -120,7 +142,15 @@ export const useChatStore = create<ChatStore>()(
         {
             name: 'chat-unread-storage',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state) => ({ unreadOrders: state.unreadOrders }), // Solo persistir lo relevante
+            partialize: (state) => ({ unreadOrders: state.unreadOrders, unreadCounts: state.unreadCounts }),
+            merge: (persisted, current) => ({
+                ...current,
+                ...(persisted as object),
+                unreadCounts: {
+                    ...(persisted as any).unreadCounts,
+                    ...current.unreadCounts,
+                },
+            }),
         }
     )
 );

@@ -3,75 +3,82 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  passwordHash String?
-  nombre       String
-  rol          UserRole   @default(CLIENTE)
-  telefono     String?
-  direccion    String?
-  dni          String?
-  especialidad String?
-  matricula    String?
-  experiencia  Int?
-  picture      String?
-  activo       Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  documents    Document[]
-  messages     Message[]
-  cases        Order[]    @relation("LawyerCases")
-  orders       Order[]    @relation("ClientOrders")
-  payouts      LawyerPayout[] @relation("LawyerPayouts")
-  pushSubscriptions PushSubscription[] @relation("UserPushSubscriptions")
+  id                             String               @id @default(uuid())
+  email                          String               @unique
+  passwordHash                   String?
+  nombre                         String
+  rol                            UserRole             @default(CLIENTE)
+  telefono                       String?
+  direccion                      String?
+  dni                            String?
+  especialidad                   String?
+  matricula                      String?
+  experiencia                    Int?
+  picture                        String?
+  activo                         Boolean              @default(true)
+  createdAt                      DateTime             @default(now())
+  updatedAt                      DateTime             @updatedAt
+  deletedAt                      DateTime?
+  documents                      Document[]
+  messages                       Message[]
+  cases                          Order[]              @relation("LawyerCases")
+  orders                         Order[]              @relation("ClientOrders")
+  payouts                        LawyerPayout[]       @relation("LawyerPayouts")
+  orderAssignmentLogsAsOldLawyer OrderAssignmentLog[] @relation("AssignmentFromOldLawyer")
+  orderAssignmentLogsAsNewLawyer OrderAssignmentLog[] @relation("AssignmentToNewLawyer")
+  reassignedOrderLogs            OrderAssignmentLog[] @relation("ReassignedByAdmin")
+  pushSubscriptions              PushSubscription[]   @relation("UserPushSubscriptions")
 
   @@index([activo, createdAt(sort: Desc)])
   @@index([rol])
 }
 
 model Service {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   titulo      String
   descripcion String
-  precio      Decimal @db.Decimal(10, 2)
+  precio      Decimal  @db.Decimal(10, 2)
   imagenUrl   String?
-  activo      Boolean @default(true)
+  activo      Boolean  @default(true)
   orders      Order[]
   createdAt   DateTime @default(now())
 }
 
 model Order {
-  id                    String         @id @default(uuid())
-  numericId             Int            @unique @default(autoincrement())
+  id                    String               @id @default(uuid())
+  numericId             Int                  @unique @default(autoincrement())
   userId                String
   lawyerId              String?
   serviceId             Int
   paymentMethodId       String?
-  total                 Decimal        @db.Decimal(10, 2)
-  status                OrderStatus    @default(PENDIENTE)
+  total                 Decimal              @db.Decimal(10, 2)
+  status                OrderStatus          @default(PENDIENTE)
   paymentId             String?
-  activo                Boolean        @default(true)
-  commissionAmount      Decimal?       @db.Decimal(10, 2)
-  operationalCostAmount Decimal?       @db.Decimal(10, 2)
-  platformFeeAmount     Decimal?       @db.Decimal(10, 2)
-  taxAmount             Decimal?       @db.Decimal(10, 2)
-  netProfitAmount       Decimal?       @db.Decimal(10, 2)
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  activo                Boolean              @default(true)
+  commissionAmount      Decimal?             @db.Decimal(10, 2)
+  operationalCostAmount Decimal?             @db.Decimal(10, 2)
+  platformFeeAmount     Decimal?             @db.Decimal(10, 2)
+  taxAmount             Decimal?             @db.Decimal(10, 2)
+  netProfitAmount       Decimal?             @db.Decimal(10, 2)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
   assignedAt            DateTime?
   closedAt              DateTime?
+  deletedAt             DateTime?
+  reassignedAt          DateTime?
   documents             Document[]
   messages              Message[]
-  lawyer                User?          @relation("LawyerCases", fields: [lawyerId], references: [id])
-  paymentMethod         PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
-  service               Service        @relation(fields: [serviceId], references: [id])
-  user                  User           @relation("ClientOrders", fields: [userId], references: [id])
+  assignmentLogs        OrderAssignmentLog[]
+  lawyer                User?                @relation("LawyerCases", fields: [lawyerId], references: [id], onDelete: SetNull)
+  paymentMethod         PaymentMethod?       @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  service               Service              @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  user                  User                 @relation("ClientOrders", fields: [userId], references: [id], onDelete: Restrict)
   payoutId              String?
-  payout                LawyerPayout?  @relation("OrderToPayout", fields: [payoutId], references: [id])
+  payout                LawyerPayout?        @relation("OrderToPayout", fields: [payoutId], references: [id], onDelete: SetNull)
   review                Review?
 
   @@index([lawyerId, status])
@@ -116,8 +123,8 @@ model Message {
   isSystem  Boolean  @default(false)
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id])
-  sender    User     @relation(fields: [senderId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Restrict)
 
   @@index([orderId, createdAt(sort: Asc)])
   @@index([senderId])
@@ -132,8 +139,8 @@ model Document {
   type       String
   size       Int
   createdAt  DateTime @default(now())
-  order      Order    @relation(fields: [orderId], references: [id])
-  uploader   User     @relation(fields: [uploaderId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  uploader   User     @relation(fields: [uploaderId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
   @@index([uploaderId])
@@ -145,7 +152,26 @@ model Review {
   rating    Int      @default(5)
   comment   String?
   createdAt DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model OrderAssignmentLog {
+  id           String   @id @default(uuid())
+  orderId      String
+  fromLawyerId String?
+  toLawyerId   String
+  reassignedBy String
+  reason       String?
+  createdAt    DateTime @default(now())
+
+  order      Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromLawyer User? @relation("AssignmentFromOldLawyer", fields: [fromLawyerId], references: [id], onDelete: SetNull)
+  toLawyer   User  @relation("AssignmentToNewLawyer", fields: [toLawyerId], references: [id], onDelete: Restrict)
+  reassigner User  @relation("ReassignedByAdmin", fields: [reassignedBy], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([fromLawyerId])
+  @@index([toLawyerId])
 }
 
 enum UserRole {
@@ -173,19 +199,20 @@ enum PayoutStatus {
 }
 
 model LawyerPayout {
-  id            String       @id @default(uuid())
-  lawyerId      String
-  amount        Decimal      @db.Decimal(10, 2)
-  status        PayoutStatus @default(PENDIENTE)
-  method        String?      // e.g. Transferencia, PayPal
-  reference     String?      // ID de comprobante bancario
-  notes         String?
-  paidAt        DateTime?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  
-  lawyer        User         @relation("LawyerPayouts", fields: [lawyerId], references: [id])
-  orders        Order[]      @relation("OrderToPayout")
+  id        String       @id @default(uuid())
+  lawyerId  String
+  amount    Decimal      @db.Decimal(10, 2)
+  status    PayoutStatus @default(PENDIENTE)
+  method    String? // e.g. Transferencia, PayPal
+  reference String? // ID de comprobante bancario
+  notes     String?
+  paidAt    DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  lawyer User    @relation("LawyerPayouts", fields: [lawyerId], references: [id], onDelete: Restrict)
+  orders Order[] @relation("OrderToPayout")
 
   @@map("LawyerPayouts")
 }
@@ -209,21 +236,21 @@ model PushSubscription {
   createdAt DateTime @default(now())
   user      User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@unique([userId, endpoint])
+  @@index([userId])
 }
 
 model EventLog {
-  id           String   @id @default(uuid())
-  type         String
-  payload      Json
-  status       String   @default("pending")
-  retries      Int      @default(0)
-  maxRetries   Int      @default(3)
-  error        String?
-  scheduledAt  DateTime?
-  createdAt    DateTime @default(now())
-  processedAt  DateTime?
+  id          String    @id @default(uuid())
+  type        String
+  payload     Json
+  status      String    @default("pending")
+  retries     Int       @default(0)
+  maxRetries  Int       @default(3)
+  error       String?
+  scheduledAt DateTime?
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
 
   @@index([status, createdAt])
   @@index([type, createdAt])

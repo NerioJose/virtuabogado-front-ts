@@ -1,5 +1,5 @@
 import { on } from '@/events/registry'
-import { broadcastOrderUpdate, broadcastPayoutUpdate, broadcastServiceUpdate } from '@/lib/broadcast'
+import { broadcastOrderUpdate, broadcastPayoutUpdate, broadcastServiceUpdate, sendBroadcast } from '@/lib/broadcast'
 import { prisma } from '@/lib/prisma'
 
 on('order.created', async (event) => {
@@ -24,6 +24,28 @@ on('order.assigned', async (event) => {
     eventType: 'updated',
     isNewAssignment: true,
   })
+})
+
+on('order.reassigned', async (event) => {
+  const data = event.data as { orderId: string; fromLawyerId: string | null; toLawyerId: string; userId: string }
+
+  await broadcastOrderUpdate({
+    orderId: data.orderId,
+    userId: data.userId,
+    lawyerId: data.toLawyerId,
+    status: 'EN_PROGRESO',
+    eventType: 'updated',
+    isNewAssignment: true,
+  })
+
+  // Notificar específicamente al abogado anterior para que su UI se actualice
+  if (data.fromLawyerId) {
+    await sendBroadcast(`global_${data.fromLawyerId}`, 'order-updated', {
+      orderId: data.orderId,
+      eventType: 'updated',
+      timestamp: new Date().toISOString(),
+    })
+  }
 })
 
 on('order.status_changed', async (event) => {

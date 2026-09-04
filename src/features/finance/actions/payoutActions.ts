@@ -14,6 +14,7 @@ export async function getPendingPayoutsSummary() {
     try {
         const pendingOrders = await prisma.order.findMany({
             where: {
+                activo: true,
                 status: 'COMPLETADO',
                 payoutId: null,
                 lawyerId: { not: null }

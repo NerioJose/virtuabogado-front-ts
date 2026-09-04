@@ -31,6 +31,7 @@ interface ClientPanelProps {
   user: any;
   servicios: ServicioCliente[];
   unreadOrders: string[];
+  unreadCounts: Record<string, number>;
   isLoading: boolean;
   handleLogout: () => void;
 }
@@ -39,6 +40,7 @@ export default function ClientPanel({
   user,
   servicios,
   unreadOrders,
+  unreadCounts,
   isLoading,
   handleLogout
 }: ClientPanelProps) {
@@ -237,7 +239,8 @@ export default function ClientPanel({
                     className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 px-1"
                   >
                     {activos.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => {
-                      const isUnread = unreadOrders.includes(servicio.id);
+                      const count = unreadCounts[servicio.id] || 0;
+                      const isUnread = count > 0;
                       // Determinar si es "Reciente" (creado en las últimas 48 horas)
                       const isRecent = servicio.createdAt && (now - new Date(servicio.createdAt).getTime()) < 48 * 60 * 60 * 1000;
                       
@@ -264,7 +267,9 @@ export default function ClientPanel({
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-black text-azul-primario bg-azul-primario/5 px-3 py-1 rounded-xl">#{servicio.numeroOrden}</span>
                                 {isUnread && (
-                                  <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-bounce" />
+                                  <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-rose-500/40 ring-2 ring-white">
+                                    {count > 99 ? '99+' : count}
+                                  </span>
                                 )}
                               </div>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{servicio.fecha}</p>
@@ -317,11 +322,16 @@ export default function ClientPanel({
                                 <motion.button
                                   whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
-                                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition ${
+                                  className={`flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition relative ${
                                     isUnread ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-azul-primario text-white shadow-lg shadow-azul-primario/20'
                                   }`}
                                 >
-                                  {isUnread ? <FiMessageSquare /> : <FiMessageSquare />} Chat
+                                  {isUnread ? (
+                                    <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-white text-rose-500 text-[8px] font-black rounded-full flex items-center justify-center leading-none shadow-sm border border-rose-200">
+                                      {count > 99 ? '99+' : count}
+                                    </span>
+                                  ) : null}
+                                  <FiMessageSquare size={14} /> Chat
                                 </motion.button>
                               </Link>
                               <Link href={`/detalle-servicio/${servicio.id}`}>

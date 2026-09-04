@@ -110,15 +110,19 @@ export const useUserDataStep = () => {
     const handleResetPassword = async () => {
         if (!email) return;
         try {
-            const { createClient } = await import('@/utils/supabase/client');
-            const supabase = createClient();
-            await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/callback?next=/perfil/seguridad`
+            const res = await fetch('/api/auth/reset-password/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Error al enviar el correo');
+            }
             setShowResetModal(true);
         } catch (err) {
             console.error('Error reset password:', err);
-            setLocalError('No se pudo enviar el enlace de recuperación.');
+            setLocalError(err instanceof Error ? err.message : 'No se pudo enviar el enlace de recuperación.');
         }
     };
 

@@ -375,6 +375,20 @@ export default function ModalContainer({
 											onChange={(val) => handleInputChange('lawyerId', val)}
 										/>
 									</div>
+									{(elemento as any)?.lawyerId && (
+										<div className="space-y-1">
+											<label className="block text-sm font-medium text-gray-700">
+												Motivo de Reasignación <span className="text-gray-400 font-normal">(opcional)</span>
+											</label>
+											<textarea
+												value={formData.reason as string || ''}
+												onChange={(e) => handleInputChange('reason', e.target.value)}
+												rows={3}
+												className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-azul-primario focus:border-azul-primario"
+												placeholder="Ej: El abogado solicitó la baja del caso, conflicto de horarios, especialización..."
+											/>
+										</div>
+									)}
 								</div>
 							</form>
 						</div>

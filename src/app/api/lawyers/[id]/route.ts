@@ -142,7 +142,7 @@ export async function DELETE(
         
         const result = await prisma.user.update({
             where: { id },
-            data: { activo: false },
+            data: { activo: false, deletedAt: new Date() },
         });
 
         // 2. Bloqueo de acceso en Supabase Auth vía Metadata (no eliminamos la cuenta)

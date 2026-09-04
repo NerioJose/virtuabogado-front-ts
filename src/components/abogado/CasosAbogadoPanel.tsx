@@ -21,6 +21,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
       casosFiltrados,
       isLoading,
       unreadOrders,
+      unreadCounts,
       filtroEstado,
       setFiltroEstado,
       casoSeleccionado,
@@ -231,22 +232,28 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                   <FiEye size={16} /> Ver Detalles
                 </button>
                 <button type="button"
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition ${
-                    unreadOrders.includes(caso.id) 
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition relative ${
+                    (unreadCounts[caso.id] || 0) > 0
                     ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200' 
                     : 'bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white'
                   }`}
                   onClick={() => setCasoSeleccionado(caso.id)}
                 >
+                  {(unreadCounts[caso.id] || 0) > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 bg-white text-red-500 text-[8px] font-black rounded-full flex items-center justify-center leading-none shadow-sm border border-red-200">
+                      {unreadCounts[caso.id] > 99 ? '99+' : unreadCounts[caso.id]}
+                    </span>
+                  )}
                   <FiMessageSquare size={18} />
                 </button>
               </div>
 
-              {/* Notification Dot */}
-              {unreadOrders.includes(caso.id) && (
-                <div className="absolute top-2 left-2 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              {/* Notification Badge */}
+              {(unreadCounts[caso.id] || 0) > 0 && (
+                <div className="absolute top-2 left-2">
+                  <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-red-500/40 ring-2 ring-white">
+                    {unreadCounts[caso.id] > 99 ? '99+' : unreadCounts[caso.id]}
+                  </span>
                 </div>
               )}
             </div>
@@ -296,11 +303,10 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                             </div>
                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">#{formatOrderId(caso.numericId, caso.createdAt)}</div>
                          </div>
-                         {unreadOrders.includes(caso.id) && (
-                           <div className="relative flex h-2 w-2">
-                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                           </div>
+                         {(unreadCounts[caso.id] || 0) > 0 && (
+                           <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-red-500/40 ring-2 ring-white">
+                             {unreadCounts[caso.id] > 99 ? '99+' : unreadCounts[caso.id]}
+                           </span>
                          )}
                       </div>
                     </td>
@@ -343,14 +349,19 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                           <FiEye size={18} />
                         </button>
                         <button type="button"
-                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition duration-300 shadow-sm ${
-                            unreadOrders.includes(caso.id) 
+                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition duration-300 shadow-sm relative ${
+                            (unreadCounts[caso.id] || 0) > 0
                             ? 'bg-red-500 text-white animate-pulse' 
                             : 'bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white'
                           }`}
-                          title={unreadOrders.includes(caso.id) ? "Responder Mensaje" : "Enviar mensaje"}
+                          title={(unreadCounts[caso.id] || 0) > 0 ? "Responder Mensaje" : "Enviar mensaje"}
                           onClick={() => setCasoSeleccionado(caso.id)}
                         >
+                          {(unreadCounts[caso.id] || 0) > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-white text-red-500 text-[7px] font-black rounded-full flex items-center justify-center leading-none shadow-sm border border-red-200">
+                              {unreadCounts[caso.id] > 99 ? '99+' : unreadCounts[caso.id]}
+                            </span>
+                          )}
                           <FiMessageSquare size={18} />
                         </button>
                       </div>

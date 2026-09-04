@@ -8,6 +8,7 @@ export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: strin
     const misCasos = useMemo(() => (response as any)?.data || [], [response]);
 
     const unreadOrders = useChatStore((state) => state.unreadOrders);
+    const unreadCounts = useChatStore((state) => state.unreadCounts);
     const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
     const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
     const [modalAbierto, setModalAbierto] = useState(false);
@@ -67,6 +68,7 @@ export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: strin
         casosFiltrados,
         isLoading,
         unreadOrders,
+        unreadCounts,
         filtroEstado,
         setFiltroEstado,
         casoSeleccionado,

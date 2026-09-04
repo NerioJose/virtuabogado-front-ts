@@ -62,22 +62,19 @@ export async function GET(request: Request) {
         const cached = getCached<any>(cacheKey);
         if (cached) return NextResponse.json(cached);
 
-        const [allUsers, total, allOrders] = await Promise.all([
+        const [clients, total, allOrders] = await Promise.all([
             prisma.user.findMany({
+                where: { rol: 'CLIENTE' },
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.user.count(),
+            prisma.user.count({ where: { rol: 'CLIENTE' } }),
             prisma.order.findMany({
                 where: { activo: true },
                 select: { userId: true, total: true, id: true }
             }),
         ]);
-
-        const clients = allUsers.filter((u: any) => 
-            u.rol?.toUpperCase() === 'CLIENTE' || u.rol === 'CLIENTE'
-        );
 
         const orderStatsMap = new Map<string, { count: number; total: number }>();
         for (const order of allOrders) {

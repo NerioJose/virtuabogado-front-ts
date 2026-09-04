@@ -60,13 +60,15 @@ const toastState = {
     setter: null as ((msg: any) => void) | null,
 };
 
-function showToast(setter: typeof toastState.setter, msg: any) {
+function showToast(setter: ((msg: any) => void) | null, msg: any) {
+    if (!setter) return;
     toastState.setter = setter;
     if (toastState.timer) clearTimeout(toastState.timer);
-    if (setter) setter(msg);
+    setter(msg);
     toastState.timer = setTimeout(() => {
-        if (setter) setter(null);
+        const s = toastState.setter;
         toastState.timer = null;
+        if (s) s(null);
     }, 5000);
 }
 
@@ -96,8 +98,11 @@ export function useGlobalChatListener() {
         if (isSubscribed && permission === 'granted') return;
 
         if (user.rol === 'ADMIN' || user.rol === 'ABOGADO') {
-            const timer = setTimeout(() => setShowPushBanner(true), 3000);
-            return () => clearTimeout(timer);
+            const showTimer = setTimeout(() => {
+                setShowPushBanner(true);
+                setTimeout(() => setShowPushBanner(false), 12000);
+            }, 3000);
+            return () => clearTimeout(showTimer);
         }
     }, [user, isSubscribed, permission]);
 
@@ -112,7 +117,7 @@ export function useGlobalChatListener() {
 
         const supabase = createClient();
         const personalChannel = supabase.channel(`global_${user.id}`);
-        const globalChannel = user.rol === 'ADMIN' ? supabase.channel('app-updates') : null;
+        const globalChannel = supabase.channel('app-updates');
 
         const handleOrderUpdate = (payload: { payload: any }) => {
             const data = payload.payload;
@@ -219,6 +224,17 @@ export function useGlobalChatListener() {
             }
         };
 
+        let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+        function showChatToast(msg: any) {
+            if (toastTimer) clearTimeout(toastTimer);
+            setToastMessage(msg);
+            toastTimer = setTimeout(() => {
+                setToastMessage(null);
+                toastTimer = null;
+            }, 6000);
+        }
+
         const personalSub = personalChannel
             .on(
                 'broadcast' as any,
@@ -240,10 +256,10 @@ export function useGlobalChatListener() {
                             const activeOrder = useChatStore.getState().activeOrderId;
                             if (activeOrder !== newMessage.orderId) {
                                 playSound();
-                                setToastMessage({ ...newMessage, type: 'chat' });
+                                showChatToast({ ...newMessage, type: 'chat' });
                                 blinkTab('💬 Nuevo Mensaje');
                             }
-                            useChatStore.getState().markAsUnread(newMessage.orderId);
+                            useChatStore.getState().markAsUnread(newMessage.orderId, newMessage.id);
                         }
                     }
 
@@ -261,17 +277,22 @@ export function useGlobalChatListener() {
             .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
             .subscribe();
 
-        if (globalChannel) {
-            globalChannel
-                .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
-                .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
-                .subscribe();
-        }
+        globalChannel
+            .on('broadcast', { event: 'order-updated' }, handleOrderUpdate)
+            .on('broadcast', { event: 'payout-updated' }, handlePayoutUpdate)
+            .on('broadcast', { event: 'new_message' }, (payload: any) => {
+                const data = payload.payload;
+                if (data.new && data.new.senderId !== user.id) {
+                    useChatStore.getState().markAsUnread(data.new.orderId, data.new.id);
+                }
+            })
+            .subscribe();
 
         return () => {
+            if (toastTimer) clearTimeout(toastTimer);
             stopBlink();
             supabase.removeChannel(personalSub);
-            if (globalChannel) supabase.removeChannel(globalChannel);
+            supabase.removeChannel(globalChannel);
         }; // react-doctor: cleanup-verified
     }, [queryClient, router, user]);
 

@@ -3,7 +3,7 @@
 // Funciona en segundo plano, con el navegador cerrado y sin sesión.
 // ===================================================================
 
-const SW_VERSION = 'v3.0.0';
+const SW_VERSION = 'v3.0.1';
 
 // ─── PUSH: Escucha eventos del servidor VAPID ─────────────────────
 self.addEventListener('push', function (event) {

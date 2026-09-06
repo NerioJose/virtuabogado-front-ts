@@ -128,7 +128,7 @@ export default function RootLayout({
 				<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 				<meta name="apple-mobile-web-app-title" content="VirtuAbogado" />
 				<meta name="mobile-web-app-capable" content="yes" />
-				<link rel="apple-touch-icon" href="/logo/logo_resized.png" />
+				<link rel="apple-touch-icon" href="/logo/logo_white_180.png" />
 				<script
 					type="application/ld+json"
 					dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}

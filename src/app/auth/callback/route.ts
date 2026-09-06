@@ -53,9 +53,10 @@ export async function GET(request: NextRequest) {
         let response = NextResponse.redirect(successUrl.toString());
 
         const supabase = createCallbackClient(request, response);
+        // `token` trae el token HASHED generado por admin.generateLink; verifyOtp
+        // para signup lo espera en `token_hash`.
         const { error } = await supabase.auth.verifyOtp({
-            email,
-            token,
+            token_hash: token,
             type: 'signup'
         });
 

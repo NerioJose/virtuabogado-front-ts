@@ -4,6 +4,7 @@ import { getFinancialSettingsCached } from '@/lib/getFinancialSettings';
 import { calculateOrderFinances } from '@/services/finance.service';
 import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
+import { validateEmail } from '@/lib/emailValidation';
 import { UserRole, OrderStatus } from '@/shared/types/entities.types';
 import { createAdminClient } from '@/utils/supabase/admin';
 
@@ -23,6 +24,11 @@ export async function POST(request: Request) {
 
         if (!email || !total) {
             return NextResponse.json({ error: 'Email y total son requeridos' }, { status: 400 });
+        }
+
+        const emailCheck = validateEmail(String(email).trim());
+        if (!emailCheck.ok) {
+            return NextResponse.json({ error: emailCheck.error || 'Email inválido' }, { status: 400 });
         }
 
         // 1. Buscar o crear el usuario por email

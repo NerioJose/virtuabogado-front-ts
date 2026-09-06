@@ -60,7 +60,13 @@ export function useAuth() {
         setError(null);
 
         try {
-            const user = await authService.register(data);
+            const { user, requiresEmailConfirmation } = await authService.register(data);
+
+            // Cliente nuevo: debe confirmar su correo antes de acceder
+            if (requiresEmailConfirmation) {
+                return { user, requiresEmailConfirmation: true };
+            }
+
             setLogin(user);
 
             // Redirigir según el rol
@@ -69,7 +75,7 @@ export function useAuth() {
 
             router.refresh();
             router.push(redirectPath);
-            return user;
+            return { user, requiresEmailConfirmation: false };
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : 'Error al registrar usuario';

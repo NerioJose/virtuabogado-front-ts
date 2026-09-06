@@ -1,15 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCheckout } from './useCheckout';
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export const useUserDataStep = () => {
-    const { 
+    const {
         userData: storeUserData,
-        setUserData, 
-        isLoading, 
+        setUserData,
+        isLoading,
         error: storeError,
-        isExistingUser, 
-        checkUserExists, 
-        authenticateUser 
+        isExistingUser,
+        requiresEmailConfirmation,
+        checkUserExists,
+        clearEmailConfirmation,
+        authenticateUser,
+        resendConfirmation
     } = useCheckout();
 
     // Estados Locales
@@ -19,12 +24,38 @@ export const useUserDataStep = () => {
     const [localError, setLocalError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState('');
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [formData, setFormData] = useState({
         password: '',
         name: storeUserData?.nombre || storeUserData?.name || '',
         phone: storeUserData?.phone || '',
     });
+
+    // Contador de espera tras reenviar el correo de confirmación
+    const startResendCooldown = () => {
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        cooldownRef.current = setInterval(() => {
+            setResendCooldown((prev) => {
+                if (prev <= 1) {
+                    if (cooldownRef.current) clearInterval(cooldownRef.current);
+                    cooldownRef.current = null;
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    // Limpiar intervalos al desmontar
+    useEffect(() => {
+        return () => {
+            if (cooldownRef.current) clearInterval(cooldownRef.current);
+        };
+    }, []);
 
     // Sincronizar formData local con el store
     useEffect(() => {
@@ -73,6 +104,7 @@ export const useUserDataStep = () => {
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(e.target.value);
         if (localError) setLocalError(null);
+        if (requiresEmailConfirmation) clearEmailConfirmation();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -93,7 +125,8 @@ export const useUserDataStep = () => {
             name: formData.name,
             nombre: formData.name,
             phone: formData.phone,
-            createAccount: !isExistingUser
+            createAccount: !isExistingUser,
+            turnstileToken
         });
 
         if (!success) {
@@ -102,6 +135,7 @@ export const useUserDataStep = () => {
     };
 
     const handleResetEmail = () => {
+        clearEmailConfirmation();
         setHasChecked(false);
         setEmail('');
         setFormData({ password: '', name: '', phone: '' });
@@ -126,6 +160,17 @@ export const useUserDataStep = () => {
         }
     };
 
+    const handleResendConfirmation = async () => {
+        if (resendCooldown > 0 || !email) return;
+        setLocalError(null);
+        try {
+            await resendConfirmation(email, formData.password, turnstileToken);
+            startResendCooldown();
+        } catch (err) {
+            setLocalError(err instanceof Error ? err.message : 'No se pudo reenviar el correo.');
+        }
+    };
+
     const displayError = localError || storeError;
 
     return {
@@ -141,12 +186,17 @@ export const useUserDataStep = () => {
         displayError,
         isLoading,
         isExistingUser,
+        requiresEmailConfirmation,
+        turnstileToken,
+        setTurnstileToken,
+        resendCooldown,
 
         // Actions
         handleInputChange,
         handleEmailChange,
         handleSubmit,
         handleResetEmail,
-        handleResetPassword
+        handleResetPassword,
+        handleResendConfirmation
     };
 };

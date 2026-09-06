@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { UserRole } from '@/shared/types/entities.types';
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
     const [formData, setFormData] = useState({
         nombre: '',
@@ -13,10 +15,21 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
     });
     const [remember, setRemember] = useState(true);
     const [passwordError, setPasswordError] = useState('');
+    const [turnstileToken, setTurnstileToken] = useState('');
+    const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const { register, isLoading, error } = useAuth();
+
+    // Limpiar intervalos al desmontar
+    useEffect(() => {
+        return () => {
+            if (cooldownRef.current) clearInterval(cooldownRef.current);
+        };
+    }, []);
 
     // Cargar preferencia y datos al montar
     useEffect(() => {
@@ -60,6 +73,21 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         };
     }, [remember, formData.email, formData.nombre, formData.telefono]);
 
+    const startResendCooldown = () => {
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        cooldownRef.current = setInterval(() => {
+            setResendCooldown((prev) => {
+                if (prev <= 1) {
+                    if (cooldownRef.current) clearInterval(cooldownRef.current);
+                    cooldownRef.current = null;
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setPasswordError('');
@@ -71,14 +99,19 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         }
 
         try {
-            await register({
+            const result = await register({
                 nombre: formData.nombre,
                 email: formData.email,
                 password: formData.password,
                 telefono: formData.telefono,
                 rol: formData.rol,
                 remember: remember,
+                turnstileToken
             });
+
+            if (result?.requiresEmailConfirmation) {
+                setAwaitingConfirmation(true);
+            }
         } catch (err) {
             console.error('Register error:', err);
         }
@@ -86,6 +119,32 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
 
     const handleChange = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
+        if (field === 'email' && awaitingConfirmation) {
+            setAwaitingConfirmation(false);
+        }
+    };
+
+    const handleResendConfirmation = async () => {
+        if (resendCooldown > 0) return;
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password,
+                    rol: formData.rol,
+                    turnstileToken
+                })
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'No se pudo reenviar el correo');
+            }
+            startResendCooldown();
+        } catch (err) {
+            console.error('Resend error:', err);
+        }
     };
 
     return {
@@ -95,7 +154,12 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         passwordError,
         isLoading,
         error,
+        turnstileToken,
+        setTurnstileToken,
+        awaitingConfirmation,
+        resendCooldown,
         handleSubmit,
         handleChange,
+        handleResendConfirmation,
     };
 }

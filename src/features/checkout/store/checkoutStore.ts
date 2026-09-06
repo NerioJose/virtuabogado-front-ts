@@ -15,6 +15,19 @@ import { ClientStatus } from '@/features/clients/types/clients.types';
 
 import { checkUserExistsAction } from '../actions/checkUserAction';
 
+/**
+ * Guarda la compra pendiente para restaurarla tras confirmar el correo.
+ * CheckoutStateSync la usa cuando vuelve con auth_success=1.
+ */
+const savePendingCheckout = (service: Servicio | null, email: string) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('checkout_pending', JSON.stringify({
+        service,
+        email,
+        timestamp: Date.now()
+    }));
+};
+
 const getInitialState = () => ({
     service: null as Servicio | null,
     userData: null as UserCheckoutData | null,
@@ -32,6 +45,7 @@ const getInitialState = () => ({
     completedAt: null as string | null,
     isProcessingPayment: false,
     isWaitingForWebhook: false,
+    requiresEmailConfirmation: false,
 });
 
 export const useCheckoutStore = create<CheckoutState>()(
@@ -155,46 +169,51 @@ export const useCheckoutStore = create<CheckoutState>()(
             return result.exists;
         },
 
-        sendOtp: async (email: string) => {
+        resendConfirmation: async (email: string, password: string, turnstileToken?: string) => {
             set({ isLoading: true, error: null });
-            const state = get();
             try {
-                await checkoutService.sendOtp(email, {
-                    service: state.service,
-                    email,
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, turnstileToken })
                 });
-                set({ isLoading: false });
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'No se pudo reenviar el correo');
+                }
+
+                if (data.requiresEmailConfirmation) {
+                    set({ requiresEmailConfirmation: true, isLoading: false });
+                    return;
+                }
+
+                // Caso borde: el usuario ya confirmó entre tanto → iniciar sesión y avanzar al pago
+                const supabase = (await import('@/utils/supabase/client')).createClient();
+                const { data: signIn, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+                if (signInErr) throw new Error(signInErr.message);
+                const { authService } = await import('@/features/auth/services/auth.service');
+                const user = authService.mapSupabaseUserToEntity(signIn.user);
+                useAuthStore.getState().setUser(user);
+                set({
+                    userData: { email, password, nombre: user.nombre || '', name: user.nombre || '', createAccount: false },
+                    existingUserId: user.id,
+                    isExistingUser: true,
+                    requiresEmailConfirmation: false,
+                    isLoading: false,
+                    step: 2
+                });
             } catch (error) {
-                set({ 
-                    error: error instanceof Error ? error.message : 'Error al enviar el enlace',
-                    isLoading: false 
+                set({
+                    error: error instanceof Error ? error.message : 'No se pudo reenviar el correo',
+                    isLoading: false
                 });
                 throw error;
             }
         },
 
-        verifyOtp: async (email: string, token: string) => {
-            set({ isLoading: true, error: null });
-            try {
-                const user = await checkoutService.verifyOtp(email, token);
-                if (user) {
-                    const { authService } = await import('@/features/auth/services/auth.service');
-                    const mappedUser = authService.mapSupabaseUserToEntity(user);
-                    useAuthStore.getState().setUser(mappedUser);
-                    set({ 
-                        existingUserId: user.id,
-                        isExistingUser: true,
-                        isLoading: false,
-                        step: 2 // Avanzar automáticamente tras verificar
-                    });
-                }
-            } catch (error) {
-                set({ 
-                    error: error instanceof Error ? error.message : 'Código inválido o expirado',
-                    isLoading: false 
-                });
-                throw error;
-            }
+        clearEmailConfirmation: () => {
+            set({ requiresEmailConfirmation: false });
         },
 
         /**
@@ -216,8 +235,22 @@ export const useCheckoutStore = create<CheckoutState>()(
                     useAuthStore.getState().clearUser();
                 }
 
-                const { user: rawUser, isNewUser } = await checkoutService.registerOrLogin(userData);
-                
+                const { user: rawUser, isNewUser, requiresEmailConfirmation } = await checkoutService.registerOrLogin(userData);
+
+                // Nuevo cliente: guardar la compra pendiente y mostrar pantalla de confirmación
+                if (requiresEmailConfirmation) {
+                    savePendingCheckout(get().service, userData.email);
+                    set({
+                        userData,
+                        isExistingUser: !isNewUser,
+                        existingUserId: null,
+                        requiresEmailConfirmation: true,
+                        isLoading: false,
+                        step: 1
+                    });
+                    return true;
+                }
+
                 if (rawUser) {
                     const { authService } = await import('@/features/auth/services/auth.service');
                     const user = authService.mapSupabaseUserToEntity(rawUser);
@@ -238,6 +271,20 @@ export const useCheckoutStore = create<CheckoutState>()(
                 }
                 return false;
             } catch (error: any) {
+                // Usuario existente pero aún sin confirmar → pantalla de confirmación
+                if (error?.code === 'email_not_confirmed' || String(error?.message || '').toLowerCase().includes('no ha sido confirmado')) {
+                    savePendingCheckout(get().service, userData.email);
+                    set({ 
+                        userData,
+                        isExistingUser: true,
+                        existingUserId: null,
+                        requiresEmailConfirmation: true,
+                        isLoading: false,
+                        error: null
+                    });
+                    return true;
+                }
+
                 console.error('❌ [Checkout] Error de autenticación:', error);
                 set({ 
                     error: error.message || 'Error al validar identidad',
@@ -270,7 +317,10 @@ export const useCheckoutStore = create<CheckoutState>()(
                 if (!currentUserId && state.userData) {
                     
                     try {
-                        const { user: rawUser } = await checkoutService.registerOrLogin(state.userData);
+                        const { user: rawUser, requiresEmailConfirmation } = await checkoutService.registerOrLogin(state.userData);
+                        if (requiresEmailConfirmation) {
+                            throw new Error('Debes confirmar tu correo antes de continuar con el pago.');
+                        }
                         if (rawUser) {
                             const { authService } = await import('@/features/auth/services/auth.service');
                             const user = authService.mapSupabaseUserToEntity(rawUser);

@@ -11,6 +11,7 @@ export interface UserCheckoutData {
     phone?: string;
     password?: string; // Para registro
     createAccount: boolean;
+    turnstileToken?: string;
 }
 
 // Datos de pago
@@ -68,6 +69,7 @@ export interface CheckoutState extends CheckoutData {
     completedAt: string | null;  // Timestamp cuando se completó exitosamente
     isProcessingPayment: boolean; // Indica si el usuario hizo clic en pagar
     isWaitingForWebhook: boolean; // Indica si estamos esperando la confirmación de la pasarela
+    requiresEmailConfirmation: boolean; // Indica si el nuevo cliente debe confirmar su correo
 
     // Actions
     openCheckout: (service: Servicio) => void;
@@ -80,8 +82,8 @@ export interface CheckoutState extends CheckoutData {
     setIsWaitingForWebhook: (val: boolean) => void;
     setOrderId: (orderId: string) => void;
     checkUserExists: (email: string) => Promise<boolean>;
-    sendOtp: (email: string) => Promise<void>;
-    verifyOtp: (email: string, token: string) => Promise<void>;
+    resendConfirmation: (email: string, password: string, turnstileToken?: string) => Promise<void>;
+    clearEmailConfirmation: () => void;
     authenticateUser: (data: UserCheckoutData) => Promise<boolean>;
     submitOrder: () => Promise<void>;
     markAsCompleted: () => void;

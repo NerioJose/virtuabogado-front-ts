@@ -9,7 +9,7 @@ import { useFinancialSettings } from '@/features/financial-settings/hooks/useFin
 
 export function useMisServicios() {
     const router = useRouter();
-    const { user, isAuthenticated, isLoading: authLoading, logout: authLogout, checkAuth } = useAuth();
+    const { user, isAuthenticated, isLoading: authLoading, logout: authLogout, checkAuth, isLoggingOut } = useAuth();
     const unreadOrders = useChatStore((state) => state.unreadOrders);
     const unreadCounts = useChatStore((state) => state.unreadCounts);
     
@@ -36,15 +36,16 @@ export function useMisServicios() {
     }, [hasHydrated, checkAuth]);
 
     useEffect(() => {
+        if (isLoggingOut) return;
         if (hasHydrated && !isAuthenticated && !authLoading && user === null) {
             router.push('/login');
         }
-    }, [hasHydrated, isAuthenticated, authLoading, user, router]);
+    }, [hasHydrated, isAuthenticated, authLoading, user, router, isLoggingOut]);
 
     const handleLogout = async () => {
         try {
             await authLogout();
-            router.push('/login');
+            window.location.href = '/login';
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
         }

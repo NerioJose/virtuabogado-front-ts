@@ -14,7 +14,7 @@ import { UserRole } from '@/shared/types/entities.types';
 
 export function useAuth() {
     const router = useRouter();
-    const { user, isAuthenticated, login: setLogin, logout: setLogout, checkAuth } = useAuthStore();
+    const { user, isAuthenticated, login: setLogin, logout: setLogout, checkAuth, isLoggingOut } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -88,10 +88,8 @@ export function useAuth() {
         setError(null);
 
         try {
-            // El store ya maneja la llamada a authService.logout
             await setLogout();
-            router.push(ROUTES.LOGIN);
-            // Removed router.refresh() - not needed for logout redirect
+            window.location.href = ROUTES.LOGIN;
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : 'Error al cerrar sesión';
@@ -140,5 +138,6 @@ export function useAuth() {
         logout,
         changePassword,
         checkAuth,
+        isLoggingOut,
     };
 }

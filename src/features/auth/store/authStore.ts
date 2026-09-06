@@ -20,11 +20,12 @@ interface AuthState {
     isAuthenticated: boolean;
     isLoading: boolean;
     error: string | null;
+    isLoggingOut: boolean;
 
     // Acciones sync
     setUser: (user: User | null) => void;
     login: (user: User) => void;
-    logout: () => void;
+    logout: () => Promise<void>;
     updateUser: (userData: Partial<User>) => void;
     clearUser: () => void;
 
@@ -42,6 +43,7 @@ const initialState = {
     isAuthenticated: false,
     isLoading: false,
     error: null,
+    isLoggingOut: false,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -69,7 +71,9 @@ export const useAuthStore = create<AuthState>()(
                 state.setUser(user);
             },
 
-            logout: () => {
+            logout: async () => {
+                set({ isLoggingOut: true });
+
                 // 1. Limpiar estado instantáneamente para UI reactiva
                 set({
                     user: null,
@@ -98,15 +102,22 @@ export const useAuthStore = create<AuthState>()(
                     localStorage.removeItem('virtu-services-storage');
                 }
 
-                // 4. Limpiar React Query Cache (Previene 401s de polling/refetch)
+                // 5. Limpiar React Query Cache (Previene 401s de polling/refetch)
                 import('@/lib/queryClient').then(({ queryClient }) => {
                     queryClient.clear();
                 });
 
-                // 5. Llamada asíncrona a Supabase sin bloquear la UI
-                import('../services/auth.service').then(({ authService }) => {
-                    authService.logout().catch(console.error);
-                });
+                // 6. Esperar el signOut de Supabase para que la sesión quede
+                //    limpiada antes de que la UI redirija al login
+                try {
+                    await import('../services/auth.service').then(({ authService }) =>
+                        authService.logout()
+                    );
+                } catch (error) {
+                    console.error('Error en signOut:', error);
+                }
+
+                set({ isLoggingOut: false });
             },
 
             updateUser: (userData: Partial<User>) => {

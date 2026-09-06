@@ -58,7 +58,7 @@ const LoadingSpinner = ({
 
 export default function AdminPage() {
 	const router = useRouter();
-	const { user, isAuthenticated, checkAuth, logout: storeLogout } = useAuthStore();
+	const { user, isAuthenticated, checkAuth, logout: storeLogout, isLoggingOut } = useAuthStore();
 	const [seccionActiva, setSeccionActiva] = useState<SeccionAdmin>('dashboard');
 	const [modalAbierto, setModalAbierto] = useState(false);
 	const [tipoModal, setTipoModal] = useState<
@@ -84,6 +84,7 @@ export default function AdminPage() {
 	}, [isAuthenticated, user]);
 
 	useEffect(() => {
+		if (isLoggingOut) return;
 		if (!isAuthenticated && user === null) {
 			// Solo redirigir si definitivamente no está autenticado
 			router.push('/login');
@@ -91,7 +92,7 @@ export default function AdminPage() {
 			console.error('No autorizado');
 			router.push('/login');
 		}
-	}, [isAuthenticated, user, router]);
+	}, [isAuthenticated, user, router, isLoggingOut]);
 
 	// Funciones para modales
 	const abrirModal = (
@@ -182,8 +183,8 @@ export default function AdminPage() {
 	// Manejador de cierre de sesión
 	const handleLogout = async () => {
 		try {
-			storeLogout();
-			router.push('/login');
+			await storeLogout();
+			window.location.href = '/login';
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
 		}
@@ -350,7 +351,7 @@ export default function AdminPage() {
 	if (!isAuthenticated || !user) {
 		return (
 			<div className="flex items-center justify-center min-h-screen bg-gray-100">
-				<LoadingSpinner text="Verificando permisos..." />
+				<LoadingSpinner text="Verificando tu sesión..." />
 			</div>
 		);
 	}

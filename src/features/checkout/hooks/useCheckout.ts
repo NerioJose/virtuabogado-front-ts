@@ -23,6 +23,7 @@ export const useCheckout = () => {
     const completedAt = useCheckoutStore((state) => state.completedAt);
     const isProcessingPayment = useCheckoutStore((state) => state.isProcessingPayment);
     const isWaitingForWebhook = useCheckoutStore((state) => state.isWaitingForWebhook);
+    const requiresEmailConfirmation = useCheckoutStore((state) => state.requiresEmailConfirmation);
 
     const openCheckout = useCheckoutStore((state) => state.openCheckout);
     const closeCheckout = useCheckoutStore((state) => state.closeCheckout);
@@ -34,8 +35,8 @@ export const useCheckout = () => {
     const setIsWaitingForWebhook = useCheckoutStore((state) => state.setIsWaitingForWebhook);
     const setOrderId = useCheckoutStore((state) => state.setOrderId);
     const checkUserExists = useCheckoutStore((state) => state.checkUserExists);
-    const sendOtp = useCheckoutStore((state) => state.sendOtp);
-    const verifyOtp = useCheckoutStore((state) => state.verifyOtp);
+    const resendConfirmation = useCheckoutStore((state) => state.resendConfirmation);
+    const clearEmailConfirmation = useCheckoutStore((state) => state.clearEmailConfirmation);
     const authenticateUser = useCheckoutStore((state) => state.authenticateUser);
     const submitOrder = useCheckoutStore((state) => state.submitOrder);
     const markAsCompleted = useCheckoutStore((state) => state.markAsCompleted);
@@ -57,6 +58,7 @@ export const useCheckout = () => {
         completedAt,
         isProcessingPayment,
         isWaitingForWebhook,
+        requiresEmailConfirmation,
 
         openCheckout,
         closeCheckout,
@@ -68,8 +70,8 @@ export const useCheckout = () => {
         setIsWaitingForWebhook,
         setOrderId,
         checkUserExists,
-        sendOtp,
-        verifyOtp,
+        resendConfirmation,
+        clearEmailConfirmation,
         authenticateUser,
         submitOrder,
         markAsCompleted,
@@ -77,10 +79,11 @@ export const useCheckout = () => {
     }), [
         isOpen, step, service, userData, paymentData, paymentMethod, orderId, total, 
         isLoading, error, isExistingUser, tempPassword, completedAt, 
-        isProcessingPayment, isWaitingForWebhook, openCheckout, closeCheckout, 
+        isProcessingPayment, isWaitingForWebhook, requiresEmailConfirmation,
+        openCheckout, closeCheckout, 
         setStep, setUserData, setPaymentData, setPaymentMethod, 
         setIsProcessingPayment, setIsWaitingForWebhook, setOrderId, 
-        checkUserExists, sendOtp, verifyOtp, authenticateUser, submitOrder, 
+        checkUserExists, resendConfirmation, clearEmailConfirmation, authenticateUser, submitOrder, 
         markAsCompleted, reset
     ]);
 };

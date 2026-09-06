@@ -10,6 +10,33 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const next = searchParams.get('next') ?? '/';
 
+    // Confirmación de email (token propio enviado por nuestra plantilla de correo)
+    const type = searchParams.get('type');
+    const token = searchParams.get('token');
+    const email = searchParams.get('email');
+
+    if (type === 'signup' && token && email) {
+        const supabase = await createClient();
+        const { error } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'signup'
+        });
+
+        if (!error) {
+            // La sesión ya quedó establecida vía cookies; el frontend restaura el checkout
+            const redirectUrl = new URL(next, origin);
+            redirectUrl.searchParams.set('auth_success', '1');
+            return NextResponse.redirect(redirectUrl.toString());
+        }
+
+        // Token inválido/expirado → error claro
+        const errorUrl = new URL('/', origin);
+        errorUrl.searchParams.set('auth_error', 'confirm_invalid');
+        errorUrl.searchParams.set('auth_success', '0');
+        return NextResponse.redirect(errorUrl.toString());
+    }
+
     if (code) {
         const supabase = await createClient();
         const { error } = await supabase.auth.exchangeCodeForSession(code);

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
+import { validateEmail } from '@/lib/emailValidation';
 
 export async function PATCH(
     request: Request,
@@ -51,6 +52,13 @@ export async function PATCH(
         const body = await request.json();
         const { nombre, email, telefono, direccion, dni, activo } = body;
         const isAdmin = role === 'ADMIN';
+
+        if (email !== undefined) {
+            const emailCheck = validateEmail(String(email).trim());
+            if (!emailCheck.ok) {
+                return NextResponse.json({ error: emailCheck.error || 'Email inválido' }, { status: 400 });
+            }
+        }
 
         const updatedClient = await prisma.user.update({
             where: { id },

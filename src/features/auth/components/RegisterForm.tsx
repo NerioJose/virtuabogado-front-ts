@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
 import { Input } from '@/shared/components/ui/Input/Input';
+import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
 import { useRegisterForm } from '../hooks/useRegisterForm';
 import { UserRole } from '@/shared/types/entities.types';
 import { ROUTES } from '@/shared/constants/routes';
@@ -21,8 +22,13 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
         passwordError,
         isLoading,
         error,
+        turnstileToken,
+        setTurnstileToken,
+        awaitingConfirmation,
+        resendCooldown,
         handleSubmit,
         handleChange,
+        handleResendConfirmation,
     } = useRegisterForm(defaultRole);
 
     return (
@@ -34,7 +40,7 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                 className="glass-card p-8 md:p-10 w-full max-w-md">
                 <form
                     onSubmit={handleSubmit}
-                    className="grid w-full max-w-sm grid-cols-1 gap-6">
+                    className={`grid w-full max-w-sm grid-cols-1 gap-6 ${awaitingConfirmation ? 'hidden' : ''}`}>
                     {/* Logo */}
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-vinotinto rounded-lg flex items-center justify-center">
@@ -119,7 +125,11 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                         </label>
                     </div>
 
-                    <Button type="submit" isLoading={isLoading} className="w-full">
+                    <div className="flex justify-center">
+                        <TurnstileWidget onToken={setTurnstileToken} />
+                    </div>
+
+                    <Button type="submit" isLoading={isLoading} className="w-full" disabled={isLoading || !turnstileToken}>
                         Registrarse
                     </Button>
 
@@ -132,6 +142,41 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                         </Link>
                     </p>
                 </form>
+
+                {awaitingConfirmation && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full max-w-sm mx-auto text-center space-y-4">
+                        <div className="text-5xl">📩</div>
+                        <h2 className="text-xl font-bold text-azul-primario">
+                            Revisa tu correo
+                        </h2>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                            Enviamos un enlace de confirmación a{' '}
+                            <span className="font-bold text-azul-primario">{formData.email}</span>.
+                            Confirma tu cuenta para poder acceder y realizar tu compra.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleResendConfirmation}
+                            disabled={resendCooldown > 0}
+                            className="w-full py-3 bg-azul-primario text-white rounded-xl font-bold hover:bg-azul-oscuro transition disabled:opacity-60 disabled:cursor-not-allowed">
+                            {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : 'Reenviar correo'}
+                        </button>
+                        <p className="text-xs text-gray-400">
+                            ¿No lo encuentras? Revisa tu bandeja de spam.
+                        </p>
+                        <p className="text-sm text-gray-600">
+                            <button
+                                type="button"
+                                onClick={() => handleChange('email', '')}
+                                className="text-azul-primario hover:underline font-semibold">
+                                Usar otro correo
+                            </button>
+                        </p>
+                    </motion.div>
+                )}
             </motion.div>
         </div>
     );

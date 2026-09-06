@@ -22,6 +22,12 @@ export class AuthService {
 
         if (error) {
             console.error('Error en Supabase login:', error);
+
+            // Email aún no confirmado → mensaje accionable
+            if (error.code === 'email_not_confirmed' || error.message?.toLowerCase().includes('not confirmed')) {
+                throw new Error('Tu correo aún no ha sido confirmado. Revisa tu bandeja y pulsa el enlace de confirmación. Si no lo encuentras, regístrate de nuevo para reenviarlo.');
+            }
+
             throw new Error(error.message);
         }
 
@@ -34,33 +40,37 @@ export class AuthService {
     }
 
     /**
-     * Registrar nuevo usuario en Supabase
+     * Registrar nuevo usuario vía el API server-side.
+     * Para clientes devuelve requiresEmailConfirmation=true; el correo se envía desde el servidor.
      */
-    async register(data: RegisterData): Promise<User> {
-        const supabase = createClient(data.remember !== false);
-
-        const { data: authData, error } = await supabase.auth.signUp({
-            email: data.email,
-            password: data.password,
-            options: {
-                data: {
-                    nombre: data.nombre,
-                    telefono: data.telefono,
-                    rol: 'CLIENTE', // Rol por defecto
-                }
-            }
+    async register(data: RegisterData): Promise<{ user: User; requiresEmailConfirmation: boolean }> {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: data.email,
+                password: data.password,
+                nombre: data.nombre,
+                telefono: data.telefono || '',
+                rol: data.rol,
+                turnstileToken: (data as any).turnstileToken || ''
+            })
         });
 
-        if (error) {
-            console.error('Error en Supabase register:', error);
-            throw new Error(error.message);
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(payload.error || 'Error al registrar usuario');
         }
 
-        if (!authData.user) {
-            throw new Error("Error al crear usuario");
+        if (!payload.user) {
+            throw new Error('Error al crear usuario');
         }
 
-        return this.mapSupabaseUserToEntity(authData.user);
+        return {
+            user: this.mapSupabaseUserToEntity(payload.user),
+            requiresEmailConfirmation: !!payload.requiresEmailConfirmation
+        };
     }
 
     /**

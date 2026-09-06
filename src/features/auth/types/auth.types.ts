@@ -18,6 +18,7 @@ export interface RegisterData {
     telefono?: string;
     rol: UserRole;
     remember?: boolean;
+    turnstileToken?: string;
     // Campos específicos para abogado
     especialidad?: string;
     numeroColegiado?: string;

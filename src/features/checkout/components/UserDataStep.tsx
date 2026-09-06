@@ -3,9 +3,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { FiMail, FiUser, FiPhone, FiLock, FiChevronRight, FiArrowLeft, FiAlertCircle, FiLoader } from 'react-icons/fi';
+import { FiMail, FiUser, FiPhone, FiLock, FiChevronRight, FiArrowLeft, FiAlertCircle, FiLoader, FiSend } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Link from 'next/link';
+import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
 import { useUserDataStep } from '../hooks/useUserDataStep';
 
 export const UserDataStep: React.FC = () => {
@@ -21,11 +22,15 @@ export const UserDataStep: React.FC = () => {
         displayError,
         isLoading,
         isExistingUser,
+        requiresEmailConfirmation,
+        setTurnstileToken,
+        resendCooldown,
         handleInputChange,
         handleEmailChange,
         handleSubmit,
         handleResetEmail,
-        handleResetPassword
+        handleResetPassword,
+        handleResendConfirmation
     } = useUserDataStep();
 
     return (
@@ -35,7 +40,6 @@ export const UserDataStep: React.FC = () => {
             className="w-full max-w-md mx-auto"
         >
             <form onSubmit={handleSubmit} className="space-y-6">
-                
                 {/* ETAPA 1: Identificación (Email) */}
                 <div className="relative">
                     <label htmlFor="email" className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
@@ -50,7 +54,7 @@ export const UserDataStep: React.FC = () => {
                             autoComplete="email"
                             value={email}
                             onChange={handleEmailChange}
-                            disabled={hasChecked || isLoading}
+                            disabled={isLoading}
                             className={`w-full pl-11 pr-12 py-4 bg-white border-2 rounded-2xl transition duration-300 outline-none
                                 ${hasChecked 
                                     ? 'border-green-100 bg-green-50/30 text-gray-700' 
@@ -90,8 +94,49 @@ export const UserDataStep: React.FC = () => {
 
                 {/* ETAPA 2: Autenticación Dinámica */}
                 <AnimatePresence mode="wait">
-                    {hasChecked && (
+                    {hasChecked && requiresEmailConfirmation && (
                         <motion.div
+                            key="confirmation"
+                            initial={{ opacity: 0, scaleY: 0 }}
+                            animate={{ opacity: 1, scaleY: 1 }}
+                            exit={{ opacity: 0, scaleY: 0 }}
+                            style={{ transformOrigin: 'top' }}
+                            className="space-y-5 overflow-hidden pt-2"
+                        >
+                            <div className="p-5 rounded-2xl border border-azul-primario/20 bg-gradient-to-br from-azul-primario/5 to-sky-50/40 text-center space-y-3">
+                                <div className="text-4xl">📩</div>
+                                <div>
+                                    <p className="text-sm font-black text-gray-800 leading-tight">
+                                        Revisa tu correo
+                                    </p>
+                                    <p className="text-[12px] text-gray-500 font-medium leading-relaxed mt-1">
+                                        Enviamos un enlace de confirmación a{' '}
+                                        <span className="font-bold text-azul-primario">{email}</span>.
+                                        <br />
+                                        Confirma tu cuenta para continuar con el pago.
+                                    </p>
+                                </div>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    type="button"
+                                    onClick={handleResendConfirmation}
+                                    disabled={isLoading || resendCooldown > 0}
+                                    className="w-full py-3.5 bg-white text-azul-primario border-2 border-azul-primario/20 rounded-2xl font-bold transition flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    <FiSend className="text-sm" />
+                                    {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : 'Reenviar correo'}
+                                </motion.button>
+                                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                                    No te llegó el correo? Revisa tu bandeja de spam o intenta reenviarlo.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {hasChecked && !requiresEmailConfirmation && (
+                        <motion.div
+                            key="auth-fields"
                             initial={{ opacity: 0, scaleY: 0 }}
                             animate={{ opacity: 1, scaleY: 1 }}
                             exit={{ opacity: 0, scaleY: 0 }}
@@ -210,6 +255,17 @@ export const UserDataStep: React.FC = () => {
                                             placeholder="+58 412..."
                                         />
                                     </div>
+                                </motion.div>
+                            )}
+
+                            {!isExistingUser && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.25 }}
+                                    className="pt-1"
+                                >
+                                    <TurnstileWidget onToken={setTurnstileToken} />
                                 </motion.div>
                             )}
 

@@ -14,25 +14,31 @@ interface OrderRequest {
     total: number;
 }
 
+/**
+ * Error tipado: el email existe pero aún no fue confirmado.
+ */
+export class EmailNotConfirmedError extends Error {
+    code: string = 'email_not_confirmed';
+
+    constructor(email: string) {
+        super('Tu correo aún no ha sido confirmado. Revisa tu bandeja y pulsa el enlace de confirmación.');
+        this.name = 'EmailNotConfirmedError';
+    }
+}
+
 class CheckoutService {
     private supabase = createClient();
 
     /**
-     * Intenta registrar al usuario o loguearlo. 
-     * Ahora más flexible para soportar pre-detección de usuario.
+     * Intenta registrar al usuario o loguearlo.
+     * Para usuarios nuevos (clientes) devuelve requiresEmailConfirmation.
      */
-    async registerOrLogin(userData: UserCheckoutData): Promise<{ user: any, isNewUser: boolean }> {
+    async registerOrLogin(userData: UserCheckoutData): Promise<{ user: any, isNewUser: boolean, requiresEmailConfirmation?: boolean }> {
         const email = userData.email.trim();
         const { password, nombre, phone } = userData;
 
-        // Si no hay contraseña (flujo OTP completado previamente en el componente)
-        // intentamos obtener el usuario actual de auth
         if (!password) {
-            const { data: { user } } = await this.supabase.auth.getUser();
-            if (user) {
-                return { user, isNewUser: false };
-            }
-            throw new Error("Se requiere contraseña o autenticación previa para continuar.");
+            throw new Error('Se requiere contraseña para continuar.');
         }
 
         // ESTRATEGIA 1: Intentar API server-side
@@ -44,84 +50,40 @@ class CheckoutService {
                     email,
                     password,
                     nombre: nombre || 'Usuario',
-                    telefono: phone || ''
+                    telefono: phone || '',
+                    turnstileToken: (userData as any).turnstileToken || ''
                 })
             });
 
+            const data = await response.json().catch(() => ({}));
+
             if (response.ok) {
-                const data = await response.json();
-                
-                // Crear sesión en el cliente localmente
+                // Nuevo cliente: requiere confirmación de email antes de crear sesión
+                if (data.requiresEmailConfirmation) {
+                    return { user: data.user, isNewUser: true, requiresEmailConfirmation: true };
+                }
+
+                // Usuario existente aunque: crear sesión
                 await this.supabase.auth.signInWithPassword({ email, password });
-                
-                return { user: data.user, isNewUser: data.isNewUser };
+                return { user: data.user, isNewUser: data.isNewUser, requiresEmailConfirmation: false };
+            }
+
+            if (data?.error && response.status < 500) {
+                console.warn('⚠️ API error capturado:', data.error);
             }
         } catch (apiError) {
             console.warn('⚠️ API error, fallback to client:', apiError);
         }
 
-        // ESTRATEGIA 2: Cliente directo
-        const { data: signInData } = await this.supabase.auth.signInWithPassword({ email, password });
-        if (signInData.user) return { user: signInData.user, isNewUser: false };
+        // ESTRATEGIA 2: Cliente directo (login de usuarios existentes)
+        const { data: signInData, error: signInError } = await this.supabase.auth.signInWithPassword({ email, password });
+        if (signInData.user) return { user: signInData.user, isNewUser: false, requiresEmailConfirmation: false };
 
-        const { data: signUpData, error: signUpError } = await this.supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { nombre: nombre || 'Usuario', telefono: phone || '', rol: 'CLIENTE' } }
-        });
-
-        if (signUpData.user && !signUpError) return { user: signUpData.user, isNewUser: true };
-
-        if (signUpError?.message.includes('already registered')) {
-            throw new Error("Usuario ya existe pero la contraseña es incorrecta. Usa la opción de 'Código de acceso'.");
+        if (signInError?.code === 'email_not_confirmed' || signInError?.message?.toLowerCase().includes('not confirmed')) {
+            throw new EmailNotConfirmedError(email);
         }
 
-        throw new Error(signUpError?.message || "Error en la autenticación.");
-    }
-
-    /**
-     * Envía un magic link al correo.
-     * Guarda el estado del checkout en sessionStorage para restaurarlo después del redirect.
-     */
-    async sendOtp(email: string, checkoutState?: Record<string, unknown>): Promise<void> {
-        // Guardar el estado del checkout antes de redirigir (usamos localStorage para soporte multi-pestaña)
-        if (checkoutState && typeof window !== 'undefined') {
-            localStorage.setItem('checkout_pending', JSON.stringify({
-                ...checkoutState,
-                timestamp: Date.now()
-            }));
-        }
-
-        // El redirect apunta al callback para que Supabase establezca la sesión
-        const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`;
-        
-        // Determinar si estamos en localhost para simplificar el envío si hay problemas de redirección
-        const isLocalhost = window.location.hostname === 'localhost';
-
-        const { error } = await this.supabase.auth.signInWithOtp({
-            email,
-            options: {
-                shouldCreateUser: false, // Solo para usuarios existentes
-                // Solo enviar redirect si no estamos en localhost o si está en la lista blanca
-                emailRedirectTo: !isLocalhost ? callbackUrl : undefined
-            }
-        });
-
-        if (error) throw error;
-    }
-
-    /**
-     * Verifica el código OTP
-     */
-    async verifyOtp(email: string, token: string): Promise<any> {
-        const { data, error } = await this.supabase.auth.verifyOtp({
-            email,
-            token,
-            type: 'magiclink' // Maneja tanto los links como los códigos de 6 dígitos
-        });
-
-        if (error) throw error;
-        return data.user;
+        throw new Error(signInError?.message || "Error en la autenticación.");
     }
 
     /**

@@ -31,15 +31,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificación anti-bot de Cloudflare Turnstile
-        const isHuman = await verifyTurnstile(turnstileToken);
-        if (!isHuman) {
-            return NextResponse.json(
-                { error: 'No pudimos verificar que no eres un robot. Inténtalo de nuevo.' },
-                { status: 400 }
-            );
-        }
-
         // Solo los clientes requieren confirmación de email.
         // Los abogados los registra/verifica el administrador (auto-confirmación).
         const userRole = rol === 'ABOGADO' ? 'ABOGADO' : 'CLIENTE';
@@ -65,8 +56,6 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        
-
         // 1. Intentar Login primero (usuarios existentes confirmados)
         const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
             email: normalizedEmail,
@@ -74,7 +63,6 @@ export async function POST(request: NextRequest) {
         });
 
         if (signInData.user && !signInError) {
-            
             return NextResponse.json({
                 user: {
                     id: signInData.user.id,
@@ -97,6 +85,9 @@ export async function POST(request: NextRequest) {
                 const alreadyConfirmed = existingUser?.email_confirmed_at;
 
                 if (existingUser && !alreadyConfirmed) {
+                    // Reenvío: el usuario ya pasó la verificación humana al crearse.
+                    // No volvemos a exigir Turnstile aquí (evita falsos "robot"
+                    // cuando se reenvía desde la pantalla de confirmación).
                     try {
                         const confirmUrl = await buildConfirmationUrl(supabaseAdmin, normalizedEmail, request, password);
                         await sendConfirmationEmail({
@@ -121,7 +112,15 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 2. Si login falla, crear usuario nuevo
+        // 2. Crear usuario NUEVO → aquí sí exigimos la verificación anti-bot.
+        const isHuman = await verifyTurnstile(turnstileToken);
+        if (!isHuman) {
+            return NextResponse.json(
+                { error: 'No pudimos verificar que no eres un robot. Inténtalo de nuevo.' },
+                { status: 400 }
+            );
+        }
+
         const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
             email: normalizedEmail,
             password,

@@ -132,6 +132,10 @@ export const useCheckoutStore = create<CheckoutState>()(
             set({ userData: normalizedData });
         },
 
+        clearError: () => {
+            set({ error: null });
+        },
+
         setPaymentData: (paymentData: PaymentData) => {
             set({ paymentData });
         },

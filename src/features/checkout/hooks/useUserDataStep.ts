@@ -13,6 +13,7 @@ export const useUserDataStep = () => {
         requiresEmailConfirmation,
         checkUserExists,
         clearEmailConfirmation,
+        clearError,
         authenticateUser,
         resendConfirmation
     } = useCheckout();
@@ -27,6 +28,7 @@ export const useUserDataStep = () => {
     const [turnstileToken, setTurnstileToken] = useState('');
     const [emailError, setEmailError] = useState<string | null>(null);
     const [resendCooldown, setResendCooldown] = useState(0);
+    const [captchaAttempt, setCaptchaAttempt] = useState(0);
     const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [formData, setFormData] = useState({
@@ -189,6 +191,14 @@ export const useUserDataStep = () => {
         }
     };
 
+    // Reintentar verificación anti-bot: limpia el error y renueva el captcha
+    const handleRetryHumanCheck = () => {
+        clearError();
+        setLocalError(null);
+        setTurnstileToken('');
+        setCaptchaAttempt((prev) => prev + 1);
+    };
+
     const displayError = localError || storeError;
 
     return {
@@ -209,6 +219,7 @@ export const useUserDataStep = () => {
         turnstileToken,
         setTurnstileToken,
         resendCooldown,
+        captchaAttempt,
 
         // Actions
         handleInputChange,
@@ -216,6 +227,7 @@ export const useUserDataStep = () => {
         handleSubmit,
         handleResetEmail,
         handleResetPassword,
-        handleResendConfirmation
+        handleResendConfirmation,
+        handleRetryHumanCheck
     };
 };

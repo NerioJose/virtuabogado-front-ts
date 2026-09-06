@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { FiMail, FiUser, FiPhone, FiLock, FiChevronRight, FiArrowLeft, FiAlertCircle, FiLoader, FiSend } from 'react-icons/fi';
+import { FiMail, FiUser, FiPhone, FiLock, FiChevronRight, FiArrowLeft, FiAlertCircle, FiLoader, FiSend, FiRefreshCw } from 'react-icons/fi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Link from 'next/link';
 import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
@@ -31,7 +31,9 @@ export const UserDataStep: React.FC = () => {
         handleSubmit,
         handleResetEmail,
         handleResetPassword,
-        handleResendConfirmation
+        handleResendConfirmation,
+        handleRetryHumanCheck,
+        captchaAttempt
     } = useUserDataStep();
 
     return (
@@ -279,7 +281,7 @@ export const UserDataStep: React.FC = () => {
                                     transition={{ delay: 0.25 }}
                                     className="pt-1"
                                 >
-                                    <TurnstileWidget onToken={setTurnstileToken} />
+                                    <TurnstileWidget key={captchaAttempt} onToken={setTurnstileToken} />
                                 </motion.div>
                             )}
 
@@ -320,6 +322,17 @@ export const UserDataStep: React.FC = () => {
                             <div className="flex-1">
                                 <p className="text-[11px] font-bold text-red-800 uppercase tracking-widest mb-1">Error de Validación</p>
                                 <p className="text-xs text-red-600 font-medium leading-relaxed">{displayError}</p>
+
+                                {displayError.toLowerCase().includes('robot') && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRetryHumanCheck}
+                                        className="mt-3 w-full py-2.5 bg-azul-primario text-white rounded-xl text-xs font-bold hover:bg-azul-oscuro transition flex items-center justify-center gap-2"
+                                    >
+                                        <FiRefreshCw className="text-xs" />
+                                        Volver al paso 1 y reintentar verificación
+                                    </button>
+                                )}
                             </div>
                         </motion.div>
                     )}

@@ -1,6 +1,8 @@
 /**
  * Verificación server-side de Cloudflare Turnstile.
- * Si las claves no están configuradas, degrada a permitido para no romper el flujo.
+ * - Si las claves no están configuradas, degrada a permitido.
+ * - "timeout-or-duplicate" (token reutilizado/ya verificado en un intento previo
+ *   exitoso) se tolera como humano para no romper reintentos legítimos.
  */
 export async function verifyTurnstile(token?: string): Promise<boolean> {
     const secret = process.env.TURNSTILE_SECRET_KEY;
@@ -26,7 +28,22 @@ export async function verifyTurnstile(token?: string): Promise<boolean> {
         });
 
         const data = await response.json();
-        return !!data?.success;
+
+        if (data?.success) {
+            return true;
+        }
+
+        const codes: string[] = Array.isArray(data?.['error-codes']) ? data['error-codes'] : [];
+        if (codes.length > 0) {
+            console.error('❌ [Turnstile] Verificación rechazada. error-codes:', codes.join(', '));
+        }
+
+        // Token ya consumido por una verificación exitosa previa (doble submit).
+        if (codes.includes('timeout-or-duplicate')) {
+            return true;
+        }
+
+        return false;
     } catch (error) {
         console.error('❌ [Turnstile] Error de verificación:', error);
         return false;

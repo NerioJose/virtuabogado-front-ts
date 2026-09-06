@@ -148,7 +148,11 @@ export const CheckoutModal: React.FC = () => {
                     </div>
 
                     <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6 relative">
-                        {isLoading && <LoadingOverlay message="Procesando tu pago..." />}
+                        {isLoading && (
+                            <LoadingOverlay
+                                message={step === 2 ? 'Procesando tu pago...' : 'Validando tu información...'}
+                            />
+                        )}
 
                         {error && (
                             <ErrorMessage

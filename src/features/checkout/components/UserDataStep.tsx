@@ -20,6 +20,7 @@ export const UserDataStep: React.FC = () => {
         setShowResetModal,
         formData,
         displayError,
+        emailError,
         isLoading,
         isExistingUser,
         requiresEmailConfirmation,
@@ -90,6 +91,19 @@ export const UserDataStep: React.FC = () => {
                             )}
                         </AnimatePresence>
                     </div>
+                    <AnimatePresence>
+                        {emailError && (
+                            <motion.p
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -4 }}
+                                className="mt-1.5 px-1 text-[11px] font-bold text-red-600 flex items-center gap-1"
+                            >
+                                <FiAlertCircle className="shrink-0" />
+                                {emailError}
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* ETAPA 2: Autenticación Dinámica */}
@@ -274,7 +288,7 @@ export const UserDataStep: React.FC = () => {
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || !!emailError}
                                 className="w-full py-4 bg-azul-primario text-white rounded-2xl font-bold shadow-lg shadow-azul-primario/25 hover:bg-azul-oscuro transition flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? (

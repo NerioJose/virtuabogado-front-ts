@@ -20,6 +20,7 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
         remember,
         setRemember,
         passwordError,
+        emailError,
         isLoading,
         error,
         turnstileToken,
@@ -85,6 +86,7 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                         label="Correo electrónico"
                         value={formData.email}
                         onChange={(e) => handleChange('email', e.target.value)}
+                        error={emailError || undefined}
                         required
                     />
 
@@ -129,7 +131,7 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                         <TurnstileWidget onToken={setTurnstileToken} />
                     </div>
 
-                    <Button type="submit" isLoading={isLoading} className="w-full" disabled={isLoading || !turnstileToken}>
+                    <Button type="submit" isLoading={isLoading} className="w-full" disabled={isLoading || !turnstileToken || !!emailError}>
                         Registrarse
                     </Button>
 

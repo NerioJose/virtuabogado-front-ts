@@ -6,7 +6,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { UserRole } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
 import { getCached, setCache, clearCache } from '@/lib/cache';
-import { validateEmail } from '@/lib/emailValidation';
+import { validateEmailDeliverability } from '@/lib/emailDeliverability';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Email y nombre son requeridos' }, { status: 400 });
         }
 
-        const emailCheck = validateEmail(String(email).trim());
+        const emailCheck = await validateEmailDeliverability(String(email).trim());
         if (!emailCheck.ok) {
             return NextResponse.json({ error: emailCheck.error || 'Email inválido' }, { status: 400 });
         }

@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { UserRole } from '@/shared/types/entities.types';
 
 const RESEND_COOLDOWN_SECONDS = 60;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
     const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
     });
     const [remember, setRemember] = useState(true);
     const [passwordError, setPasswordError] = useState('');
+    const [emailError, setEmailError] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
@@ -88,6 +90,37 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         }, 1000);
     };
 
+    // Chequeo en vivo de deliverabilidad del email (formato + desechable + MX)
+    useEffect(() => {
+        const email = formData.email.trim();
+
+        if (!email) {
+            setEmailError(null);
+            return;
+        }
+        if (!EMAIL_PATTERN.test(email)) {
+            setEmailError('Ingresa un correo electrónico válido.');
+            return;
+        }
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/auth/validate-email?email=${encodeURIComponent(email)}`);
+                const data = await res.json().catch(() => ({}));
+                if (!cancelled) setEmailError(data?.ok ? null : (data?.error || 'Correo no válido'));
+            } catch (err) {
+                console.error('Error validando email:', err);
+                if (!cancelled) setEmailError(null);
+            }
+        }, 700);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [formData.email]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setPasswordError('');
@@ -119,8 +152,11 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
 
     const handleChange = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
-        if (field === 'email' && awaitingConfirmation) {
-            setAwaitingConfirmation(false);
+        if (field === 'email') {
+            setEmailError(null);
+            if (awaitingConfirmation) {
+                setAwaitingConfirmation(false);
+            }
         }
     };
 
@@ -152,6 +188,7 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         remember,
         setRemember,
         passwordError,
+        emailError,
         isLoading,
         error,
         turnstileToken,

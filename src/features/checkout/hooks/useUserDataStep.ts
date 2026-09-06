@@ -25,6 +25,7 @@ export const useUserDataStep = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
+    const [emailError, setEmailError] = useState<string | null>(null);
     const [resendCooldown, setResendCooldown] = useState(0);
     const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -68,12 +69,13 @@ export const useUserDataStep = () => {
         }
     }, [storeUserData]);
 
-    // Debounce para verificación de Email
+    // Debounce para verificación de Email (usuario existente + deliverabilidad MX)
     useEffect(() => {
         const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        
+
         if (!isValidEmail) {
             setHasChecked(false);
+            setEmailError(null);
             return;
         }
 
@@ -82,14 +84,28 @@ export const useUserDataStep = () => {
 
             setIsCheckingEmail(true);
             setLocalError(null);
+
+            // 1. Verificar si el usuario existe (login vs registro)
+            let userExists = false;
             try {
-                await checkUserExists(email);
+                userExists = await checkUserExists(email);
                 setHasChecked(true);
             } catch (err) {
                 console.error('Error checking email:', err);
-            } finally {
-                setIsCheckingEmail(false);
             }
+
+            // 2. Verificación en vivo de deliverabilidad (formato + desechable + MX)
+            try {
+                const res = await fetch(`/api/auth/validate-email?email=${encodeURIComponent(email)}`);
+                const data = await res.json().catch(() => ({}));
+                setEmailError(data?.ok ? null : (data?.error || null));
+            } catch (err) {
+                console.error('Error validando email:', err);
+                setEmailError(null);
+            }
+
+            if (userExists) setEmailError(null);
+            setIsCheckingEmail(false);
         }, 800);
 
         return () => clearTimeout(timer);
@@ -103,6 +119,7 @@ export const useUserDataStep = () => {
 
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(e.target.value);
+        setEmailError(null);
         if (localError) setLocalError(null);
         if (requiresEmailConfirmation) clearEmailConfirmation();
     };
@@ -137,6 +154,7 @@ export const useUserDataStep = () => {
     const handleResetEmail = () => {
         clearEmailConfirmation();
         setHasChecked(false);
+        setEmailError(null);
         setEmail('');
         setFormData({ password: '', name: '', phone: '' });
     };
@@ -184,6 +202,7 @@ export const useUserDataStep = () => {
         setShowResetModal,
         formData,
         displayError,
+        emailError,
         isLoading,
         isExistingUser,
         requiresEmailConfirmation,

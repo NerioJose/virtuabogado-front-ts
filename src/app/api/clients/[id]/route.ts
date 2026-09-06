@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/utils/supabase/server';
-import { validateEmail } from '@/lib/emailValidation';
+import { validateEmailDeliverability } from '@/lib/emailDeliverability';
 
 export async function PATCH(
     request: Request,
@@ -54,7 +54,7 @@ export async function PATCH(
         const isAdmin = role === 'ADMIN';
 
         if (email !== undefined) {
-            const emailCheck = validateEmail(String(email).trim());
+            const emailCheck = await validateEmailDeliverability(String(email).trim());
             if (!emailCheck.ok) {
                 return NextResponse.json({ error: emailCheck.error || 'Email inválido' }, { status: 400 });
             }

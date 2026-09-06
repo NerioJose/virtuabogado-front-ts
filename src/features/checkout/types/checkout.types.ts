@@ -76,6 +76,7 @@ export interface CheckoutState extends CheckoutData {
     closeCheckout: () => void;
     setStep: (step: CheckoutStep) => void;
     setUserData: (data: UserCheckoutData) => void;
+    clearError: () => void;
     setPaymentData: (data: PaymentData) => void;
     setPaymentMethod: (method: PaymentMethod) => void;
     setIsProcessingPayment: (val: boolean) => void;

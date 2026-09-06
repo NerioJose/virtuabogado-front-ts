@@ -29,6 +29,7 @@ export const useCheckout = () => {
     const closeCheckout = useCheckoutStore((state) => state.closeCheckout);
     const setStep = useCheckoutStore((state) => state.setStep);
     const setUserData = useCheckoutStore((state) => state.setUserData);
+    const clearError = useCheckoutStore((state) => state.clearError);
     const setPaymentData = useCheckoutStore((state) => state.setPaymentData);
     const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod);
     const setIsProcessingPayment = useCheckoutStore((state) => state.setIsProcessingPayment);
@@ -64,6 +65,7 @@ export const useCheckout = () => {
         closeCheckout,
         setStep,
         setUserData,
+        clearError,
         setPaymentData,
         setPaymentMethod,
         setIsProcessingPayment,
@@ -81,9 +83,9 @@ export const useCheckout = () => {
         isLoading, error, isExistingUser, tempPassword, completedAt, 
         isProcessingPayment, isWaitingForWebhook, requiresEmailConfirmation,
         openCheckout, closeCheckout, 
-        setStep, setUserData, setPaymentData, setPaymentMethod, 
+        setStep, setUserData, clearError, setPaymentData, setPaymentMethod, 
         setIsProcessingPayment, setIsWaitingForWebhook, setOrderId, 
         checkUserExists, resendConfirmation, clearEmailConfirmation, authenticateUser, submitOrder, 
-        markAsCompleted, reset
+        markAsCompleted, reset, clearError
     ]);
 };

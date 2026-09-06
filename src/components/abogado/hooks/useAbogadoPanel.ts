@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
@@ -9,7 +9,6 @@ import { getFinancialSummary } from '@/features/finance/actions/getFinancialSumm
 import { Abogado } from '@/types/index';
 
 export function useAbogadoPanel(abogadoId?: string) {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const [seccionActiva, setSeccionActiva] = useState('casos');
     const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
@@ -93,8 +92,8 @@ export function useAbogadoPanel(abogadoId?: string) {
     };
 
     const handleLogout = async () => {
-        storeLogout();
-        router.push('/login');
+        await storeLogout();
+        window.location.href = '/login';
     };
 
     return {

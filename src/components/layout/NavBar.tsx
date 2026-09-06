@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FiChevronDown, FiFileText, FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -182,18 +181,17 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
 
 const Navbar = () => {
 	const [isOpen, setIsOpen] = useState(false);
-	const router = useRouter();
 
 	// Usar authStore para estado de autenticación
 	const { user, logout } = useAuthStore();
 
 
 
-	const handleLogout = () => {
+	const handleLogout = async () => {
 		try {
 			setIsOpen(false);
-			logout();
-			router.push('/login');
+			await logout();
+			window.location.href = '/login';
 		} catch (error) {
 			console.error('Error al cerrar sesión:', error);
 		}

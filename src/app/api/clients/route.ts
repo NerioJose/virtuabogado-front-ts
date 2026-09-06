@@ -161,6 +161,7 @@ export async function POST(request: Request) {
 
         const adminClient = createAdminClient();
         let userId: string;
+        let clientRole = 'CLIENTE';
 
         // 1. Intentar crear en Supabase Auth
         const tempPassword = body.password || crypto.randomBytes(12).toString('hex');
@@ -168,7 +169,7 @@ export async function POST(request: Request) {
         const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
             email,
             email_confirm: true,
-            user_metadata: { rol: 'CLIENTE', nombre },
+            user_metadata: { rol: clientRole, nombre },
             password: tempPassword
         });
 
@@ -182,10 +183,11 @@ export async function POST(request: Request) {
                 if (!existingUser) return NextResponse.json({ error: 'Usuario no encontrado tras conflicto' }, { status: 500 });
                 
                 userId = existingUser.id;
+                clientRole = ((existingUser.user_metadata?.rol as string) || 'CLIENTE').toUpperCase();
 
                 // Actualizar metadatos y contraseña si se proporcionó
                 const updateData: any = {
-                    user_metadata: { ...existingUser.user_metadata, rol: 'CLIENTE', nombre }
+                    user_metadata: { ...existingUser.user_metadata, rol: clientRole, nombre }
                 };
                 if (body.password) {
                     updateData.password = body.password;
@@ -205,7 +207,7 @@ export async function POST(request: Request) {
             where: { email },
             update: {
                 nombre,
-                rol: 'CLIENTE',
+                rol: clientRole as any,
                 telefono,
                 direccion,
                 dni,

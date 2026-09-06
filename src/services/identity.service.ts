@@ -15,6 +15,21 @@ interface SyncOptions {
   defaultName?: string;
 }
 
+function resolveSafeRole(
+  email: string,
+  masterAdminEmail: string | undefined,
+  existingRole: string | null | undefined,
+  incomingRole: string | null | undefined,
+): string {
+  if (email === masterAdminEmail) return 'ADMIN';
+  const existing = (existingRole || '').toUpperCase();
+  const incoming = (incomingRole || 'CLIENTE').toUpperCase();
+  if (existing && existing !== 'CLIENTE' && incoming === 'CLIENTE') {
+    return existing;
+  }
+  return incoming;
+}
+
 export async function syncUserIdentity(
   supabaseUser: { id: string; email?: string | null; user_metadata?: Record<string, any> | null },
   extraData: ExtraData = {},
@@ -58,18 +73,17 @@ export async function syncUserIdentity(
 
     // 3. Protección de rol
     const masterAdminEmail = options.masterAdminEmail || process.env.EMAIL_MASTER_ADMIN;
-    const isMasterAdmin = email === masterAdminEmail;
-    const roleToPreserve = isMasterAdmin ? 'ADMIN' : (existingByEmail.rol || (rol?.toUpperCase()) || 'CLIENTE');
+    const roleToPreserve = resolveSafeRole(email, masterAdminEmail, existingByEmail.rol, rol);
 
     // 4. Upsert por ID oficial
     mergedUser = await prisma.user.upsert({
       where: { id: targetUserId },
-      update: { ...updateData, rol: roleToPreserve },
+      update: { ...updateData, rol: roleToPreserve as any },
       create: {
         id: targetUserId,
         email,
         nombre: finalName || options.defaultName || 'Usuario Nuevo',
-        rol: roleToPreserve,
+        rol: roleToPreserve as any,
         telefono: telefono || undefined,
         activo: true,
         createdAt: new Date(),
@@ -110,8 +124,7 @@ export async function syncUserIdentity(
   } else {
     // Sin colisión, upsert simple
     const masterAdminEmail = options.masterAdminEmail || process.env.EMAIL_MASTER_ADMIN;
-    const isMasterAdmin = email === masterAdminEmail;
-    const currentRole = isMasterAdmin ? 'ADMIN' : (updateData.rol || (rol?.toUpperCase()) || 'CLIENTE');
+    const currentRole = resolveSafeRole(email, masterAdminEmail, existingByEmail?.rol, (updateData.rol as string) || (rol as string));
 
     if (finalName) updateData.nombre = finalName;
 
@@ -138,12 +151,12 @@ export async function syncUserIdentity(
     try {
       mergedUser = await prisma.user.upsert({
         where: { id: targetUserId },
-        update: { ...updateData, rol: currentRole },
+        update: { ...updateData, rol: currentRole as any },
         create: {
           id: targetUserId,
           email,
           nombre: finalName || options.defaultName || 'Usuario Nuevo',
-          rol: currentRole,
+          rol: currentRole as any,
           telefono: telefono || undefined,
           activo: true,
           createdAt: new Date(),

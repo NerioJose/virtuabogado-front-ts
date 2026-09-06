@@ -56,6 +56,13 @@ export const useCheckoutStorage = () => {
 
     // Recuperar del localStorage al montar
     useEffect(() => {
+        // Si venimos de un redirect de auth (confirmación de email), la
+        // restauración la maneja CheckoutStateSync en el paso 2. Restaurar
+        // aquí forzaría el paso 1 con datos obsoletos.
+        if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('auth_success') === '1') {
+            return;
+        }
+
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (!savedData) return;
 

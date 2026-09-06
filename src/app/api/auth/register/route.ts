@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { validateEmail } from '@/lib/emailValidation';
+import { validateEmailDeliverability } from '@/lib/emailDeliverability';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { sendConfirmationEmail } from '@/lib/emailTemplates';
 
@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
 
         const normalizedEmail = String(email).toLowerCase().trim();
 
-        // Validación estricta de email (formato + dominios desechables)
-        const emailCheck = validateEmail(normalizedEmail);
+        // Validación estricta de email (formato + dominios desechables + MX del dominio)
+        const emailCheck = await validateEmailDeliverability(normalizedEmail);
         if (!emailCheck.ok) {
             return NextResponse.json(
                 { error: emailCheck.error || 'Email inválido' },

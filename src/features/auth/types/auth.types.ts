@@ -9,6 +9,7 @@ export interface LoginCredentials {
     password: string;
     remember?: boolean;
     rol?: UserRole; // Para desarrollo
+    turnstileToken?: string;
 }
 
 export interface RegisterData {

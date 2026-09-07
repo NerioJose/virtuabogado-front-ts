@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { transporter } from '@/lib/nodemailer';
+import { sendTransactionalMail } from '@/lib/nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
         
 
         try {
-            await transporter.sendMail({
-                from: `"VirtuAbogado" <${GMAIL_USER}>`,
+            await sendTransactionalMail({
                 to: normalizedEmail,
-                subject: 'Restablece tu contraseña en VirtuAbogado 🔒',
+                subject: 'Restablece tu contraseña en VirtuAbogado',
+                text: `Hola ${user.nombre}, hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el enlace para continuar: ${resetLink}\n\nEste enlace es válido por 15 minutos.\n\nSi no solicitaste este cambio, ignora este correo.\n\nVirtuAbogado`,
                 html: `
                     <!DOCTYPE html>
                     <html>
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
                             .text { color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
                             .button { display: inline-block; background-color: #1961a0; color: #ffffff !important; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; box-shadow: 0 10px 20px -5px rgba(25, 97, 160, 0.3); }
                             .footer { padding: 32px; background-color: #f1f5f9; text-align: center; }
-                            .footer-text { color: #94a3b8; font-size: 12px; margin: 0; }
+                            .footer-text { color: #94a3b8; font-size: 12px; margin: 0 0 8px; }
                         </style>
                     </head>
                     <body>
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
                             </div>
                             <div class="footer">
                                 <p class="footer-text">© ${new Date().getFullYear()} VirtuAbogado.</p>
+                                <p class="footer-text">Si no solicitaste este cambio, ignora este correo.</p>
                             </div>
                         </div>
                     </body>

@@ -17,11 +17,38 @@ export const transporter = nodemailer.createTransport({
 
 // Verificación de conexión opcional en logs de servidor
 if (process.env.NODE_ENV === 'development') {
-    transporter.verify((error, success) => {
+    transporter.verify((error) => {
         if (error) {
             console.error('❌ [Nodemailer] Error de conexión SMTP:', error);
-        } else {
-            
         }
+    });
+}
+
+export interface TransactionalMail {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+}
+
+/**
+ * Envía un correo transaccional con las cabeceras y el formato que
+ * maximizan la entregabilidad (menos probabilidad de caer en spam):
+ * - Remitente fijo de la cuenta Gmail.
+ * - Versión en texto plano junto al HTML.
+ * - Cabecera List-Unsubscribe (señal anti-bulk).
+ */
+export async function sendTransactionalMail({ to, subject, html, text }: TransactionalMail): Promise<void> {
+    await transporter.sendMail({
+        from: `"VirtuAbogado" <${GMAIL_USER}>`,
+        replyTo: GMAIL_USER,
+        to,
+        subject,
+        html,
+        text,
+        headers: {
+            'List-Unsubscribe': `<mailto:${GMAIL_USER}?subject=unsubscribe>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
     });
 }

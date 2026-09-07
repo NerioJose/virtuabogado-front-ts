@@ -15,10 +15,12 @@ import {
 	FiShield,
 	FiX,
 	FiClock,
+	FiSend,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
 import { usePerfilAbogadoPanel } from './hooks/usePerfilAbogadoPanel';
+import TelegramConnect from '@/components/notifications/TelegramConnect';
 
 interface PerfilAbogadoPanelProps {
 	abogado: {
@@ -338,6 +340,22 @@ export default function PerfilAbogadoPanel({
 							</button>
 						</div>
 					</form>
+				</div>
+			</div>
+
+			{/* Notificaciones por Telegram */}
+			<div className="bg-white rounded-lg shadow-sm overflow-hidden">
+				<div className="p-6 border-b border-gray-100 flex items-center gap-3">
+					<div className="p-2 bg-[#0088cc]/10 text-[#0088cc] rounded-lg">
+						<FiSend size={20} />
+					</div>
+					<div>
+						<h3 className="text-lg font-bold text-gray-800">Notificaciones por Telegram</h3>
+						<p className="text-xs text-gray-500">Recibe avisos de nuevos casos aunque no tengas la app abierta</p>
+					</div>
+				</div>
+				<div className="p-6">
+					<TelegramConnect />
 				</div>
 			</div>
 		</div>

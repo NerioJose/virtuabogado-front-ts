@@ -12,12 +12,14 @@ import {
     FiUser,
     FiShield,
     FiCreditCard,
-    FiMessageCircle
+    FiMessageCircle,
+    FiBell
 } from 'react-icons/fi';
 import { useAdminServices } from '@/features/services/hooks/useServices';
 import ServiciosPanel from './ServiciosPanel';
 import { useConfiguracionPanel } from '@/features/financial-settings/hooks/useConfiguracionPanel';
 import { useAdminConfiguracion, TabType } from './hooks/useAdminConfiguracion';
+import TelegramConnect from '@/components/notifications/TelegramConnect';
 
 // Componente para configuración financiera (Extraído por claridad)
 function FinancialSettingsSection() {
@@ -252,6 +254,17 @@ export default function ConfiguracionPanel() {
 					>
 						<FiUser size={20} /> Perfil de Empresa
 					</button>
+
+					<button type="button"
+						onClick={() => handleTabChange('notificaciones')}
+						className={`px-8 py-5 text-sm font-bold transition flex items-center gap-3 ${
+							activeTab === 'notificaciones' 
+								? 'bg-azul-primario text-white' 
+								: 'text-gray-500 hover:bg-azul-claro/20'
+						}`}
+					>
+						<FiBell size={20} /> Notificaciones
+					</button>
 				</div>
 
 				<div className="p-8 bg-gray-50/30">
@@ -260,6 +273,11 @@ export default function ConfiguracionPanel() {
 					{activeTab === 'perfil' && (
 						<div className="p-20 text-center text-gray-400 italic">
 							Módulo de configuración de perfil bajo mantenimiento
+						</div>
+					)}
+					{activeTab === 'notificaciones' && (
+						<div className="max-w-2xl">
+							<TelegramConnect />
 						</div>
 					)}
 				</div>

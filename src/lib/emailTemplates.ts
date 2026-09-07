@@ -1,4 +1,4 @@
-import { transporter } from './nodemailer';
+import { sendTransactionalMail } from './nodemailer';
 
 /**
  * Envía el correo de confirmación de cuenta (CLIENTE).
@@ -11,12 +11,11 @@ export async function sendConfirmationEmail(params: {
     confirmUrl: string;
 }) {
     const { to, nombre, confirmUrl } = params;
-    const GMAIL_USER = process.env.GMAIL_USER;
 
-    await transporter.sendMail({
-        from: `"VirtuAbogado" <${GMAIL_USER}>`,
+    await sendTransactionalMail({
         to,
-        subject: 'Confirma tu correo en VirtuAbogado ✉️',
+        subject: 'Confirma tu correo en VirtuAbogado',
+        text: `Hola ${nombre}, estamos a un paso de activar tu cuenta. Haz clic en el enlace para confirmar tu correo: ${confirmUrl}\n\nEste enlace es válido por 24 horas.\n\nSi no solicitaste este correo, ignóralo.\n\nVirtuAbogado`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -31,7 +30,7 @@ export async function sendConfirmationEmail(params: {
                     .text { color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
                     .button { display: inline-block; background-color: #1961a0; color: #ffffff !important; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; box-shadow: 0 10px 20px -5px rgba(25, 97, 160, 0.3); }
                     .footer { padding: 32px; background-color: #f1f5f9; text-align: center; }
-                    .footer-text { color: #94a3b8; font-size: 12px; margin: 0; }
+                    .footer-text { color: #94a3b8; font-size: 12px; margin: 0 0 8px; }
                 </style>
             </head>
             <body>
@@ -47,6 +46,7 @@ export async function sendConfirmationEmail(params: {
                     </div>
                     <div class="footer">
                         <p class="footer-text">© ${new Date().getFullYear()} VirtuAbogado.</p>
+                        <p class="footer-text">Si no solicitaste este correo, ignóralo.</p>
                     </div>
                 </div>
             </body>

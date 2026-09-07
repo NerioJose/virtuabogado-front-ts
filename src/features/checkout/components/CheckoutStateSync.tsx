@@ -1,10 +1,11 @@
 'use client';
 
-import React, { Suspense, useEffect, useRef } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useCheckout } from '../hooks/useCheckout';
 import { useCheckoutStore } from '../store/checkoutStore';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { Loader } from '@/shared/components/feedback/Loader';
 import type { Servicio } from '@/shared/types/entities.types';
 
 const PENDING_KEY = 'checkout_pending';
@@ -31,10 +32,13 @@ function StateSyncHandler() {
     const pendingServiceRef = useRef<Servicio | null>(null);
     const hasOpenedRef = useRef(false);
     const hasCheckedAuthRef = useRef(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const authSuccess = searchParams.get('auth_success') === '1';
         if (!authSuccess) return;
+
+        setLoading(true);
 
         // 1. Retirar DE INMEDIATO el estado restaurable para que
         //    useCheckoutStorage (montado después en CheckoutLayoutWrapper)
@@ -71,7 +75,14 @@ function StateSyncHandler() {
         }
 
         if (!isAuthenticated) {
-            return; // sin sesión: no hay nada que reabrir
+            // Sin sesión: no hay nada que reabrir. Limpiamos la URL y
+            // quitamos el loader para no dejarlo en loop.
+            const newParams = new URLSearchParams(searchParams.toString());
+            newParams.delete('auth_success');
+            const cleanUrl = `${pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
+            router.replace(cleanUrl, { scroll: false });
+            setLoading(false);
+            return;
         }
 
         // 3. Autenticado con la sesión real: abrir el checkout en el paso 2
@@ -101,9 +112,16 @@ function StateSyncHandler() {
         newParams.delete('auth_success');
         const cleanUrl = `${pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
         router.replace(cleanUrl, { scroll: false });
+        setLoading(false);
     }, [searchParams, isAuthenticated, user, openCheckout, pathname, router, checkAuth]);
 
-    return null;
+    if (!loading) return null;
+
+    return (
+        <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-white/90 backdrop-blur-sm">
+            <Loader size="lg" text="Confirmando tu correo y preparando tu pago…" />
+        </div>
+    );
 }
 
 /**

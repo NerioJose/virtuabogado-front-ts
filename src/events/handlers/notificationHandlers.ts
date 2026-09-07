@@ -41,20 +41,41 @@ on('order.payment_received', async (event) => {
 
   const order = await prisma.order.findUnique({
     where: { id: data.orderId },
-    select: { total: true, user: { select: { nombre: true } }, service: { select: { titulo: true } } },
+    select: {
+      numericId: true,
+      total: true,
+      user: { select: { nombre: true } },
+      service: { select: { titulo: true } },
+    },
   })
 
   if (!order) return
 
   const clientName = order.user?.nombre || 'Cliente'
   const serviceName = order.service?.titulo || 'Servicio Legal'
+  const casoNum = order.numericId ? `#${order.numericId}` : `#${data.orderId.slice(0, 8)}`
 
   notifyNewSale(data.orderId, order.total.toString(), true, clientName, serviceName)
     .catch((e) => console.error('[Event] Error push venta:', e))
 
+  // Determinístico: misma lógica de auto-asignación que orderHandlers (1 abogado activo), 
+  // sin depender de la actualización de la orden que corre en paralelo.
+  const activeLawyers = await prisma.user.findMany({
+    where: { rol: 'ABOGADO' as any, activo: true },
+    select: { nombre: true },
+  })
+  const isAutoAssign = activeLawyers.length === 1
+
+  const title = isAutoAssign
+    ? 'Pago Confirmado — Abogado Asignado'
+    : 'Pago Confirmado — Asignación Pendiente'
+  const asignacion = isAutoAssign
+    ? `El pago fue confirmado. Asignado automáticamente a ${activeLawyers[0].nombre}.`
+    : 'El pago fue confirmado. Requiere asignar abogado.'
+
   telegramToAdmins(
-    'Pago Confirmado — Asignación Pendiente',
-    `Se recibió un pago de ${clientName} por "${serviceName}" ($${order.total}). Requiere asignar abogado.`,
+    title,
+    `Caso ${casoNum} · ${serviceName}\nCliente: ${clientName}\nMonto: $${order.total}\n${asignacion}`,
     `/admin?orden=${data.orderId}`,
   )
 })
@@ -67,6 +88,7 @@ on('order.assigned', async (event) => {
     select: {
       status: true,
       total: true,
+      numericId: true,
       lawyer: { select: { nombre: true } },
       user: { select: { nombre: true } },
       service: { select: { titulo: true } },
@@ -76,6 +98,8 @@ on('order.assigned', async (event) => {
   if (!order) return
 
   const serviceName = data.serviceName || order.service?.titulo || 'Servicio Legal'
+  const clientName = order.user?.nombre || 'Cliente'
+  const casoNum = order.numericId ? `#${order.numericId}` : `#${data.orderId.slice(0, 8)}`
 
   notifyNewCase(data.lawyerId, data.orderId, serviceName)
     .catch((e) => console.error('[Event] Error push asignación:', e))
@@ -89,7 +113,7 @@ on('order.assigned', async (event) => {
   telegramToLawyer(
     data.lawyerId,
     'Nuevo Caso Asignado',
-    `Tienes un nuevo expediente asignado: "${serviceName}". Entra para ver los detalles.`,
+    `Caso ${casoNum} · ${serviceName}\nCliente: ${clientName}\nEntra para ver los detalles del expediente.`,
     `/abogado?caso=${data.orderId}`,
   )
 })
@@ -103,6 +127,8 @@ on('order.reassigned', async (event) => {
   const order = await prisma.order.findUnique({
     where: { id: data.orderId },
     select: {
+      numericId: true,
+      user: { select: { nombre: true } },
       service: { select: { titulo: true } },
     },
   })
@@ -110,6 +136,8 @@ on('order.reassigned', async (event) => {
   if (!order) return
 
   const serviceName = data.serviceName || order.service?.titulo || 'Servicio Legal'
+  const clientName = order.user?.nombre || 'Cliente'
+  const casoNum = order.numericId ? `#${order.numericId}` : `#${data.orderId.slice(0, 8)}`
 
   notifyNewCase(data.toLawyerId, data.orderId, serviceName)
     .catch((e) => console.error('[Event] Error push nuevo abogado:', e))
@@ -125,7 +153,7 @@ on('order.reassigned', async (event) => {
   telegramToLawyer(
     data.toLawyerId,
     'Nuevo Caso Asignado',
-    `Se te ha asignado el expediente "${serviceName}". Entra para ver los detalles.`,
+    `Caso ${casoNum} · ${serviceName}\nCliente: ${clientName}\nEntra para ver los detalles del expediente.`,
     `/abogado?caso=${data.orderId}`,
   )
 })

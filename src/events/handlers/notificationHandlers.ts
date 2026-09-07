@@ -9,6 +9,32 @@ import {
   notifyPayoutCompleted,
   notifyNewMessage,
 } from '@/lib/push-notifications'
+import { sendTelegramMessage, buildTelegramMessage } from '@/lib/telegram'
+
+/** Envía un Telegram a todos los admins que tengan chat vinculado. */
+async function telegramToAdmins(title: string, body: string, url?: string) {
+  const admins = await prisma.user.findMany({
+    where: { rol: 'ADMIN' as any, activo: true, telegramChatId: { not: null } },
+    select: { telegramChatId: true },
+  })
+  await Promise.all(
+    admins.map((a) =>
+      sendTelegramMessage(a.telegramChatId as string, buildTelegramMessage(title, body, url)),
+    ),
+  )
+}
+
+/** Envía un Telegram al abogado si tiene chat vinculado. */
+async function telegramToLawyer(lawyerId: string, title: string, body: string, url?: string) {
+  if (!lawyerId) return
+  const lawyer = await prisma.user.findUnique({
+    where: { id: lawyerId },
+    select: { telegramChatId: true },
+  })
+  if (lawyer?.telegramChatId) {
+    await sendTelegramMessage(lawyer.telegramChatId, buildTelegramMessage(title, body, url))
+  }
+}
 
 on('order.payment_received', async (event) => {
   const data = event.data as { orderId: string; paymentId: string }
@@ -25,6 +51,12 @@ on('order.payment_received', async (event) => {
 
   notifyNewSale(data.orderId, order.total.toString(), true, clientName, serviceName)
     .catch((e) => console.error('[Event] Error push venta:', e))
+
+  telegramToAdmins(
+    'Pago Confirmado — Asignación Pendiente',
+    `Se recibió un pago de ${clientName} por "${serviceName}" ($${order.total}). Requiere asignar abogado.`,
+    `/admin?orden=${data.orderId}`,
+  )
 })
 
 on('order.assigned', async (event) => {
@@ -53,6 +85,13 @@ on('order.assigned', async (event) => {
 
   notifyNewSale(data.orderId, order.total.toString(), false, order.user?.nombre, serviceName)
     .catch((e) => console.error('[Event] Error push venta:', e))
+
+  telegramToLawyer(
+    data.lawyerId,
+    'Nuevo Caso Asignado',
+    `Tienes un nuevo expediente asignado: "${serviceName}". Entra para ver los detalles.`,
+    `/abogado?caso=${data.orderId}`,
+  )
 })
 
 on('order.reassigned', async (event) => {
@@ -82,6 +121,13 @@ on('order.reassigned', async (event) => {
 
   notifyOrderStatusUpdate(data.userId, data.orderId, 'EN_PROGRESO', serviceName)
     .catch((e) => console.error('[Event] Error push cliente:', e))
+
+  telegramToLawyer(
+    data.toLawyerId,
+    'Nuevo Caso Asignado',
+    `Se te ha asignado el expediente "${serviceName}". Entra para ver los detalles.`,
+    `/abogado?caso=${data.orderId}`,
+  )
 })
 
 on('order.status_changed', async (event) => {

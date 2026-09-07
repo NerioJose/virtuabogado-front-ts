@@ -19,6 +19,7 @@ model User {
   matricula                      String?
   experiencia                    Int?
   picture                        String?
+  telegramChatId                 String?
   activo                         Boolean              @default(true)
   createdAt                      DateTime             @default(now())
   updatedAt                      DateTime             @updatedAt

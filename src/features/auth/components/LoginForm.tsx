@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
 import { Input } from '@/shared/components/ui/Input/Input';
+import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
 import { ROUTES } from '@/shared/constants/routes';
 import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
 
@@ -23,6 +24,8 @@ export function LoginForm() {
         setShowPassword,
         remember,
         setRemember,
+        turnstileToken,
+        setTurnstileToken,
         isLoading,
         error,
         handleSubmit,
@@ -142,11 +145,15 @@ export function LoginForm() {
                         </Link>
                     </div>
 
+                    <div className="flex justify-center">
+                        <TurnstileWidget onToken={setTurnstileToken} />
+                    </div>
+
                     <Button
                         type="submit"
                         isLoading={isLoading}
                         className="w-full"
-                        disabled={!email || !password}>
+                        disabled={!email || !password || !turnstileToken}>
                         {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                     </Button>
 

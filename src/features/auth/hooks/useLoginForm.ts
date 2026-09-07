@@ -6,6 +6,7 @@ export function useLoginForm() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [remember, setRemember] = useState(true);
+    const [turnstileToken, setTurnstileToken] = useState('');
     const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const { login, isLoading, error } = useAuth();
@@ -53,6 +54,7 @@ export function useLoginForm() {
                 email,
                 password,
                 remember,
+                turnstileToken,
             });
 
             // Si el login fue exitoso y "Recordarme" está activo, guardar email
@@ -73,6 +75,8 @@ export function useLoginForm() {
         setShowPassword,
         remember,
         setRemember,
+        turnstileToken,
+        setTurnstileToken,
         isLoading,
         error,
         handleSubmit,

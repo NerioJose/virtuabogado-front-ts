@@ -11,32 +11,27 @@ export class AuthService {
      * Iniciar sesión con Supabase
      */
     async login(credentials: LoginCredentials): Promise<User> {
-        // Opción 1: Si no recordamos, usamos un cliente que no persista indefinidamente en localStorage
-        // o simplemente ajustamos las cookies si estamos en SSR.
-        const supabase = createClient(credentials.remember !== false);
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: credentials.email,
-            password: credentials.password
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: credentials.email,
+                password: credentials.password,
+                turnstileToken: (credentials as any).turnstileToken || ''
+            })
         });
 
-        if (error) {
-            console.error('Error en Supabase login:', error);
+        const payload = await response.json().catch(() => ({}));
 
-            // Email aún no confirmado → mensaje accionable
-            if (error.code === 'email_not_confirmed' || error.message?.toLowerCase().includes('not confirmed')) {
-                throw new Error('Tu correo aún no ha sido confirmado. Revisa tu bandeja y pulsa el enlace de confirmación. Si no lo encuentras, regístrate de nuevo para reenviarlo.');
-            }
-
-            throw new Error(error.message);
+        if (!response.ok) {
+            throw new Error(payload.error || 'Error al iniciar sesión');
         }
 
-        if (!data.user) {
-            throw new Error("No se pudo obtener el usuario");
+        if (!payload.user) {
+            throw new Error('No se pudo obtener el usuario');
         }
 
-        // Mapear usuario de Supabase a nuestra entidad User
-        return this.mapSupabaseUserToEntity(data.user);
+        return this.mapSupabaseUserToEntity(payload.user);
     }
 
     /**

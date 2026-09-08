@@ -221,18 +221,18 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 				</motion.div>
 
 				{/* Vista Escritorio: Tabla Contable */}
-				<div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
+				<div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-x-auto">
 					<div className="table-container p-1">
-						<table className="min-w-[1100px] divide-y divide-slate-100 text-left">
+						<table className="min-w-full divide-y divide-slate-100 text-left">
 						<thead className="bg-slate-50/50">
 							<tr>
-								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia</th>
-								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</th>
-								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Concepto de Pago</th>
-								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha</th>
-								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monto</th>
-								<th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-								<th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</th>
+								<th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia</th>
+								<th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</th>
+								<th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Concepto de Pago</th>
+								<th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha</th>
+								<th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monto</th>
+								<th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+								<th className="px-4 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</th>
 							</tr>
                         </thead>
 						<tbody className="divide-y divide-slate-100">
@@ -243,36 +243,36 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 										key={order.id} 
 										className="group hover:bg-slate-50/30 transition-colors"
 									>
-										<td className="px-8 py-5 text-sm font-black text-azul-primario">
+										<td className="px-4 py-5 text-sm font-black text-azul-primario">
 											#{formatOrderId(order.numericId, order.createdAt)}
 										</td>
-										<td className="px-8 py-5">
+										<td className="px-4 py-5">
 											<div className="space-y-0.5">
 												<p className="text-sm font-black text-slate-700">{order.userName}</p>
 												<p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{order.userEmail}</p>
 											</div>
 										</td>
-										<td className="px-8 py-5">
+										<td className="px-4 py-5">
 											<p className="text-xs font-bold text-slate-600 truncate max-w-[200px]">
 												{order.items?.[0]?.serviceName || 'Consulta Profesional'}
 											</p>
 										</td>
-										<td className="px-8 py-5 text-xs font-bold text-slate-400">
+										<td className="px-4 py-5 text-xs font-bold text-slate-400">
 											{new Date(order.createdAt).toLocaleDateString()}
 										</td>
-										<td className="px-8 py-5">
+										<td className="px-4 py-5">
 											<span className="text-sm font-black text-slate-800 tracking-tight">
 												{formatUSD(order.total)}
 											</span>
 										</td>
-										<td className="px-8 py-5">
+										<td className="px-4 py-5">
 											<span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
 												order.status === 'COMPLETADO' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
 											}`}>
 												{order.status}
 											</span>
 										</td>
-										<td className="px-8 py-5 text-right">
+										<td className="px-4 py-5 text-right">
 											<div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
 												<motion.button whileHover={{ scale: 1.1 }} onClick={() => abrirModal('ver', order as any)} className="p-2 bg-slate-100 text-slate-500 rounded-lg">
 													<FiEye size={18} />

@@ -184,16 +184,16 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
       {/* Vista Escritorio: Tabla Operativa Premium con Scroll Lateral */}
       <div className="hidden lg:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
         <div className="table-container p-1">
-          <table className="min-w-[1100px] divide-y divide-slate-100 text-left">
+          <table className="min-w-full divide-y divide-slate-100 text-left">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Causa #</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Servicio Jurídico</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Honorarios</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Causa #</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Servicio Jurídico</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Honorarios</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                <th className="px-4 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -210,7 +210,7 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                       key={order.id} 
                       className={`group hover:bg-slate-50/30 transition-colors ${order.status === OrderStatus.COMPLETADO ? 'opacity-60' : ''}`}
                     >
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-azul-primario bg-azul-primario/5 px-3 py-1 rounded-xl">#{order.numericId}</span>
                           {isUnread && (
@@ -220,35 +220,35 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
                           )}
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="space-y-0.5">
                           <p className="text-sm font-black text-slate-700">{order.userName}</p>
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{order.userEmail}</p>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <p className="text-xs font-bold text-slate-600 truncate max-w-[200px]">
                           {order.items.map((item: any) => item.serviceName).join(', ')}
                         </p>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className={`px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
                           order.lawyerId ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-amber-50 text-amber-600 border border-amber-100 animate-pulse'
                         }`}>
                           {order.lawyerName || 'POR ASIGNAR'}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className="text-sm font-black text-slate-700 tracking-tight">
                           ${order.total.toLocaleString()}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${config.color}`}>
                           {icon} {order.status}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 

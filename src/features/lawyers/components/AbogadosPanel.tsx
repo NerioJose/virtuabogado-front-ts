@@ -154,17 +154,17 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
         </AnimatePresence>
       </motion.div>
 
-      <div className="hidden lg:block bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-x-auto">
         <div className="table-container p-1">
-          <table className="min-w-[1100px] divide-y divide-slate-100">
+          <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Especialidad</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado Operativo</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nivel Carga</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ranking</th>
-                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cuerpo Legal</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Especialidad</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado Operativo</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nivel Carga</th>
+                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ranking</th>
+                <th className="px-4 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -177,7 +177,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                       key={lawyer.id} 
                       className="group hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex items-center gap-4">
                           <div className="relative h-12 w-12 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
                             <Image src={userImage} alt={lawyer.nombre} fill sizes="200px" className="object-cover" />
@@ -188,12 +188,12 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className="px-3 py-1 bg-azul-primario/5 text-azul-primario rounded-xl text-[10px] font-black uppercase tracking-tight">
                           {lawyer.especialidad}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
                           lawyer.status === LawyerStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
                           lawyer.status === LawyerStatus.PENDING ? 'bg-amber-50 text-amber-600' :
@@ -202,7 +202,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                           {lawyer.status}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black tracking-tight ${
                           casosEnProceso >= 8 ? 'bg-rose-50 text-rose-600' :
                           casosEnProceso >= 4 ? 'bg-amber-50 text-amber-600' :
@@ -211,13 +211,13 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
                           <FiBriefcase /> {casosEnProceso} {casosEnProceso === 1 ? 'CASO' : 'CASOS'}
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex items-center gap-1.5 text-amber-500">
                           <span className="text-sm font-black text-slate-700">{lawyer.rating || '--'}</span>
                           <FiStar className="fill-current w-4 h-4" />
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 

@@ -164,32 +164,32 @@ export function OrdersHistoryTable({ user }: Props) {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50/50 border-bottom border-slate-200">
-                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso / ID</th>
-                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Servicio</th>
-                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
-                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
+                                    <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso / ID</th>
+                                    <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Servicio</th>
+                                    <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
+                                    <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                                    <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
                                     {user.rol === 'ABOGADO' && (
-                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Comisión</th>
+                                        <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Comisión</th>
                                     )}
-                                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{user.rol === 'ABOGADO' ? 'Su Neto' : 'Monto total'}</th>
+                                    <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{user.rol === 'ABOGADO' ? 'Su Neto' : 'Monto total'}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {isLoading ? (
                                     [...Array(5)].map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
-                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
-                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-28"></div></td>
-                                            <td className="px-6 py-5"><div className="h-6 bg-slate-100 rounded-full w-20"></div></td>
-                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-20"></div></td>
-                                            <td className="px-6 py-5"><div className="h-4 bg-slate-100 rounded w-16 ml-auto"></div></td>
+                                            <td className="px-4 py-5"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
+                                            <td className="px-4 py-5"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
+                                            <td className="px-4 py-5"><div className="h-4 bg-slate-100 rounded w-28"></div></td>
+                                            <td className="px-4 py-5"><div className="h-6 bg-slate-100 rounded-full w-20"></div></td>
+                                            <td className="px-4 py-5"><div className="h-4 bg-slate-100 rounded w-20"></div></td>
+                                            <td className="px-4 py-5"><div className="h-4 bg-slate-100 rounded w-16 ml-auto"></div></td>
                                         </tr>
                                     ))
                                 ) : !data || data.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={user.rol === 'ABOGADO' ? 7 : 6} className="px-6 py-12 text-center text-slate-400 italic font-bold">
+                                        <td colSpan={user.rol === 'ABOGADO' ? 7 : 6} className="px-4 py-12 text-center text-slate-400 italic font-bold">
                                             No se encontraron registros.
                                         </td>
                                     </tr>
@@ -200,15 +200,15 @@ export function OrdersHistoryTable({ user }: Props) {
                                         
                                         return (
                                             <tr key={order.id} className={`hover:bg-slate-50 transition-colors ${isPlaceholderData ? 'opacity-50' : ''}`}>
-                                                <td className="px-6 py-5">
+                                                <td className="px-4 py-5">
                                                     <div className="text-sm font-black text-slate-900">
                                                         #{formatOrderId(order.numericId, order.createdAt)}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5 text-sm text-slate-600 font-black">
+                                                <td className="px-4 py-5 text-sm text-slate-600 font-black">
                                                     {order.service.titulo}
                                                 </td>
-                                                <td className="px-6 py-5">
+                                                <td className="px-4 py-5">
                                                     <div className="flex items-center gap-3">
                                                         <div className="size-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black border border-blue-100">
                                                             {order.user.nombre.charAt(0)}
@@ -216,13 +216,13 @@ export function OrdersHistoryTable({ user }: Props) {
                                                         <span className="text-sm text-slate-600 font-bold">{order.user.nombre}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5">
+                                                <td className="px-4 py-5">
                                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black border uppercase tracking-tighter ${status.color}`}>
                                                         <StatusIcon className="size-3" />
                                                         {status.label}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-5 text-sm text-slate-500 font-bold">
+                                                <td className="px-4 py-5 text-sm text-slate-500 font-bold">
                                                     {new Date(order.createdAt).toLocaleDateString('es-ES', { 
                                                         day: '2-digit', 
                                                         month: 'short', 
@@ -230,11 +230,11 @@ export function OrdersHistoryTable({ user }: Props) {
                                                     })}
                                                 </td>
                                                 {user.rol === 'ABOGADO' && (
-                                                    <td className="px-6 py-5 text-sm font-black text-red-500 text-right">
+                                                    <td className="px-4 py-5 text-sm font-black text-red-500 text-right">
                                                         -{formatUSD(order.financials?.comisionLawyer || 0)}
                                                     </td>
                                                 )}
-                                                <td className="px-6 py-5 text-sm font-black text-slate-900 text-right">
+                                                <td className="px-4 py-5 text-sm font-black text-slate-900 text-right">
                                                     {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
                                                 </td>
                                             </tr>

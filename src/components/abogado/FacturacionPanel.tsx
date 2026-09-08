@@ -164,7 +164,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 			{/* Listado de Facturas */}
 			<div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[400px]">
-				<div className="px-8 py-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+				<div className="px-4 py-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
 					<h2 className="text-xl font-black text-slate-800 tracking-tight">Honorarios por Servicios</h2>
 
 				</div>
@@ -264,53 +264,53 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 				{/* VISTA DESKTOP (Tabla) */}
 				<div className="hidden lg:block">
 					<div className="table-container p-1">
-						<table className="min-w-[1000px] divide-y divide-slate-50">
+						<table className="min-w-full divide-y divide-slate-50">
 							<thead className="bg-slate-50/30">
 								<tr>
-									<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Nº Factura</th>
-									<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Concepto</th>
-									<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
-									<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tus Honorarios (Neto)</th>
-									<th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado Liquidación</th>
-									<th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
+									<th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Nº Factura</th>
+									<th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente / Concepto</th>
+									<th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha</th>
+									<th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tus Honorarios (Neto)</th>
+									<th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado Liquidación</th>
+									<th className="px-4 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
 								</tr>
 							</thead>
 							<tbody className="bg-white divide-y divide-slate-50">
 								{facturasFiltradas.length === 0 ? (
 									<tr>
-										<td colSpan={7} className="px-8 py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+										<td colSpan={7} className="px-4 py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
 											No hay facturas registradas
 										</td>
 									</tr>
 								) : (
 									facturasFiltradas.map((factura) => (
 										<tr key={factura.id} className="hover:bg-slate-50/50 transition-colors group">
-											<td className="px-8 py-6 whitespace-nowrap">
+											<td className="px-4 py-6 whitespace-nowrap">
 												<div className="text-sm font-black text-slate-800">{factura.numero}</div>
 												<div className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Expediente Digital</div>
 											</td>
-											<td className="px-8 py-6">
+											<td className="px-4 py-6">
 												<div className="text-sm font-black text-slate-700">{factura.cliente}</div>
 												<div className="text-xs text-azul-primario font-bold tracking-tight truncate max-w-[200px]">{factura.concepto}</div>
 											</td>
-											<td className="px-8 py-6 whitespace-nowrap">
+											<td className="px-4 py-6 whitespace-nowrap">
 												<div className="text-sm text-slate-500 font-black flex items-center">
 													<FiClock className="mr-1.5 text-slate-300" size={14} />
 													{factura.fecha}
 												</div>
 											</td>
-											<td className="px-8 py-6 whitespace-nowrap">
+											<td className="px-4 py-6 whitespace-nowrap">
 												<div className="text-base font-black text-slate-800">
 													{formatearImporte(factura.importeNeto)}
 												</div>
 												<div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Bruto: {formatearImporte(factura.importeBruto)}</div>
 											</td>
-											<td className="px-8 py-6 whitespace-nowrap">
+											<td className="px-4 py-6 whitespace-nowrap">
 												<span className={`px-4 py-1.5 inline-flex text-[9px] font-black uppercase tracking-widest rounded-xl ${obtenerColorEstado(factura.estado).replace('100', '500').replace('800', 'white')}`}>
 													{factura.estado.replace('_', ' ')}
 												</span>
 											</td>
-											<td className="px-8 py-6 whitespace-nowrap text-right">
+											<td className="px-4 py-6 whitespace-nowrap text-right">
 												<div className="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition duration-300">
 													<button type="button"
 														onClick={() => setFacturaSeleccionada(factura)}

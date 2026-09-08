@@ -356,15 +356,15 @@ export default function ClientPanel({
                     {/* 🖥️ Tabla para Tablets, PCs y Televisores */}
                     <div className="hidden md:block bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[800px]">
+                        <table className="w-full text-left border-collapse min-w-full">
                           <thead className="bg-slate-50/50">
                             <tr>
-                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Expediente</th>
-                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Causa Legal</th>
-                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest capitalize">Fecha</th>
-                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</th>
-                              <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acción</th>
+                              <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Expediente</th>
+                              <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Causa Legal</th>
+                              <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest capitalize">Fecha</th>
+                              <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                              <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto</th>
+                              <th className="px-4 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acción</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -375,18 +375,18 @@ export default function ClientPanel({
                                 animate={{ opacity: 1 }}
                                 className="group hover:bg-slate-50/50 transition-colors"
                               >
-                                <td className="px-8 py-5 text-sm font-black text-azul-primario tracking-tighter">#{servicio.numeroOrden}</td>
-                                <td className="px-8 py-5">
+                                <td className="px-4 py-5 text-sm font-black text-azul-primario tracking-tighter">#{servicio.numeroOrden}</td>
+                                <td className="px-4 py-5">
                                   <p className="text-sm font-black text-slate-700">{servicio.nombre}</p>
                                 </td>
-                                <td className="px-8 py-5 text-xs font-bold text-slate-400">{servicio.fecha}</td>
-                                <td className="px-8 py-5">
+                                <td className="px-4 py-5 text-xs font-bold text-slate-400">{servicio.fecha}</td>
+                                <td className="px-4 py-5">
                                   <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusColor(servicio.estado)}`}>
                                     {getStatusText(servicio.estado)}
                                   </span>
                                 </td>
-                                <td className="px-8 py-5 text-sm font-black text-slate-700">${servicio.precio.toLocaleString()}</td>
-                                <td className="px-8 py-5 text-right">
+                                <td className="px-4 py-5 text-sm font-black text-slate-700">${servicio.precio.toLocaleString()}</td>
+                                <td className="px-4 py-5 text-right">
                                   <div className="flex justify-end gap-2">
                                     <Link href={`/detalle-servicio/${servicio.id}`}>
                                       <button type="button" className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-azul-primario hover:text-white transition shadow-sm">

@@ -116,26 +116,26 @@ export default function PayoutManagement() {
                     </h3>
                 </div>
 
-                <div className="bg-white rounded-[2rem] border border-slate-200/60 overflow-hidden shadow-sm">
+                <div className="bg-white rounded-[2rem] border border-slate-200/60 overflow-x-auto shadow-sm">
                     <table className="min-w-full divide-y divide-slate-100 text-left">
                         <thead className="bg-slate-50/50">
                             <tr>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Abogado</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monto</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha / Estado</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia</th>
-                                <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</th>
+                                <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Abogado</th>
+                                <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monto</th>
+                                <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha / Estado</th>
+                                <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Referencia</th>
+                                <th className="px-4 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {history.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-10 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No hay historial de pagos</td>
+                                    <td colSpan={5} className="px-4 py-10 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No hay historial de pagos</td>
                                 </tr>
                             ) : (
                                 history.map((payout: any) => (
                                     <tr key={payout.id} className="group hover:bg-slate-50/30 transition-colors">
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 py-6">
                                             <p className="text-sm font-black text-slate-700">{payout.lawyer.nombre}</p>
                                             <div className="flex flex-col gap-1 mt-1">
                                                 {payout.orders?.map((o: any) => (
@@ -145,10 +145,10 @@ export default function PayoutManagement() {
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 py-6">
                                             <p className="text-lg font-black text-slate-900 tracking-tighter">{formatUSD(payout.amount)}</p>
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 py-6">
                                             <div className="space-y-2">
                                                 <div className="flex items-center gap-2">
                                                     <FiCalendar className="text-slate-300" size={14} />
@@ -161,7 +161,7 @@ export default function PayoutManagement() {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 py-6">
                                             {payout.reference ? (
                                                 <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 w-fit">
                                                     <FiCheckCircle className="text-emerald-500" />
@@ -171,7 +171,7 @@ export default function PayoutManagement() {
                                                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Pendiente Transferencia</span>
                                             )}
                                         </td>
-                                        <td className="px-8 py-6 text-right">
+                                        <td className="px-4 py-6 text-right">
                                             {payout.status === 'PENDIENTE' && (
                                                 <button type="button" 
                                                     onClick={() => handleFinalize(payout)}

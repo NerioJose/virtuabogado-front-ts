@@ -149,18 +149,18 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
         </AnimatePresence>
       </motion.div>
 
-      <div className="hidden lg:block bg-white rounded-[2.2rem] shadow-sm border border-slate-200/60 overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-[2.2rem] shadow-sm border border-slate-200/60 overflow-x-auto">
         <div className="table-container p-1">
-          <table className="min-w-[1100px] divide-y divide-slate-100 text-left">
+          <table className="min-w-full divide-y divide-slate-100 text-left">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expediente Cliente</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comunicación</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Antigüedad</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actividad</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Inversión Total</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expediente Cliente</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comunicación</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Antigüedad</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actividad</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Inversión Total</th>
+                <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                <th className="px-4 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -173,7 +173,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                       key={cliente.id} 
                       className="group hover:bg-slate-50/30 transition-colors"
                     >
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex items-center gap-4">
                           <div className="relative h-11 w-11 rounded-2xl overflow-hidden shadow-inner border border-slate-100">
                             <Image src={userImage} alt={cliente.nombre} fill sizes="200px" className="object-cover" />
@@ -184,7 +184,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="space-y-1">
                           <div className="flex items-center text-xs text-slate-500 font-medium">
                             <FiMail className="mr-2 text-azul-primario" /> {cliente.email}
@@ -196,24 +196,24 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           )}
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex items-center gap-2 text-slate-500">
                           <FiCalendar className="text-azul-primario" />
                           <span className="text-xs font-bold">{new Date(cliente.createdAt).toLocaleDateString()}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="space-y-1">
                           <p className="text-xs font-black text-azul-primario capitalize">{cliente.serviciosContratados} Servicios</p>
                           <p className="text-[10px] text-slate-400 font-bold uppercase">{clientOrders.length} Órdenes totales</p>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className="text-sm font-black text-emerald-600 tracking-tight">
                           ${cliente.totalGastado.toLocaleString()}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
                           cliente.status === ClientStatus.ACTIVE ? 'bg-emerald-50 text-emerald-600' :
                           cliente.status === ClientStatus.PENDING ? 'bg-amber-50 text-amber-600' :
@@ -222,7 +222,7 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
                           {cliente.status}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex justify-end gap-3 opacity-90 group-hover:opacity-100 transition-opacity">
                           <motion.button 
                             whileHover={{ scale: 1.1, y: -2 }} 

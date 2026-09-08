@@ -101,17 +101,17 @@ export default function DocumentList({
         <table className="min-w-full divide-y divide-slate-50">
           <thead className="bg-slate-50/50">
             <tr>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Documento</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"> {documentos[0]?.cliente ? 'Cliente / Caso' : 'Caso'} </th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subida</th>
-              <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tamaño</th>
-              {showActions && <th scope="col" className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>}
+              <th scope="col" className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Documento</th>
+              <th scope="col" className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"> {documentos[0]?.cliente ? 'Cliente / Caso' : 'Caso'} </th>
+              <th scope="col" className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subida</th>
+              <th scope="col" className="px-4 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tamaño</th>
+              {showActions && <th scope="col" className="px-4 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-50">
             {documentos.map((documento) => (
               <tr key={documento.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                       {obtenerIconoDocumento(documento.nombre).icon}
@@ -122,21 +122,21 @@ export default function DocumentList({
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
                   {documento.cliente && <div className="text-sm font-black text-slate-700">{documento.cliente}</div>}
                   <div className="text-xs text-azul-primario font-bold tracking-tight">{documento.caso || 'Sin caso'}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm text-slate-500 font-bold flex items-center">
                     <FiClock className="mr-1.5 text-slate-300" size={14} />
                     {documento.fechaSubida}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-xs text-slate-400 font-black font-mono">{documento.tamaño}</div>
                 </td>
                 {showActions && (
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm">
                     <div className="flex justify-end space-x-2">
                       <button type="button"
                         onClick={() => onDescargar(documento)}

@@ -267,17 +267,17 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
           <table className="w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
               <tr>
-                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso / ID</th>
-                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
-                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Inicio</th>
-                <th scope="col" className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                <th scope="col" className="px-6 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
+                <th scope="col" className="px-4 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Caso / ID</th>
+                <th scope="col" className="px-4 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
+                <th scope="col" className="px-4 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Inicio</th>
+                <th scope="col" className="px-4 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                <th scope="col" className="px-4 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-50">
               {casosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
+                  <td colSpan={5} className="px-4 py-20 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-200 mb-4 border border-slate-100">
                         <FiBriefcase size={32} />
@@ -292,7 +292,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
               ) : (
                 casosFiltrados.map((caso: any) => (
                   <tr key={caso.id} className={`hover:bg-slate-50/80 transition-colors group ${caso.status === OrderStatus.COMPLETADO ? 'opacity-60 grayscale-[0.2]' : ''}`}>
-                    <td className="px-6 py-5 whitespace-nowrap">
+                    <td className="px-4 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-4">
                          <div className="w-11 h-11 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario group-hover:bg-azul-primario group-hover:text-white transition duration-300 shadow-sm">
                             <FiBriefcase size={20} />
@@ -310,7 +310,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                          )}
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
+                    <td className="px-4 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 border border-slate-200">
                              {caso.userName?.charAt(0) || 'U'}
@@ -321,12 +321,12 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                          </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
+                    <td className="px-4 py-5 whitespace-nowrap">
                       <div className="text-sm font-black text-slate-600">
                         {new Date(caso.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
+                    <td className="px-4 py-5 whitespace-nowrap">
                       <span className={`px-3 py-1.5 text-[10px] font-black rounded-xl uppercase tracking-tighter shadow-sm border ${
                         caso.status === OrderStatus.PENDIENTE ? 'bg-amber-50 text-amber-600 border-amber-100' :
                         caso.status === OrderStatus.EN_PROGRESO ? 'bg-blue-50 text-blue-600 border-blue-100' :
@@ -339,7 +339,7 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
                         </div>
                       </span>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-right text-sm">
+                    <td className="px-4 py-5 whitespace-nowrap text-right text-sm">
                       <div className="flex justify-end gap-2.5">
                         <button type="button"
                           className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 hover:bg-azul-primario hover:text-white transition duration-300 flex items-center justify-center shadow-sm"

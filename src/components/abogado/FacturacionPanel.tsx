@@ -21,6 +21,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { formatUSD } from '@/lib/finance';
 import PayoutHistoryList from '@/features/finance/components/PayoutHistoryList';
 import { useFacturacionPanel, Factura, PeriodoFacturacion } from './hooks/useFacturacionPanel';
+import Pagination from '@/components/ui/Pagination';
 
 interface FacturacionPanelProps {
 	abogadoId: string;
@@ -44,6 +45,9 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 		handleMarcarPagada,
 		confirmarPago,
 		isUpdating,
+		pagination,
+		page,
+		setPage,
 	} = useFacturacionPanel(abogadoId);
 
 
@@ -341,6 +345,16 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 						</table>
 					</div>
 				</div>
+
+				{pagination.totalPages > 1 && (
+					<Pagination
+						page={page}
+						totalPages={pagination.totalPages}
+						total={pagination.total}
+						pageSize={pagination.limit}
+						onPageChange={setPage}
+					/>
+				)}
 			</div>
 
 			{/* Modal de Detalles Premium */}

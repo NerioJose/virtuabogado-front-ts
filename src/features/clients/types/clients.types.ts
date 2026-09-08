@@ -41,6 +41,7 @@ export interface UpdateClientRequest {
 export interface ClientsFilters {
     status?: ClientStatus | 'ALL';
     searchQuery?: string;
+    antiguedad?: 'reciente' | 'historico';
     startDate?: Date;
     endDate?: Date;
     page?: number;

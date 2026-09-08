@@ -6,6 +6,7 @@ import Image from 'next/image';
 import userImage from '../../../../public/images/user-placeholder.png';
 import { LawyerStatus } from '@/features/lawyers/types/lawyers.types';
 import { useAbogadosPanel } from '../hooks/useAbogadosPanel';
+import Pagination from '@/components/ui/Pagination';
 import { ElementoSeleccionable } from '@/types/index';
 import { formatLawyerName } from '@/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,9 +25,12 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
       setEspecialidadFilter,
       statusFilter,
       setStatusFilter,
-      getActiveCases,
       updateStatus,
       isLoading,
+      total,
+      totalPages,
+      page,
+      setPage,
   } = useAbogadosPanel(terminoBusqueda);
 
   const container = {
@@ -88,7 +92,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
       >
         <AnimatePresence mode='popLayout'>
           {filteredLawyers.map((lawyer) => {
-            const casosEnProceso = getActiveCases(lawyer.id);
+            const casosEnProceso = lawyer.casosActivos;
             return (
               <motion.div
                 layout
@@ -170,7 +174,7 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
             <tbody className="divide-y divide-slate-100">
               <AnimatePresence mode='popLayout'>
                 {filteredLawyers.map((lawyer) => {
-                  const casosEnProceso = getActiveCases(lawyer.id);
+const casosEnProceso = lawyer.casosActivos;
                   return (
                     <motion.tr 
                       layout
@@ -262,6 +266,16 @@ function AbogadosPanel({ terminoBusqueda, abrirModal }: AbogadosPanelProps) {
           <h3 className="text-lg font-black text-azul-primario">Sin coincidencias</h3>
           <p className="text-slate-400 text-sm mt-1">Intenta con otros criterios de búsqueda.</p>
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={10}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

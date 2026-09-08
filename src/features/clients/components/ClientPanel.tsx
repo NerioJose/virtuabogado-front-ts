@@ -26,6 +26,7 @@ import ClientStats from './ClientStats';
 import { getStatusColor, getStatusText, type ServicioCliente } from '@/features/orders';
 import { useClientPanel } from '../hooks/useClientPanel';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
+import Pagination from '@/components/ui/Pagination';
 
 interface ClientPanelProps {
   user: any;
@@ -62,6 +63,13 @@ export default function ClientPanel({
     statsData,
     activos,
     historial,
+    activosTotal,
+    historialTotal,
+    totalActual,
+    totalPages,
+    page,
+    setPage,
+    pageSize,
     handlePasswordChange,
   } = useClientPanel(servicios);
 
@@ -168,9 +176,9 @@ export default function ClientPanel({
                       }`}
                     >
                       Mis Expedientes Activos
-                      {activos.length > 0 && (
+                      {activosTotal > 0 && (
                         <span className={`ml-2 px-2 py-0.5 rounded-full text-[9px] ${tabActivo === 'activos' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                          {activos.length}
+                          {activosTotal}
                         </span>
                       )}
                     </button>
@@ -183,9 +191,9 @@ export default function ClientPanel({
                       }`}
                     >
                       Historial de Servicios
-                      {historial.length > 0 && (
+                      {historialTotal > 0 && (
                         <span className={`ml-2 px-2 py-0.5 rounded-full text-[9px] ${tabActivo === 'historial' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                          {historial.length}
+                          {historialTotal}
                         </span>
                       )}
                     </button>
@@ -238,7 +246,7 @@ export default function ClientPanel({
                     animate="show"
                     className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 px-1"
                   >
-                    {activos.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => {
+                    {activos.map((servicio: any) => {
                       const count = unreadCounts[servicio.id] || 0;
                       const isUnread = count > 0;
                       // Determinar si es "Reciente" (creado en las últimas 48 horas)
@@ -368,7 +376,7 @@ export default function ClientPanel({
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {historial.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => (
+                            {historial.map((servicio: any) => (
                               <motion.tr 
                                 key={servicio.id}
                                 initial={{ opacity: 0 }}
@@ -404,7 +412,7 @@ export default function ClientPanel({
 
                     {/* 📱 Mini-Cards para Móviles (Evita scroll horizontal) */}
                     <div className="grid grid-cols-1 gap-4 md:hidden">
-                      {historial.filter(s => filtroEstado === 'todos' || s.estado === filtroEstado).map((servicio: any) => (
+                      {historial.map((servicio: any) => (
                         <motion.div 
                           key={servicio.id}
                           className="bg-white p-5 rounded-[2rem] border border-slate-200/60 shadow-sm flex items-center justify-between gap-4"
@@ -431,6 +439,16 @@ export default function ClientPanel({
                       ))}
                     </div>
                   </div>
+                )}
+
+                {totalPages > 1 && (
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={totalActual}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                  />
                 )}
               </motion.div>
             )}

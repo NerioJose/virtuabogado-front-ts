@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
@@ -32,6 +32,11 @@ export function useFacturacionPanel(abogadoId: string) {
     const [filtroEstado, setFiltroEstado] = useState<
         'todas' | 'liquidada' | 'procesando' | 'por_liquidar' | 'pendientes'
     >('todas');
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        setPage(1);
+    }, [filtroEstado, periodo]);
 
     const { data: summary, isLoading: isLoadingSummary } = useQuery({
         queryKey: ['Finance', periodo, abogadoId],
@@ -89,7 +94,7 @@ export function useFacturacionPanel(abogadoId: string) {
             });
     }, [response, payoutStatusMap]);
 
-    const facturasFiltradas = facturas.filter((factura) => {
+    const facturasFiltradasAll = facturas.filter((factura) => {
         if (filtroEstado === 'todas') return true;
         if (filtroEstado === 'liquidada') return factura.estado === 'liquidada';
         if (filtroEstado === 'procesando') return factura.estado === 'procesando';
@@ -97,6 +102,15 @@ export function useFacturacionPanel(abogadoId: string) {
         if (filtroEstado === 'pendientes') return factura.estado === 'pendiente';
         return true;
     });
+
+    const totalFacturas = facturasFiltradasAll.length;
+    const totalPages = Math.max(1, Math.ceil(totalFacturas / 8));
+    const pageSize = 8;
+    const facturasFiltradas = useMemo(() => {
+        if (totalFacturas <= pageSize) return facturasFiltradasAll;
+        const start = (page - 1) * pageSize;
+        return facturasFiltradasAll.slice(start, start + pageSize);
+    }, [facturasFiltradasAll, page, totalFacturas]);
 
     const isLoading = isLoadingOrders || isLoadingSummary;
 
@@ -164,5 +178,8 @@ export function useFacturacionPanel(abogadoId: string) {
         handleMarcarPagada,
         confirmarPago,
         isUpdating: updateOrder.isPending,
+        pagination: { total: totalFacturas, totalPages, limit: pageSize },
+        page,
+        setPage,
     };
 }

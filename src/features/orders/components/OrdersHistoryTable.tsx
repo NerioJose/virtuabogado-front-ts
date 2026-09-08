@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { formatUSD } from '@/lib/finance';
 import { formatOrderId } from '@/lib/formatOrderId';
+import Pagination from '@/components/ui/Pagination';
 
 interface Props {
     user: { id: string, rol: UserRole };
@@ -156,6 +157,19 @@ export function OrdersHistoryTable({ user }: Props) {
                     })
                 )}
             </div>
+
+            {/* Paginación móvil */}
+            {!isLoading && data && data.totalPages > 1 && (
+                <div className="md:hidden">
+                    <Pagination
+                        page={filters.page}
+                        totalPages={data.totalPages}
+                        total={data.total}
+                        pageSize={filters.limit || 10}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            )}
 
             {/* VISTA DESKTOP: TABLA ELEGANTE */}
             <div className="hidden md:block bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">

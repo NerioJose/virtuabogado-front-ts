@@ -19,6 +19,7 @@ export async function GET(request: Request) {
         const lawyerId = searchParams.get('lawyerId');
         const requestedUserId = searchParams.get('userId');
         const requestedStatus = searchParams.get('status');
+        const search = searchParams.get('search')?.trim();
         const page = parseInt(searchParams.get('page') || '1');
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
         const skip = (page - 1) * limit;
@@ -50,7 +51,20 @@ export async function GET(request: Request) {
             where.status = requestedStatus;
         }
 
-        const [totalCount, orders, settings] = await Promise.all([
+        if (search) {
+            where.OR = [
+                { id: { contains: search, mode: 'insensitive' } },
+                { service: { titulo: { contains: search, mode: 'insensitive' } } },
+                { user: { nombre: { contains: search, mode: 'insensitive' } } },
+                { user: { email: { contains: search, mode: 'insensitive' } } },
+            ];
+            const numericPart = parseInt(search, 10);
+            if (!Number.isNaN(numericPart)) {
+                where.OR.push({ numericId: numericPart });
+            }
+        }
+
+        const [totalCount, orders, settings, countsByStatus] = await Promise.all([
             prisma.order.count({ where }),
             prisma.order.findMany({
                 where, skip, take: limit,
@@ -67,7 +81,10 @@ export async function GET(request: Request) {
                 },
                 orderBy: { createdAt: 'desc' }
             }),
-            getCachedFinancialSettings()
+            getCachedFinancialSettings(),
+            isAdmin
+                ? prisma.order.groupBy({ by: ['status'], where: { activo: { not: false } }, _count: { _all: true } })
+                : Promise.resolve([]),
         ]);
 
         const formattedOrders = orders.map(order => {
@@ -78,9 +95,15 @@ export async function GET(request: Request) {
             };
         });
 
+        const statusCounts: Record<string, number> = {};
+        countsByStatus.forEach((group) => {
+            statusCounts[group.status] = group._count._all;
+        });
+
         return NextResponse.json(serializeFinance({
             data: formattedOrders,
             pagination: { total: totalCount, page, limit, totalPages: Math.ceil(totalCount / limit) },
+            countsByStatus: isAdmin ? statusCounts : undefined,
         }));
     } catch (error) {
         console.error('❌ API Error fetching orders:', error);

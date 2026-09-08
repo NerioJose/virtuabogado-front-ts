@@ -81,6 +81,7 @@ export interface OrdersFilters {
     startDate?: Date;
     endDate?: Date;
     searchQuery?: string;
+    search?: string;
 }
 
 export interface OrdersState {

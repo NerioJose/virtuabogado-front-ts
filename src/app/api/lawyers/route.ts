@@ -57,22 +57,61 @@ export async function GET(request: Request) {
         const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
         const skip = (page - 1) * limit;
-        const cacheKey = `lawyers-${page}-${limit}`;
+        const search = searchParams.get('search')?.trim();
+        const especialidad = searchParams.get('especialidad')?.trim();
+        const status = searchParams.get('status');
+
+        const cacheKey = `lawyers-${page}-${limit}-${especialidad || 'all'}-${status || 'all'}-${search || ''}`;
 
         const cached = await getCached<any>(cacheKey);
         if (cached) return NextResponse.json(cached);
 
-        const [lawyers, total] = await Promise.all([
+        const where: any = { rol: 'ABOGADO' };
+        if (status === 'ACTIVO') where.activo = true;
+        if (status === 'INACTIVO') where.activo = false;
+        if (especialidad && especialidad !== 'todas') {
+            where.especialidad = { equals: especialidad, mode: 'insensitive' };
+        }
+        if (search) {
+            where.OR = [
+                { nombre: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { telefono: { contains: search, mode: 'insensitive' } },
+                { matricula: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+
+        const [lawyers, total, orderGroups] = await Promise.all([
             prisma.user.findMany({
-                where: { rol: 'ABOGADO' },
+                where,
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.user.count({ where: { rol: 'ABOGADO' } }),
+            prisma.user.count({ where }),
+            prisma.order.groupBy({
+                by: ['lawyerId', 'status'],
+                where: { activo: true, lawyerId: { not: null } },
+                _count: { _all: true },
+            }),
         ]);
 
-        const formattedLawyers = lawyers.map((lawyer: any) => ({
+        const caseStatsMap = new Map<string, { activos: number; completados: number }>();
+        for (const group of orderGroups) {
+            if (!group.lawyerId) continue;
+            const current = caseStatsMap.get(group.lawyerId) || { activos: 0, completados: 0 };
+            if (group.status === 'EN_PROGRESO' || group.status === 'REVISION' || group.status === 'PENDIENTE' || group.status === 'PAID') {
+                current.activos += group._count._all;
+            }
+            if (group.status === 'COMPLETADO') {
+                current.completados += group._count._all;
+            }
+            caseStatsMap.set(group.lawyerId, current);
+        }
+
+        const formattedLawyers = lawyers.map((lawyer: any) => {
+            const stats = caseStatsMap.get(lawyer.id) || { activos: 0, completados: 0 };
+            return {
             id: lawyer.id,
             nombre: lawyer.nombre || 'Abogado Sin Nombre',
             email: lawyer.email || 'N/A',
@@ -81,12 +120,13 @@ export async function GET(request: Request) {
             status: lawyer.activo ? 'ACTIVO' : 'INACTIVO', 
             matricula: lawyer.matricula || undefined,
             experiencia: lawyer.experiencia || undefined,
-            casosActivos: 0,
-            casosCompletados: 0,
+            casosActivos: stats.activos,
+            casosCompletados: stats.completados,
             rating: 5,
             createdAt: lawyer.createdAt,
             updatedAt: lawyer.updatedAt,
-        }));
+            };
+        });
 
         const response = serializeFinance({
             data: formattedLawyers,

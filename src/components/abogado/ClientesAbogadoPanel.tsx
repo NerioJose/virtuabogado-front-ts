@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { FiUser, FiMail, FiPhone, FiFileText, FiMessageSquare, FiSearch, FiFilter } from 'react-icons/fi';
-import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
+import { FiUser, FiMail, FiPhone, FiFileText, FiMessageSquare, FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
 import userImage from '../../../public/images/user-placeholder.png';
-import { OrderStatus } from '@/features/orders/types/orders.types';
 
-import { useClientesAbogadoPanel, ClienteRecord } from './hooks/useClientesAbogadoPanel';
+import { useClientesAbogadoPanel } from './hooks/useClientesAbogadoPanel';
+import Pagination from '@/components/ui/Pagination';
 
 interface ClientesAbogadoPanelProps {
   abogadoId: string;
@@ -24,6 +22,9 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
     filtroActividad,
     setFiltroActividad,
     esClienteReciente,
+    pagination,
+    page,
+    setPage,
   } = useClientesAbogadoPanel(abogadoId);
 
   if (isLoading) {
@@ -45,7 +46,7 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
         </h2>
         
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            Total: {clientesFiltrados.length} Registros
+            Total: {pagination.total} Registros
         </p>
       </div>
 
@@ -162,6 +163,16 @@ export default function ClientesAbogadoPanel({ abogadoId, onNavigateToCasos, onN
           ))
         )}
       </div>
+
+      {pagination.totalPages > 1 && (
+        <Pagination
+          page={page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

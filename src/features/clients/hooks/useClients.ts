@@ -20,6 +20,15 @@ export const useClients = (filters?: ClientsFilters) => {
     });
 };
 
+export const useClientsPaginated = (filters?: ClientsFilters) => {
+    return useQuery({
+        queryKey: [...CLIENT_KEYS.lists(), 'paginated', filters || {}],
+        queryFn: () => clientsService.getAllPaginated(filters),
+        staleTime: 1000 * 60 * 3,
+        placeholderData: (previousData) => previousData,
+    });
+};
+
 export const useClient = (id: string) => {
     return useQuery({
         queryKey: CLIENT_KEYS.detail(id),

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import {
 	FiSearch,
 	FiUser,
@@ -10,10 +9,10 @@ import {
 	FiLock,
 	FiCheckCircle
 } from 'react-icons/fi';
-import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import Pagination from '@/components/ui/Pagination';
 import { useMensajesPanel } from './hooks/useMensajesPanel';
 
 interface MensajesPanelProps {
@@ -37,7 +36,10 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 		isUpdating,
 		ordenActual,
 		unreadOrders,
-		unreadCounts
+		unreadCounts,
+		pagination,
+		page,
+		setPage,
 	} = useMensajesPanel(abogadoId, initialClienteId);
 
 	if (isLoading) {
@@ -49,7 +51,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-250px)] overflow-hidden bg-white rounded-3xl shadow-sm border border-slate-100">
+		<div className="flex h-[calc(100dvh-100px)] md:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-170px)] overflow-hidden bg-white rounded-3xl shadow-sm border border-slate-100">
 			{/* Lista de conversaciones */}
 			<div className={`w-full md:w-[350px] border-r border-slate-50 flex flex-col bg-white ${conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
 				<div className="p-6 border-b border-slate-50">
@@ -126,6 +128,18 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 						))
 					)}
 				</div>
+
+				{pagination?.totalPages > 1 && (
+					<div className="border-t border-slate-100 p-3">
+						<Pagination
+							page={page}
+							totalPages={pagination.totalPages}
+							total={pagination.total}
+							pageSize={pagination.limit || 10}
+							onPageChange={setPage}
+						/>
+					</div>
+				)}
 			</div>
 
 			{/* Área de chat */}
@@ -167,7 +181,7 @@ export default function MensajesPanel({ abogadoId, initialClienteId }: MensajesP
 
 						{/* Chat Real (Ocupa el resto del espacio) */}
 						<div className="flex-1 overflow-hidden relative">
-							<ChatWindow orderId={conversacionActiva} />
+							<ChatWindow orderId={conversacionActiva} className="h-full" />
 						</div>
 					</>
 				) : (

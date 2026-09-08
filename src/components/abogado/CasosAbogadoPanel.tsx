@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { formatOrderId } from '@/lib/formatOrderId';
 import { useCasosAbogadoPanel } from './hooks/useCasosAbogadoPanel';
+import Pagination from '@/components/ui/Pagination';
 
 interface CasosAbogadoPanelProps {
   abogadoId: string;
@@ -31,6 +32,9 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
       openConfirmModal,
       handleConfirmarCompletar,
       isUpdating,
+      pagination,
+      page,
+      setPage,
   } = useCasosAbogadoPanel(abogadoId, initialClienteId, initialCasoId);
 
   if (isLoading && misCasos.length === 0) {
@@ -373,6 +377,16 @@ function CasosAbogadoPanel({ abogadoId, initialClienteId, initialCasoId }: Casos
           </table>
         </div>
       </div>
+
+      {pagination?.totalPages > 1 && (
+        <Pagination
+          page={page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          pageSize={pagination.limit || 10}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

@@ -1,35 +1,32 @@
-import { useState, useMemo } from 'react';
-import { useClients } from '@/features/clients/hooks/useClients';
+import { useState, useMemo, useEffect } from 'react';
+import { useClientsPaginated } from '@/features/clients/hooks/useClients';
 import { useOrdersStore } from '@/features/orders';
 
 export function useClientesPanel(terminoBusqueda: string) {
-    const { data: clients = [], isLoading } = useClients();
+    const [page, setPage] = useState(1);
+    const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
+    const [debouncedTerm, setDebouncedTerm] = useState('');
     const orders = useOrdersStore((state) => state.orders);
 
-    const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedTerm(terminoBusqueda), 300);
+        return () => clearTimeout(t);
+    }, [terminoBusqueda]);
 
-    const esClienteReciente = (createdAt: Date | string) => {
-        const hoy = new Date();
-        const fechaRegistro = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
-        const diferenciaDias = Math.floor((hoy.getTime() - fechaRegistro.getTime()) / (1000 * 60 * 60 * 24));
-        return diferenciaDias <= 30;
-    };
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedTerm, filtroActividad]);
 
-    const clientesFiltrados = useMemo(() => {
-        const term = terminoBusqueda.toLowerCase().trim();
-        return clients.filter(cliente => {
-            const coincideTermino =
-                cliente.nombre?.toLowerCase().includes(term) ||
-                cliente.email?.toLowerCase().includes(term) ||
-                (cliente.telefono && cliente.telefono.includes(term)) ||
-                cliente.id?.toLowerCase().includes(term);
+    const { data: response, isLoading } = useClientsPaginated({
+        page,
+        limit: 10,
+        searchQuery: debouncedTerm || undefined,
+        antiguedad: filtroActividad === 'todos' ? undefined : filtroActividad === 'reciente' ? 'reciente' : 'historico',
+    });
 
-            if (filtroActividad === 'todos') return coincideTermino;
-            if (filtroActividad === 'reciente') return coincideTermino && esClienteReciente(cliente.createdAt);
-            if (filtroActividad === 'inactivo') return coincideTermino && !esClienteReciente(cliente.createdAt);
-            return coincideTermino;
-        });
-    }, [clients, terminoBusqueda, filtroActividad]);
+    const clients = useMemo(() => response?.data || [], [response]);
+    const total = response?.total ?? 0;
+    const totalPages = response?.totalPages ?? 1;
 
     const getClientOrders = (clientId: string) => {
         return orders.filter(order => order.userId === clientId);
@@ -37,10 +34,14 @@ export function useClientesPanel(terminoBusqueda: string) {
 
     return {
         clients,
-        clientesFiltrados,
+        clientesFiltrados: clients,
         filtroActividad,
         setFiltroActividad,
         getClientOrders,
         isLoading,
+        total,
+        totalPages,
+        page,
+        setPage,
     };
 }

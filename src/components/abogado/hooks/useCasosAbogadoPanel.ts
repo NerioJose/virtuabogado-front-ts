@@ -1,15 +1,29 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useChatStore } from '@/features/chat/store/chatStore';
-import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
+import { useOrders } from '@/features/orders/hooks/useOrders';
+import { useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 
 export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: string | null, initialCasoId?: string | null) {
-    const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
-    const misCasos = useMemo(() => (response as any)?.data || [], [response]);
+    const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        setPage(1);
+    }, [filtroEstado]);
+
+    const { data: response, isLoading } = useOrders({
+        lawyerId: abogadoId,
+        status: filtroEstado === 'todos' ? undefined : filtroEstado,
+        page,
+        limit: 10,
+    });
+    const res = response as { data?: any[]; pagination?: any } | undefined;
+    const misCasos = useMemo(() => res?.data || [], [res]);
+    const pagination = useMemo(() => res?.pagination, [res]);
 
     const unreadOrders = useChatStore((state) => state.unreadOrders);
     const unreadCounts = useChatStore((state) => state.unreadCounts);
-    const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
     const [casoSeleccionado, setCasoSeleccionado] = useState<string | null>(null);
     const [modalAbierto, setModalAbierto] = useState(false);
     const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
@@ -47,9 +61,8 @@ export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: strin
 
         return misCasos
             .filter((caso: any) => {
-                const matchEstado = filtroEstado === 'todos' || caso.status === filtroEstado;
                 const matchCliente = initialClienteId ? caso.userId === initialClienteId : true;
-                return matchEstado && matchCliente;
+                return matchCliente;
             })
             .sort((a: any, b: any) => {
                 const priorityA = getStatusPriority(a.status);
@@ -61,7 +74,7 @@ export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: strin
 
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             });
-    }, [misCasos, filtroEstado, initialClienteId]);
+    }, [misCasos, initialClienteId]);
 
     return {
         misCasos,
@@ -78,5 +91,8 @@ export function useCasosAbogadoPanel(abogadoId: string, initialClienteId?: strin
         openConfirmModal,
         handleConfirmarCompletar,
         isUpdating: updateOrder.isPending,
+        pagination,
+        page,
+        setPage,
     };
 }

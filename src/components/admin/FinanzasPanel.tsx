@@ -17,6 +17,7 @@ import { formatOrderId } from '@/lib/formatOrderId';
 import { motion, AnimatePresence } from 'framer-motion';
 import PayoutManagement from '@/features/finance/components/PayoutManagement';
 import { useFinanzasPanel } from './hooks/useFinanzasPanel';
+import Pagination from '@/components/ui/Pagination';
 import { ElementoSeleccionable } from '@/types/index';
 
 interface FinanzasPanelProps {
@@ -36,6 +37,9 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 		summary,
 		ordenesFiltradas,
 		isLoading,
+		pagination,
+		page,
+		setPage,
 	} = useFinanzasPanel(terminoBusqueda);
 
 	const container = {
@@ -298,6 +302,16 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 						<h3 className="text-xl font-black text-azul-primario uppercase tracking-tight">Sin movimientos</h3>
 						<p className="text-slate-400 text-sm mt-1">No se detectaron transacciones en el periodo consultado.</p>
 					</div>
+				)}
+
+				{pagination?.totalPages > 1 && (
+					<Pagination
+						page={page}
+						totalPages={pagination.totalPages}
+						total={pagination.total}
+						pageSize={pagination.limit || 10}
+						onPageChange={setPage}
+					/>
 				)}
                 </>
                 ) : (

@@ -20,6 +20,15 @@ export const useLawyers = (filters?: LawyersFilters) => {
     });
 };
 
+export const useLawyersPaginated = (filters?: LawyersFilters) => {
+    return useQuery({
+        queryKey: [...LAWYER_KEYS.lists(), 'paginated', filters || {}],
+        queryFn: () => lawyersService.getAllPaginated(filters),
+        staleTime: 1000 * 60 * 3,
+        placeholderData: (previousData) => previousData,
+    });
+};
+
 export const useLawyer = (id: string) => {
     return useQuery({
         queryKey: LAWYER_KEYS.detail(id),

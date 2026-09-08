@@ -6,6 +6,7 @@ import Image from 'next/image';
 import userImage from '../../../../public/images/user-placeholder.png';
 import { ClientStatus } from '@/features/clients/types/clients.types';
 import { useClientesPanel } from '../hooks/useClientesPanel';
+import Pagination from '@/components/ui/Pagination';
 import { ElementoSeleccionable } from '@/types/index';
 import { capitalizeName } from '@/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +23,10 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
       setFiltroActividad,
       getClientOrders,
       isLoading,
+      total,
+      totalPages,
+      page,
+      setPage,
   } = useClientesPanel(terminoBusqueda);
 
   const container = {
@@ -267,6 +272,16 @@ function ClientesPanel({ terminoBusqueda, abrirModal }: ClientesPanelProps) {
           <h3 className="text-lg font-black text-azul-primario">Sin resultados</h3>
           <p className="text-slate-400 text-sm mt-1">Ajusta los filtros o el término de búsqueda.</p>
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={10}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

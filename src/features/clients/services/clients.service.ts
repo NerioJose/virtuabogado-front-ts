@@ -23,6 +23,7 @@ export const clientsService = {
         const params = new URLSearchParams();
         if (filters?.status) params.append('status', filters.status);
         if (filters?.searchQuery) params.append('search', filters.searchQuery);
+        if (filters?.antiguedad) params.append('antiguedad', filters.antiguedad);
         if (filters?.page) params.append('page', filters.page.toString());
         if (filters?.limit) params.append('limit', filters.limit.toString());
 

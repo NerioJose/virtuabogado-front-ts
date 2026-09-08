@@ -5,6 +5,7 @@ import { FiEdit, FiTrash2, FiEye, FiFilter, FiUserPlus, FiMessageSquare, FiBrief
 import { ElementoSeleccionable } from '@/types/index';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useCasosPanel } from './hooks/useCasosPanel';
+import Pagination from '@/components/ui/Pagination';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CasosPanelProps {
@@ -22,6 +23,11 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
       filtroEstado,
       setFiltroEstado,
       getStatusConfig,
+      pagination,
+      countsByStatus,
+      visibleTotal,
+      page,
+      setPage,
   } = useCasosPanel(terminoBusqueda);
 
   const statusIcons: Record<string, React.ReactNode> = {
@@ -64,12 +70,12 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
           
           <div className="flex gap-2">
             {[
-              { id: 'todos', label: 'Todos', count: orders.length },
-              { id: OrderStatus.PENDIENTE, label: 'Pendientes', count: orders.filter((o: any) => o.status === OrderStatus.PENDIENTE).length },
-              { id: OrderStatus.EN_PROGRESO, label: 'En Proceso', count: orders.filter((o: any) => o.status === OrderStatus.EN_PROGRESO).length },
-              { id: OrderStatus.REVISION, label: 'En Revisión', count: orders.filter((o: any) => o.status === OrderStatus.REVISION).length },
-              { id: OrderStatus.COMPLETADO, label: 'Completados', count: orders.filter((o: any) => o.status === OrderStatus.COMPLETADO).length },
-              { id: OrderStatus.CANCELADO, label: 'Cancelados', count: orders.filter((o: any) => o.status === OrderStatus.CANCELADO).length },
+              { id: 'todos', label: 'Todos', count: visibleTotal },
+              { id: OrderStatus.PENDIENTE, label: 'Pendientes', count: countsByStatus[OrderStatus.PENDIENTE] || 0 },
+              { id: OrderStatus.EN_PROGRESO, label: 'En Proceso', count: countsByStatus[OrderStatus.EN_PROGRESO] || 0 },
+              { id: OrderStatus.REVISION, label: 'En Revisión', count: countsByStatus[OrderStatus.REVISION] || 0 },
+              { id: OrderStatus.COMPLETADO, label: 'Completados', count: countsByStatus[OrderStatus.COMPLETADO] || 0 },
+              { id: OrderStatus.CANCELADO, label: 'Cancelados', count: countsByStatus[OrderStatus.CANCELADO] || 0 },
             ].map((btn) => (
               <button type="button"
                 key={btn.id}
@@ -305,6 +311,18 @@ function CasosPanel({ terminoBusqueda, abrirModal }: CasosPanelProps) {
           </div>
           <h3 className="text-xl font-black text-azul-primario uppercase tracking-tight">Sin causas registradas</h3>
           <p className="text-slate-400 text-sm mt-1">No se encontraron casos bajo los criterios actuales.</p>
+        </div>
+      )}
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
+          <Pagination
+            page={page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            pageSize={pagination.limit}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

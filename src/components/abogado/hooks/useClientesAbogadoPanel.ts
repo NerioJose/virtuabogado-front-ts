@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 
@@ -18,6 +18,11 @@ export function useClientesAbogadoPanel(abogadoId: string) {
     const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
     const [busqueda, setBusqueda] = useState('');
     const [filtroActividad, setFiltroActividad] = useState<'todos' | 'reciente' | 'inactivo'>('todos');
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        setPage(1);
+    }, [busqueda, filtroActividad]);
 
     const clientes: ClienteRecord[] = useMemo(() => {
         const orders = (response as any)?.data || [];
@@ -64,7 +69,7 @@ export function useClientesAbogadoPanel(abogadoId: string) {
         return diferenciaDias <= 30;
     };
 
-    const clientesFiltrados = useMemo(() => {
+    const clientesFiltradosAll = useMemo(() => {
         return clientes.filter(cliente => {
             const coincideTermino =
                 cliente.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -79,6 +84,15 @@ export function useClientesAbogadoPanel(abogadoId: string) {
         });
     }, [clientes, busqueda, filtroActividad]);
 
+    const total = clientesFiltradosAll.length;
+    const totalPages = Math.max(1, Math.ceil(total / 10));
+    const pageSize = 10;
+    const clientesFiltrados = useMemo(() => {
+        if (total <= pageSize) return clientesFiltradosAll;
+        const start = (page - 1) * pageSize;
+        return clientesFiltradosAll.slice(start, start + pageSize);
+    }, [clientesFiltradosAll, page, total]);
+
     return {
         clientesFiltrados,
         isLoading,
@@ -87,5 +101,8 @@ export function useClientesAbogadoPanel(abogadoId: string) {
         filtroActividad,
         setFiltroActividad,
         esClienteReciente,
+        pagination: { total, totalPages, limit: pageSize },
+        page,
+        setPage,
     };
 }

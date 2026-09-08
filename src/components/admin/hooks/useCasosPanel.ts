@@ -1,60 +1,47 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOrders } from '@/features/orders/hooks/useOrders';
-import { OrderStatus } from '@/features/orders/types/orders.types';
+import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 import { useChatStore } from '@/features/chat/store/chatStore';
 
 export function useCasosPanel(terminoBusqueda: string) {
-    const { data: response, isLoading } = useOrders({ limit: 100 });
-    const orders = useMemo(() => (response as any)?.data || [], [response]);
+    const [page, setPage] = useState(1);
+    const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
+    const [debouncedTerm, setDebouncedTerm] = useState('');
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedTerm(terminoBusqueda), 300);
+        return () => clearTimeout(t);
+    }, [terminoBusqueda]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedTerm, filtroEstado]);
+
+    const { data: response, isLoading } = useOrders({
+        limit: 10,
+        page,
+        status: filtroEstado === 'todos' ? undefined : filtroEstado,
+        search: debouncedTerm || undefined,
+    });
+    const res = response as { data?: Order[]; pagination?: any; countsByStatus?: Record<string, number> } | undefined;
+    const orders = useMemo(() => res?.data || [], [res]);
+    const pagination = useMemo(() => res?.pagination, [res]);
+    const countsByStatus = useMemo(() => res?.countsByStatus || {}, [res]);
     const unreadOrders = useChatStore((state) => state.unreadOrders);
     const unreadCounts = useChatStore((state) => state.unreadCounts);
 
-    const [filtroEstado, setFiltroEstado] = useState<'todos' | OrderStatus>('todos');
-
     const ordenesFiltradas = useMemo(() => {
-        const term = terminoBusqueda.toLowerCase().trim();
-        
-        const getStatusPriority = (status: string): number => {
-            switch (status) {
-                case OrderStatus.PENDIENTE:
-                case OrderStatus.PAID:
-                    return 1;
-                case OrderStatus.EN_PROGRESO:
-                case OrderStatus.REVISION:
-                    return 2;
-                case OrderStatus.PAGO_PENDIENTE:
-                    return 3; 
-                case OrderStatus.COMPLETADO:
-                    return 4;
-                default:
-                    return 5;
-            }
-        };
+        const filterHidden = (status: string): boolean =>
+            [OrderStatus.PAGO_PENDIENTE, OrderStatus.PAGO_RECHAZADO].includes(status as OrderStatus);
 
-        const filtradas = orders.filter((orden: any) => {
-            const coincideBusqueda =
-                orden.userName?.toLowerCase().includes(term) ||
-                orden.userEmail?.toLowerCase().includes(term) ||
-                orden.items?.some((item: any) => item.serviceName?.toLowerCase().includes(term)) ||
-                orden.lawyerName?.toLowerCase().includes(term) ||
-                orden.id?.toLowerCase().includes(term);
+        return orders.filter((orden) => !filterHidden(orden.status));
+    }, [orders]);
 
-            const coincideEstado =
-                filtroEstado === 'todos' || orden.status === filtroEstado;
-
-            return coincideBusqueda && coincideEstado;
-        });
-
-        return [...filtradas].sort((a: any, b: any) => {
-            const priorityA = getStatusPriority(a.status as OrderStatus);
-            const priorityB = getStatusPriority(b.status as OrderStatus);
-            
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
-            }
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-    }, [orders, terminoBusqueda, filtroEstado]);
+    const visibleTotal = useMemo(() => {
+        return (pagination?.total ?? 0)
+            - (countsByStatus[OrderStatus.PAGO_PENDIENTE] || 0)
+            - (countsByStatus[OrderStatus.PAGO_RECHAZADO] || 0);
+    }, [pagination, countsByStatus]);
 
     const getStatusConfig = (status: OrderStatus) => {
         const config: Record<string, { label: string, color: string }> = {
@@ -80,5 +67,10 @@ export function useCasosPanel(terminoBusqueda: string) {
         filtroEstado,
         setFiltroEstado,
         getStatusConfig,
+        pagination,
+        countsByStatus,
+        visibleTotal,
+        page,
+        setPage,
     };
 }

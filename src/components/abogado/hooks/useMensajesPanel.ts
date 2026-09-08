@@ -1,15 +1,32 @@
-import { useState, useMemo } from 'react';
-import { useOrdersByLawyer, useUpdateOrder } from '@/features/orders/hooks/useOrders';
+import { useState, useMemo, useEffect } from 'react';
+import { useOrders, useUpdateOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { useChatStore } from '@/features/chat/store/chatStore';
 
 export function useMensajesPanel(abogadoId: string, initialClienteId?: string | null) {
-    const { data: response, isLoading } = useOrdersByLawyer(abogadoId);
     const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
     const [busqueda, setBusqueda] = useState('');
+    const [debouncedBusqueda, setDebouncedBusqueda] = useState('');
+    const [page, setPage] = useState(1);
     const [modalAbierto, setModalAbierto] = useState(false);
     const [casoParaCompletar, setCasoParaCompletar] = useState<string | null>(null);
     const updateOrder = useUpdateOrder();
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedBusqueda(busqueda), 300);
+        return () => clearTimeout(t);
+    }, [busqueda]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedBusqueda, initialClienteId]);
+
+    const { data: response, isLoading } = useOrders({
+        lawyerId: abogadoId,
+        search: debouncedBusqueda || undefined,
+        page,
+        limit: 10,
+    });
 
     const openConfirmModal = (orderId: string) => {
         setCasoParaCompletar(orderId);
@@ -34,17 +51,15 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         }
     };
 
+    const res = response as { data?: any[]; pagination?: any } | undefined;
+    const orders = useMemo(() => res?.data || [], [res]);
+    const pagination = useMemo(() => res?.pagination, [res]);
+
     const conversaciones = useMemo(() => {
-        const orders = (response as any)?.data || [];
         return orders
             .filter((order: any) => {
                 if (initialClienteId && order.userId !== initialClienteId) return false;
-                const term = busqueda.toLowerCase();
-                return (
-                    order.userName?.toLowerCase().includes(term) ||
-                    order.items?.[0]?.serviceName?.toLowerCase().includes(term) ||
-                    order.id.toLowerCase().includes(term)
-                );
+                return true;
             })
             .map((order: any) => ({
                 id: order.id,
@@ -54,7 +69,7 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
                 caso: order.items?.[0]?.serviceName || 'Servicio Legal',
                 status: order.status
             }));
-    }, [response, busqueda, initialClienteId]);
+    }, [orders, initialClienteId]);
 
     const formatearFecha = (fecha: string | Date): string => {
         const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
@@ -77,7 +92,6 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         }
     };
 
-    const orders = useMemo(() => (response as any)?.data || [], [response]);
     const ordenActual = useMemo(() => orders.find((o: any) => o.id === conversacionActiva), [orders, conversacionActiva]);
 
     const unreadOrders = useChatStore((state) => state.unreadOrders);
@@ -98,6 +112,9 @@ export function useMensajesPanel(abogadoId: string, initialClienteId?: string | 
         isUpdating: updateOrder.isPending,
         ordenActual,
         unreadOrders,
-        unreadCounts
+        unreadCounts,
+        pagination,
+        page,
+        setPage,
     };
 }

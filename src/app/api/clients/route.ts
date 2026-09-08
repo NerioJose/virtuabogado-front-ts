@@ -58,19 +58,40 @@ export async function GET(request: Request) {
         const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
         const skip = (page - 1) * limit;
-        const cacheKey = `clients-${page}-${limit}`;
+        const search = searchParams.get('search')?.trim();
+        const status = searchParams.get('status');
+        const antiguedad = searchParams.get('antiguedad');
+
+        const cacheKey = `clients-${page}-${limit}-${status || 'all'}-${antiguedad || 'all'}-${search || ''}`;
 
         const cached = await getCached<any>(cacheKey);
         if (cached) return NextResponse.json(cached);
 
+        const where: any = { rol: 'CLIENTE' };
+        if (status === 'active') where.activo = true;
+        if (status === 'inactive') where.activo = false;
+        if (antiguedad === 'reciente' || antiguedad === 'historico') {
+            const corte = new Date();
+            corte.setDate(corte.getDate() - 30);
+            where.createdAt = antiguedad === 'reciente' ? { gte: corte } : { lt: corte };
+        }
+        if (search) {
+            where.OR = [
+                { nombre: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { telefono: { contains: search, mode: 'insensitive' } },
+                { id: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+
         const [clients, total, orderGroups] = await Promise.all([
             prisma.user.findMany({
-                where: { rol: 'CLIENTE' },
+                where,
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.user.count({ where: { rol: 'CLIENTE' } }),
+            prisma.user.count({ where }),
             prisma.order.groupBy({
                 by: ['userId'],
                 where: { activo: true },

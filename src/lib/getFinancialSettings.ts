@@ -15,7 +15,7 @@ export interface FinancialSettingsData {
 }
 
 export async function getFinancialSettingsCached(): Promise<FinancialSettingsData> {
-  const cached = getCached<FinancialSettingsData>(CACHE_KEY)
+  const cached = await getCached<FinancialSettingsData>(CACHE_KEY)
   if (cached) return cached
 
   const settings = await prisma.financialSettings.findUnique({
@@ -36,6 +36,6 @@ export async function getFinancialSettingsCached(): Promise<FinancialSettingsDat
         platform_fee_percentage: 0,
       }
 
-  setCache(CACHE_KEY, result, CACHE_TTL_MS)
+  await setCache(CACHE_KEY, result, CACHE_TTL_MS)
   return result
 }

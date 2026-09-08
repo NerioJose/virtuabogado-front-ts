@@ -5,11 +5,11 @@ import { clearCache } from '@/lib/cache'
 on('service.updated', async () => {
   revalidatePath('/')
   revalidatePath('/servicios')
-  clearCache('services-')
+  await clearCache('services-')
 })
 
 on('service.deleted', async () => {
   revalidatePath('/')
   revalidatePath('/servicios')
-  clearCache('services-')
+  await clearCache('services-')
 })

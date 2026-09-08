@@ -60,7 +60,7 @@ export async function GET(request: Request) {
         const skip = (page - 1) * limit;
         const cacheKey = `clients-${page}-${limit}`;
 
-        const cached = getCached<any>(cacheKey);
+        const cached = await getCached<any>(cacheKey);
         if (cached) return NextResponse.json(cached);
 
         const [clients, total, orderGroups] = await Promise.all([
@@ -111,7 +111,7 @@ export async function GET(request: Request) {
             limit,
             totalPages: Math.ceil(total / limit),
         });
-        setCache(cacheKey, response, 10_000);
+        await setCache(cacheKey, response, 10_000);
         return NextResponse.json(response);
     } catch (error) {
         console.error('❌ API Error fetching clients:', error);

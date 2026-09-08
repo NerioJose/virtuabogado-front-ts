@@ -12,7 +12,7 @@ export async function GET(req: Request) {
         const showAll = searchParams.get('all') === 'true';
         const cacheKey = showAll ? 'services-all' : 'services-active';
 
-        const cached = getCached<any[]>(cacheKey);
+        const cached = await getCached<any[]>(cacheKey);
         if (cached) {
             return NextResponse.json(cached, {
                 headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' }
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
         });
 
         const result = serializeFinance(services);
-        setCache(cacheKey, result, 10_000);
+        await setCache(cacheKey, result, 10_000);
         return NextResponse.json(result, {
             headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' }
         });

@@ -14,7 +14,7 @@ export const revalidate = 3600;
 export async function GET(request: NextRequest) {
     try {
         // Caché en memoria de 30s para evitar queries repetidas en ráfagas
-        const cached = getCached<any>('financial-settings-ui');
+        const cached = await getCached<any>('financial-settings-ui');
         if (cached) {
             return NextResponse.json(cached, {
                 headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
             updatedBy: isAdmin ? settings.updated_by : undefined,
         };
 
-        setCache('financial-settings-ui', response, 30_000);
+        await setCache('financial-settings-ui', response, 30_000);
         return NextResponse.json(response, {
             headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
         });
@@ -160,8 +160,8 @@ export async function PATCH(request: NextRequest) {
 
         // Invalidar caché
         revalidatePath('/');
-        clearCache('financial-settings-ui');
-        clearCache('financial-settings');
+        await clearCache('financial-settings-ui');
+        await clearCache('financial-settings');
 
         return NextResponse.json({ success: true, message: 'Configuración actualizada' });
     } catch (error: any) {

@@ -1,9 +1,8 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { UserRole, OrderStatus } from '@/shared/types/entities.types';
+import { UserRole } from '@/shared/types/entities.types';
 import { serializeFinance } from '@/lib/finance';
-import { aggregateFinancials } from '@/services/finance.service';
 import { getFinancialSettingsCached } from '@/lib/getFinancialSettings';
 
 export interface FinancialSummaryFilters {
@@ -11,109 +10,114 @@ export interface FinancialSummaryFilters {
     dateRange?: 'today' | 'week' | 'month' | 'year' | 'all';
 }
 
+type IncomeRow = {
+    totalIncome: number;
+    totalCommissions: number;
+    totalOps: number;
+    totalTaxes: number;
+    totalFees: number;
+    count: number;
+};
+
+type PendingRow = { pending: number };
+
 /**
  * Server Action to fetch financial KPIs for Admin and Lawyers.
- * Uses the centralized src/services/finance.service.ts logic for absolute precision.
+ * Agrega en SQL (parámetros indexados) en lugar de cargar todas las órdenes:
+ * misma fórmula que calculateOrderFinances pero ejecutada por PostgreSQL.
  */
 export async function getFinancialSummary(filters: FinancialSummaryFilters, user: { id: string, rol: UserRole }) {
-    const { lawyerId, dateRange } = filters;
+    const { lawyerId } = filters;
     
-    // 1. Fetch Dynamic Platform Settings (con caché compartido, evita N+1 en dashboard)
+    // 1. Fetch Dynamic Platform Settings (con caché compartido)
     const settings = await getFinancialSettingsCached();
+    const lp = Number(settings.lawyer_commission_percentage || 0);
+    const op = Number(settings.operational_costs_percentage || 0);
+    const tp = Number(settings.tax_percentage || 0);
+    const pf = Number(settings.platform_fee_percentage || 0);
 
     // 2. Build Date Filter
-    let dateFilter: any = undefined;
+    let dateFrom: Date | null = null;
     const now = new Date();
     
-    if (dateRange === 'today') {
+    if (filters.dateRange === 'today') {
         const start = new Date(now);
         start.setHours(0, 0, 0, 0);
-        dateFilter = { gte: start };
-    } else if (dateRange === 'week') {
+        dateFrom = start;
+    } else if (filters.dateRange === 'week') {
         const start = new Date(now);
         start.setDate(now.getDate() - 7);
         start.setHours(0, 0, 0, 0);
-        dateFilter = { gte: start };
-    } else if (dateRange === 'month') {
+        dateFrom = start;
+    } else if (filters.dateRange === 'month') {
         const start = new Date(now);
         start.setMonth(now.getMonth() - 1);
         start.setHours(0, 0, 0, 0);
-        dateFilter = { gte: start };
-    } else if (dateRange === 'year') {
+        dateFrom = start;
+    } else if (filters.dateRange === 'year') {
         const start = new Date(now);
         start.setFullYear(now.getFullYear() - 1);
         start.setHours(0, 0, 0, 0);
-        dateFilter = { gte: start };
+        dateFrom = start;
     }
 
-    // 3. Base Query Filter (Removing status filter to handle legcay casing in-memory)
-    const where: any = {
-        activo: true,
-        createdAt: dateFilter,
-    };
-
-    // Security & Filtering by User Role (In-case normalization fails elsewhere)
+    // Security & Filtering by User Role
     const role = (user.rol as string).toUpperCase();
-    
-
-    if (role === 'ABOGADO') {
-        where.lawyerId = user.id;
-    } else if (role === 'ADMIN' && lawyerId) {
-        where.lawyerId = lawyerId;
-    }
-    
-    
+    const effectiveLawyerId = role === 'ABOGADO' ? user.id : (role === 'ADMIN' ? (lawyerId || null) : null);
 
     try {
-        // 4. Fetch Order Data (Including payout status for balance calculation)
-        const allOrders = await prisma.order.findMany({
-            where,
-            select: {
-                total: true,
-                status: true,
-                createdAt: true,
-                payout: {
-                    select: {
-                        status: true
-                    }
-                }
-            }
-        });
+        // 3. Agregación en SQL de los ingresos del período (sin cargar filas)
+        const [stats] = await prisma.$queryRaw<IncomeRow[]>`
+            SELECT
+                COALESCE(SUM("total"), 0)::float8 AS "totalIncome",
+                COALESCE(SUM(ROUND("total" * ${lp} / 100.0, 2)), 0)::float8 AS "totalCommissions",
+                COALESCE(SUM(ROUND("total" * ${op} / 100.0, 2)), 0)::float8 AS "totalOps",
+                COALESCE(SUM(ROUND("total" * ${tp} / 100.0, 2)), 0)::float8 AS "totalTaxes",
+                COALESCE(SUM(ROUND("total" * ${pf} / 100.0, 2)), 0)::float8 AS "totalFees",
+                COUNT(*)::int AS "count"
+            FROM "Order"
+            WHERE "activo" = true
+              AND "status" IN ('PENDIENTE', 'EN_PROGRESO', 'REVISION', 'COMPLETADO')
+              AND (${dateFrom}::timestamptz IS NULL OR "createdAt" >= ${dateFrom})
+              AND (${effectiveLawyerId}::text IS NULL OR "lawyerId" = ${effectiveLawyerId})
+        `;
 
-        // 🏛️ Filter orders for income reporting
-        const orders = allOrders.filter((o: any) => {
-            const s = (o.status || '').toUpperCase();
-            return ['PENDIENTE', 'EN_PROGRESO', 'REVISION', 'COMPLETADO'].includes(s);
-        });
+        // 4. Comisiones pendientes de pago al abogado (COMPLETADO sin liquidar)
+        const [pendingStats] = await prisma.$queryRaw<PendingRow[]>`
+            SELECT COALESCE(SUM(COALESCE(o."commissionAmount", 0)), 0)::float8 AS "pending"
+            FROM "Order" o
+            LEFT JOIN "LawyerPayouts" p ON p.id = o."payoutId"
+            WHERE o."activo" = true
+              AND o."status" = 'COMPLETADO'
+              AND o."lawyerId" IS NOT NULL
+              AND (o."payoutId" IS NULL OR p."status" IS DISTINCT FROM 'COMPLETADO')
+              AND (${dateFrom}::timestamptz IS NULL OR o."createdAt" >= ${dateFrom})
+              AND (${effectiveLawyerId}::text IS NULL OR o."lawyerId" = ${effectiveLawyerId})
+        `;
 
-        // Orders that are COMPLETED but NOT yet paid out to the lawyer
-        const pendingPayoutOrders = orders.filter((o: any) => {
-            return o.status === 'COMPLETADO' && o.payout?.status !== 'COMPLETADO';
-        });
+        const totalIncome = Number(stats.totalIncome || 0);
+        const totalCommissions = Number(stats.totalCommissions || 0);
+        const totalExpenses = Number(stats.totalOps || 0) + Number(stats.totalTaxes || 0) + Number(stats.totalFees || 0);
 
-        // 5. Calculate Metrics using the Fintech-grade engine
-        const stats = await aggregateFinancials(orders, settings);
-        const pendingStats = await aggregateFinancials(pendingPayoutOrders, settings);
-        
-        // 6. Structure Final KPIs
+        // 5. Estructurar KPIs finales
         const summary = {
-            totalIncome: stats.totalIncome,
-            totalNetEarned: stats.totalCommissions, // Total historical net for the period
-            pendingLawyerPayments: pendingStats.totalCommissions, // REAL Balance owed to lawyer
-            realProfit: stats.realProfit,
-            operationalCostsAndTaxes: stats.totalExpenses,
-            transactionCount: stats.count,
-            lawyerPendingBalance: role === 'ABOGADO' ? pendingStats.totalCommissions : undefined,
-            lawyerTotalEarned: role === 'ABOGADO' ? stats.totalCommissions : undefined,
+            totalIncome,
+            totalNetEarned: totalCommissions,
+            pendingLawyerPayments: Number(pendingStats.pending || 0),
+            realProfit: Number((totalIncome - totalCommissions - totalExpenses).toFixed(2)),
+            operationalCostsAndTaxes: Number(totalExpenses.toFixed(2)),
+            transactionCount: Number(stats.count || 0),
+            lawyerPendingBalance: role === 'ABOGADO' ? Number(pendingStats.pending || 0) : undefined,
+            lawyerTotalEarned: role === 'ABOGADO' ? totalCommissions : undefined,
             settings: {
-                lawyerPercentage: Number(settings.lawyer_commission_percentage || 0),
-                opsPercentage: Number(settings.operational_costs_percentage || 0),
-                taxPercentage: Number(settings.tax_percentage || 0),
-                platformFeePercentage: Number(settings.platform_fee_percentage || 0)
+                lawyerPercentage: lp,
+                opsPercentage: op,
+                taxPercentage: tp,
+                platformFeePercentage: pf
             }
         };
 
-        // 7. Serialize for Next.js 15 Client Components
+        // 6. Serialize para Next.js 15 Client Components
         return serializeFinance(summary);
     } catch (error) {
         console.error('❌ [DATABASE_REPAIR] Error en getFinancialSummary:', {
@@ -122,10 +126,10 @@ export async function getFinancialSummary(filters: FinancialSummaryFilters, user
             context: {
                 userId: user.id,
                 rol: role,
-                where
+                dateRange: filters.dateRange,
+                lawyerId: effectiveLawyerId
             }
         });
-        // We throw a generic error to the frontend but keep details in the server
         throw new Error('Lo sentimos, hubo un error al calcular los datos financieros de la plataforma.');
     }
 }

@@ -63,7 +63,7 @@ export async function GET(request: Request) {
         const cached = getCached<any>(cacheKey);
         if (cached) return NextResponse.json(cached);
 
-        const [clients, total, allOrders] = await Promise.all([
+        const [clients, total, orderGroups] = await Promise.all([
             prisma.user.findMany({
                 where: { rol: 'CLIENTE' },
                 skip,
@@ -71,18 +71,20 @@ export async function GET(request: Request) {
                 orderBy: { createdAt: 'desc' }
             }),
             prisma.user.count({ where: { rol: 'CLIENTE' } }),
-            prisma.order.findMany({
+            prisma.order.groupBy({
+                by: ['userId'],
                 where: { activo: true },
-                select: { userId: true, total: true, id: true }
+                _count: { _all: true },
+                _sum: { total: true },
             }),
         ]);
 
         const orderStatsMap = new Map<string, { count: number; total: number }>();
-        for (const order of allOrders) {
-            const stats = orderStatsMap.get(order.userId) || { count: 0, total: 0 };
-            stats.count++;
-            stats.total += Number(order.total);
-            orderStatsMap.set(order.userId, stats);
+        for (const group of orderGroups) {
+            orderStatsMap.set(group.userId, {
+                count: group._count._all,
+                total: Number(group._sum.total || 0),
+            });
         }
 
         const formattedClients = clients.map((client: any) => {

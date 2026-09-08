@@ -83,12 +83,14 @@ model Order {
   review                Review?
 
   @@index([lawyerId, status])
+  @@index([lawyerId, activo, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@index([userId])
   @@index([serviceId])
   @@index([status])
   @@index([paymentId])
   @@index([status, createdAt(sort: Desc)])
+  @@index([activo, status, payoutId, lawyerId])
 }
 
 model PaymentMethod {

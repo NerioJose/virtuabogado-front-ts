@@ -20,7 +20,7 @@ export async function GET(request: Request) {
         const requestedUserId = searchParams.get('userId');
         const requestedStatus = searchParams.get('status');
         const page = parseInt(searchParams.get('page') || '1');
-        const limit = parseInt(searchParams.get('limit') || '50');
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
         const skip = (page - 1) * limit;
 
         const where: any = { activo: { not: false } };

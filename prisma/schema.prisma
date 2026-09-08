@@ -252,6 +252,7 @@ model EventLog {
   maxRetries  Int       @default(3)
   error       String?
   scheduledAt DateTime?
+  leaseUntil  DateTime?
   createdAt   DateTime  @default(now())
   processedAt DateTime?
 

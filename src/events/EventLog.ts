@@ -1,26 +1,37 @@
 import { prisma } from '@/lib/prisma'
+import { EVENT_LEASE_MS, nextBackoffMs } from './dispatch'
 
 export async function markProcessing(id: string): Promise<void> {
   await prisma.eventLog.update({
     where: { id },
-    data: { status: 'processing' },
+    data: { status: 'processing', leaseUntil: new Date(Date.now() + EVENT_LEASE_MS) },
   })
 }
 
 export async function markCompleted(id: string): Promise<void> {
   await prisma.eventLog.update({
     where: { id },
-    data: { status: 'completed', processedAt: new Date() },
+    data: { status: 'completed', processedAt: new Date(), leaseUntil: null, error: null },
   })
 }
 
 export async function markFailed(id: string, error: string): Promise<void> {
+  const current = await prisma.eventLog.findUnique({
+    where: { id },
+    select: { retries: true },
+  })
+  const retries = (current?.retries || 0) + 1
+  const scheduledAt = new Date(Date.now() + nextBackoffMs(retries))
+
   await prisma.eventLog.update({
     where: { id },
     data: {
       status: 'failed',
       error,
-      retries: { increment: 1 },
+      retries,
+      leaseUntil: null,
+      scheduledAt,
+      processedAt: new Date(),
     },
   })
 }

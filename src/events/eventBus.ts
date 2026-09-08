@@ -1,14 +1,17 @@
 import { prisma } from '@/lib/prisma'
+import { after } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { BusinessEvent, BusinessEventType } from './definitions'
-import { getHandlers, hasHandlers } from './registry'
-import { markCompleted, markFailed, markProcessing } from './EventLog'
+import { hasHandlers } from './registry'
+import { markCompleted } from './EventLog'
+import { isProcessingInWorker } from './dispatch'
 import './handlers'
 
 export async function emit(event: BusinessEvent): Promise<void> {
   const eventLog = await prisma.eventLog.create({
     data: {
       type: event.type,
-      payload: event.data as any,
+      payload: event.data as unknown as Prisma.InputJsonValue,
       status: 'pending',
     },
   })
@@ -18,20 +21,39 @@ export async function emit(event: BusinessEvent): Promise<void> {
     return
   }
 
-  await markProcessing(eventLog.id)
+  await schedule(eventLog.id)
+}
 
-  const handlers = getHandlers(event.type)
-  const results = await Promise.allSettled(handlers.map((h) => h(event)))
+async function schedule(eventLogId: string): Promise<void> {
+  const { processEvent } = await import('./processor')
 
-  const errors = results
-    .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-    .map((r) => r.reason?.message || String(r.reason))
-
-  if (errors.length === 0) {
-    await markCompleted(eventLog.id)
-  } else {
-    await markFailed(eventLog.id, errors.join('; '))
+  // Eventos emitidos mientras el procesador corre se encolan directo (evita latencia de cron)
+  if (isProcessingInWorker()) {
+    await processEvent(eventLogId)
+    return
   }
+
+  const mode = process.env.EVENT_DISPATCH || (process.env.NODE_ENV === 'production' ? 'after' : 'inline')
+
+  if (mode === 'none') return
+
+  const run = () =>
+    processEvent(eventLogId).catch((error) =>
+      console.error('[Events] Error en dispatch de evento:', eventLogId, error)
+    )
+
+  if (mode === 'after') {
+    try {
+      after(run)
+      return
+    } catch {
+      // Sin contexto de request (script, edge, after anidado): el cron lo recogerá.
+      return
+    }
+  }
+
+  // inline (dev por defecto): procesamiento síncrono igual que antes de la cola.
+  await run()
 }
 
 export async function retryEvent(eventLogId: string): Promise<void> {
@@ -44,6 +66,6 @@ export async function retryEvent(eventLogId: string): Promise<void> {
 
   await emit({
     type: eventLog.type as BusinessEventType,
-    data: eventLog.payload as any,
+    data: eventLog.payload as Record<string, unknown>,
   })
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard, FiBell, FiPlayCircle } from 'react-icons/fi';
+import { FiUsers, FiUserCheck, FiBriefcase, FiDollarSign, FiPieChart, FiSettings, FiLogOut, FiHome, FiX, FiClock, FiCreditCard, FiBell, FiPlayCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,9 +16,11 @@ interface SidebarProps {
   handleLogout: () => void;
   isOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout, isOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
   const { user } = useAuthStore();
   const { subscribe, unsubscribe, isSubscribed, isPending, lastError } = usePushNotifications();
   
@@ -46,12 +48,12 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
         <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 rounded-full bg-vinotinto blur-3xl opacity-20" />
       </div>
 
-      <div className="p-6 relative flex flex-col h-full overflow-hidden">
-        <div className="flex justify-between items-center mb-6 shrink-0">
+      <div className={`p-6 relative flex flex-col h-full overflow-hidden ${collapsed ? 'lg:p-3 lg:px-2' : ''}`}>
+        <div className={`flex justify-between items-center mb-6 shrink-0 ${collapsed ? 'lg:justify-center' : ''}`}>
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex-1 flex justify-center lg:justify-start"
+            className={`flex-1 flex justify-center lg:justify-start ${collapsed ? 'lg:hidden' : ''}`}
           >
             <Link href="/" className="transition-transform hover:scale-105 active:scale-95">
               <Image 
@@ -64,6 +66,13 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
               />
             </Link>
           </motion.div>
+          <button type="button" 
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            className="hidden lg:flex w-10 h-10 rounded-full items-center justify-center hover:bg-white/10 transition-colors"
+          >
+            {collapsed ? <FiChevronRight size={22} /> : <FiChevronLeft size={22} />}
+          </button>
           <button type="button" 
             onClick={onClose}
             className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
@@ -78,7 +87,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 px-1 shrink-0"
+              className={`mb-6 px-1 shrink-0 ${collapsed ? 'lg:hidden' : ''}`}
             >
               <div className="flex items-center p-4 bg-white/10 rounded-[1.5rem] border border-white/10 backdrop-blur-md shadow-xl">
                 <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-vinotinto to-rose-600 flex items-center justify-center text-white font-black text-xl shadow-lg border border-white/20 shrink-0">
@@ -111,7 +120,8 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 setSeccionActiva(item.id as SeccionAdmin);
                 onClose?.();
               }}
-              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition duration-300 group
+              className={`flex items-center w-full p-3 rounded-2xl transition duration-300 group
+                ${collapsed ? 'lg:justify-center lg:space-x-0 lg:px-2' : 'space-x-3'}
                 ${seccionActiva === item.id 
                   ? 'bg-white text-azul-primario font-black shadow-lg shadow-black/10 translate-x-1' 
                   : 'text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1'
@@ -120,11 +130,11 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
               <div className={`text-lg transition-transform group-hover:scale-110 ${seccionActiva === item.id ? 'text-azul-primario font-black' : ''}`}>
                 {item.icon}
               </div>
-              <span className="text-sm tracking-tight">{item.label}</span>
+              <span className={`text-sm tracking-tight ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
               {seccionActiva === item.id && (
                 <motion.div 
                   layoutId="active-pill"
-                  className="ml-auto w-1.5 h-1.5 rounded-full bg-azul-primario"
+                  className={`ml-auto w-1.5 h-1.5 rounded-full bg-azul-primario ${collapsed ? 'lg:hidden' : ''}`}
                 />
               )}
             </motion.button>
@@ -144,7 +154,8 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                 }
               }}
               disabled={isPending}
-              className={`flex items-center space-x-3 w-full p-3 rounded-2xl transition duration-300 group border
+              className={`flex items-center w-full p-3 rounded-2xl transition duration-300 group border
+                ${collapsed ? 'lg:justify-center lg:space-x-0 lg:px-2' : 'space-x-3'}
                 ${isPending ? 'opacity-50 cursor-wait' : 'hover:translate-x-1'}
                 ${isSubscribed 
                   ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' 
@@ -160,7 +171,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
                   </span>
                  }
               </div>
-              <div className="flex flex-col items-start overflow-hidden">
+              <div className={`flex flex-col items-start overflow-hidden ${collapsed ? 'lg:hidden' : ''}`}>
                   <span className="text-sm tracking-tight font-black truncate w-full">
                       {isSubscribed ? 'NOTIFICACIONES ACTIVAS' : 'ACTIVAR NOTIFICACIONES'}
                   </span>
@@ -175,10 +186,11 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
         <div className="pt-4 border-t border-white/10 shrink-0 mt-2">
           <button type="button" 
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full p-3.5 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition duration-300 font-black text-xs uppercase tracking-widest group shadow-sm active:scale-95"
+            className={`flex items-center w-full p-3.5 rounded-2xl bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white transition duration-300 font-black text-xs uppercase tracking-widest group shadow-sm active:scale-95
+              ${collapsed ? 'lg:justify-center lg:space-x-0 lg:px-0' : 'space-x-3'}`}
           >
             <FiLogOut className="text-lg group-hover:rotate-12 transition-transform" />
-            <span>Cerrar sesión</span>
+            <span className={collapsed ? 'lg:hidden' : ''}>Cerrar sesión</span>
           </button>
         </div>
       </div>
@@ -201,7 +213,7 @@ export default function Sidebar({ seccionActiva, setSeccionActiva, handleLogout,
       </AnimatePresence>
 
       {/* Desktop Sidebar (Siempre visible en LG+) */}
-      <div className="hidden lg:block fixed left-0 top-0 w-72 h-screen z-50">
+      <div className={`hidden lg:block fixed left-0 top-0 h-screen z-50 transition-all duration-300 ${collapsed ? 'w-16' : 'w-72'}`}>
         {sidebarContent}
       </div>
 

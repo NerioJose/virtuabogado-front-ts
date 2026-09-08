@@ -19,7 +19,9 @@ import {
 	FiLogOut,
 	FiMenu,
 	FiX,
-	FiLoader
+	FiLoader,
+	FiChevronLeft,
+	FiChevronRight
 } from 'react-icons/fi';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
@@ -79,6 +81,15 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 		setFechaActual(new Date().toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }));
 	}, []);
 
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+	useEffect(() => {
+		const saved = localStorage.getItem('vb:sidebar-collapsed:abogado');
+		if (saved) setIsSidebarCollapsed(saved === '1');
+	}, []);
+	useEffect(() => {
+		localStorage.setItem('vb:sidebar-collapsed:abogado', isSidebarCollapsed ? '1' : '0');
+	}, [isSidebarCollapsed]);
+
 	// 🔥 REALTIME REACTIVITY: Escuchar cambios en órdenes y mensajes
 	// Esto invalida la caché de TanStack Query instantáneamente
 	useRealtimeSubscription();
@@ -106,12 +117,13 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 
 			<motion.div 
                 className={`
-                    w-72 bg-white shadow-2xl fixed h-full z-[70] transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)
+                    w-72 bg-white shadow-2xl fixed h-full z-[70] transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) overflow-x-hidden
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    ${isSidebarCollapsed ? 'lg:w-16' : 'lg:w-72'}
                 `}
             >
-				<div className="p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario/[0.02]">
-					<Link href="/" className="group/logo">
+				<div className={`p-6 border-b border-gray-100 flex justify-between items-center bg-azul-primario/[0.02] ${isSidebarCollapsed ? 'lg:justify-center lg:px-2 lg:p-4' : ''}`}>
+					<Link href="/" className={`group/logo ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
 						<h2 className="text-xl font-black text-azul-primario tracking-tight flex items-center gap-2 group-hover/logo:scale-105 transition-transform">
 							<div className="w-8 h-8 bg-azul-primario rounded-lg flex items-center justify-center text-white">
                                 <FiBriefcase size={18} />
@@ -120,6 +132,13 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 						</h2>
 						<p className="text-[10px] uppercase font-black text-slate-400 mt-1 tracking-widest">Panel de Gestión</p>
 					</Link>
+					<button type="button"
+						onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+						title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+						className={`hidden lg:flex p-2 text-slate-400 hover:text-azul-primario transition-colors`}
+					>
+						{isSidebarCollapsed ? <FiChevronRight size={24} /> : <FiChevronLeft size={24} />}
+					</button>
 					<button type="button" 
 						onClick={() => setIsSidebarOpen(false)}
 						className="lg:hidden p-2 text-slate-400 hover:text-red-500 transition-colors"
@@ -143,16 +162,22 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							<li key={item.id} className={item.divider ? 'pt-4 mt-4 border-t border-slate-100' : ''}>
 								<button type="button"
 									onClick={() => { handleNavClick(item.id); setIsSidebarOpen(false); }}
-									className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition duration-200 group ${seccionActiva === item.id
+									title={isSidebarCollapsed ? item.label : undefined}
+									className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition duration-200 group ${
+										isSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
+									} ${
+										seccionActiva === item.id
 										? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25 translate-x-2'
 										: 'text-slate-500 hover:bg-slate-50 hover:text-azul-primario'
 										}`}>
-                                    <span className={`text-lg mr-3 transition-transform group-hover:scale-110 ${seccionActiva === item.id ? 'text-white' : 'text-slate-400'}`}>
+                                    <span className={`text-lg mr-3 transition-transform group-hover:scale-110 ${isSidebarCollapsed ? 'lg:mr-0' : ''} ${seccionActiva === item.id ? 'text-white' : 'text-slate-400'}`}>
                                         {item.icon}
                                     </span>
-									<span className="font-bold text-sm">{item.label}</span>
+									<span className={`font-bold text-sm ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
 									{(item.id === 'mensajes' || item.id === 'casos') && totalUnread > 0 && (
 										<span className={`ml-auto min-w-[20px] h-[20px] px-1.5 text-[10px] font-black rounded-full flex items-center justify-center leading-none shadow-sm ${
+											isSidebarCollapsed ? 'lg:hidden' : ''
+										} ${
 											seccionActiva === item.id
 												? 'bg-white text-red-500'
 												: 'bg-red-500 text-white'
@@ -164,16 +189,16 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 							</li>
 						))}
 						
-						<li className="mt-8 px-4">
-							<PushNotificationToggle />
+						<li className={`mt-8 px-4 ${isSidebarCollapsed ? 'lg:px-3' : ''}`}>
+							<PushNotificationToggle compact={isSidebarCollapsed} />
 						</li>
 						
 						<li className="mt-4 mb-6">
 							<button type="button"
 								onClick={handleLogout}
-								className="w-full flex items-center px-4 py-4 text-red-500 hover:bg-red-50 rounded-2xl transition group font-black text-sm">
-								<FiLogOut className="mr-3 group-hover:-translate-x-1 transition-transform text-lg" />
-								<span>Cerrar Sesión</span>
+								className={`w-full flex items-center px-4 py-4 text-red-500 hover:bg-red-50 rounded-2xl transition group font-black text-sm ${isSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''}`}>
+								<FiLogOut className={`mr-3 group-hover:-translate-x-1 transition-transform text-lg ${isSidebarCollapsed ? 'lg:mr-0' : ''}`} />
+								<span className={isSidebarCollapsed ? 'lg:hidden' : ''}>Cerrar Sesión</span>
 							</button>
 						</li>
 					</ul>
@@ -181,7 +206,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 			</motion.div>
 
 			{/* Main Content Area */}
-			<div className="lg:ml-72 flex-1 min-h-screen flex flex-col transition duration-500 bg-slate-50/50 overflow-x-hidden w-full max-w-full">
+			<div className={`${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'} flex-1 min-h-screen flex flex-col transition-all duration-500 bg-slate-50/50 overflow-x-hidden w-full max-w-full`}>
 				{/* Móvil Header / Top Bar */}
 				<header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 lg:hidden px-4 h-16 flex items-center justify-between">
 					<button type="button" 

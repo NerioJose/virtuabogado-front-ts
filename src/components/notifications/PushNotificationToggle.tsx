@@ -7,9 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface PushNotificationToggleProps {
   className?: string;
+  compact?: boolean;
 }
 
-export default function PushNotificationToggle({ className = '' }: PushNotificationToggleProps) {
+export default function PushNotificationToggle({ className = '', compact = false }: PushNotificationToggleProps) {
   const { isSubscribed, isPending, subscribe, unsubscribe, lastError, permission } = usePushNotifications();
 
   const handleToggle = async () => {
@@ -26,7 +27,8 @@ export default function PushNotificationToggle({ className = '' }: PushNotificat
         onClick={handleToggle}
         disabled={isPending}
         className={`
-          w-full flex items-center px-4 py-3.5 rounded-2xl transition duration-300 relative overflow-hidden group
+          w-full flex items-center py-3.5 rounded-2xl transition duration-300 relative overflow-hidden group
+          ${compact ? 'justify-center px-2' : 'px-4'}
           ${isPending ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
           ${isSubscribed 
             ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm' 
@@ -35,7 +37,7 @@ export default function PushNotificationToggle({ className = '' }: PushNotificat
         `}
       >
         {/* Indicador de estado animado */}
-        <div className={`mr-3 w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300 ${
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300 ${compact ? 'w-9 h-9' : 'mr-3'} ${
           isSubscribed ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400 group-hover:text-azul-primario shadow-sm'
         }`}>
           {isPending ? (
@@ -52,7 +54,7 @@ export default function PushNotificationToggle({ className = '' }: PushNotificat
           )}
         </div>
 
-        <div className="flex flex-col text-left flex-1 min-w-0">
+        <div className={`flex flex-col text-left flex-1 min-w-0 ${compact ? 'hidden' : ''}`}>
           <span className="text-[11px] font-black uppercase tracking-tight">
             {isSubscribed ? 'Alertas Activas' : 'Activar Notificaciones'}
           </span>
@@ -63,7 +65,7 @@ export default function PushNotificationToggle({ className = '' }: PushNotificat
 
         {/* Badge de estado en el botón */}
         <AnimatePresence>
-          {isSubscribed && (
+          {isSubscribed && !compact && (
             <motion.div
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}

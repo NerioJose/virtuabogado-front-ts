@@ -68,11 +68,21 @@ export default function AdminPage() {
 		useState<ElementoSeleccionable>(null);
 	const [terminoBusqueda, setTerminoBusqueda] = useState('');
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
 	// Verificar autenticación y rol de administrador
 	useEffect(() => {
 		checkAuth();
 	}, [checkAuth]);
+
+	// Persistir estado de colapso del sidebar
+	useEffect(() => {
+		const saved = localStorage.getItem('vb:sidebar-collapsed:admin');
+		if (saved) setIsSidebarCollapsed(saved === '1');
+	}, []);
+	useEffect(() => {
+		localStorage.setItem('vb:sidebar-collapsed:admin', isSidebarCollapsed ? '1' : '0');
+	}, [isSidebarCollapsed]);
 
 	// Inicializar datos del dashboard
 	useEffect(() => {
@@ -368,10 +378,12 @@ export default function AdminPage() {
 				handleLogout={handleLogout}
 				isOpen={isSidebarOpen}
 				onClose={() => setIsSidebarOpen(false)}
+				collapsed={isSidebarCollapsed}
+				onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
 			/>
 
 			{/* Contenido principal */}
-			<div className={`flex-1 min-w-0 transition duration-500 ease-in-out lg:ml-72`}>
+			<div className={`flex-1 min-w-0 transition-all duration-500 ease-in-out ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
 				{/* Barra superior Premium */}
 				<header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 px-4 py-4 md:px-8 flex justify-between items-center shadow-sm">
 					<div className="flex items-center gap-4">

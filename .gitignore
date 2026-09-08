@@ -46,3 +46,7 @@ next-env.d.ts
 .codegraph/
 graphify-out/
 .graphifyignore
+
+# skills locales de opencode
+.opencode/
+diagrams/

@@ -42,7 +42,6 @@ on('message.sent', async (event) => {
     broadcastPromises.push(sendBroadcast(`global_${order.lawyerId}`, 'new_message', { new: newMessage }))
   }
   broadcastPromises.push(sendBroadcast(`chat_${data.orderId}`, 'new_message', { new: newMessage }))
-  broadcastPromises.push(sendBroadcast('app-updates', 'new_message', { new: newMessage }))
 
   const results = await Promise.allSettled(broadcastPromises)
   const successes = results.filter(r => r.status === 'fulfilled' && r.value === true).length

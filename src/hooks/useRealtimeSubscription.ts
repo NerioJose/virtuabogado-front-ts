@@ -88,16 +88,13 @@ export const useRealtimeSubscription = () => {
             }
         };
 
-        // Canal global - todos los administradores y usuarios lo reciben
+        // Canal global - SOLO eventos de catálogo (servicios/métodos de pago).
+        // F3: las órdenes/mensajes ya no se transmiten aquí (fan-out acotado):
+        // los implicados reciben su canal personal global_{id} y los admins su canal admin-updates.
         const globalChannel = supabase.channel('app-updates');
         globalChannel
-            .on('broadcast', { event: 'order-updated' }, handleUpdate)
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
-            .on('broadcast', { event: 'payout-updated' }, handleUpdate)
-            .on('broadcast', { event: 'new_message' }, handleNewMessage)
-            .subscribe((status) => {
-                
-            });
+            .subscribe();
 
         // Canal personal - solo para usuarios autenticados
         const personalChannel = user?.id ? supabase.channel(`global_${user.id}`) : null;
@@ -109,11 +106,22 @@ export const useRealtimeSubscription = () => {
                 .subscribe();
         }
 
+        // Canal de administradores - reciben actualizaciones de órdenes/payouts
+        // sin re-transmitir a la base global de usuarios conectados
+        const adminChannel = user?.rol === 'ADMIN' ? supabase.channel('admin-updates') : null;
+        if (adminChannel) {
+            adminChannel
+                .on('broadcast', { event: 'order-updated' }, handleUpdate)
+                .on('broadcast', { event: 'payout-updated' }, handleUpdate)
+                .subscribe();
+        }
+
         return () => { // react-doctor: cleanup-verified
             supabase.removeChannel(globalChannel);
             if (personalChannel) supabase.removeChannel(personalChannel);
+            if (adminChannel) supabase.removeChannel(adminChannel);
         };
-    }, [queryClient, user?.id]);
+    }, [queryClient, user?.id, user?.rol]);
 
     // ═══════════════════════════════════════════════
     // REALTIME - sincronización instantánea
@@ -222,15 +230,36 @@ export const useRealtimeSubscription = () => {
             const channel = supabase.channel(channelName);
             channelRef = channel;
 
-            let tables = ['Order', 'Message', 'Service', 'PaymentMethod'];
+            // Suscripciones postgres_changes ACOTADAS por columna (F3):
+            // los clientes solo escuchan sus propias órdenes y los abogados las suyas,
+            // en vez de recibir el stream WAL completo de la tabla Order.
+            // Message/Service/PaymentMethod quedan sin filtro (RLS + catálogo).
+            let tableSubscriptions: Array<{ table: string; filter?: string }> = [];
             if (user?.rol === 'ADMIN') {
-                tables = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod', 'LawyerPayouts'];
+                tableSubscriptions = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod', 'LawyerPayouts'].map(t => ({ table: t }));
             } else if (user?.rol === 'ABOGADO') {
-                tables = ['User', 'Order', 'Service', 'Message', 'PaymentMethod', 'LawyerPayouts'];
+                tableSubscriptions = [
+                    { table: 'Order', filter: `lawyerId=eq.${user.id}` },
+                    { table: 'Service' },
+                    { table: 'Message' },
+                    { table: 'PaymentMethod' },
+                    { table: 'LawyerPayouts', filter: `lawyerId=eq.${user.id}` },
+                ];
+            } else {
+                tableSubscriptions = [
+                    { table: 'Order', filter: `userId=eq.${user.id}` },
+                    { table: 'Service' },
+                    { table: 'Message' },
+                    { table: 'PaymentMethod' },
+                ];
             }
 
-            tables.forEach(table => {
-                channel.on('postgres_changes', { event: '*', schema: 'public', table }, handleChanges);
+            tableSubscriptions.forEach(({ table, filter }) => {
+                if (filter) {
+                    channel.on('postgres_changes', { event: '*', schema: 'public', table, filter }, handleChanges);
+                } else {
+                    channel.on('postgres_changes', { event: '*', schema: 'public', table }, handleChanges);
+                }
             });
 
             channel.subscribe((status: string, err?: any) => {

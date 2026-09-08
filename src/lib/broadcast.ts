@@ -162,8 +162,10 @@ export async function broadcastOrderUpdate(params: {
 
     const broadcasts: Promise<boolean>[] = [];
 
-    // Canal global de actualizaciones - escuchado por useRealtimeSubscription
-    broadcasts.push(sendBroadcast('app-updates', 'order-updated', payload));
+    // Canal de administradores - fan-out acotado (F3): las órdenes ya no
+    // se transmiten a todos los clientes conectados vía 'app-updates'.
+    // Los implicados (cliente/abogado) reciben su canal personal global_{id}.
+    broadcasts.push(sendBroadcast('admin-updates', 'order-updated', payload));
 
     // Canal personal del cliente (si existe)
     if (userId) {
@@ -213,7 +215,8 @@ export async function broadcastPayoutUpdate(params: {
     const { payoutId, lawyerId, eventType } = params;
     const payload = { payoutId, lawyerId, eventType, timestamp: new Date().toISOString() };
     const broadcasts: Promise<boolean>[] = [];
-    broadcasts.push(sendBroadcast('app-updates', 'payout-updated', payload));
+    // Fan-out acotado (F3): solo administradores + abogado implicado
+    broadcasts.push(sendBroadcast('admin-updates', 'payout-updated', payload));
     broadcasts.push(sendBroadcast(`global_${lawyerId}`, 'payout-updated', payload));
     await Promise.allSettled(broadcasts);
 }

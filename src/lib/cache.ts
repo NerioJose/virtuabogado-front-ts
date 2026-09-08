@@ -28,8 +28,10 @@ function getDriver(): Promise<CacheDriver> {
 }
 
 async function resolveDriver(): Promise<CacheDriver> {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  // Soportamos ambos esquemas de variables: KV_REST_API_* (documentado) y
+  // UPSTASH_REDIS_REST_* (convención estándar del CLI de Upstash/Vercel).
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) {
     try {
       const driver = await createUpstashDriver(url, token);

@@ -143,13 +143,26 @@ function createMemoryDriver(): CacheDriver {
 }
 
 export async function getCached<T>(key: string): Promise<T | null> {
-  return (await getDriver()).get<T>(key);
+  try {
+    return await (await getDriver()).get<T>(key);
+  } catch (err) {
+    console.warn(`[cache] get cache falló (fail-open), key=${key}:`, err);
+    return null;
+  }
 }
 
 export async function setCache<T>(key: string, data: T, ttlMs: number): Promise<void> {
-  await (await getDriver()).set<T>(key, data, ttlMs);
+  try {
+    await (await getDriver()).set<T>(key, data, ttlMs);
+  } catch (err) {
+    console.warn(`[cache] set cache falló (fail-open), key=${key}:`, err);
+  }
 }
 
 export async function clearCache(pattern?: string): Promise<void> {
-  await (await getDriver()).clear(pattern);
+  try {
+    await (await getDriver()).clear(pattern);
+  } catch (err) {
+    console.warn(`[cache] clear cache falló (fail-open), pattern=${pattern ?? '*'}:`, err);
+  }
 }

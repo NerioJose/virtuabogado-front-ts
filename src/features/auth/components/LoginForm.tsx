@@ -97,7 +97,7 @@ export function LoginForm() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="tu@email.com"
                         required
-                        autoComplete="email"
+                        autoComplete="off"
                     />
 
                     <div className="relative">

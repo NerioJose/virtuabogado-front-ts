@@ -5,7 +5,7 @@ export function useLoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [remember, setRemember] = useState(true);
+    const [remember, setRemember] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
     const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
 

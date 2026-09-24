@@ -14,7 +14,7 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         telefono: '',
         rol: defaultRole,
     });
-    const [remember, setRemember] = useState(true);
+    const [remember, setRemember] = useState(false);
     const [passwordError, setPasswordError] = useState('');
     const [emailError, setEmailError] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState('');

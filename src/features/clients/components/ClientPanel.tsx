@@ -52,6 +52,8 @@ export default function ClientPanel({
     setTabActivo,
     isSidebarOpen,
     setIsSidebarOpen,
+    conversacionActiva,
+    setConversacionActiva,
     filtroEstado,
     setFiltroEstado,
     terminoBusqueda,
@@ -467,55 +469,115 @@ export default function ClientPanel({
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="w-full"
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <button type="button" onClick={() => setSeccionActiva('servicios')} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-                    <FiArrowLeft size={20} className="text-slate-500" />
-                  </button>
-                  <div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center text-azul-primario">
-                    <FiMessageSquare size={20} />
-                  </div>
-                  <h2 className="text-xl font-black text-slate-800 tracking-tight">Mensajes</h2>
-                </div>
-
-                <div className="space-y-4">
-                  {servicios.length === 0 ? (
-                    <div className="py-16 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                      <FiMessageSquare className="mx-auto text-slate-300 mb-4" size={48} />
-                      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No tienes mensajes aún</p>
-                      <p className="text-slate-300 text-xs mt-2">Los mensajes aparecerán cuando tengas un caso activo</p>
-                    </div>
-                  ) : (
-                    servicios.map((servicio) => {
-                      const count = unreadCounts[servicio.id] || 0;
-                      const isUnread = count > 0 || unreadOrders.includes(servicio.id);
-                      return (
-                      <div key={servicio.id} className={`bg-white p-5 rounded-3xl border shadow-sm hover:shadow-md transition ${isUnread ? 'border-rose-200 bg-rose-50/40' : 'border-slate-100'}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isUnread ? 'bg-rose-100 text-rose-500' : 'bg-azul-primario/10 text-azul-primario'}`}>
-                              <FiMessageSquare size={18} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-slate-800 text-sm truncate">{servicio.nombre}</p>
-                              <p className="text-[10px] font-bold text-azul-primario uppercase tracking-tight">{servicio.numeroOrden}</p>
-                            </div>
-                            {isUnread && (
-                              <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-rose-500/40">
-                                {count > 99 ? '99+' : count}
-                              </span>
-                            )}
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusColor(servicio.estado)}`}>
-                            {getStatusText(servicio.estado)}
-                          </span>
+                <div className="flex h-[calc(100dvh-100px)] md:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-170px)] overflow-hidden bg-white rounded-3xl border border-slate-200/60">
+                  {/* Lista de conversaciones */}
+                  <div className={`w-full md:w-[350px] border-r border-slate-100 flex flex-col bg-white ${conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
+                    <div className="p-6 border-b border-slate-50">
+                      <div className="flex items-center gap-3">
+                        <button type="button" onClick={() => setSeccionActiva('servicios')} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                          <FiArrowLeft size={20} className="text-slate-500" />
+                        </button>
+                        <div className="w-10 h-10 bg-azul-primario/10 rounded-xl flex items-center justify-center text-azul-primario">
+                          <FiMessageSquare size={20} />
                         </div>
-                        <div className="h-64 md:h-80 border border-slate-100 rounded-2xl overflow-hidden">
-                          <ChatWindow orderId={servicio.id} className="h-full" />
+                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Mensajes</h2>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                      {servicios.length === 0 ? (
+                        <div className="p-12 text-center">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <FiMessageSquare size={24} />
+                          </div>
+                          <p className="text-slate-400 font-bold text-sm tracking-tight">No hay mensajes aún</p>
+                          <p className="text-slate-300 text-xs mt-2">Aparecerán cuando tengas un caso activo</p>
+                        </div>
+                      ) : (
+                        servicios.map((servicio) => {
+                          const count = unreadCounts[servicio.id] || 0;
+                          const isUnread = count > 0 || unreadOrders.includes(servicio.id);
+                          const isActive = conversacionActiva === servicio.id;
+                          return (
+                            <button
+                              type="button"
+                              key={servicio.id}
+                              onClick={() => setConversacionActiva(servicio.id)}
+                              className={`w-[calc(100%-1rem)] text-left p-5 mx-2 my-1 rounded-2xl transition duration-200 group relative ${
+                                isActive
+                                  ? 'bg-azul-primario text-white shadow-lg shadow-azul-primario/25'
+                                  : isUnread
+                                    ? 'bg-rose-50/70 border border-rose-200 hover:bg-rose-100'
+                                    : 'hover:bg-slate-50'
+                              }`}
+                            >
+                              {isUnread && !isActive && (
+                                <span className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 rounded-l-2xl" />
+                              )}
+                              <div className="flex justify-between items-start gap-2 mb-1">
+                                <h3 className={`text-sm font-black truncate ${isActive ? 'text-white' : 'text-slate-800'}`}>
+                                  {servicio.abogado || 'Tu abogado'}
+                                </h3>
+                                {isUnread && (
+                                  <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-rose-500/40 shrink-0">
+                                    {count > 99 ? '99+' : count}
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-[11px] font-bold uppercase tracking-wider mb-1 truncate ${isActive ? 'text-white/90' : 'text-azul-primario'}`}>
+                                {servicio.nombre}
+                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : isUnread ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                                <span className={`text-[10px] font-bold uppercase tracking-tighter truncate ${isActive ? 'text-white/70' : 'text-slate-400'}`}>
+                                  {servicio.numeroOrden} · {getStatusText(servicio.estado)}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Área de chat */}
+                  <div className={`w-full md:flex-1 flex flex-col bg-slate-50/30 ${!conversacionActiva ? 'hidden md:flex' : 'flex'}`}>
+                    {conversacionActiva ? (
+                      <>
+                        <div className="p-4 md:p-6 border-b border-slate-100 flex items-center gap-4 bg-white/80 backdrop-blur-sm z-10 shadow-sm">
+                          <button type="button" onClick={() => setConversacionActiva(null)} className="md:hidden p-2.5 bg-slate-100 text-slate-500 rounded-xl active:scale-90 transition">
+                            <FiArrowLeft size={20} />
+                          </button>
+                          <div className="w-12 h-12 bg-azul-primario/5 rounded-2xl flex items-center justify-center text-azul-primario shadow-inner">
+                            <FiUser size={24} />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-base font-black text-slate-800 leading-tight truncate">
+                              {servicios.find((s) => s.id === conversacionActiva)?.abogado || 'Tu abogado'}
+                            </h3>
+                            <p className="text-[10px] text-azul-primario font-black uppercase tracking-widest truncate mt-0.5">
+                              {servicios.find((s) => s.id === conversacionActiva)?.nombre}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-hidden relative">
+                          <ChatWindow orderId={conversacionActiva} className="h-full" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center p-12 lg:p-24">
+                        <div className="text-center max-w-sm">
+                          <div className="mx-auto w-24 h-24 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 flex items-center justify-center mb-8 text-azul-primario">
+                            <FiMessageSquare size={48} />
+                          </div>
+                          <h3 className="text-slate-800 font-black text-2xl mb-4 tracking-tight">Tus Conversaciones</h3>
+                          <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                            Selecciona un caso de la lista para ver la conversación con tu abogado.
+                          </p>
                         </div>
                       </div>
-                      );
-                    })
-                  )}
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}

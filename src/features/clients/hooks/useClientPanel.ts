@@ -8,6 +8,7 @@ export function useClientPanel(servicios: ServicioCliente[]) {
   const [seccionActiva, setSeccionActiva] = useState('servicios');
   const [tabActivo, setTabActivo] = useState<'activos' | 'historial'>('activos');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [conversacionActiva, setConversacionActiva] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'pendiente' | 'programado' | 'revision' | 'completado' | 'cancelado'>('todos');
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [page, setPage] = useState(1);
@@ -98,6 +99,8 @@ export function useClientPanel(servicios: ServicioCliente[]) {
     setTabActivo,
     isSidebarOpen,
     setIsSidebarOpen,
+    conversacionActiva,
+    setConversacionActiva,
     filtroEstado,
     setFiltroEstado,
     terminoBusqueda,

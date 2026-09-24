@@ -140,7 +140,7 @@ export const mapOrderToServicio = (order: Order): ServicioCliente => {
         precio: order.total,
         // Campos opcionales que se llenarán cuando haya backend
         fechaCita: undefined,
-        abogado: undefined,
+        abogado: order.lawyerName,
         createdAt: typeof order.createdAt === 'string' ? order.createdAt : order.createdAt.toISOString(),
     };
 };

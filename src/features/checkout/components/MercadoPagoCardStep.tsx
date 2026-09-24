@@ -112,7 +112,7 @@ export const MercadoPagoCardStep: React.FC<MercadoPagoCardStepProps> = ({
             if (finalStatus === 'approved') {
                 window.location.href = `/payment/success?orderId=${encodeURIComponent(orderId)}`;
             } else if (finalStatus === 'rejected' || finalStatus === 'cancelled' || finalStatus === 'charged_back') {
-                const detail = data?.errorDetail || data?.status_detail || 'Tarjeta rechazada';
+                const detail = data?.statusDetail || data?.errorDetail || 'Tarjeta rechazada';
                 window.location.href = `/payment/error?orderId=${encodeURIComponent(orderId)}&error=${encodeURIComponent(detail)}`;
             } else {
                 // pending / in_process / respuesta inesperada: la página /payment/success

@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
+import { FINANCIAL_SETTINGS_ID } from '../src/lib/constants';
 
 dotenv.config();
 
@@ -82,10 +83,10 @@ async function main() {
 
   // 3. CONFIGURACIÓN FINANCIERA
   await prisma.financialSettings.upsert({
-    where: { id: 'default-settings' },
+    where: { id: FINANCIAL_SETTINGS_ID },
     update: {},
     create: {
-      id: 'default-settings',
+      id: FINANCIAL_SETTINGS_ID,
       lawyer_commission_percentage: 70,
       operational_costs_percentage: 10,
       tax_percentage: 15,

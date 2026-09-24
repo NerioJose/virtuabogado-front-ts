@@ -7,6 +7,7 @@ import { ZenobankService } from '../services/zenobank.service';
 import { serializeFinance } from '@/lib/finance';
 import { syncUserIdentity } from '@/services/identity.service';
 import { getUsdPenRate } from '@/lib/exchangeRate';
+import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 
 interface ProcessPaymentParams {
     serviceId: number;
@@ -51,7 +52,10 @@ export async function processPaymentAction({ serviceId, paymentMethodId, rateSaw
     }
 
     // 3. OBTENER CONFIGURACIÓN FINANCIERA PARA DESGLOSE
-    const settings = await prisma.financialSettings.findFirst();
+    // Fila maestra única (misma que el panel admin y el PATCH), no findFirst.
+    const settings = await prisma.financialSettings.findUnique({
+        where: { id: FINANCIAL_SETTINGS_ID }
+    });
     const total = Number(service.precio);
 
     const commission = (total * Number(settings?.lawyer_commission_percentage ?? 70)) / 100;

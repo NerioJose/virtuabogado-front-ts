@@ -12,6 +12,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 
 const TTL_MS = 60 * 60 * 1000; // 1 hora
 
@@ -36,10 +37,18 @@ async function fetchUsdPenRate(): Promise<number | null> {
     }
 }
 
+/**
+ * Lee la tasa manual SIEMPRE de la fila maestra (única fuente de verdad),
+ * la misma que lee/escribe el panel admin y el PATCH. Si la maestra no
+ * existe aún, cae (defensivo) a la primera fila disponible.
+ */
 async function getManualFallbackRate(): Promise<number | null> {
     try {
         const model = (prisma as any).financialSettings || (prisma as any).FinancialSettings || (prisma as any)['FinancialSettings'];
-        const settings = await model?.findFirst?.();
+        let settings = await model?.findUnique?.({ where: { id: FINANCIAL_SETTINGS_ID } });
+        if (!settings) {
+            settings = await model?.findFirst?.();
+        }
         const raw = settings?.usd_pen_fallback_rate;
         const rate = raw == null ? NaN : Number(raw);
         return Number.isFinite(rate) && rate > 0 ? rate : null;

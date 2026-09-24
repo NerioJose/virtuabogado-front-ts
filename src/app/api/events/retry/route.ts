@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
 import { retryEvent } from '@/events/eventBus'
+import { isCronAuthorized } from '@/lib/cronAuth'
 
 export async function POST(request: Request) {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const { id } = await request.json()
 
@@ -12,8 +17,9 @@ export async function POST(request: Request) {
     await retryEvent(id)
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Events API] Error retrying event:', error)
-    return NextResponse.json({ error: error.message || 'Error al reintentar evento' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Error al reintentar evento'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server'
 import { claimAndProcessBatch } from '@/events/processor'
+import { cleanupOldEvents, cleanupAllFailed } from '@/events/EventLog'
+import { isCronAuthorized } from '@/lib/cronAuth'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
-
-function isCronAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return true
-  const auth = request.headers.get('authorization')
-  return auth === `Bearer ${secret}`
-}
 
 export async function GET(request: Request) {
   return handle(request)
@@ -27,10 +22,18 @@ async function handle(request: Request) {
   try {
     const summary = await claimAndProcessBatch()
 
+    // Limpieza oportunista del EventLog: evita que la tabla crezca sin control
+    // y agote el storage del plan gratuito de Supabase.
+    const [deletedCompleted, deletedFailed] = await Promise.all([
+      cleanupOldEvents(7),
+      cleanupAllFailed(),
+    ])
+
     return NextResponse.json({
       ok: true,
       ...summary,
       pendingRemaining: summary.remaining,
+      cleanup: { deletedCompleted, deletedFailed },
     })
   } catch (error) {
     console.error('[Events Process] Error:', error)

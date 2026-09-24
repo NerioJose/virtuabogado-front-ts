@@ -13,11 +13,15 @@ function createPrismaClient() {
     // multiplica pools por cada función serverless de Vercel y agota
     // el límite de conexiones de PostgreSQL (15 en plan free).
     // El pooler multiplexa N clientes en pocas conexiones reales.
+    // En serverless SIEMPRE preferir una URL con pooler (Supavisor, puerto 6543).
+    // Orden: 1) DATABASE_URL_POOLER explícita, 2) DATABASE_URL (en prod apunta al
+    // pooler), 3) DIRECT_URL como último recurso (migraciones/scripts).
     const poolerUrl = process.env.DATABASE_URL_POOLER;
-    const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
-    
-    const dbUrl = poolerUrl || directUrl;
-    const usingPooler = !!poolerUrl;
+    const runtimeUrl = process.env.DATABASE_URL;
+    const directUrl = process.env.DIRECT_URL;
+
+    const dbUrl = poolerUrl || runtimeUrl || directUrl;
+    const usingPooler = !!dbUrl && /pooler\.supabase\.com|:6543\b/.test(dbUrl);
 
     if (!dbUrl) {
         console.error('❌ [Prisma] No hay URL de base de datos configurada.');

@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
         const services = await prisma.service.findMany({
             where: showAll ? {} : { activo: true },
-            orderBy: { createdAt: 'desc' } as any
+            orderBy: [{ createdAt: 'desc' }, { id: 'asc' }]
         });
 
         const result = serializeFinance(services);

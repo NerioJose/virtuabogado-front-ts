@@ -57,6 +57,8 @@ model Order {
   serviceId             Int
   paymentMethodId       String?
   total                 Decimal              @db.Decimal(10, 2)
+  totalPen              Decimal?             @db.Decimal(10, 2)
+  exchangeRateUsed      Decimal?             @db.Decimal(10, 4)
   status                OrderStatus          @default(PENDIENTE)
   paymentId             String?
   activo                Boolean              @default(true)

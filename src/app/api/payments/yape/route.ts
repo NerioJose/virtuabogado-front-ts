@@ -47,8 +47,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'La orden no está en estado de pago pendiente' }, { status: 409 });
         }
 
-        // 2. Convertir el total (USD, guardado en la order) a PEN server-side
-        const amountPen = await convertUsdToPen(Number(order.total));
+        // 2. Convertir el total a PEN: SIEMPRE se usa el monto congelado en la order
+        // (totalPen). No es retroactivo: la tasa nueva solo aplica a órdenes nuevas.
+        const amountPen = order.totalPen != null ? Number(order.totalPen) : await convertUsdToPen(Number(order.total));
 
         // 3. Conocer el servicio para la descripción
         const service = await prisma.service.findUnique({ where: { id: order.serviceId } });

@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { ZenobankService } from '../services/zenobank.service';
 import { serializeFinance } from '@/lib/finance';
 import { syncUserIdentity } from '@/services/identity.service';
+import { getUsdPenRate } from '@/lib/exchangeRate';
 
 interface ProcessPaymentParams {
     serviceId: number;
@@ -77,6 +78,13 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
     if (false) { // Bloque de reutilización deshabilitado (forzar nueva orden)
         // ... logic
     } else {
+        // CONGELACIÓN DE MONTO: se calcula y guarda el equivalente en soles (PEN)
+        // con la tasa vigente en el MOMENTO EN QUE EL CLIENTE INICIA LA COMPRA.
+        // La tasa nueva aplica solo a órdenes creadas después; esta orden pagará
+        // siempre lo que el cliente vio (no retroactivo).
+        const exchangeRateUsed = await getUsdPenRate();
+        const totalPen = Math.round(total * exchangeRateUsed * 100) / 100;
+
         // Crear nueva orden con tipos seguros
         order = await prisma.order.create({
             data: {
@@ -84,6 +92,8 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
                 serviceId: service.id,
                 paymentMethodId: paymentMethod.id,
                 total: total,
+                totalPen: totalPen,
+                exchangeRateUsed: exchangeRateUsed,
                 status: 'PAGO_PENDIENTE', // Inicialmente en espera de pago
                 commissionAmount: commission,
                 taxAmount: taxes,

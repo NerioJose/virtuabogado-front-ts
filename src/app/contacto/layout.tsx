@@ -3,11 +3,11 @@ import BreadcrumbSchema from '@/components/seo/BreadcrumbSchema';
 
 export const metadata: Metadata = {
     title: 'Contáctanos | VirtuAbogado',
-    description: 'Comunícate con VirtuAbogado. Estamos en Carabobo, Venezuela. Envíanos un mensaje y te responderemos lo antes posible.',
+    description: 'Comunícate con VirtuAbogado. Estamos en Lima, Perú. Envíanos un mensaje y te responderemos lo antes posible.',
     alternates: { canonical: 'https://virtuabogado.app/contacto' },
     openGraph: {
         title: 'Contáctanos | VirtuAbogado',
-        description: 'Comunícate con VirtuAbogado. Estamos en Carabobo, Venezuela.',
+        description: 'Comunícate con VirtuAbogado. Estamos en Lima, Perú.',
         url: 'https://virtuabogado.app/contacto',
     },
 };

@@ -268,7 +268,7 @@ export const UserDataStep: React.FC = () => {
                                             value={formData.phone}
                                             onChange={handleInputChange}
                                             className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-azul-primario focus:ring-4 focus:ring-azul-primario/5 transition outline-none"
-                                            placeholder="+58 412..."
+                                            placeholder="+51 9XX XXX XXX"
                                         />
                                     </div>
                                 </motion.div>

@@ -141,7 +141,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
 
     try {
       // Lógica de Redirección a WhatsApp
-      const rawPhone = (settings as any)?.whatsappPhone || '584120000000';
+      const rawPhone = (settings as any)?.whatsappPhone || '514120000000';
       const phone = rawPhone.replace(/\D/g, ''); // Limpiar para wa.me
       
       const message = `*Nueva consulta desde VirtuAbogado*
@@ -269,7 +269,7 @@ const FormularioContacto = React.memo(({ onSubmitSuccess }: FormularioContactoPr
             value={formData.telefono}
             onChange={handleChange}
             className={`w-full px-4 py-3 border ${errors.telefono ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-vinotinto focus:border-vinotinto transition duration-200`}
-            placeholder="+58 XXX XXX XXX"
+            placeholder="+51 XXX XXX XXX"
           />
           {errors.telefono && <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>}
         </div>

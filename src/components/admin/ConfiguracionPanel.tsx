@@ -137,7 +137,7 @@ function FinancialSettingsSection() {
 										placeholder="51999888777"
 									/>
 								</div>
-								<p className="mt-1 text-[10px] text-gray-400">Sin espacios ni símbolos. Ejemplo: 584121234567</p>
+								<p className="mt-1 text-[10px] text-gray-400">Sin espacios ni símbolos. Ejemplo: 51987654321</p>
 							</div>
 						</div>
 

@@ -65,7 +65,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 defaultOptions: {
                     queries: {
                         // Keep data fresh for 30 seconds
-                        staleTime: 1000 * 30, // 30 seconds (Balanced for Venezuelan high-latency)
+                        staleTime: 1000 * 30, // 30 seconds (Balanced for Peruvian high-latency)
 
                         // Keep unused data in cache for 5 minutes before garbage collection
                         gcTime: 1000 * 60 * 5, // 5 minutes

@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FiMapPin } from 'react-icons/fi';
 
-const MAP_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d507183.4768929463!2d-68.1994!3d10.1621!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e8063ac94b61481%3A0x1d1b0f4c1c1c1c1c!2sEstado%20Carabobo%2C%20Venezuela!5e0!3m2!1ses!2sve!4v1732206000000!5m2!1ses!2sve&z=9';
+const MAP_URL = 'https://maps.google.com/maps?q=lima%2C%20peru&t=&z=11&ie=UTF8&iwloc=&output=embed';
 
 const SeccionMapa = React.memo(() => {
   const [mapLoaded, setMapLoaded] = React.useState(false);
@@ -21,7 +21,7 @@ const SeccionMapa = React.memo(() => {
           Nuestra Ubicación
         </h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Nos encontramos en el estado Carabobo, Venezuela. Aquí puedes ver nuestra ubicación en el mapa.
+          Nos encontramos en Lima, Perú. Aquí puedes ver nuestra ubicación en el mapa.
         </p>
       </motion.div>
 
@@ -39,7 +39,7 @@ const SeccionMapa = React.memo(() => {
             >
               <FiMapPin className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Visítanos en Carabobo</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Visítanos en Lima</h3>
             <button type="button"
               onClick={() => setMapLoaded(true)}
               className="bg-vinotinto hover:bg-vinotinto-light text-white font-medium py-3 px-6 rounded-xl transition duration-300 shadow-lg mt-2"
@@ -57,7 +57,7 @@ const SeccionMapa = React.memo(() => {
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            title="Mapa de Carabobo, Venezuela"
+            title="Mapa de Lima, Perú"
             className="absolute inset-0"
             sandbox="allow-scripts allow-same-origin"
           />

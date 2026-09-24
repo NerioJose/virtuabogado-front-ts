@@ -49,8 +49,8 @@ const InformacionContacto = React.memo(() => {
         </svg>
       ),
       title: 'Dirección',
-      primary: 'Estado Carabobo',
-      secondary: 'Venezuela'
+      primary: 'Lima',
+      secondary: 'Perú'
     }
   ], [settings]);
 

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 import { getCached, setCache, clearCache } from '@/lib/cache';
 import { clearExchangeRateCache } from '@/lib/exchangeRate';
+import { broadcastExchangeRateUpdate } from '@/lib/broadcast';
 
 export const revalidate = 3600;
 
@@ -14,14 +15,6 @@ export const revalidate = 3600;
  */
 export async function GET(request: NextRequest) {
     try {
-        // Caché en memoria de 30s para evitar queries repetidas en ráfagas
-        const cached = await getCached<any>('financial-settings-ui');
-        if (cached) {
-            return NextResponse.json(cached, {
-                headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
-            });
-        }
-
         const supabase = await createClient();
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -33,6 +26,17 @@ export async function GET(request: NextRequest) {
                  select: { rol: true }
             });
             isAdmin = dbUser?.rol === 'ADMIN';
+        }
+
+        // Caché en memoria de 30s para públicos; los admins leen siempre fresco
+        // para que el panel refleje de inmediato los cambios guardados (PATCH).
+        if (!isAdmin) {
+            const cached = await getCached<any>('financial-settings-ui');
+            if (cached) {
+                return NextResponse.json(cached, {
+                    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
+                });
+            }
         }
 
         const model = (prisma as any).financialSettings || (prisma as any).FinancialSettings || (prisma as any)['FinancialSettings'];
@@ -78,9 +82,13 @@ export async function GET(request: NextRequest) {
             updatedBy: isAdmin ? settings.updated_by : undefined,
         };
 
-        await setCache('financial-settings-ui', response, 30_000);
+        if (!isAdmin) {
+            await setCache('financial-settings-ui', response, 30_000);
+        }
         return NextResponse.json(response, {
-            headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
+            headers: isAdmin
+                ? { 'Cache-Control': 'no-store, max-age=0' }
+                : { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=3600' }
         });
     } catch (error) {
         console.error('❌ [GET] Error inesperado:', error);
@@ -137,6 +145,7 @@ export async function PATCH(request: NextRequest) {
                 tax_percentage: updates.tax_percentage ?? 0,
                 platform_fee_percentage: updates.platform_fee_percentage ?? 0,
                 simulation_base: updates.simulation_base ?? 0,
+                usd_pen_fallback_rate: updates.usd_pen_fallback_rate ?? null,
                 whatsappPhone: updates.whatsappPhone ?? null,
                 updated_by: user.id,
                 updated_at: new Date()
@@ -146,14 +155,15 @@ export async function PATCH(request: NextRequest) {
                 updated_at: new Date()
             },
         }) : prisma.$executeRaw`
-            INSERT INTO "FinancialSettings" (id, lawyer_commission_percentage, operational_costs_percentage, tax_percentage, platform_fee_percentage, simulation_base, whatsapp_phone, updated_by, updated_at)
-            VALUES (${FINANCIAL_SETTINGS_ID}, ${updates.lawyer_commission_percentage ?? 0}, ${updates.operational_costs_percentage ?? 0}, ${updates.tax_percentage ?? 0}, ${updates.platform_fee_percentage ?? 0}, ${updates.simulation_base ?? 0}, ${updates.whatsappPhone ?? null}, ${user.id}, ${new Date()})
+            INSERT INTO "FinancialSettings" (id, lawyer_commission_percentage, operational_costs_percentage, tax_percentage, platform_fee_percentage, simulation_base, usd_pen_fallback_rate, whatsapp_phone, updated_by, updated_at)
+            VALUES (${FINANCIAL_SETTINGS_ID}, ${updates.lawyer_commission_percentage ?? 0}, ${updates.operational_costs_percentage ?? 0}, ${updates.tax_percentage ?? 0}, ${updates.platform_fee_percentage ?? 0}, ${updates.simulation_base ?? 0}, ${updates.usd_pen_fallback_rate ?? null}, ${updates.whatsappPhone ?? null}, ${user.id}, ${new Date()})
             ON CONFLICT (id) DO UPDATE SET
                 lawyer_commission_percentage = EXCLUDED.lawyer_commission_percentage,
                 operational_costs_percentage = EXCLUDED.operational_costs_percentage,
                 tax_percentage = EXCLUDED.tax_percentage,
                 platform_fee_percentage = EXCLUDED.platform_fee_percentage,
                 simulation_base = EXCLUDED.simulation_base,
+                usd_pen_fallback_rate = EXCLUDED.usd_pen_fallback_rate,
                 whatsapp_phone = EXCLUDED.whatsapp_phone,
                 updated_by = EXCLUDED.updated_by,
                 updated_at = NOW()
@@ -165,7 +175,36 @@ export async function PATCH(request: NextRequest) {
         await clearCache('financial-settings');
         clearExchangeRateCache();
 
-        return NextResponse.json({ success: true, message: 'Configuración actualizada' });
+        // Devolver la configuración actualizada (verdad del servidor) para que
+        // el panel refleje el cambio al instante.
+        const persisted = model ? await model.findUnique({ where: { id: FINANCIAL_SETTINGS_ID } }) : null;
+        const response = {
+            id: FINANCIAL_SETTINGS_ID,
+            lawyerCommissionPercentage: Number(persisted?.lawyer_commission_percentage ?? updates.lawyer_commission_percentage ?? 0),
+            operationalCostsPercentage: Number(persisted?.operational_costs_percentage ?? updates.operational_costs_percentage ?? 0),
+            taxPercentage: Number(persisted?.tax_percentage ?? updates.tax_percentage ?? 0),
+            platformFeePercentage: Number(persisted?.platform_fee_percentage ?? updates.platform_fee_percentage ?? 0),
+            simulationBase: Number(persisted?.simulation_base ?? updates.simulation_base ?? 0),
+            usdPenFallbackRate: persisted?.usd_pen_fallback_rate != null
+                ? Number(persisted.usd_pen_fallback_rate)
+                : updates.usd_pen_fallback_rate == null ? null : Number(updates.usd_pen_fallback_rate),
+            whatsappPhone: persisted?.whatsappPhone ?? updates.whatsappPhone ?? null,
+            updatedAt: new Date().toISOString(),
+            updatedBy: user.id,
+        };
+
+        // Broadcast en tiempo real para que todos los clientes conectados (incluidos
+        // anónimos) recalculen los precios en soles al instante, sin recargar.
+        try {
+            await broadcastExchangeRateUpdate({
+                rate: response.usdPenFallbackRate ?? null,
+                timestamp: response.updatedAt,
+            });
+        } catch (err) {
+            console.warn('⚠️ [PATCH] Broadcast de tasa falló (no crítico):', err);
+        }
+
+        return NextResponse.json(response);
     } catch (error: any) {
         console.error('❌ [PATCH] Error:', error.message);
         return NextResponse.json({ error: error.message }, { status: 500 });

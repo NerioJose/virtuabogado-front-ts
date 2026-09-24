@@ -68,6 +68,19 @@ export const useRealtimeSubscription = () => {
                 queryClient.invalidateQueries({ queryKey: ['Service', 'active'], refetchType: 'all' });
             }
             
+            if (eventName === 'exchange-rate-updated') {
+                const exchangeRate = Number(eventPayload?.rate);
+                if (Number.isFinite(exchangeRate) && exchangeRate > 0) {
+                    // Aplica la nueva tasa al instante en TODOS los clientes (incluidos anónimos).
+                    // DualPrice/Money dependen de la query ['exchange-rate'] y se re-renderizan solos.
+                    queryClient.setQueryData(['exchange-rate'], exchangeRate);
+                } else {
+                    // Sin tasa manual → volver a consultar la automática
+                    queryClient.invalidateQueries({ queryKey: ['exchange-rate'], refetchType: 'all' });
+                }
+                queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
+            }
+            
             if (eventName === 'payout-updated') {
                 queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
                 queryClient.invalidateQueries({ queryKey: ['PendingPayouts'], refetchType: 'all' });
@@ -94,6 +107,7 @@ export const useRealtimeSubscription = () => {
         const globalChannel = supabase.channel('app-updates');
         globalChannel
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
+            .on('broadcast', { event: 'exchange-rate-updated' }, handleUpdate)
             .subscribe();
 
         // Canal personal - solo para usuarios autenticados

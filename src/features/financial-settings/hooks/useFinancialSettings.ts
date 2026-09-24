@@ -61,12 +61,20 @@ export const useUpdateFinancialSettings = () => {
             console.error('❌ Error updating financial settings:', err);
         },
         onSuccess: (data) => {
-            // Refetch to ensure consistency
+            // La respuesta del PATCH es la verdad del servidor: aplicarla de inmediato
+            queryClient.setQueryData(FINANCIAL_SETTINGS_KEYS.detail(), data);
+
+            // Si se guardó una tasa manual válida, aplicarla a los precios al instante
+            const rate = data.usdPenFallbackRate != null ? Number(data.usdPenFallbackRate) : 0;
+            if (rate > 0) {
+                queryClient.setQueryData(['exchange-rate'], rate);
+            }
+
+            // Revalidar para mantener consistencia multi-tab / cross-device
             queryClient.invalidateQueries({
                 queryKey: FINANCIAL_SETTINGS_KEYS.detail(),
                 refetchType: 'active',
             });
-            
         },
     });
 };

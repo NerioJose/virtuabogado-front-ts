@@ -244,3 +244,23 @@ export async function broadcastPaymentMethodUpdate(params: {
     // Canal global de actualizaciones - escuchado por useRealtimeSubscription
     await sendBroadcast('app-updates', 'payment-method-updated', payload);
 }
+
+/**
+ * Notifica a TODOS los clientes conectados (incluidos anónimos) que la tasa
+ * manual USD -> PEN cambió. Los precios en soles se recalculan al instante
+ * sin necesidad de recargar el navegador.
+ */
+export async function broadcastExchangeRateUpdate(params: {
+    rate: number | null;
+    timestamp: string;
+}): Promise<void> {
+    const { rate, timestamp } = params;
+
+    const payload = {
+        rate,
+        timestamp,
+    };
+
+    // Canal global de actualizaciones - escuchado por useRealtimeSubscription
+    await sendBroadcast('app-updates', 'exchange-rate-updated', payload);
+}

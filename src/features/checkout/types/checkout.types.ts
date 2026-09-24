@@ -70,6 +70,7 @@ export interface CheckoutState extends CheckoutData {
     isProcessingPayment: boolean; // Indica si el usuario hizo clic en pagar
     isWaitingForWebhook: boolean; // Indica si estamos esperando la confirmación de la pasarela
     requiresEmailConfirmation: boolean; // Indica si el nuevo cliente debe confirmar su correo
+    selectedMethod: string | null; // Método de pago seleccionado en el paso 2 (identificador)
 
     // Actions
     openCheckout: (service: Servicio) => void;
@@ -79,6 +80,7 @@ export interface CheckoutState extends CheckoutData {
     clearError: () => void;
     setPaymentData: (data: PaymentData) => void;
     setPaymentMethod: (method: PaymentMethod) => void;
+    setSelectedMethod: (identifier: string | null) => void;
     setIsProcessingPayment: (val: boolean) => void;
     setIsWaitingForWebhook: (val: boolean) => void;
     setOrderId: (orderId: string) => void;

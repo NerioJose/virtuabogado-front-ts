@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
+import { useCheckoutStore } from '../store/checkoutStore';
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { useCheckout } from '../hooks/useCheckout';
 import { usePaymentMethods } from '../hooks/usePaymentMethods';
@@ -38,7 +39,8 @@ export const usePaymentStep = () => {
         payerEmail?: string;
         mode?: 'card' | 'yape';
     } | null>(null);
-    const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+    const selectedMethod = useCheckoutStore((state) => state.selectedMethod);
+    const setSelectedMethod = useCheckoutStore((state) => state.setSelectedMethod);
 
     const selectMethod = (identifier: string) => {
         setSelectedMethod(identifier);

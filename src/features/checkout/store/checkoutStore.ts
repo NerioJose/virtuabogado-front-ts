@@ -46,6 +46,7 @@ const getInitialState = () => ({
     isProcessingPayment: false,
     isWaitingForWebhook: false,
     requiresEmailConfirmation: false,
+    selectedMethod: null as string | null,
 });
 
 export const useCheckoutStore = create<CheckoutState>()(
@@ -142,6 +143,10 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         setPaymentMethod: (paymentMethod: PaymentMethod) => {
             set({ paymentMethod });
+        },
+
+        setSelectedMethod: (selectedMethod: string | null) => {
+            set({ selectedMethod });
         },
         
         setIsProcessingPayment: (isProcessingPayment: boolean) => {

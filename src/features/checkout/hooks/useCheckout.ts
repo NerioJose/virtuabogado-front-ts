@@ -24,6 +24,7 @@ export const useCheckout = () => {
     const isProcessingPayment = useCheckoutStore((state) => state.isProcessingPayment);
     const isWaitingForWebhook = useCheckoutStore((state) => state.isWaitingForWebhook);
     const requiresEmailConfirmation = useCheckoutStore((state) => state.requiresEmailConfirmation);
+    const selectedMethod = useCheckoutStore((state) => state.selectedMethod);
 
     const openCheckout = useCheckoutStore((state) => state.openCheckout);
     const closeCheckout = useCheckoutStore((state) => state.closeCheckout);
@@ -32,6 +33,7 @@ export const useCheckout = () => {
     const clearError = useCheckoutStore((state) => state.clearError);
     const setPaymentData = useCheckoutStore((state) => state.setPaymentData);
     const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod);
+    const setSelectedMethod = useCheckoutStore((state) => state.setSelectedMethod);
     const setIsProcessingPayment = useCheckoutStore((state) => state.setIsProcessingPayment);
     const setIsWaitingForWebhook = useCheckoutStore((state) => state.setIsWaitingForWebhook);
     const setOrderId = useCheckoutStore((state) => state.setOrderId);
@@ -60,6 +62,7 @@ export const useCheckout = () => {
         isProcessingPayment,
         isWaitingForWebhook,
         requiresEmailConfirmation,
+        selectedMethod,
 
         openCheckout,
         closeCheckout,
@@ -68,6 +71,7 @@ export const useCheckout = () => {
         clearError,
         setPaymentData,
         setPaymentMethod,
+        setSelectedMethod,
         setIsProcessingPayment,
         setIsWaitingForWebhook,
         setOrderId,
@@ -81,9 +85,9 @@ export const useCheckout = () => {
     }), [
         isOpen, step, service, userData, paymentData, paymentMethod, orderId, total, 
         isLoading, error, isExistingUser, tempPassword, completedAt, 
-        isProcessingPayment, isWaitingForWebhook, requiresEmailConfirmation,
+        isProcessingPayment, isWaitingForWebhook, requiresEmailConfirmation, selectedMethod,
         openCheckout, closeCheckout, 
-        setStep, setUserData, clearError, setPaymentData, setPaymentMethod, 
+        setStep, setUserData, clearError, setPaymentData, setPaymentMethod, setSelectedMethod, 
         setIsProcessingPayment, setIsWaitingForWebhook, setOrderId, 
         checkUserExists, resendConfirmation, clearEmailConfirmation, authenticateUser, submitOrder, 
         markAsCompleted, reset, clearError

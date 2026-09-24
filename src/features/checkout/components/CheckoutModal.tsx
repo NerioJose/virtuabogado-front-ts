@@ -16,14 +16,16 @@ import { PaymentStep } from './PaymentStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { LoadingOverlay } from './LoadingOverlay';
 import { ErrorMessage } from './ErrorMessage';
-import { DualPrice } from '@/components/ui/DualPrice';
 
-// --- COMPONENTE TÁCTICO: ALERTA DE PRECISIÓN CRIPTO ---
+// --- COMPONENTE TÁCTICO: ALERTA DE PRECISIÓN CRIPTO (SOLO USD) ---
 const ZenobankTacticalAlert: React.FC<{ total: number }> = ({ total }) => {
     const { data: methods } = usePaymentMethods();
     const hasZenobank = methods?.some((m: any) => m.identifier === 'zenobank');
 
     if (!hasZenobank) return null;
+
+    // Monto EXACTO en USD (2 decimales), idéntico al que recibe la pasarela.
+    const exactUsd = `US$ ${(Number(total) || 0).toFixed(2)}`;
 
     return (
         <motion.div 
@@ -40,12 +42,15 @@ const ZenobankTacticalAlert: React.FC<{ total: number }> = ({ total }) => {
                     Requisito de Activación Inmediata
                 </p>
                 <p className="text-[10px] text-amber-900 leading-tight font-medium">
-                    Al pagar con <span className="font-bold">Criptomonedas</span>, debes transferir el monto <span className="font-bold underline text-amber-800 uppercase tracking-tighter">EXACTO</span> incluyendo todos los decimales para evitar rechazos:
+                    Al pagar con <span className="font-bold">Criptomonedas</span>, debes transferir el monto <span className="font-bold underline text-amber-800 uppercase tracking-tighter">EXACTO</span> en dólares, incluyendo todos los decimales, para evitar rechazos:
                 </p>
                 <div className="bg-white/40 px-3 py-1.5 rounded-lg border border-amber-200 flex justify-between items-center mt-2">
-                    <span className="text-[9px] font-bold text-amber-900/60 uppercase">Importe Requerido:</span>
-                    <DualPrice usd={total} className="text-sm font-mono font-black text-amber-900 tracking-tighter" />
+                    <span className="text-[9px] font-bold text-amber-900/60 uppercase">Importe Exacto (USD):</span>
+                    <span className="text-sm font-mono font-black text-amber-900 tracking-tighter">{exactUsd}</span>
                 </div>
+                <p className="text-[9px] text-amber-800/70 font-bold uppercase tracking-wider">
+                    El pago se cobra únicamente en dólares estadounidenses (USD).
+                </p>
             </div>
         </motion.div>
     );
@@ -60,6 +65,7 @@ export const CheckoutModal: React.FC = () => {
         isLoading,
         error,
         reset,
+        selectedMethod,
     } = useCheckout();
 
     const { isAuthenticated } = useAuthStore();
@@ -189,8 +195,8 @@ export const CheckoutModal: React.FC = () => {
                             </motion.div>
                         )}
 
-                        {/* --- VISIBILIDAD RADICAL: ALERTA TÁCTICA ZENOBANK --- */}
-                        {step === 2 && (
+                        {/* --- VISIBILIDAD RADICAL: ALERTA TÁCTICA CRIPTO (solo cuando se elige cripto) --- */}
+                        {step === 2 && selectedMethod === 'zenobank' && (
                              <ZenobankTacticalAlert total={Number(service.precio) || 0} />
                         )}
 

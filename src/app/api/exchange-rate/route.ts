@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUsdPenRate } from '@/lib/exchangeRate';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/exchange-rate
@@ -13,13 +13,13 @@ export async function GET() {
         const rate = await getUsdPenRate();
         return NextResponse.json(
             { rate, currency: 'PEN', updatedAt: new Date().toISOString() },
-            { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=60' } }
+            { headers: { 'Cache-Control': 'no-store' } }
         );
     } catch (error) {
         console.warn('[exchange-rate] No se pudo obtener la tasa USD/PEN:', error);
         return NextResponse.json(
             { rate: null, currency: 'PEN', updatedAt: new Date().toISOString() },
-            { status: 200, headers: { 'Cache-Control': 'public, s-maxage=60' } }
+            { status: 200, headers: { 'Cache-Control': 'no-store' } }
         );
     }
 }

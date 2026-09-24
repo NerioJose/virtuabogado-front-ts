@@ -11,9 +11,10 @@ import { getUsdPenRate } from '@/lib/exchangeRate';
 interface ProcessPaymentParams {
     serviceId: number;
     paymentMethodId: string; // Recibimos el IDENTIFIER (ej. 'zenobank', 'mock')
+    rateSaw?: number; // Tasa que el cliente vio en el checkout (para congelar exactamente lo mostrado)
 }
 
-export async function processPaymentAction({ serviceId, paymentMethodId }: ProcessPaymentParams) {
+export async function processPaymentAction({ serviceId, paymentMethodId, rateSaw }: ProcessPaymentParams) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -82,7 +83,17 @@ export async function processPaymentAction({ serviceId, paymentMethodId }: Proce
         // con la tasa vigente en el MOMENTO EN QUE EL CLIENTE INICIA LA COMPRA.
         // La tasa nueva aplica solo a órdenes creadas después; esta orden pagará
         // siempre lo que el cliente vio (no retroactivo).
-        const exchangeRateUsed = await getUsdPenRate();
+        const freshRate = await getUsdPenRate();
+        // Si el cliente envió la tasa que vio (rateSaw), se valida contra la tasa
+        // vigente (±25% de tolerancia anti-manipulación) y se congela la MENOR:
+        // jamás se cobra más de lo mostrado en el checkout, aunque la tasa cambie
+        // entre el render y la creación de la orden.
+        const seenValid =
+            typeof rateSaw === 'number'
+            && Number.isFinite(rateSaw)
+            && rateSaw > 0
+            && Math.abs(rateSaw - freshRate) / freshRate <= 0.25;
+        const exchangeRateUsed = seenValid ? Math.min(rateSaw!, freshRate) : freshRate;
         const totalPen = Math.round(total * exchangeRateUsed * 100) / 100;
 
         // Crear nueva orden con tipos seguros

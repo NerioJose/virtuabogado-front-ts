@@ -21,7 +21,7 @@ export function useExchangeRate() {
     const { data, isLoading } = useQuery({
         queryKey: ['exchange-rate'],
         queryFn: fetchExchangeRate,
-        staleTime: 1000 * 60 * 5, // 5 min (reflejar rápido cambios del admin)
+        staleTime: 1000 * 30, // 30s - el preview del checkout debe reflejar la tasa fresca
         gcTime: 1000 * 60 * 60,
         retry: 1,
     });

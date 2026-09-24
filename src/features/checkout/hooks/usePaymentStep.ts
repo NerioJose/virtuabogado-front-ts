@@ -106,9 +106,14 @@ export const usePaymentStep = () => {
         const loadingToast = toast.loading('Conectando con la pasarela financiera segura...');
 
         try {
+            // Tasa que el cliente está viendo en el checkout: se congela en la orden
+            // para que el monto cobrado jamás supere lo mostrado.
+            const rateSaw = Number(queryClient.getQueryData(['exchange-rate']) ?? 0);
+
             const result = await processPaymentAction({
                 serviceId: service!.id,
-                paymentMethodId
+                paymentMethodId,
+                rateSaw,
             });
 
             if (result.success) {

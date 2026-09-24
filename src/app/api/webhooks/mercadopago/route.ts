@@ -5,6 +5,8 @@ import { MercadoPagoService } from '@/features/checkout/services/mercadopago.ser
 import { convertUsdToPen } from '@/lib/exchangeRate';
 import { emit } from '@/events/eventBus';
 
+export const maxDuration = 60;
+
 /**
  * POST /api/webhooks/mercadopago
  * Recibe notificaciones de MercadoPago. Es la FUENTE DE VERDAD para marcar la

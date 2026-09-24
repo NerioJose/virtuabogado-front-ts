@@ -7,6 +7,8 @@ import { convertUsdToPen } from '@/lib/exchangeRate';
 import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
 
+export const maxDuration = 60;
+
 /**
  * GET /api/payments/mercadopago?orderId=...
  * Devuelve los montos (USD original y PEN convertido) para mostrar en el

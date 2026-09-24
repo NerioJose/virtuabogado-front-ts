@@ -8,6 +8,7 @@ import { UserRole } from '@/shared/types/entities.types';
 import { getAuthUser, getCachedFinancialSettings, formatOrderResponse } from './orders.helpers';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function GET(request: Request) {
     try {

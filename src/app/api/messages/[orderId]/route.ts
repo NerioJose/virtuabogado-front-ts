@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { emit } from '@/events/eventBus';
 import { getChatAuth, checkChatAccess } from '@/services/chat.service';
 
+export const maxDuration = 60;
+
 export async function GET(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
     try {
         const { orderId } = await params;

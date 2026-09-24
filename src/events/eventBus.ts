@@ -25,7 +25,7 @@ export async function emit(event: BusinessEvent): Promise<void> {
 }
 
 async function schedule(eventLogId: string): Promise<void> {
-  const { processEvent } = await import('./processor')
+  const { processEvent, drainDue } = await import('./processor')
 
   // Eventos emitidos mientras el procesador corre se encolan directo (evita latencia de cron)
   if (isProcessingInWorker()) {
@@ -38,7 +38,7 @@ async function schedule(eventLogId: string): Promise<void> {
   if (mode === 'none') return
 
   const run = () =>
-    processEvent(eventLogId).catch((error) =>
+    drainDue(eventLogId).catch((error) =>
       console.error('[Events] Error en dispatch de evento:', eventLogId, error)
     )
 

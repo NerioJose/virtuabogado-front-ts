@@ -7,6 +7,8 @@ import { convertUsdToPen } from '@/lib/exchangeRate';
 import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
 
+export const maxDuration = 60;
+
 /**
  * POST /api/payments/yape
  * Procesa un pago con Yape (Checkout API): recibe el token Yape generado en el

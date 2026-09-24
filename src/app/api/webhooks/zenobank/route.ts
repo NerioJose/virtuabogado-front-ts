@@ -4,6 +4,8 @@ const prisma = prismaClient as any;
 import { Webhook } from 'svix';
 import { emit } from '@/events/eventBus';
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
     const svixId = req.headers.get('svix-id');
     const svixTimestamp = req.headers.get('svix-timestamp');

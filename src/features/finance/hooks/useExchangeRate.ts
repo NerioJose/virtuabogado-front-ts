@@ -22,6 +22,7 @@ export function useExchangeRate() {
         queryKey: ['exchange-rate'],
         queryFn: fetchExchangeRate,
         staleTime: 1000 * 30, // 30s - el preview del checkout debe reflejar la tasa fresca
+        refetchInterval: 1000 * 30, // auto-reconciliación: pestañas abiertas convergen aunque el broadcast falle
         gcTime: 1000 * 60 * 60,
         retry: 1,
     });

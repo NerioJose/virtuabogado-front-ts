@@ -35,6 +35,7 @@ export const useRealtimeSubscription = () => {
                     queryClient.refetchQueries({ queryKey: ['Service'], type: 'active' });
                     queryClient.refetchQueries({ queryKey: ['PayoutHistory'], type: 'active' });
                     queryClient.refetchQueries({ queryKey: ['PendingPayouts'], type: 'active' });
+                    queryClient.refetchQueries({ queryKey: ['exchange-rate'], type: 'active' });
                 }
             }, 300_000); // 5 minutos
             return () => clearInterval(interval);
@@ -195,6 +196,9 @@ export const useRealtimeSubscription = () => {
                     
                     queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
                     queryClient.invalidateQueries({ queryKey: ['DashboardStats'], refetchType: 'all' });
+                    // La tasa solo la ve el ADMIN (RLS lo restringe): al cambiar la
+                    // config financiera se fuerza el refetch de la tasa compartida.
+                    queryClient.invalidateQueries({ queryKey: ['exchange-rate'], refetchType: 'all' });
                     break;
                 case 'PaymentMethod':
                     

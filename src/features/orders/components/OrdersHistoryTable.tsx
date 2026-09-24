@@ -17,6 +17,7 @@ import {
     RotateCcw
 } from 'lucide-react';
 import { DualPrice } from '@/components/ui/DualPrice';
+import { formatPEN } from '@/lib/finance';
 import { formatOrderId } from '@/lib/formatOrderId';
 import Pagination from '@/components/ui/Pagination';
 
@@ -152,6 +153,11 @@ export function OrdersHistoryTable({ user }: Props) {
                                         )}
                                     </div>
                                 </div>
+                                {user.rol === 'ADMIN' && order.totalPen != null && (
+                                    <p className="text-[10px] font-bold text-slate-400 mt-2 text-right">
+                                        Cobrado: <span className="text-slate-600">{formatPEN(order.totalPen)}</span> · Tasa {Number(order.exchangeRateUsed || 0).toFixed(4)}
+                                    </p>
+                                )}
                             </div>
                         );
                     })
@@ -186,6 +192,9 @@ export function OrdersHistoryTable({ user }: Props) {
                                     {user.rol === 'ABOGADO' && (
                                         <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Comisión</th>
                                     )}
+                                    {user.rol === 'ADMIN' && (
+                                        <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">S/ cobrado × Tasa</th>
+                                    )}
                                     <th className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{user.rol === 'ABOGADO' ? 'Su Neto' : 'Monto total'}</th>
                                 </tr>
                             </thead>
@@ -203,7 +212,7 @@ export function OrdersHistoryTable({ user }: Props) {
                                     ))
                                 ) : !data || data.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={user.rol === 'ABOGADO' ? 7 : 6} className="px-4 py-12 text-center text-slate-400 italic font-bold">
+                                        <td colSpan={7} className="px-4 py-12 text-center text-slate-400 italic font-bold">
                                             No se encontraron registros.
                                         </td>
                                     </tr>
@@ -246,6 +255,18 @@ export function OrdersHistoryTable({ user }: Props) {
                                                 {user.rol === 'ABOGADO' && (
                                                     <td className="px-4 py-5 text-sm font-black text-red-500 text-right">
                                                         -<DualPrice usd={order.financials?.comisionLawyer || 0} className="inline-block" />
+                                                    </td>
+                                                )}
+                                                {user.rol === 'ADMIN' && (
+                                                    <td className="px-4 py-5 text-sm font-black text-slate-900 text-right">
+                                                        {order.totalPen != null ? (
+                                                            <>
+                                                                <span>{formatPEN(order.totalPen)}</span>
+                                                                <span className="block text-[10px] font-bold text-slate-400 mt-0.5">Tasa {Number(order.exchangeRateUsed || 0).toFixed(4)}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-slate-300">—</span>
+                                                        )}
                                                     </td>
                                                 )}
                                                 <td className="px-4 py-5 text-sm font-black text-slate-900 text-right">

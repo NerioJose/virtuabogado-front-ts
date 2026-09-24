@@ -67,7 +67,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
     };
 
     const status = statusConfig[order.status] || statusConfig[OrderStatus.PENDIENTE];
-    const isPendingPayment = order.status === OrderStatus.PAGO_PENDIENTE;
+    const isPendingPayment = order.status === OrderStatus.PAGO_PENDIENTE && user?.rol === 'CLIENTE';
 
     if (isPendingPayment) {
         return (

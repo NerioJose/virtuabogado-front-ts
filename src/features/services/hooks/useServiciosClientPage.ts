@@ -27,8 +27,9 @@ export function useServiciosClientPage() {
 
     const activeServices = useServicesStore(state => state.activeServices);
 
-    const hasPendingPayment = orders.some((order: any) => order.status === 'PAGO_PENDIENTE');
-    const pendingOrder = orders.find((order: any) => order.status === 'PAGO_PENDIENTE');
+    const isClient = user?.rol === 'CLIENTE';
+    const hasPendingPayment = isClient && orders.some((order: any) => order.status === 'PAGO_PENDIENTE');
+    const pendingOrder = isClient ? orders.find((order: any) => order.status === 'PAGO_PENDIENTE') : undefined;
 
     const getServiceImage = (service: Service) => {
         if (service.imagenUrl) return service.imagenUrl;

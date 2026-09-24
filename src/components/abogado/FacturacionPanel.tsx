@@ -18,7 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import PayoutHistoryList from '@/features/finance/components/PayoutHistoryList';
 import { useFacturacionPanel, Factura, PeriodoFacturacion } from './hooks/useFacturacionPanel';
 import Pagination from '@/components/ui/Pagination';
@@ -72,7 +72,7 @@ export default function FacturacionPanel({ abogadoId }: FacturacionPanelProps) {
 
 	// Función para formatear importes
 	const formatearImporte = (importe: number) => {
-		return formatUSD(importe);
+		return <DualPrice usd={importe} />;
 	};
 
 	if (isLoading) {

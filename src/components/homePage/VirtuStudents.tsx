@@ -9,7 +9,7 @@ import { useServicesRealtime } from '@/features/services/hooks/useServicesRealti
 import { useServicesStore } from '@/features/services/store/servicesStore';
 import { useCheckout } from '@/features/checkout';
 import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 
 export default function VirtuStudents() {
     const { isLoading } = useServices(); // Mantener para el fetch inicial
@@ -30,9 +30,7 @@ export default function VirtuStudents() {
     // Si no hay datos, está cargando o el servicio no está activo, no mostrar nada
     if (isLoading || !studentService) return null;
 
-    const price = formatUSD(studentService.precio);
-    const title = studentService.titulo;
-    const description = studentService.descripcion;
+    const title = studentService.titulo;    const description = studentService.descripcion;
 
     return (
         <section className="py-24 bg-gray-50/30 overflow-hidden">
@@ -122,7 +120,7 @@ export default function VirtuStudents() {
                                 <div className="flex flex-col border-l border-gray-100 pl-8">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inversión Alumno</span>
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-4xl font-black text-vinotinto">{price}</span>
+                                        <DualPrice usd={studentService.precio} className="text-4xl text-vinotinto" />
                                     </div>
                                 </div>
                             </div>

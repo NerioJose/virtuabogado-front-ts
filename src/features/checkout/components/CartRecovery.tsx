@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiShoppingCart, FiX, FiRefreshCw } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 
 /**
  * Componente que muestra un banner de recuperación de carrito abandonado
@@ -87,8 +87,6 @@ export const CartRecovery = () => {
         setShowRecovery(false);
     };
 
-    const priceFormatted = service?.precio ? formatUSD(service.precio) : '';
-
     return (
         <AnimatePresence>
             {showRecovery && (
@@ -129,11 +127,11 @@ export const CartRecovery = () => {
                                 </div>
                                 <p className="text-sm text-slate-500 mb-4 line-clamp-1">
                                     <span className="font-semibold text-azul-primario">{service?.nombre}</span>
-                                    {priceFormatted && (
-                                        <span className="ml-2 px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-black uppercase text-slate-600">
-                                            {priceFormatted}
+                                    {service?.precio ? (
+                                        <span className="ml-2 inline-block px-2 py-0.5 bg-slate-100 rounded-md">
+                                            <DualPrice usd={service.precio} className="text-[10px] text-slate-600" />
                                         </span>
-                                    )}
+                                    ) : null}
                                 </p>
                                 
                                 {/* Botones */}

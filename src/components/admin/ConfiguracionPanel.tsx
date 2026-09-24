@@ -31,6 +31,7 @@ function FinancialSettingsSection() {
 		platformFee, setPlatformFee,
 		simulationBase, setSimulationBase,
 		whatsappPhone, setWhatsappPhone,
+		usdPenFallbackRate, setUsdPenFallbackRate,
 		validation,
 		previewData,
 		isSaving,
@@ -138,6 +139,28 @@ function FinancialSettingsSection() {
 									/>
 								</div>
 								<p className="mt-1 text-[10px] text-gray-400">Sin espacios ni símbolos. Ejemplo: 51987654321</p>
+							</div>
+
+							<div className="pt-4 border-t border-gray-100">
+								<div className="flex items-center gap-2 text-azul-primario font-bold mb-3">
+									<FiDollarSign /> <h4>Tasa de Cambio (USD → PEN)</h4>
+								</div>
+								<label className="block text-sm font-bold text-gray-700 mb-1">Tasa referencial (S/ por 1 USD)</label>
+								<div className="relative">
+									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">S/</span>
+									<input
+										type="number"
+										min="0"
+										step="0.0001"
+										value={usdPenFallbackRate}
+										onChange={(e) => setUsdPenFallbackRate(e.target.value)}
+										className="block w-full pl-10 p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-azul-primario outline-none"
+										placeholder="3.75"
+									/>
+								</div>
+								<p className="mt-1 text-[10px] text-gray-400">
+									Si la definís, tiene prioridad sobre la tasa automática y se usa para mostrar precios en soles y para convertir el cobro en MercadoPago/Yape. Dejala vacía para usar la tasa automática (Frankfurter).
+								</p>
 							</div>
 						</div>
 

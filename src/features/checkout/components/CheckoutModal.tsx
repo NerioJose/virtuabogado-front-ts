@@ -16,7 +16,7 @@ import { PaymentStep } from './PaymentStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { LoadingOverlay } from './LoadingOverlay';
 import { ErrorMessage } from './ErrorMessage';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 
 // --- COMPONENTE TÁCTICO: ALERTA DE PRECISIÓN CRIPTO ---
 const ZenobankTacticalAlert: React.FC<{ total: number }> = ({ total }) => {
@@ -44,9 +44,7 @@ const ZenobankTacticalAlert: React.FC<{ total: number }> = ({ total }) => {
                 </p>
                 <div className="bg-white/40 px-3 py-1.5 rounded-lg border border-amber-200 flex justify-between items-center mt-2">
                     <span className="text-[9px] font-bold text-amber-900/60 uppercase">Importe Requerido:</span>
-                    <span className="text-sm font-mono font-black text-amber-900 tracking-tighter">
-                        {formatUSD(total, 2)}
-                    </span>
+                    <DualPrice usd={total} className="text-sm font-mono font-black text-amber-900 tracking-tighter" />
                 </div>
             </div>
         </motion.div>

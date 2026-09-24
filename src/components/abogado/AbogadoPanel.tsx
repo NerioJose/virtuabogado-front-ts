@@ -27,7 +27,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOrdersByLawyer } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { UserRole } from '@/shared/types/entities.types';
-import { formatCurrency } from '@/utils/formatters';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialSummary } from '@/features/finance/actions/getFinancialSummary';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -317,7 +317,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
 									<div>
 										<p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Honorarios Pendientes</p>
 										<h3 className="text-3xl font-black text-slate-900 mt-1">
-											{formatCurrency(estadisticas.ingresosMes)}
+											<DualPrice usd={estadisticas.ingresosMes} />
 										</h3>
 									</div>
 									<div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform shadow-inner">

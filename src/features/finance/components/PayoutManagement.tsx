@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { usePayoutManagement } from '../hooks/usePayoutManagement';
 import { 
     FiDollarSign, 
@@ -80,7 +80,7 @@ export default function PayoutManagement() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total de Honorarios</p>
-                                        <p className="text-2xl font-black text-slate-900 tracking-tighter">{formatUSD(item.totalPending)}</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tighter"><DualPrice usd={item.totalPending} /></p>
                                     </div>
                                 </div>
                                 <div className="space-y-1 mb-6">
@@ -140,13 +140,13 @@ export default function PayoutManagement() {
                                             <div className="flex flex-col gap-1 mt-1">
                                                 {payout.orders?.map((o: any) => (
                                                     <span key={o.id} className="text-[9px] text-slate-400 font-bold tracking-tight">
-                                                        • {o.service?.titulo} ({formatUSD(Number(o.commissionAmount))})
+                                                        • {o.service?.titulo} (<DualPrice usd={Number(o.commissionAmount)} className="inline-flex align-middle" />)
                                                     </span>
                                                 ))}
                                             </div>
                                         </td>
                                         <td className="px-4 py-6">
-                                            <p className="text-lg font-black text-slate-900 tracking-tighter">{formatUSD(payout.amount)}</p>
+                                            <p className="text-lg font-black text-slate-900 tracking-tighter"><DualPrice usd={payout.amount} /></p>
                                         </td>
                                         <td className="px-4 py-6">
                                             <div className="space-y-2">
@@ -213,7 +213,7 @@ export default function PayoutManagement() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">Monto Total</p>
-                                        <p className="text-2xl font-black text-azul-primario tracking-tighter">{formatUSD((selectedLawyer as any)?.amount)}</p>
+                                        <p className="text-2xl font-black text-azul-primario tracking-tighter"><DualPrice usd={(selectedLawyer as any)?.amount} /></p>
                                     </div>
                                 </div>
 

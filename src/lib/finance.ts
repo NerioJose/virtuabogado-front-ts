@@ -14,6 +14,30 @@ export function formatUSD(amount: number | string | null | undefined, precision:
 }
 
 /**
+ * Profesional PEN (soles peruanos) Formatter using Intl.NumberFormat.
+ * [CLIENT-SAFE]
+ */
+export function formatPEN(amount: number | string | null | undefined, precision: number = 2): string {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : (amount || 0);
+    return new Intl.NumberFormat('es-PE', {
+        style: 'currency',
+        currency: 'PEN',
+        minimumFractionDigits: precision,
+        maximumFractionDigits: precision,
+    }).format(numericAmount);
+}
+
+/**
+ * Convierte un monto en USD a PEN usando la tasa dada, redondeado a 2 decimales.
+ * [CLIENT-SAFE]
+ */
+export function usdToPen(usd: number | string | null | undefined, rate: number): number {
+    const numericAmount = typeof usd === 'string' ? parseFloat(usd) : (usd || 0);
+    if (!rate || !Number.isFinite(rate)) return 0;
+    return Math.round(numericAmount * rate * 100) / 100;
+}
+
+/**
  * Fintech-grade Serialization Utility.
  * Recursively converts Prisma Decimal objects to native numbers and Dates to ISO strings.
  * Solves the Next.js 15 error: "Only plain objects can be passed to Client Components".

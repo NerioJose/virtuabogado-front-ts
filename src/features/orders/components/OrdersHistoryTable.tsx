@@ -16,7 +16,7 @@ import {
     XCircle,
     RotateCcw
 } from 'lucide-react';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { formatOrderId } from '@/lib/formatOrderId';
 import Pagination from '@/components/ui/Pagination';
 
@@ -145,10 +145,10 @@ export function OrdersHistoryTable({ user }: Props) {
                                             {user.rol === 'ABOGADO' ? 'Su Neto' : 'Total'}
                                         </span>
                                         <span className="text-sm font-black text-slate-900">
-                                            {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
+                                            <DualPrice usd={user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total} />
                                         </span>
                                         {user.rol === 'ABOGADO' && (
-                                            <p className="text-[10px] text-rose-500 font-bold mt-0.5">Com: -{formatUSD(order.financials?.comisionLawyer || 0)}</p>
+                                            <p className="text-[10px] text-rose-500 font-bold mt-0.5">Com: -<DualPrice usd={order.financials?.comisionLawyer || 0} className="inline-block" /></p>
                                         )}
                                     </div>
                                 </div>
@@ -245,11 +245,11 @@ export function OrdersHistoryTable({ user }: Props) {
                                                 </td>
                                                 {user.rol === 'ABOGADO' && (
                                                     <td className="px-4 py-5 text-sm font-black text-red-500 text-right">
-                                                        -{formatUSD(order.financials?.comisionLawyer || 0)}
+                                                        -<DualPrice usd={order.financials?.comisionLawyer || 0} className="inline-block" />
                                                     </td>
                                                 )}
                                                 <td className="px-4 py-5 text-sm font-black text-slate-900 text-right">
-                                                    {formatUSD(user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total)}
+                                                    <DualPrice usd={user.rol === 'ABOGADO' ? order.financials?.netoPlataforma : order.total} className="inline-block" />
                                                 </td>
                                             </tr>
                                         );

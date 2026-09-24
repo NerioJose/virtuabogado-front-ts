@@ -90,7 +90,7 @@ export async function middleware(request: NextRequest) {
         return response;
     }
 
-    const publicApiPaths = ['/api/services', '/api/webhooks', '/api/payments'];
+    const publicApiPaths = ['/api/services', '/api/webhooks', '/api/payments', '/api/exchange-rate'];
     if (publicApiPaths.some(p => pathname.startsWith(p))) {
         const res = NextResponse.next();
         if (isAllowedOrigin) {

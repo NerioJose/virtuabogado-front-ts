@@ -13,7 +13,7 @@ import {
   FiClock,
   FiCheckCircle
 } from 'react-icons/fi';
-import { formatCurrency } from '@/utils/formatters';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { useDashboard } from './hooks/useDashboard';
 import { Order, OrderStatus } from '@/features/orders/types/orders.types';
 
@@ -122,7 +122,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 text-sm">Ingresos Mes Actual</p>
-              <h3 className="text-3xl font-bold text-azul-primario mt-2">{formatCurrency(stats.ingresosMes)}</h3>
+              <h3 className="text-3xl font-bold text-azul-primario mt-2"><DualPrice usd={stats.ingresosMes} /></h3>
             </div>
             <div className="w-12 h-12 bg-azul-claro/20 rounded-lg flex items-center justify-center text-azul-primario">
               <FiDollarSign size={24} />
@@ -130,7 +130,7 @@ export default function Dashboard() {
           </div>
           <div className="mt-4 flex items-center text-gray-500 text-sm">
             <FiTrendingUp className="mr-1" />
-            <span>Total acumulado: {formatCurrency(stats.ingresosTotales)}</span>
+            <span>Total acumulado: <DualPrice usd={stats.ingresosTotales} /></span>
           </div>
         </motion.div>
       </div>
@@ -194,7 +194,7 @@ export default function Dashboard() {
                     </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                    {formatCurrency(caso.total)}
+                    <DualPrice usd={caso.total} />
                   </td>
                 </tr>
               ))}

@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
 import { getCached, setCache, clearCache } from '@/lib/cache';
+import { clearExchangeRateCache } from '@/lib/exchangeRate';
 
 export const revalidate = 3600;
 
@@ -162,6 +163,7 @@ export async function PATCH(request: NextRequest) {
         revalidatePath('/');
         await clearCache('financial-settings-ui');
         await clearCache('financial-settings');
+        clearExchangeRateCache();
 
         return NextResponse.json({ success: true, message: 'Configuración actualizada' });
     } catch (error: any) {

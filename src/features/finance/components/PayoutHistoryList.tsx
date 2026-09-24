@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getPayoutHistory } from '../actions/payoutActions';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { 
     FiCheckCircle, 
     FiClock, 
@@ -60,7 +60,7 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liquidación</p>
                             <h4 className="text-xl font-black text-slate-900 tracking-tighter">
-                                {formatUSD(payout.amount)}
+                                <DualPrice usd={payout.amount} />
                             </h4>
                         </div>
                         <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${
@@ -84,7 +84,7 @@ export default function PayoutHistoryList({ lawyerId }: PayoutHistoryListProps) 
                                         {order.service?.titulo}
                                     </span>
                                     <span className="text-[9px] font-black text-slate-300">
-                                        {formatUSD(Number(order.commissionAmount))}
+                                        <DualPrice usd={Number(order.commissionAmount)} className="inline-flex" />
                                     </span>
                                 </div>
                             ))}

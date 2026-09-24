@@ -12,7 +12,7 @@ import {
 	FiActivity,
 	FiDownload
 } from 'react-icons/fi';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { formatOrderId } from '@/lib/formatOrderId';
 import { motion, AnimatePresence } from 'framer-motion';
 import PayoutManagement from '@/features/finance/components/PayoutManagement';
@@ -86,7 +86,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 								<div className="h-8 bg-slate-100 animate-pulse rounded-lg w-2/3" />
 							) : (
 								<p className={`text-2xl font-black tracking-tighter ${kpi.color}`}>
-									{formatUSD(kpi.value)}
+									<DualPrice usd={kpi.value} />
 								</p>
 							)}
 						</div>
@@ -207,7 +207,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 											<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
 											<p className="text-sm font-black text-azul-primario">{order.userName}</p>
 										</div>
-										<p className="text-xl font-black text-slate-700 tracking-tighter">{formatUSD(order.total)}</p>
+										<p className="text-xl font-black text-slate-700 tracking-tighter"><DualPrice usd={order.total} /></p>
 									</div>
 								</div>
 
@@ -266,7 +266,7 @@ function FinanzasPanel({ terminoBusqueda, abrirModal }: FinanzasPanelProps) {
 										</td>
 										<td className="px-4 py-5">
 											<span className="text-sm font-black text-slate-800 tracking-tight">
-												{formatUSD(order.total)}
+												<DualPrice usd={order.total} />
 											</span>
 										</td>
 										<td className="px-4 py-5">

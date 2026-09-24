@@ -12,7 +12,7 @@ import {
 	FiTrendingUp,
 	FiTrendingDown,
 } from 'react-icons/fi';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { motion } from 'framer-motion';
 import { useDashboardStats, DashboardStatsData } from './hooks/useDashboardStats';
 
@@ -34,7 +34,7 @@ const SkeletonCard = () => (
 // Componente para tarjetas de estadísticas Premium
 interface StatCardProps {
 	title: string;
-	value: string | number;
+	value: React.ReactNode;
 	icon: React.ReactNode;
 	bgColor: string;
 	iconColor: string;
@@ -210,7 +210,7 @@ function DashboardStats() {
 						/>
 						<StatCard
 							title="Liquidez Mensual"
-							value={formatUSD(stats.ingresosMes)}
+							value={<DualPrice usd={stats.ingresosMes} />}
 							icon={<FiDollarSign />}
 							bgColor="bg-rose-50"
 							iconColor="text-rose-600"
@@ -278,21 +278,21 @@ function DashboardStats() {
 						<div className="space-y-6">
 							<div className="flex justify-between items-center">
 								<span className="text-xs font-bold text-white/60 uppercase tracking-widest">Facturación Bruta</span>
-								<span className="text-xl font-black tracking-tight">{formatUSD(stats.ingresosTotales)}</span>
+								<span className="text-xl font-black tracking-tight"><DualPrice usd={stats.ingresosTotales} /></span>
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="text-xs font-bold text-white/60 uppercase tracking-widest">Compromisos Abogados</span>
-								<span className="text-lg font-black text-amber-300">-{formatUSD(stats.pagosAbogados)}</span>
+								<span className="text-lg font-black text-amber-300">-<DualPrice usd={stats.pagosAbogados} /></span>
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="text-xs font-bold text-white/60 uppercase tracking-widest">Tributos y Operativa</span>
-								<span className="text-lg font-black text-rose-300">-{formatUSD(stats.gastosOperativos)}</span>
+								<span className="text-lg font-black text-rose-300">-<DualPrice usd={stats.gastosOperativos} /></span>
 							</div>
 							<div className="pt-6 border-t border-white/20 flex justify-between items-center">
 								<div className="flex flex-col">
 									<span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Utilidad Proyectada</span>
 									<span className="text-4xl font-black tracking-tighter mt-1 drop-shadow-lg">
-										{formatUSD(stats.gananciasNetas)}
+										<DualPrice usd={stats.gananciasNetas} />
 									</span>
 								</div>
 								<div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-emerald-400 backdrop-blur-md shadow-inner">

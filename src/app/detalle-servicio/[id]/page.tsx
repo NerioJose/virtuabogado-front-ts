@@ -12,6 +12,7 @@ import { useAuthStore } from '@/features/auth';
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import { OrderStatus } from '@/features/orders/types/orders.types';
 import { ChatWindow } from '@/features/chat/components/ChatWindow';
+import { DualPrice } from '@/components/ui/DualPrice';
 // Las imágenes en /public se sirven desde la raíz / en Next.js. No es necesario importarlas como módulos para el componente Image.
 
 export default function DetalleServicioPage({ params }: { params: Promise<{ id: string }> }) {
@@ -165,7 +166,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Total pagado</p>
-                                        <p className="font-semibold text-gray-900">${(order.total || 0).toFixed(2)}</p>
+                                        <p className="font-semibold text-gray-900"><DualPrice usd={order.total} /></p>
                                     </div>
                                 </div>
 
@@ -203,14 +204,14 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                             <p className="font-bold text-gray-900 truncate">{item.serviceName || 'Servicio'}</p>
                                             <p className="text-sm text-gray-600">Cantidad: {item.quantity || 1}</p>
                                         </div>
-                                        <p className="font-black text-azul-primario text-lg sm:text-base">${(item.price || 0).toFixed(2)}</p>
+                                        <p className="font-black text-azul-primario text-lg sm:text-base"><DualPrice usd={item.price} /></p>
                                     </div>
                                 )) : (
                                     <p className="text-sm text-gray-500 py-4 text-center">No hay información de items disponible</p>
                                 )}
                                 <div className="mt-4 pt-4 flex justify-between items-center border-t border-gray-200">
                                     <p className="font-black text-gray-900 uppercase tracking-widest text-xs">Total del Pedido</p>
-                                    <p className="text-2xl font-black text-azul-primario tracking-tighter">${(order.total || 0).toFixed(2)}</p>
+                                    <p className="text-2xl font-black text-azul-primario tracking-tighter"><DualPrice usd={order.total} /></p>
                                 </div>
                             </div>
                         </div>

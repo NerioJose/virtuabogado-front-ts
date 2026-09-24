@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import type { Servicio } from '@/shared/types/entities.types';
 import { FiClock, FiDollarSign, FiInfo } from 'react-icons/fi';
-import { formatUSD } from '@/lib/finance';
+import { DualPrice } from '@/components/ui/DualPrice';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 
 interface ServiceSummaryProps {
@@ -57,17 +57,16 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
             <div className="border-t border-dashed border-azul-primario/10 pt-4 space-y-2">
                 <div className="flex justify-between items-center text-[11px] font-medium text-gray-500">
                     <span className="italic">Base del Servicio:</span>
-                    <span className="font-bold">{formatUSD(basePrice)}</span>
+                    <span className="font-bold"><DualPrice usd={basePrice} /></span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] font-medium text-gray-400">
                     <span className="italic">Impuestos (IVA {taxPercentage}%):</span>
-                    <span className="font-bold text-azul-primario/60">{formatUSD(taxAmount)}</span>
+                    <span className="font-bold text-azul-primario/60"><DualPrice usd={taxAmount} /></span>
                 </div>
                 <div className="flex justify-between items-center pt-2 mt-1 border-t border-azul-primario/5">
                     <span className="text-xs font-black text-azul-primario uppercase tracking-widest">Importe Final:</span>
-                    <div className="flex items-center gap-1 text-xl font-black text-azul-primario tracking-tighter">
-                        <span className="text-sm font-bold opacity-50">$</span>
-                        {Number(total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    <div className="text-xl font-black text-azul-primario tracking-tighter">
+                        <DualPrice usd={total} />
                     </div>
                 </div>
             </div>

@@ -12,6 +12,7 @@ export const useConfiguracionPanel = () => {
     const [taxPercentage, setTaxPercentage] = useState<number>(0);
     const [platformFee, setPlatformFee] = useState<number>(0);
     const [whatsappPhone, setWhatsappPhone] = useState<string>('');
+    const [usdPenFallbackRate, setUsdPenFallbackRate] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
 
@@ -23,6 +24,8 @@ export const useConfiguracionPanel = () => {
             setPlatformFee((financialSettings as any).platformFeePercentage || 0);
             setSimulationBase((financialSettings as any).simulationBase || 0);
             setWhatsappPhone((financialSettings as any).whatsappPhone || '');
+            const rate = (financialSettings as any).usdPenFallbackRate;
+            setUsdPenFallbackRate(rate != null && Number(rate) > 0 ? String(rate) : '');
         }
     }, [financialSettings]);
 
@@ -59,7 +62,8 @@ export const useConfiguracionPanel = () => {
                 taxPercentage: taxPercentage,
                 platformFeePercentage: platformFee,
                 simulationBase: simulationBase,
-                whatsappPhone: whatsappPhone
+                whatsappPhone: whatsappPhone,
+                usdPenFallbackRate: usdPenFallbackRate.trim() === '' ? null : parseFloat(usdPenFallbackRate),
             });
             setSaveMessage('Configuración financiera guardada correctamente');
             setTimeout(() => setSaveMessage(''), 3000);
@@ -79,6 +83,7 @@ export const useConfiguracionPanel = () => {
         taxPercentage, setTaxPercentage,
         platformFee, setPlatformFee,
         whatsappPhone, setWhatsappPhone,
+        usdPenFallbackRate, setUsdPenFallbackRate,
         // UI feedback states
         isSaving,
         saveMessage,

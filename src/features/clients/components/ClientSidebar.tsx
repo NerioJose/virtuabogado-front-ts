@@ -33,6 +33,7 @@ interface ClientSidebarProps {
   userName: string;
   userEmail: string;
   userPicture?: string;
+  totalUnread?: number;
 }
 
 export default function ClientSidebar({
@@ -43,7 +44,8 @@ export default function ClientSidebar({
   onClose,
   userName,
   userEmail,
-  userPicture
+  userPicture,
+  totalUnread = 0
 }: ClientSidebarProps) {
   const { navItems, handleNavItemClick } = useClientSidebar(seccionActiva, setSeccionActiva, onClose);
 
@@ -112,6 +114,13 @@ export default function ClientSidebar({
                     {ICON_MAP[item.icon]}
                   </span>
                   <span className="font-bold text-sm tracking-tight">{item.label}</span>
+                  {item.id === 'mensajes' && totalUnread > 0 && (
+                    <span className={`ml-auto min-w-[20px] h-[20px] px-1.5 text-[10px] font-black rounded-full flex items-center justify-center leading-none shadow-sm ${
+                      seccionActiva === item.id ? 'bg-white text-rose-500' : 'bg-rose-500 text-white'
+                    }`}>
+                      {totalUnread > 99 ? '99+' : totalUnread}
+                    </span>
+                  )}
                 </button>
               )}
             </li>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiSearch, 
@@ -78,6 +78,11 @@ export default function ClientPanel({
     setNow(Date.now());
   }, []);
 
+  const totalUnread = useMemo(
+    () => Object.values(unreadCounts).reduce((acc, n) => acc + (Number(n) || 0), 0),
+    [unreadCounts]
+  );
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -98,6 +103,7 @@ export default function ClientPanel({
         userName={user?.nombre && !user.nombre.includes('@') ? user.nombre : (user?.email?.split('@')[0] || 'Usuario')}
         userEmail={user?.email || ''}
         userPicture={user?.picture}
+        totalUnread={totalUnread}
       />
 
       {/* Main Content */}
@@ -479,17 +485,25 @@ export default function ClientPanel({
                       <p className="text-slate-300 text-xs mt-2">Los mensajes aparecerán cuando tengas un caso activo</p>
                     </div>
                   ) : (
-                    servicios.map((servicio) => (
-                      <div key={servicio.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition">
+                    servicios.map((servicio) => {
+                      const count = unreadCounts[servicio.id] || 0;
+                      const isUnread = count > 0 || unreadOrders.includes(servicio.id);
+                      return (
+                      <div key={servicio.id} className={`bg-white p-5 rounded-3xl border shadow-sm hover:shadow-md transition ${isUnread ? 'border-rose-200 bg-rose-50/40' : 'border-slate-100'}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-azul-primario/10 flex items-center justify-center shrink-0">
-                              <FiMessageSquare className="text-azul-primario" size={18} />
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isUnread ? 'bg-rose-100 text-rose-500' : 'bg-azul-primario/10 text-azul-primario'}`}>
+                              <FiMessageSquare size={18} />
                             </div>
                             <div className="min-w-0">
                               <p className="font-black text-slate-800 text-sm truncate">{servicio.nombre}</p>
                               <p className="text-[10px] font-bold text-azul-primario uppercase tracking-tight">{servicio.numeroOrden}</p>
                             </div>
+                            {isUnread && (
+                              <span className="min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm shadow-rose-500/40">
+                                {count > 99 ? '99+' : count}
+                              </span>
+                            )}
                           </div>
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusColor(servicio.estado)}`}>
                             {getStatusText(servicio.estado)}
@@ -499,7 +513,8 @@ export default function ClientPanel({
                           <ChatWindow orderId={servicio.id} className="h-full" />
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </motion.div>

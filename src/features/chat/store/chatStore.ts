@@ -20,6 +20,7 @@ interface ChatStore {
     sendFile: (file: File, senderId: string) => Promise<void>;
     markAsUnread: (orderId: string, messageId?: string) => void;
     markAsRead: (orderId: string) => void;
+    hydrateUnread: (counts: Record<string, number>) => void;
     cleanup: () => void;
 }
 
@@ -127,10 +128,21 @@ export const useChatStore = create<ChatStore>()(
             },
 
             markAsRead: (orderId) => {
-                set((state) => ({
-                    unreadOrders: state.unreadOrders.filter(id => id !== orderId),
-                    unreadCounts: { ...state.unreadCounts, [orderId]: 0 }
-                }));
+                set((state) => {
+                    const nextCounts = { ...state.unreadCounts };
+                    delete nextCounts[orderId];
+                    return {
+                        unreadOrders: state.unreadOrders.filter(id => id !== orderId),
+                        unreadCounts: nextCounts,
+                    };
+                });
+            },
+
+            hydrateUnread: (counts) => {
+                const clean = Object.fromEntries(
+                    Object.entries(counts || {}).filter(([, v]) => Number(v) > 0)
+                ) as Record<string, number>;
+                set({ unreadCounts: clean, unreadOrders: Object.keys(clean) });
             },
 
             cleanup: () => {
@@ -143,14 +155,25 @@ export const useChatStore = create<ChatStore>()(
             name: 'chat-unread-storage',
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({ unreadOrders: state.unreadOrders, unreadCounts: state.unreadCounts }),
-            merge: (persisted, current) => ({
-                ...current,
-                ...(persisted as object),
-                unreadCounts: {
-                    ...(persisted as any).unreadCounts,
-                    ...current.unreadCounts,
-                },
-            }),
+            merge: (persisted, current) => {
+                const p = (persisted ?? {}) as {
+                    unreadOrders?: unknown;
+                    unreadCounts?: Record<string, number>;
+                };
+                const persistedCounts: Record<string, number> = p.unreadCounts || {};
+                // Descartar claves en 0 o inválidas de versiones previas.
+                const cleanCounts = Object.fromEntries(
+                    Object.entries(persistedCounts).filter(([, v]) => Number(v) > 0)
+                ) as Record<string, number>;
+                const unreadOrders = Array.isArray(p.unreadOrders)
+                    ? p.unreadOrders.filter((id: string) => cleanCounts[id] > 0)
+                    : [];
+                return {
+                    ...current,
+                    unreadOrders,
+                    unreadCounts: { ...cleanCounts, ...current.unreadCounts },
+                };
+            },
         }
     )
 );

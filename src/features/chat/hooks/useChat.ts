@@ -30,6 +30,7 @@ export function useChat(orderId: string) {
         if (!orderId || isLoading) return;
         useChatStore.setState({ activeOrderId: orderId });
         useChatStore.getState().markAsRead(orderId);
+        void chatService.markRead(orderId);
     }, [orderId, isLoading]);
 
     // 2. Suscripción LOCAL para esta ventana de chat específica
@@ -88,7 +89,7 @@ export function useChat(orderId: string) {
                 createdAt: new Date().toISOString(),
                 isPending: true,
                 isSystem: false,
-                read: false
+                readBy: []
             };
 
             queryClient.setQueryData<Message[]>(chatKeys.messages(orderId), (old = []) => [...old, optimisticMessage]);

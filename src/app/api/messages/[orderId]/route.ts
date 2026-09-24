@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
         if (!hasAccess) return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
 
         const newMessage = await prisma.message.create({
-            data: { orderId, content, senderId, read: false, isSystem: false },
+            data: { orderId, content, senderId, isSystem: false },
             include: { sender: { select: { nombre: true, picture: true, rol: true } } }
         });
 

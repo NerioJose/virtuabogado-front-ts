@@ -174,7 +174,7 @@ export default function AbogadoPanel({ abogadoId }: AbogadoPanelProps) {
                                         {item.icon}
                                     </span>
 									<span className={`font-bold text-sm ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-									{(item.id === 'mensajes' || item.id === 'casos') && totalUnread > 0 && (
+									{item.id === 'mensajes' && totalUnread > 0 && (
 										<span className={`ml-auto min-w-[20px] h-[20px] px-1.5 text-[10px] font-black rounded-full flex items-center justify-center leading-none shadow-sm ${
 											isSidebarCollapsed ? 'lg:hidden' : ''
 										} ${

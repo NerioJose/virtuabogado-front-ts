@@ -30,7 +30,7 @@ on('message.sent', async (event) => {
     senderId: message.senderId,
     content: message.content,
     isSystem: message.isSystem,
-    read: message.read,
+    readBy: message.readBy,
     createdAt: message.createdAt.toISOString(),
     sender: message.sender,
   }

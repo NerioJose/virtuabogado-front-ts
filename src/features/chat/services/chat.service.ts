@@ -12,6 +12,27 @@ export const chatService = {
         return response.json();
     },
 
+    /** Marca como leídos los mensajes de la orden para el usuario actual (server-side). */
+    async markRead(orderId: string): Promise<void> {
+        try {
+            await fetch(`/api/messages/${orderId}/read`, { method: 'POST' });
+        } catch {
+            // fire-and-forget: el estado local ya se actualizó
+        }
+    },
+
+    /** Obtiene los contadores de no leídos por orden para el usuario actual. */
+    async getUnreadCounts(): Promise<Record<string, number>> {
+        try {
+            const res = await fetch('/api/messages/unread-counts', { cache: 'no-store' });
+            if (!res.ok) return {};
+            const data = await res.json().catch(() => ({}));
+            return data?.counts || {};
+        } catch {
+            return {};
+        }
+    },
+
     async sendMessage(orderId: string, content: string, senderId: string): Promise<Message> {
         const response = await fetch(`/api/messages/${orderId}`, {
             method: 'POST',

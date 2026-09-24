@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatStore } from '@/features/chat/store/chatStore';
+import { chatService } from '../services/chat.service';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useRouter } from 'next/navigation';
 import { useCheckoutStore } from '@/features/checkout/store/checkoutStore';
@@ -109,6 +110,16 @@ export function useGlobalChatListener() {
     const handleDismissBanner = () => {
         setShowPushBanner(false);
     };
+
+    // Hidratar contadores de no leídos desde el servidor (estado por usuario).
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        chatService.getUnreadCounts().then((counts) => {
+            if (!cancelled) useChatStore.getState().hydrateUnread(counts);
+        });
+        return () => { cancelled = true; };
+    }, [user]);
 
 
 

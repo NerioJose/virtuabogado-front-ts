@@ -4,7 +4,7 @@ export interface Message {
     senderId: string;
     content: string;
     isSystem: boolean;
-    read: boolean;
+    readBy?: string[];
     createdAt: string;
     sender?: {
         nombre: string;

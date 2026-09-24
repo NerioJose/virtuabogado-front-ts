@@ -125,6 +125,7 @@ model Message {
   content   String
   isSystem  Boolean  @default(false)
   read      Boolean  @default(false)
+  readBy    String[] @default([])
   createdAt DateTime @default(now())
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Restrict)

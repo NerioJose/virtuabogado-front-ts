@@ -1,68 +1,99 @@
 /**
- * Rate limiting global (Fase 2).
+ * Rate limiting global (Fase 2) — Edge-safe, SIN SDK.
  *
- * - Si hay Redis de Upstash configurado, usa un sliding window COMPARTIDO entre
- *   todas las instancias serverless → el límite es global real (no por lambda).
- * - Si no hay Redis (p. ej. dev), cae a un token bucket en memoria local.
- * - Fail-open: si Redis falla, no se bloquean solicitudes legítimas.
+ * IMPORTANTE: este módulo se importa desde `middleware.ts` (Edge Runtime).
+ * Por eso NO debe importar `@upstash/ratelimit` ni `@upstash/redis`: su
+ * inicialización en Edge colgaba el middleware (504 MIDDLEWARE_INVOCATION_TIMEOUT).
+ * En su lugar usamos `fetch` directo a la API REST de Upstash (igual que
+ * `src/lib/cache.ts`), con timeout duro y fail-open.
  *
- * Compatible con Edge Runtime (middleware): usa el cliente REST de Upstash.
+ * Estrategia: ventana fija (INCR + EXPIRE) compartida entre instancias.
+ * Si no hay Redis configurado o falla, se usa un contador en memoria local.
  */
 
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-
+const PREFIX = 'vb:ratelimit:';
 const MAX_REQUESTS = 10;
-const WINDOW = '60 s';
-const WINDOW_MS = 60_000;
+const WINDOW_SECONDS = 60;
+const WINDOW_MS = WINDOW_SECONDS * 1000;
+const REDIS_TIMEOUT_MS = 800;
 
-function resolveRedis(): Redis | null {
+interface RedisConfig {
+  url: string;
+  token: string;
+}
+
+function resolveConfig(): RedisConfig | null {
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
+  return { url: url.replace(/\/$/, ''), token };
+}
+
+async function redisCommand(
+  config: RedisConfig,
+  path: string
+): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REDIS_TIMEOUT_MS);
   try {
-    return new Redis({ url, token });
+    const res = await fetch(`${config.url}${path}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${config.token}` },
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
+    // Timeout / red / DNS: señalamos fallo para hacer fail-open.
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-let globalLimiter: Ratelimit | null = null;
-const redis = resolveRedis();
-if (redis) {
-  globalLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(MAX_REQUESTS, WINDOW),
-    prefix: 'vb:ratelimit',
-    analytics: false,
-  });
+interface WindowResult {
+  success: boolean;
+  remaining: number;
 }
 
-// --- Fallback en memoria (por instancia, solo si no hay Redis) ---
-const memoryMap = new Map<string, { tokens: number; lastRefill: number }>();
-const REFILL_INTERVAL_MS = 1000;
+async function redisFixedWindow(key: string): Promise<WindowResult | null> {
+  const config = resolveConfig();
+  if (!config) return null;
 
-function memoryLimit(key: string): boolean {
+  const redisKey = PREFIX + key;
+  const incr = (await redisCommand(config, `/incr/${encodeURIComponent(redisKey)}`)) as {
+    result?: unknown;
+  } | null;
+  const count = Number(incr?.result);
+  if (!Number.isFinite(count)) return null; // fail-open
+
+  if (count === 1) {
+    // Primer request de la ventana: fijar TTL (best-effort).
+    await redisCommand(config, `/expire/${encodeURIComponent(redisKey)}?seconds=${WINDOW_SECONDS}`);
+  }
+
+  return { success: count <= MAX_REQUESTS, remaining: Math.max(0, MAX_REQUESTS - count) };
+}
+
+// --- Fallback en memoria (por instancia, solo si no hay Redis o falla) ---
+const memoryMap = new Map<string, { count: number; resetAt: number }>();
+
+function memoryFixedWindow(key: string): WindowResult {
   const now = Date.now();
   let entry = memoryMap.get(key);
-  if (!entry) {
-    entry = { tokens: MAX_REQUESTS, lastRefill: now };
+  if (!entry || now >= entry.resetAt) {
+    entry = { count: 0, resetAt: now + WINDOW_MS };
     memoryMap.set(key, entry);
   }
-  const refill = Math.floor((now - entry.lastRefill) / REFILL_INTERVAL_MS);
-  if (refill > 0) {
-    entry.tokens = Math.min(MAX_REQUESTS, entry.tokens + refill);
-    entry.lastRefill = now;
-  }
+  entry.count++;
+
   if (memoryMap.size > 1000) {
-    const cutoff = now - WINDOW_MS;
     for (const [k, v] of memoryMap) {
-      if (v.lastRefill < cutoff) memoryMap.delete(k);
+      if (now >= v.resetAt) memoryMap.delete(k);
     }
   }
-  if (entry.tokens <= 0) return false;
-  entry.tokens--;
-  return true;
+
+  return { success: entry.count <= MAX_REQUESTS, remaining: Math.max(0, MAX_REQUESTS - entry.count) };
 }
 
 export interface RateLimitResult {
@@ -74,19 +105,16 @@ export interface RateLimitResult {
 
 /**
  * Verifica el límite para la clave dada (típicamente la IP del cliente).
- * Nunca lanza: ante error de Redis, fail-open con fallback en memoria.
+ * Nunca lanza ni cuelga: ante error/timeout de Redis, fail-open con fallback.
  */
 export async function checkRateLimit(key: string): Promise<RateLimitResult> {
-  if (globalLimiter) {
-    try {
-      const res = await globalLimiter.limit(key);
-      return { success: res.success, limit: res.limit, remaining: res.remaining, reset: res.reset };
-    } catch (err) {
-      console.warn('[rateLimit] Redis falló, usando fallback en memoria:', err);
-    }
-  }
-  const success = memoryLimit(key);
-  return { success, limit: MAX_REQUESTS, remaining: success ? 1 : 0, reset: Date.now() + WINDOW_MS };
+  const result = (await redisFixedWindow(key)) ?? memoryFixedWindow(key);
+  return {
+    success: result.success,
+    limit: MAX_REQUESTS,
+    remaining: result.remaining,
+    reset: Date.now() + WINDOW_MS,
+  };
 }
 
 /**

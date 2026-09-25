@@ -82,6 +82,7 @@ export interface OrdersFilters {
     endDate?: Date;
     searchQuery?: string;
     search?: string;
+    hidePendingPayment?: boolean;
 }
 
 export interface OrdersState {

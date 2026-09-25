@@ -22,6 +22,7 @@ export function useCasosPanel(terminoBusqueda: string) {
         page,
         status: filtroEstado === 'todos' ? undefined : filtroEstado,
         search: debouncedTerm || undefined,
+        hidePendingPayment: true,
     });
     const res = response as { data?: Order[]; pagination?: any; countsByStatus?: Record<string, number> } | undefined;
     const orders = useMemo(() => res?.data || [], [res]);
@@ -38,10 +39,8 @@ export function useCasosPanel(terminoBusqueda: string) {
     }, [orders]);
 
     const visibleTotal = useMemo(() => {
-        return (pagination?.total ?? 0)
-            - (countsByStatus[OrderStatus.PAGO_PENDIENTE] || 0)
-            - (countsByStatus[OrderStatus.PAGO_RECHAZADO] || 0);
-    }, [pagination, countsByStatus]);
+        return pagination?.total ?? 0;
+    }, [pagination]);
 
     const getStatusConfig = (status: OrderStatus) => {
         const config: Record<string, { label: string, color: string }> = {

@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
         const skip = (page - 1) * limit;
+        const hidePendingPayment = searchParams.get('hidePendingPayment') === 'true';
 
         const where: any = { activo: { not: false } };
         const isAdmin = role === 'ADMIN';
@@ -47,6 +48,12 @@ export async function GET(request: Request) {
                 } else {
                     where.status = { notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO'] };
                 }
+            } else if (hidePendingPayment) {
+                // El panel "Casos y Expedientes" filtra estos estados en el cliente por página;
+                // al excluirlos en el servidor se evitan páginas vacías cuando los más
+                // recientes son pagos pendientes/rechazados. Default (RecentOrders/Dashboard)
+                // sigue incluyéndolos.
+                where.status = { notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO'] };
             }
         } else {
             where.status = requestedStatus;
@@ -84,7 +91,7 @@ export async function GET(request: Request) {
             }),
             getCachedFinancialSettings(),
             isAdmin
-                ? prisma.order.groupBy({ by: ['status'], where: { activo: { not: false } }, _count: { _all: true } })
+                ? prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } })
                 : Promise.resolve([]),
         ]);
 

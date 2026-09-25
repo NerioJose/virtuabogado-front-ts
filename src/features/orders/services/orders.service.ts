@@ -24,6 +24,7 @@ export const ordersService = {
         if (searchTerm) params.append('search', searchTerm);
         if (filters?.page) params.append('page', filters.page.toString());
         if (filters?.limit) params.append('limit', filters.limit.toString());
+        if (filters?.hidePendingPayment) params.append('hidePendingPayment', 'true');
 
         const response = await fetch(`/api/orders?${params.toString()}`, {
             cache: 'no-store'

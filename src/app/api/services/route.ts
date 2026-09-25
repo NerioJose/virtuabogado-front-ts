@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { emit } from '@/events/eventBus';
-import { getCached, setCache } from '@/lib/cache';
+import { clearCache } from '@/lib/cache';
+import { broadcastServiceUpdate } from '@/lib/broadcast';
 import { toServiceJson } from '@/features/services/mappers/serviceJson';
 
 export const dynamic = 'force-dynamic';
@@ -10,22 +11,16 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const showAll = searchParams.get('all') === 'true';
-        const cacheKey = showAll ? 'services-all' : 'services-active';
 
-        const cached = await getCached<any[]>(cacheKey);
-        if (cached) {
-            return NextResponse.json(cached, {
-                headers: { 'Cache-Control': 'no-store' }
-            });
-        }
-
+        // Sin caché de capa de datos: el catálogo es diminuto y force-dynamic.
+        // Cualquier TTL aquí retrasa la propagación de cambios (precio/activar/ocultar)
+        // a otros dispositivos hasta que expire o se limpie asíncronamente.
         const services = await prisma.service.findMany({
             where: showAll ? { is_manual_case_placeholder: false } : { activo: true },
             orderBy: [{ createdAt: 'desc' }, { id: 'asc' }]
         });
 
         const mapped = services.map(toServiceJson);
-        await setCache(cacheKey, mapped, 10_000);
         return NextResponse.json(mapped, {
             headers: { 'Cache-Control': 'no-store' }
         });
@@ -60,6 +55,11 @@ export async function POST(req: Request) {
                 activo: activo ?? true
             }
         });
+
+        // Propagación inmediata: limpiar caché y emitir broadcast SÍNCRONAMENTE
+        // (no solo vía after()) para que otros dispositivos refresquen al instante.
+        await clearCache('services-');
+        await broadcastServiceUpdate({ serviceId: service.id, eventType: 'created' });
 
         await emit({
             type: 'service.updated',

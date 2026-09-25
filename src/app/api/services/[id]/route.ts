@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
+import { clearCache } from '@/lib/cache';
+import { broadcastServiceUpdate } from '@/lib/broadcast';
 
 const toServiceJson = (service: any) => ({
     ...serializeFinance(service),
@@ -63,6 +65,11 @@ export async function PATCH(
             data: updateData
         });
 
+        // Propagación inmediata (precio/activar/ocultar): limpiar caché y broadcast
+        // síncronos antes de responder, para que otros dispositivos refresquen al instante.
+        await clearCache('services-');
+        await broadcastServiceUpdate({ serviceId: service.id, eventType: 'updated' });
+
         await emit({
             type: 'service.updated',
             data: { serviceId: service.id, eventType: 'updated' },
@@ -89,6 +96,10 @@ export async function DELETE(
             where: { id: parseInt(id) },
             data: { activo: false }
         });
+
+        // Propagación inmediata: el ocultado debe reflejarse al instante en otros dispositivos.
+        await clearCache('services-');
+        await broadcastServiceUpdate({ serviceId: service.id, eventType: 'deleted' });
 
         await emit({
             type: 'service.deleted',

@@ -38,7 +38,7 @@ export const useServicesStore = create<ServicesState>()(
         }),
         {
             name: 'virtu-services-storage',
-            version: 3, // Incrementado para forzar limpieza de caché (Lanzamiento virtustudents)
+            version: 4, // Bump: descarta snapshots viejos sin precioPen (par promedio S/ → .01)
         }
     )
 );

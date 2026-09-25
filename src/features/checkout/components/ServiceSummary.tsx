@@ -5,7 +5,7 @@ import { FiClock, FiDollarSign, FiInfo } from 'react-icons/fi';
 import { DualPrice } from '@/components/ui/DualPrice';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { useExchangeRate } from '@/features/finance/hooks/useExchangeRate';
-import { resolveServiceUsd, resolveServicePen } from '@/lib/servicePrice';
+import { resolveServiceBreakdown } from '@/lib/servicePrice';
 import { useCheckoutStore } from '../store/checkoutStore';
 
 interface ServiceSummaryProps {
@@ -17,12 +17,17 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
     const { rate } = useExchangeRate();
     const isCrypto = useCheckoutStore((state) => state.selectedMethod === 'zenobank');
 
-    // Cálculo del desglose (Impuestos Incluidos), coherente con la tasa vigente.
+    // Cálculo del desglose (Impuestos Incluidos) desde la fuente única de verdad:
+    // base, impuestos y total derivan del MISMO par canónico escalado.
     const taxPercentage = (settings as any)?.taxPercentage || 0;
-    const total = rate && rate > 0 ? resolveServiceUsd(service, rate) : (Number(service.precio) || 0);
-    const totalPen = rate && rate > 0 ? resolveServicePen(service, rate) : undefined;
-    const basePrice = total / (1 + (taxPercentage / 100));
-    const taxAmount = total - basePrice;
+    const breakdown = rate && rate > 0
+        ? resolveServiceBreakdown(service, rate, taxPercentage)
+        : {
+            total: { usd: Number(service.precio) || 0, pen: null },
+            base: { usd: Number(service.precio) || 0, pen: null },
+            tax: { usd: 0, pen: null },
+        };
+    const { base, tax, total } = breakdown;
 
     // Al pagar con cripto, TODO se muestra solo en dólares (monto exacto con decimales),
     // sin soles, para que el cliente transfiera el monto exacto a la plataforma.
@@ -72,16 +77,16 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
             <div className="border-t border-dashed border-azul-primario/10 pt-4 space-y-2">
                 <div className="flex justify-between items-center text-[11px] font-medium text-gray-500">
                     <span className="italic">Base del Servicio:</span>
-                    <span className="font-bold"><Money value={basePrice} /></span>
+                    <span className="font-bold"><Money value={base.usd} pen={base.pen ?? undefined} /></span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] font-medium text-gray-400">
                     <span className="italic">Impuestos (IVA {taxPercentage}%):</span>
-                    <span className="font-bold text-azul-primario/60"><Money value={taxAmount} /></span>
+                    <span className="font-bold text-azul-primario/60"><Money value={tax.usd} pen={tax.pen ?? undefined} /></span>
                 </div>
                 <div className="flex justify-between items-center pt-2 mt-1 border-t border-azul-primario/5">
                     <span className="text-xs font-black text-azul-primario uppercase tracking-widest">Importe Final:</span>
                     <div className="text-xl font-black text-azul-primario tracking-tighter">
-                        <Money value={total} pen={totalPen} />
+                        <Money value={total.usd} pen={total.pen ?? undefined} />
                     </div>
                 </div>
                 {isCrypto && (

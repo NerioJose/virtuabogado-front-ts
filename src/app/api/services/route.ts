@@ -20,7 +20,7 @@ export async function GET(req: Request) {
         const cached = await getCached<any[]>(cacheKey);
         if (cached) {
             return NextResponse.json(cached, {
-                headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' }
+                headers: { 'Cache-Control': 'no-store' }
             });
         }
 
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
         const mapped = serializeFinance(services).map(toServiceJson);
         await setCache(cacheKey, mapped, 10_000);
         return NextResponse.json(mapped, {
-            headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' }
+            headers: { 'Cache-Control': 'no-store' }
         });
     } catch (error) {
         console.error('Error fetching services:', error);

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiShoppingCart, FiX, FiRefreshCw } from 'react-icons/fi';
 import { useCheckout } from '../hooks/useCheckout';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useServicesStore } from '@/features/services/store/servicesStore';
 import { DualPrice } from '@/components/ui/DualPrice';
 
 /**
@@ -23,7 +24,14 @@ export const CartRecovery = () => {
         isWaitingForWebhook 
     } = useCheckout();
     const { isAuthenticated } = useAuthStore();
+    const activeServices = useServicesStore(state => state.activeServices);
     const [showRecovery, setShowRecovery] = useState(false);
+
+    // Normaliza el service persistido: si el snapshot del carrito carece de
+    // precioPen canónico, se rellena desde el catálogo fresco (fuente única).
+    const effectiveService = service && (!service.precioPen || Number(service.precioPen) <= 0)
+        ? { ...service, precioPen: activeServices.find(s => s.id === service.id)?.precioPen ?? service.precioPen }
+        : service;
 
     useEffect(() => {
         // --- REGLA UX: SUPRESIÓN TOTAL SI ESTÁ PAGANDO ---
@@ -76,8 +84,8 @@ export const CartRecovery = () => {
     }, [service, isOpen, step, completedAt, isAuthenticated, isProcessingPayment, isWaitingForWebhook]);
 
     const handleContinue = () => {
-        if (service) {
-            openCheckout(service);
+        if (effectiveService) {
+            openCheckout(effectiveService);
         }
         setShowRecovery(false);
     };
@@ -126,10 +134,10 @@ export const CartRecovery = () => {
                                     </button>
                                 </div>
                                 <p className="text-sm text-slate-500 mb-4 line-clamp-1">
-                                    <span className="font-semibold text-azul-primario">{service?.nombre}</span>
-                                    {service?.precio ? (
+                                    <span className="font-semibold text-azul-primario">{effectiveService?.nombre}</span>
+                                    {effectiveService?.precio ? (
                                         <span className="ml-2 inline-block px-2 py-0.5 bg-slate-100 rounded-md">
-                                            <DualPrice usd={service.precio} pen={service.precioPen} className="text-[10px] text-slate-600" />
+                                            <DualPrice usd={effectiveService.precio} pen={effectiveService.precioPen} className="text-[10px] text-slate-600" />
                                         </span>
                                     ) : null}
                                 </p>

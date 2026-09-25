@@ -38,6 +38,16 @@ export function usdToPen(usd: number | string | null | undefined, rate: number):
 }
 
 /**
+ * Convierte un monto en PEN a USD usando la tasa dada, redondeado a 2 decimales.
+ * [CLIENT-SAFE]
+ */
+export function penToUsd(pen: number | string | null | undefined, rate: number): number {
+    const numericAmount = typeof pen === 'string' ? parseFloat(pen) : (pen || 0);
+    if (!rate || !Number.isFinite(rate) || rate <= 0) return 0;
+    return Math.round((numericAmount / rate) * 100) / 100;
+}
+
+/**
  * Fintech-grade Serialization Utility.
  * Recursively converts Prisma Decimal objects to native numbers and Dates to ISO strings.
  * Solves the Next.js 15 error: "Only plain objects can be passed to Client Components".

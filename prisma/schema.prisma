@@ -39,14 +39,15 @@ model User {
 }
 
 model Service {
-  id          Int      @id @default(autoincrement())
-  titulo      String
-  descripcion String
-  precio      Decimal  @db.Decimal(10, 2)
-  imagenUrl   String?
-  activo      Boolean  @default(true)
-  orders      Order[]
-  createdAt   DateTime @default(now())
+  id                        Int      @id @default(autoincrement())
+  titulo                    String
+  descripcion               String
+  precio                    Decimal  @db.Decimal(10, 2)
+  imagenUrl                 String?
+  activo                    Boolean  @default(true)
+  is_manual_case_placeholder Boolean @default(false)
+  orders                    Order[]
+  createdAt                 DateTime @default(now())
 }
 
 model Order {

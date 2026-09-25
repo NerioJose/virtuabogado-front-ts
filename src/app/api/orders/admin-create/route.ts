@@ -98,6 +98,7 @@ export async function POST(request: Request) {
                         descripcion: `Servicio creado por admin para caso manual`,
                         precio: Number(total),
                         activo: false,
+                        is_manual_case_placeholder: true,
                     }
                 });
                 serviceId = newService.id;

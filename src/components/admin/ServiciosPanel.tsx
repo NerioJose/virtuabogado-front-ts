@@ -13,7 +13,8 @@ import {
 } from 'react-icons/fi';
 import { useServiciosPanel } from './hooks/useServiciosPanel';
 import DualPrice from '@/components/ui/DualPrice';
-import { formatUSD, formatPEN, usdToPen, penToUsd } from '@/lib/finance';
+import { formatPEN } from '@/lib/finance';
+import { penToUsd } from '@/lib/money';
 
 export default function ServiciosPanel() {
     const {
@@ -25,7 +26,7 @@ export default function ServiciosPanel() {
         editForm,
         setEditForm,
         precioMode,
-        setPrecioMode,
+        switchPrecioMode,
         rate,
         handleEdit,
         handleCancel,
@@ -45,8 +46,8 @@ export default function ServiciosPanel() {
 
     const pricePreview = hasRate
         ? precioMode === 'USD'
-            ? `≈ ${formatPEN(usdToPen(priceValue, rate!))} (tasa S/ ${Number(rate).toFixed(2)})`
-            : `≈ ${formatUSD(penToUsd(priceValue, rate!))} (tasa S/ ${Number(rate).toFixed(2)})`
+            ? `≈ ${formatPEN(penToUsd(priceValue, rate!))} (tasa S/ ${Number(rate).toFixed(2)})`
+            : `≈ ${formatPEN(priceValue)} → US$ ${penToUsd(priceValue, rate!)} (tasa S/ ${Number(rate).toFixed(2)})`
         : '';
 
     const renderForm = () => (
@@ -67,14 +68,14 @@ export default function ServiciosPanel() {
                         <div className="flex rounded-lg overflow-hidden border border-gray-200 text-xs font-bold">
                             <button
                                 type="button"
-                                onClick={() => setPrecioMode('USD')}
+                                onClick={() => switchPrecioMode('USD')}
                                 className={`px-3 py-1 transition ${precioMode === 'USD' ? 'bg-azul-primario text-white' : 'text-gray-500 hover:bg-gray-100'}`}
                             >
                                 US$
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setPrecioMode('PEN')}
+                                onClick={() => switchPrecioMode('PEN')}
                                 disabled={!hasRate}
                                 title={!hasRate ? 'No hay tasa de cambio disponible para cargar el precio en soles' : undefined}
                                 className={`px-3 py-1 transition ${precioMode === 'PEN' ? 'bg-azul-primario text-white' : 'text-gray-500 hover:bg-gray-100'} disabled:opacity-40 disabled:cursor-not-allowed`}
@@ -97,7 +98,9 @@ export default function ServiciosPanel() {
                     {precioMode === 'PEN' && !hasRate ? (
                         <p className="mt-1 text-[10px] text-red-500">No hay tasa de cambio disponible: no se puede guardar el precio en soles.</p>
                     ) : (
-                        <p className="mt-1 text-[10px] text-gray-400">Se guarda en {precioMode === 'USD' ? 'dólares (canónico)' : 'soles y se convierte a dólares al guardar'}. {pricePreview}</p>
+                        <p className="mt-1 text-[10px] text-gray-400">
+                            Se guarda en {precioMode === 'USD' ? 'dólares (canónico)' : 'soles exactos (canónico) y su equivalente en dólares con la tasa actual'}. {pricePreview}
+                        </p>
                     )}
                 </div>
             </div>
@@ -218,7 +221,7 @@ export default function ServiciosPanel() {
                                     <div className="flex items-center gap-4 pt-1">
                                         <span className="flex items-center">
                                             <FiDollarSign size={14} className="text-azul-primario mr-1" />
-                                            <DualPrice usd={service.precio} />
+                                            <DualPrice usd={service.precio} pen={service.precioPen} />
                                         </span>
                                         <span className="text-xs text-gray-400 flex items-center gap-1">
                                             <FiInfo size={12} /> {service.imagenUrl ? 'URL propia' : 'Auto-path'}

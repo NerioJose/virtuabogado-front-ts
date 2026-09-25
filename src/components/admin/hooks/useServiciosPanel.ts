@@ -8,7 +8,7 @@ import { Service, CreateServiceRequest } from '@/features/services/types/service
 import { toast } from 'sonner';
 import { slugify } from '@/utils/formatters';
 import { useExchangeRate } from '@/features/finance/hooks/useExchangeRate';
-import { penToUsd } from '@/lib/finance';
+import { usdToPen, penToUsd, roundMoney } from '@/lib/money';
 
 export type PrecioMode = 'USD' | 'PEN';
 
@@ -33,39 +33,49 @@ export function useServiciosPanel() {
     const handleEdit = (service: Service) => {
         setEditingId(service.id);
         setIsCreating(false);
+        const penFixed = service.precioPen != null && Number(service.precioPen) > 0;
         setEditForm({
             titulo: service.titulo,
             descripcion: service.descripcion,
-            precio: service.precio,
+            precio: penFixed ? Number(service.precioPen) : service.precio,
             activo: service.activo,
             imagenUrl: service.imagenUrl || ''
         });
-        setPrecioMode('USD');
+        setPrecioMode(penFixed ? 'PEN' : 'USD');
     };
 
     const handleCancel = () => {
         resetForm();
     };
 
-    // Convierte el precio tipeado al canónico en USD si el modo es PEN.
-    const resolvePrecio = (raw: number): number => {
+    // Convierte el valor mostrado al alternar el modo de moneda, usando la tasa vigente.
+    const switchPrecioMode = (next: PrecioMode) => {
+        if (next === precioMode) return;
+        const raw = Number(editForm.precio) || 0;
+        const converted = next === 'PEN' ? usdToPen(raw, rate ?? 0) : penToUsd(raw, rate ?? 0);
+        setEditForm(f => ({ ...f, precio: converted }));
+        setPrecioMode(next);
+    };
+
+    // Resuelve el guardado: USD canónico (precio) + PEN exacto (precioPen) cuando se carga en soles.
+    const resolvePrecio = (raw: number): { precio: number; precioPen: number | null } => {
         if (precioMode === 'PEN') {
             if (!rate || rate <= 0) {
                 toast.error('No hay tasa de cambio disponible para convertir el precio.');
                 throw new Error('Tasa no disponible');
             }
-            return penToUsd(raw, rate);
+            return { precio: penToUsd(raw, rate), precioPen: roundMoney(raw) };
         }
-        return raw;
+        return { precio: raw, precioPen: null };
     };
 
     const handleSave = async () => {
         if (!editingId) return;
         const serviceName = editForm.titulo || 'Servicio';
 
-        let finalPrecio: number;
+        let resolved: { precio: number; precioPen: number | null };
         try {
-            finalPrecio = resolvePrecio(Number(editForm.precio) || 0);
+            resolved = resolvePrecio(Number(editForm.precio) || 0);
         } catch {
             return;
         }
@@ -75,7 +85,8 @@ export function useServiciosPanel() {
                 id: editingId,
                 titulo: editForm.titulo,
                 descripcion: editForm.descripcion,
-                precio: finalPrecio,
+                precio: resolved.precio,
+                precioPen: resolved.precioPen,
                 activo: editForm.activo,
                 imagenUrl: editForm.imagenUrl || undefined
             }),
@@ -107,9 +118,9 @@ export function useServiciosPanel() {
             return;
         }
 
-        let finalPrecio: number;
+        let resolved: { precio: number; precioPen: number | null };
         try {
-            finalPrecio = resolvePrecio(Number(editForm.precio) || 0);
+            resolved = resolvePrecio(Number(editForm.precio) || 0);
         } catch {
             return;
         }
@@ -118,7 +129,8 @@ export function useServiciosPanel() {
         const payload: CreateServiceRequest = {
             titulo: serviceName,
             descripcion: editForm.descripcion?.trim() || '',
-            precio: finalPrecio,
+            precio: resolved.precio,
+            precioPen: resolved.precioPen,
             activo: editForm.activo ?? true,
             imagenUrl: editForm.imagenUrl?.trim() || undefined,
         };
@@ -168,7 +180,7 @@ export function useServiciosPanel() {
         editForm,
         setEditForm,
         precioMode,
-        setPrecioMode,
+        switchPrecioMode,
         rate,
         handleEdit,
         handleCancel,

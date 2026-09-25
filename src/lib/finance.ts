@@ -31,21 +31,13 @@ export function formatPEN(amount: number | string | null | undefined, precision:
  * Convierte un monto en USD a PEN usando la tasa dada, redondeado a 2 decimales.
  * [CLIENT-SAFE]
  */
-export function usdToPen(usd: number | string | null | undefined, rate: number): number {
-    const numericAmount = typeof usd === 'string' ? parseFloat(usd) : (usd || 0);
-    if (!rate || !Number.isFinite(rate)) return 0;
-    return Math.round(numericAmount * rate * 100) / 100;
-}
+export { usdToPen } from '@/lib/money';
 
 /**
  * Convierte un monto en PEN a USD usando la tasa dada, redondeado a 2 decimales.
  * [CLIENT-SAFE]
  */
-export function penToUsd(pen: number | string | null | undefined, rate: number): number {
-    const numericAmount = typeof pen === 'string' ? parseFloat(pen) : (pen || 0);
-    if (!rate || !Number.isFinite(rate) || rate <= 0) return 0;
-    return Math.round((numericAmount / rate) * 100) / 100;
-}
+export { penToUsd } from '@/lib/money';
 
 /**
  * Fintech-grade Serialization Utility.

@@ -6,6 +6,8 @@ import { syncUserIdentity } from '@/services/identity.service';
 import { emit } from '@/events/eventBus';
 import { UserRole } from '@/shared/types/entities.types';
 import { getAuthUser, getCachedFinancialSettings, formatOrderResponse } from './orders.helpers';
+import { getUsdPenRate } from '@/lib/exchangeRate';
+import { usdToPen, penToUsd, roundMoney } from '@/lib/money';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -141,7 +143,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Servicio no encontrado' }, { status: 404 });
         }
 
-        const currentPrice = Number(service.precio);
+        // Precio canónico coherente: si el servicio es canónico en soles, el USD se
+        // deriva con la tasa vigente; el S/ se congela exacto.
+        const freshRate = await getUsdPenRate();
+        const servicePen =
+            service.precio_pen != null && Number(service.precio_pen) > 0
+                ? Number(service.precio_pen)
+                : null;
+        const currentPrice = servicePen ? penToUsd(servicePen, freshRate) : roundMoney(Number(service.precio));
+        const totalPen = servicePen ? servicePen : usdToPen(currentPrice, freshRate);
         let settings = await getCachedFinancialSettings();
         if (!settings) {
             settings = { lawyer_commission_percentage: 0, operational_costs_percentage: 0, tax_percentage: 0, platform_fee_percentage: 0 };
@@ -165,6 +175,8 @@ export async function POST(request: Request) {
                 userId: finalUserId,
                 serviceId: Number(serviceId),
                 total: currentPrice,
+                totalPen: totalPen,
+                exchangeRateUsed: freshRate,
                 status: 'PAGO_PENDIENTE',
                 paymentId: `PAY-${Date.now()}`,
                 commissionAmount: split.comisionAbogado,

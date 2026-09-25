@@ -74,6 +74,7 @@ export default function ServiciosClientPage() {
         nombre: s.titulo,
         titulo: s.titulo,
         precio: Number(s.precio),
+        precioPen: s.precioPen ?? null,
         descripcion: s.descripcion,
         icono: ICON_MAP[s.titulo] || DEFAULT_ICON,
         imagen: getServiceImage(s),
@@ -184,7 +185,7 @@ export default function ServiciosClientPage() {
                                         <div className="flex items-center gap-2 justify-center lg:justify-start">
                                             <div className="bg-azul-primario text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md border border-white/10 flex items-center gap-2">
                                                 <span className="opacity-80">Desde</span>
-                                                <DualPrice usd={servicio.precio} className="text-base" />
+                                                <DualPrice usd={servicio.precio} pen={servicio.precioPen} className="text-base" />
                                             </div>
                                         </div>
 										<p className="text-gray-600 leading-relaxed text-lg">

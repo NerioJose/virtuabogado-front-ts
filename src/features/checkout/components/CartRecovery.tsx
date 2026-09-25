@@ -129,7 +129,7 @@ export const CartRecovery = () => {
                                     <span className="font-semibold text-azul-primario">{service?.nombre}</span>
                                     {service?.precio ? (
                                         <span className="ml-2 inline-block px-2 py-0.5 bg-slate-100 rounded-md">
-                                            <DualPrice usd={service.precio} className="text-[10px] text-slate-600" />
+                                            <DualPrice usd={service.precio} pen={service.precioPen} className="text-[10px] text-slate-600" />
                                         </span>
                                     ) : null}
                                 </p>

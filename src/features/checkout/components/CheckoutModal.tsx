@@ -16,6 +16,8 @@ import { PaymentStep } from './PaymentStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { LoadingOverlay } from './LoadingOverlay';
 import { ErrorMessage } from './ErrorMessage';
+import { useExchangeRate } from '@/features/finance/hooks/useExchangeRate';
+import { resolveServiceUsd } from '@/lib/servicePrice';
 
 // --- COMPONENTE TÁCTICO: ALERTA DE PRECISIÓN CRIPTO (SOLO USD) ---
 const ZenobankTacticalAlert: React.FC<{ total: number }> = ({ total }) => {
@@ -70,6 +72,7 @@ export const CheckoutModal: React.FC = () => {
 
     const { isAuthenticated } = useAuthStore();
     const { clearStorage } = useCheckoutStorage();
+    const { rate } = useExchangeRate();
 
     useEffect(() => {
         if (step === 3) {
@@ -197,7 +200,7 @@ export const CheckoutModal: React.FC = () => {
 
                         {/* --- VISIBILIDAD RADICAL: ALERTA TÁCTICA CRIPTO (solo cuando se elige cripto) --- */}
                         {step === 2 && selectedMethod === 'zenobank' && (
-                             <ZenobankTacticalAlert total={Number(service.precio) || 0} />
+                             <ZenobankTacticalAlert total={rate && rate > 0 ? resolveServiceUsd(service, rate) : Number(service.precio) || 0} />
                         )}
 
                         {step < 3 && <ServiceSummary service={service} />}

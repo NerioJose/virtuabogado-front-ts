@@ -8,6 +8,7 @@ import { serializeFinance } from '@/lib/finance';
 import { syncUserIdentity } from '@/services/identity.service';
 import { getUsdPenRate } from '@/lib/exchangeRate';
 import { FINANCIAL_SETTINGS_ID } from '@/lib/constants';
+import { usdToPen, penToUsd, roundMoney } from '@/lib/money';
 
 interface ProcessPaymentParams {
     serviceId: number;
@@ -56,11 +57,13 @@ export async function processPaymentAction({ serviceId, paymentMethodId, rateSaw
     const settings = await prisma.financialSettings.findUnique({
         where: { id: FINANCIAL_SETTINGS_ID }
     });
-    const total = Number(service.precio);
 
-    const commission = (total * Number(settings?.lawyer_commission_percentage ?? 70)) / 100;
-    const taxes = (total * Number(settings?.tax_percentage ?? 15)) / 100;
-    const platformFee = (total * Number(settings?.platform_fee_percentage ?? 5)) / 100;
+    // Si el servicio tiene precio canónico en soles (precio_pen), el USD se deriva
+    // de la misma tasa congelada que la orden (una sola tasa, nunca dos).
+    const servicePen =
+        service.precio_pen != null && Number(service.precio_pen) > 0
+            ? Number(service.precio_pen)
+            : null;
 
     /* 
     // 4. IDEMPOTENCIA: Bloque desactivado para forzar registro visual de toda intención de pago
@@ -98,7 +101,14 @@ export async function processPaymentAction({ serviceId, paymentMethodId, rateSaw
             && rateSaw > 0
             && Math.abs(rateSaw - freshRate) / freshRate <= 0.25;
         const exchangeRateUsed = seenValid ? Math.min(rateSaw!, freshRate) : freshRate;
-        const totalPen = Math.round(total * exchangeRateUsed * 100) / 100;
+        // MONTO ÚNICO COHERENTE: S/ canónico se queda exacto; el USD (y el desglose)
+        // se deriva de la misma tasa congelada de la orden.
+        const totalUsd = servicePen ? penToUsd(servicePen, exchangeRateUsed) : roundMoney(Number(service.precio));
+        const totalPen = servicePen ? servicePen : usdToPen(totalUsd, exchangeRateUsed);
+
+        const commission = (totalUsd * Number(settings?.lawyer_commission_percentage ?? 70)) / 100;
+        const taxes = (totalUsd * Number(settings?.tax_percentage ?? 15)) / 100;
+        const platformFee = (totalUsd * Number(settings?.platform_fee_percentage ?? 5)) / 100;
 
         // Crear nueva orden con tipos seguros
         order = await prisma.order.create({
@@ -106,7 +116,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId, rateSaw
                 userId: user.id,
                 serviceId: service.id,
                 paymentMethodId: paymentMethod.id,
-                total: total,
+                total: totalUsd,
                 totalPen: totalPen,
                 exchangeRateUsed: exchangeRateUsed,
                 status: 'PAGO_PENDIENTE', // Inicialmente en espera de pago
@@ -128,7 +138,7 @@ export async function processPaymentAction({ serviceId, paymentMethodId, rateSaw
         try {
             const session = await ZenobankService.createCheckoutSession({
                 orderId: order.id,
-                amount: Number(total), // Garantía de tipo numérico
+                amount: Number(order.total), // Garantía de tipo numérico
                 currency: 'USD',
                 description: `Pago por servicio: ${service.titulo}`,
                 customer: {

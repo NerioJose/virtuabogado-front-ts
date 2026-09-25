@@ -4,6 +4,8 @@ import type { Servicio } from '@/shared/types/entities.types';
 import { FiClock, FiDollarSign, FiInfo } from 'react-icons/fi';
 import { DualPrice } from '@/components/ui/DualPrice';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
+import { useExchangeRate } from '@/features/finance/hooks/useExchangeRate';
+import { resolveServiceUsd, resolveServicePen } from '@/lib/servicePrice';
 import { useCheckoutStore } from '../store/checkoutStore';
 
 interface ServiceSummaryProps {
@@ -12,21 +14,23 @@ interface ServiceSummaryProps {
 
 export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
     const { data: settings } = useFinancialSettings();
+    const { rate } = useExchangeRate();
     const isCrypto = useCheckoutStore((state) => state.selectedMethod === 'zenobank');
 
-    // Cálculo del desglose (Impuestos Incluidos)
+    // Cálculo del desglose (Impuestos Incluidos), coherente con la tasa vigente.
     const taxPercentage = (settings as any)?.taxPercentage || 0;
-    const total = Number(service.precio) || 0;
+    const total = rate && rate > 0 ? resolveServiceUsd(service, rate) : (Number(service.precio) || 0);
+    const totalPen = rate && rate > 0 ? resolveServicePen(service, rate) : undefined;
     const basePrice = total / (1 + (taxPercentage / 100));
     const taxAmount = total - basePrice;
 
     // Al pagar con cripto, TODO se muestra solo en dólares (monto exacto con decimales),
     // sin soles, para que el cliente transfiera el monto exacto a la plataforma.
-    const Money: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
+    const Money: React.FC<{ value: number; pen?: number; className?: string }> = ({ value, pen, className }) => {
         if (isCrypto) {
             return <span className={className}>US$ {(Number(value) || 0).toFixed(2)}</span>;
         }
-        return <DualPrice usd={value} className={className} />;
+        return <DualPrice usd={value} pen={pen} className={className} />;
     };
 
     return (
@@ -77,7 +81,7 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
                 <div className="flex justify-between items-center pt-2 mt-1 border-t border-azul-primario/5">
                     <span className="text-xs font-black text-azul-primario uppercase tracking-widest">Importe Final:</span>
                     <div className="text-xl font-black text-azul-primario tracking-tighter">
-                        <Money value={total} />
+                        <Money value={total} pen={totalPen} />
                     </div>
                 </div>
                 {isCrypto && (

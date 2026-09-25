@@ -27,6 +27,7 @@ export interface Servicio {
     titulo?: string; // For services page
     descripcion: string;
     precio?: number;
+    precioPen?: number | null;
     duracion?: string;
     imagen?: string;
     icono?: any;

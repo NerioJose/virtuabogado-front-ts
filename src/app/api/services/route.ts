@@ -48,13 +48,14 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { titulo, descripcion, precio, imagenUrl, activo } = body;
+        const { titulo, descripcion, precio, precioPen, imagenUrl, activo } = body;
 
         const service = await prisma.service.create({
             data: {
                 titulo,
                 descripcion,
                 precio,
+                precio_pen: precioPen ?? null,
                 imagenUrl,
                 activo: activo ?? true
             }

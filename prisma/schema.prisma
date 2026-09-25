@@ -43,6 +43,7 @@ model Service {
   titulo                    String
   descripcion               String
   precio                    Decimal  @db.Decimal(10, 2)
+  precio_pen                Decimal? @db.Decimal(10, 2)
   imagenUrl                 String?
   activo                    Boolean  @default(true)
   is_manual_case_placeholder Boolean @default(false)

@@ -120,7 +120,7 @@ export default function VirtuStudents() {
                                 <div className="flex flex-col border-l border-gray-100 pl-8">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Inversión Alumno</span>
                                     <div className="flex items-baseline gap-1">
-                                        <DualPrice usd={studentService.precio} className="text-4xl text-vinotinto" />
+                                        <DualPrice usd={studentService.precio} pen={studentService.precioPen} className="text-4xl text-vinotinto" />
                                     </div>
                                 </div>
                             </div>

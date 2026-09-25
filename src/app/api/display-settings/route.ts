@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { DISPLAY_SETTINGS_ID } from '@/lib/constants';
+import { sendBroadcast } from '@/lib/broadcast';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,6 +103,14 @@ export async function PATCH(request: NextRequest) {
                     updated_at = NOW()
             `;
         }
+
+        // Propagar el cambio a TODOS los clientes conectados (incluidos anónimos)
+        // sin depender del WAL de Supabase (que no siempre dispara para escrituras
+        // vía Prisma). El listener global en useRealtimeSubscription refresca la query.
+        await sendBroadcast('app-updates', 'display-settings-updated', {
+            showUsd: body.showUsd,
+            timestamp: new Date().toISOString(),
+        });
 
         return NextResponse.json({ showUsd: body.showUsd });
     } catch (error: any) {

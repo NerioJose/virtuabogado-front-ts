@@ -45,7 +45,7 @@ export function useDisplaySettings() {
 export function useUpdateDisplaySettings() {
     const queryClient = useQueryClient();
 
-    return useMutation<DisplaySettings, Error, boolean>({
+    return useMutation<DisplaySettings, Error, boolean, { previous?: DisplaySettings }>({
         mutationFn: async (showUsd) => {
             const res = await fetch('/api/display-settings', {
                 method: 'PATCH',
@@ -57,7 +57,20 @@ export function useUpdateDisplaySettings() {
         },
         onMutate: async (showUsd) => {
             await queryClient.cancelQueries({ queryKey: displaySettingsKeys.all });
+            const previous = queryClient.getQueryData<DisplaySettings>(displaySettingsKeys.all);
             queryClient.setQueryData<DisplaySettings>(displaySettingsKeys.all, { showUsd });
+            return { previous };
+        },
+        onError: (_err, _showUsd, context) => {
+            // Rollback: si el PATCH falló, restauramos el valor previo para que
+            // el switch no quede pegado a un estado que nunca persistió.
+            if (context?.previous) {
+                queryClient.setQueryData<DisplaySettings>(displaySettingsKeys.all, context.previous);
+            }
+        },
+        onSettled: () => {
+            // Converger SIEMPRE al valor persistido en el servidor (éxito o error).
+            queryClient.invalidateQueries({ queryKey: displaySettingsKeys.all });
         },
     });
 }

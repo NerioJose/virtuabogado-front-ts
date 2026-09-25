@@ -22,6 +22,7 @@ import { useConfiguracionPanel } from '@/features/financial-settings/hooks/useCo
 import { useDisplaySettings, useUpdateDisplaySettings } from '@/features/finance/hooks/useDisplaySettings';
 import { useAdminConfiguracion, TabType } from './hooks/useAdminConfiguracion';
 import TelegramConnect from '@/components/notifications/TelegramConnect';
+import { toast } from 'sonner';
 
 // Componente para configuración financiera (Extraído por claridad)
 function FinancialSettingsSection() {
@@ -40,7 +41,7 @@ function FinancialSettingsSection() {
 		saveMessage,
 		handleSave
 	} = useConfiguracionPanel();
-	const { showUsd } = useDisplaySettings();
+	const { showUsd, isLoading: displayLoading } = useDisplaySettings();
 	const updateDisplaySettings = useUpdateDisplaySettings();
 
 	if (loadingSettings) {
@@ -180,8 +181,15 @@ function FinancialSettingsSection() {
 									type="button"
 									role="switch"
 									aria-checked={showUsd}
-									onClick={() => updateDisplaySettings.mutate(!showUsd)}
-									disabled={updateDisplaySettings.isPending}
+									onClick={() => {
+										updateDisplaySettings.mutate(!showUsd, {
+											onError: (e) => {
+												// El rollback del hook restaura el valor previo; aquí solo informamos.
+												toast.error(e?.message || 'No se pudo actualizar la configuración');
+											},
+										});
+									}}
+									disabled={displayLoading || updateDisplaySettings.isPending}
 									className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${showUsd ? 'bg-green-500' : 'bg-gray-300'}`}
 								>
 									<span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${showUsd ? 'translate-x-6' : 'translate-x-1'}`} />

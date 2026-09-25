@@ -59,6 +59,15 @@ export const useRealtimeSubscription = () => {
                 }
                 queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
             }
+
+            if (eventName === 'display-settings-updated') {
+                const showUsd = eventPayload?.showUsd;
+                if (typeof showUsd === 'boolean') {
+                    queryClient.setQueryData(['display-settings'], { showUsd });
+                } else {
+                    queryClient.invalidateQueries({ queryKey: ['display-settings'], refetchType: 'all' });
+                }
+            }
             
             if (eventName === 'payout-updated') {
                 queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
@@ -87,6 +96,7 @@ export const useRealtimeSubscription = () => {
         globalChannel
             .on('broadcast', { event: 'service-updated' }, handleUpdate)
             .on('broadcast', { event: 'exchange-rate-updated' }, handleUpdate)
+            .on('broadcast', { event: 'display-settings-updated' }, handleUpdate)
             .subscribe();
 
         // Canal personal - solo para usuarios autenticados

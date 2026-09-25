@@ -35,6 +35,8 @@ export interface Order {
     subtotal: number;
     tax: number;
     total: number;
+    totalPen?: number | null; // S/ canónico congelado al crear la orden
+    exchangeRateUsed?: number | null; // Tasa aplicada al crear la orden
     status: OrderStatus;
     paymentMethod: PaymentMethod;
     paymentMethodIdentifier?: string | null;

@@ -32,6 +32,7 @@ export const useCheckoutStorage = () => {
                 titulo: service.titulo,
                 descripcion: service.descripcion,
                 precio: service.precio,
+                precioPen: service.precioPen ?? null,
                 duracion: service.duracion,
                 imagen: service.imagen,
                 // icono se excluye porque es un ReactNode

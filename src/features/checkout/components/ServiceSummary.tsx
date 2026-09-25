@@ -6,6 +6,7 @@ import { DualPrice } from '@/components/ui/DualPrice';
 import { useFinancialSettings } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { useExchangeRate } from '@/features/finance/hooks/useExchangeRate';
 import { resolveServiceBreakdown } from '@/lib/servicePrice';
+import { useServicesStore } from '@/features/services/store/servicesStore';
 import { useCheckoutStore } from '../store/checkoutStore';
 
 interface ServiceSummaryProps {
@@ -16,12 +17,19 @@ export const ServiceSummary: React.FC<ServiceSummaryProps> = ({ service }) => {
     const { data: settings } = useFinancialSettings();
     const { rate } = useExchangeRate();
     const isCrypto = useCheckoutStore((state) => state.selectedMethod === 'zenobank');
+    const activeServices = useServicesStore(state => state.activeServices);
+
+    // Backfill defensivo: si el service llegó de un snapshot antiguo del checkout
+    // sin precioPen canónico, se rellena desde el catálogo en vivo (fuente única).
+    const resolvedService = service && (!service.precioPen || Number(service.precioPen) <= 0)
+        ? { ...service, precioPen: activeServices.find(s => s.id === service.id)?.precioPen ?? service.precioPen }
+        : service;
 
     // Cálculo del desglose (Impuestos Incluidos) desde la fuente única de verdad:
     // base, impuestos y total derivan del MISMO par canónico escalado.
     const taxPercentage = (settings as any)?.taxPercentage || 0;
     const breakdown = rate && rate > 0
-        ? resolveServiceBreakdown(service, rate, taxPercentage)
+        ? resolveServiceBreakdown(resolvedService, rate, taxPercentage)
         : {
             total: { usd: Number(service.precio) || 0, pen: null },
             base: { usd: Number(service.precio) || 0, pen: null },

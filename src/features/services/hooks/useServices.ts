@@ -14,7 +14,22 @@ import { useServicesStore } from '../store/servicesStore';
 
 import { useEffect } from 'react';
 
+// Limpieza one-shot: elimina los snapshots persistidos viejos (sin precioPen)
+// que ya no se usan tras quitar la persistencia del store.
+const LEGACY_SERVICES_STORAGE_KEY = 'virtu-services-storage';
+let purgedLegacyStorage = false;
+function purgeLegacyServicesStorage() {
+    if (purgedLegacyStorage || typeof window === 'undefined') return;
+    purgedLegacyStorage = true;
+    try {
+        window.localStorage.removeItem(LEGACY_SERVICES_STORAGE_KEY);
+    } catch {
+        // fail-open: si el storage está inaccesible no bloqueamos el render
+    }
+}
+
 export const useServices = (options?: any) => {
+    purgeLegacyServicesStorage();
     const setServices = useServicesStore(state => state.setServices);
     const query = useQuery({
         queryKey: servicesKeys.active,

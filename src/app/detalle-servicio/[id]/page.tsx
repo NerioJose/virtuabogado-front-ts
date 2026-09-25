@@ -166,7 +166,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Total pagado</p>
-                                        <p className="font-semibold text-gray-900"><DualPrice usd={order.total} /></p>
+                                        <p className="font-semibold text-gray-900"><DualPrice usd={order.total} pen={order.totalPen} /></p>
                                     </div>
                                 </div>
 
@@ -211,7 +211,7 @@ export default function DetalleServicioPage({ params }: { params: Promise<{ id: 
                                 )}
                                 <div className="mt-4 pt-4 flex justify-between items-center border-t border-gray-200">
                                     <p className="font-black text-gray-900 uppercase tracking-widest text-xs">Total del Pedido</p>
-                                    <p className="text-2xl font-black text-azul-primario tracking-tighter"><DualPrice usd={order.total} /></p>
+                                    <p className="text-2xl font-black text-azul-primario tracking-tighter"><DualPrice usd={order.total} pen={order.totalPen} /></p>
                                 </div>
                             </div>
                         </div>

@@ -87,6 +87,15 @@ export function useServiciosPanel() {
             }
             return { precio: penToUsd(raw, rate), precioPen: roundMoney(raw) };
         }
+        // USD canónico: si el servicio tenía un PEN canónico y el campo no se editó
+        // (round-trip S/→US$→S/ por el toggle), conservar el precioPen exacto para
+        // no anularlo al guardar sin cambios reales y no reintroducir el .01.
+        const previous = editingId != null ? services?.find(s => s.id === editingId) : null;
+        const hasCanonicalPen = previous?.precioPen != null && Number(previous.precioPen) > 0;
+        const uneditedUsd = previous != null && Math.abs(raw - Number(previous.precio)) < 1e-9;
+        if (hasCanonicalPen && uneditedUsd) {
+            return { precio: raw, precioPen: Number(previous.precioPen) };
+        }
         return { precio: raw, precioPen: null };
     };
 

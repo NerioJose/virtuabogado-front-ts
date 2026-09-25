@@ -14,7 +14,7 @@ import {
 import { useServiciosPanel } from './hooks/useServiciosPanel';
 import DualPrice from '@/components/ui/DualPrice';
 import { formatPEN } from '@/lib/finance';
-import { penToUsd } from '@/lib/money';
+import { usdToPen, penToUsd } from '@/lib/money';
 
 export default function ServiciosPanel() {
     const {
@@ -43,10 +43,15 @@ export default function ServiciosPanel() {
 
     const priceValue = Number(editForm.precio) || 0;
     const hasRate = !!rate && rate > 0;
+    const editingService = services?.find(s => s.id === editingId);
+    const canonicalPen = editingService != null && editingService.precioPen != null && Number(editingService.precioPen) > 0
+        ? Number(editingService.precioPen)
+        : null;
+    const fieldUneditedUsd = editingService != null && Math.abs(priceValue - Number(editingService.precio)) < 1e-9;
 
     const pricePreview = hasRate
         ? precioMode === 'USD'
-            ? `≈ ${formatPEN(penToUsd(priceValue, rate!))} (tasa S/ ${Number(rate).toFixed(2)})`
+            ? `≈ ${formatPEN(canonicalPen && fieldUneditedUsd ? canonicalPen : usdToPen(priceValue, rate!))} (tasa S/ ${Number(rate).toFixed(2)})`
             : `≈ ${formatPEN(priceValue)} → US$ ${penToUsd(priceValue, rate!)} (tasa S/ ${Number(rate).toFixed(2)})`
         : '';
 

@@ -29,9 +29,9 @@ export async function GET(req: Request) {
             orderBy: [{ createdAt: 'desc' }, { id: 'asc' }]
         });
 
-        const result = serializeFinance(services);
-        await setCache(cacheKey, result, 10_000);
-        return NextResponse.json(result.map(toServiceJson), {
+        const mapped = serializeFinance(services).map(toServiceJson);
+        await setCache(cacheKey, mapped, 10_000);
+        return NextResponse.json(mapped, {
             headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' }
         });
     } catch (error) {

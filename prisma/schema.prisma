@@ -120,6 +120,15 @@ model FinancialSettings {
   @@map("FinancialSettings")
 }
 
+model DisplaySettings {
+  id              String   @id @default(uuid())
+  show_usd_prices Boolean  @default(true)
+  updated_at      DateTime @updatedAt
+  updated_by      String?
+
+  @@map("DisplaySettings")
+}
+
 model Message {
   id        String   @id @default(uuid())
   orderId   String

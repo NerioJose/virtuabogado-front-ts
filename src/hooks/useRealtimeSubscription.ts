@@ -22,28 +22,6 @@ export const useRealtimeSubscription = () => {
     }, [connectionStatus]);
 
     // ═══════════════════════════════════════════════
-    // POLLING FALLBACK MINIMIZADO - para TODOS los usuarios (incluye anónimos)
-    // Con staleTimes largos + broadcast, esto casi nunca se ejecuta
-    // ═══════════════════════════════════════════════
-    useEffect(() => {
-        const staggerKey = user?.id || 'anon';
-        const startDelay = Math.abs(parseInt(staggerKey.slice(-8), 16) % 120_000) || 30000;
-        const timer = setTimeout(() => {
-            const interval = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    queryClient.refetchQueries({ queryKey: ['Order'], type: 'active' });
-                    queryClient.refetchQueries({ queryKey: ['Service'], type: 'active' });
-                    queryClient.refetchQueries({ queryKey: ['PayoutHistory'], type: 'active' });
-                    queryClient.refetchQueries({ queryKey: ['PendingPayouts'], type: 'active' });
-                    queryClient.refetchQueries({ queryKey: ['exchange-rate'], type: 'active' });
-                }
-            }, 300_000); // 5 minutos
-            return () => clearInterval(interval);
-        }, startDelay);
-        return () => clearTimeout(timer);
-    }, [queryClient, user?.id]);
-
-    // ═══════════════════════════════════════════════
     // BROADCAST LISTENER - sincronización instantánea entre usuarios
     // Las mutaciones via Prisma (PATCH/POST API) no disparan WAL events.
     // La API envía broadcasts manuales (global + personal) tras cada mutación.

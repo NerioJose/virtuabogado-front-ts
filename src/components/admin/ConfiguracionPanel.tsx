@@ -13,11 +13,13 @@ import {
     FiShield,
     FiCreditCard,
     FiMessageCircle,
-    FiBell
+    FiBell,
+    FiEye
 } from 'react-icons/fi';
 import { useAdminServices } from '@/features/services/hooks/useServices';
 import ServiciosPanel from './ServiciosPanel';
 import { useConfiguracionPanel } from '@/features/financial-settings/hooks/useConfiguracionPanel';
+import { useDisplaySettings, useUpdateDisplaySettings } from '@/features/finance/hooks/useDisplaySettings';
 import { useAdminConfiguracion, TabType } from './hooks/useAdminConfiguracion';
 import TelegramConnect from '@/components/notifications/TelegramConnect';
 
@@ -38,6 +40,8 @@ function FinancialSettingsSection() {
 		saveMessage,
 		handleSave
 	} = useConfiguracionPanel();
+	const { showUsd } = useDisplaySettings();
+	const updateDisplaySettings = useUpdateDisplaySettings();
 
 	if (loadingSettings) {
 		return (
@@ -161,6 +165,27 @@ function FinancialSettingsSection() {
 								<p className="mt-1 text-[10px] text-gray-400">
 									Si la definís, tiene prioridad sobre la tasa automática y se usa para mostrar precios en soles y para convertir el cobro en MercadoPago/Yape. Dejala vacía para usar la tasa automática (Frankfurter).
 								</p>
+							</div>
+
+							<div className="mt-4 flex items-start justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+								<div>
+									<div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+										<FiEye /> Mostrar montos en US$
+									</div>
+									<p className="mt-0.5 text-[10px] text-gray-400">
+										Al desactivarlo, los precios se muestran solo en soles (S/) para todos los clientes del sitio, en tiempo real y sin recargar la página.
+									</p>
+								</div>
+								<button
+									type="button"
+									role="switch"
+									aria-checked={showUsd}
+									onClick={() => updateDisplaySettings.mutate(!showUsd)}
+									disabled={updateDisplaySettings.isPending}
+									className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${showUsd ? 'bg-green-500' : 'bg-gray-300'}`}
+								>
+									<span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${showUsd ? 'translate-x-6' : 'translate-x-1'}`} />
+								</button>
 							</div>
 						</div>
 

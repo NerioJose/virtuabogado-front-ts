@@ -173,3 +173,14 @@ ALTER TABLE "EventLog" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins can access event logs" ON "EventLog"
     FOR ALL
     USING (auth.role() = 'service_role' OR auth.jwt() ->> 'role' = 'ADMIN');
+
+-- 13. DISPLAY SETTINGS (Pública para lectura, admin para escritura)
+ALTER TABLE "DisplaySettings" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read display settings" ON "DisplaySettings"
+    FOR SELECT
+    USING (true);
+
+CREATE POLICY "Admins can manage display settings" ON "DisplaySettings"
+    FOR ALL
+    USING (auth.role() = 'service_role' OR auth.jwt() ->> 'role' = 'ADMIN');

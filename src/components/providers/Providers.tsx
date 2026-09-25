@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useDisplaySettingsRealtime } from '@/hooks/useDisplaySettingsRealtime';
 import { initializeAuth } from '@/features/auth/store/authStore';
 import React, { useEffect, useState } from 'react';
 import UploadManager from '@/features/storage/components/UploadManager';
@@ -16,6 +17,13 @@ const RealtimeSubscription = () => {
     if (process.env.NODE_ENV === 'development') {
         
     }
+
+    return null;
+};
+
+// Realtime del flag "mostrar US$" (WAL público, funciona para anónimos y logueados)
+const DisplaySettingsRealtime = () => {
+    useDisplaySettingsRealtime();
 
     return null;
 };
@@ -90,6 +98,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     return (
         <QueryClientProvider client={queryClient}>
             <RealtimeSubscription />
+            <DisplaySettingsRealtime />
             {children}
             <UploadManager />
             <PWAInstallBanner />

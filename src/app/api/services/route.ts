@@ -6,6 +6,11 @@ import { getCached, setCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
+const toServiceJson = (service: any) => ({
+    ...serializeFinance(service),
+    precioPen: service.precio_pen ?? null,
+});
+
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
@@ -26,7 +31,7 @@ export async function GET(req: Request) {
 
         const result = serializeFinance(services);
         await setCache(cacheKey, result, 10_000);
-        return NextResponse.json(result, {
+        return NextResponse.json(result.map(toServiceJson), {
             headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' }
         });
     } catch (error) {
@@ -66,7 +71,7 @@ export async function POST(req: Request) {
             data: { serviceId: service.id, eventType: 'updated' },
         });
 
-        return NextResponse.json(serializeFinance(service));
+        return NextResponse.json(toServiceJson(service));
     } catch (error) {
         console.error('Error creating service:', error);
         return NextResponse.json({ error: 'Error creating service' }, { status: 500 });

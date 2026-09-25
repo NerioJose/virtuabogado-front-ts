@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
 
+const toServiceJson = (service: any) => ({
+    ...serializeFinance(service),
+    precioPen: service.precio_pen ?? null,
+});
+
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -17,7 +22,7 @@ export async function GET(
             return NextResponse.json({ error: 'Service not found' }, { status: 404 });
         }
 
-        return NextResponse.json(serializeFinance(service));
+        return NextResponse.json(toServiceJson(service));
     } catch (error) {
         console.error('Error fetching service:', error);
         return NextResponse.json({ error: 'Error fetching service' }, { status: 500 });
@@ -63,7 +68,7 @@ export async function PATCH(
             data: { serviceId: service.id, eventType: 'updated' },
         });
 
-        return NextResponse.json(serializeFinance(service));
+        return NextResponse.json(toServiceJson(service));
     } catch (error) {
         console.error('Error updating service:', error);
         return NextResponse.json({ error: 'Error updating service' }, { status: 500 });

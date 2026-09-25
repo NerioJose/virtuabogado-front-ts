@@ -36,7 +36,10 @@ export function useDisplaySettings() {
         retry: 1,
     });
 
-    return { showUsd: data?.showUsd ?? true, isLoading: data === undefined };
+    // Default `false` mientras carga: nunca mostrar US$ si el flag aún no se
+    // confirmó. Evita el flash "US$ aparece y luego se oculta" cuando el admin
+    // tiene showUsd desactivado. El valor real llega del fetch/realtime.
+    return { showUsd: data?.showUsd ?? false, isLoading: data === undefined };
 }
 
 export function useUpdateDisplaySettings() {

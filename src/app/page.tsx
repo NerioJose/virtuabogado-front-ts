@@ -6,6 +6,7 @@ import SectionTestimonios from '@/components/homePage/SeccionTestimonios';
 import CallToAction from '@/components/homePage/CallToAction';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { prisma } from '@/lib/prisma';
+import { toServiceJson } from '@/features/services/mappers/serviceJson';
 
 
 export const metadata: Metadata = {
@@ -26,7 +27,8 @@ function getQueryClient() {
 export default async function HomePage() {
     const queryClient = getQueryClient();
 
-    // Pre-fetch de servicios para que todo el Home cargue sin loaders
+    // Pre-fetch de servicios para que todo el Home cargue sin loaders.
+    // Mapeado con toServiceJson → mismos campos (precioPen numérico) que /api/services.
     await queryClient.prefetchQuery({
         queryKey: ['Service', 'active'],
         queryFn: async () => {
@@ -34,7 +36,7 @@ export default async function HomePage() {
                 where: { activo: true },
                 orderBy: { id: 'asc' }
             });
-            return data.map(s => ({ ...s, precio: Number(s.precio) }));
+            return data.map(toServiceJson);
         }
     });
 

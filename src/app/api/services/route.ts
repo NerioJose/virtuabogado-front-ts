@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { emit } from '@/events/eventBus';
-import { serializeFinance } from '@/lib/finance';
 import { getCached, setCache } from '@/lib/cache';
+import { toServiceJson } from '@/features/services/mappers/serviceJson';
 
 export const dynamic = 'force-dynamic';
-
-const toServiceJson = (service: any) => ({
-    ...serializeFinance(service),
-    precioPen: service.precio_pen ?? null,
-});
 
 export async function GET(req: Request) {
     try {
@@ -29,7 +24,7 @@ export async function GET(req: Request) {
             orderBy: [{ createdAt: 'desc' }, { id: 'asc' }]
         });
 
-        const mapped = serializeFinance(services).map(toServiceJson);
+        const mapped = services.map(toServiceJson);
         await setCache(cacheKey, mapped, 10_000);
         return NextResponse.json(mapped, {
             headers: { 'Cache-Control': 'no-store' }

@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { servicesService } from '../services/services.service';
-import { CreateServiceRequest, UpdateServiceRequest, Service } from '../types/services.types';
+import { CreateServiceRequest, UpdateServiceRequest } from '../types/services.types';
+import { normalizeService } from '../mappers/serviceJson';
 
 export const servicesKeys = {
     all: ['Service'] as const,
@@ -40,10 +41,12 @@ export const useServices = (options?: any) => {
         ...options
     });
 
-    // Sincronizar con el store de Zustand cuando cambien los datos
+    // Sincronizar con el store de Zustand cuando cambien los datos.
+    // Aplicamos normalizeService SIEMPRE: ninguna fuente (prefetch SSR, API,
+    // realtime, invalidaciones) puede colar una fila sin precioPen numérico.
     useEffect(() => {
         if (query.data) {
-            setServices(query.data as any);
+            setServices((query.data as any[] || []).map(normalizeService));
         }
     }, [query.data, setServices]);
 
@@ -61,7 +64,7 @@ export const useAdminServices = () => {
 
     useEffect(() => {
         if (query.data) {
-            setServices(query.data as any);
+            setServices((query.data as any[] || []).map(normalizeService));
         }
     }, [query.data, setServices]);
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import ServiciosClientPage from './ServiciosClientPage';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { prisma } from '@/lib/prisma';
+import { toServiceJson } from '@/features/services/mappers/serviceJson';
 
 
 export const metadata: Metadata = {
@@ -30,8 +31,7 @@ export default async function ServiciosPage() {
                 where: { activo: true },
                 orderBy: { id: 'asc' }
             });
-            // Convertir Decimal a Number para compatibilidad con JSON
-            return data.map(s => ({ ...s, precio: Number(s.precio) }));
+            return data.map(toServiceJson);
         }
     });
 

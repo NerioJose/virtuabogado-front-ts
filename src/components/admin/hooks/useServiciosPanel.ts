@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
     useAdminServices,
     useUpdateService,
@@ -23,11 +23,18 @@ export function useServiciosPanel() {
     const [editForm, setEditForm] = useState<Partial<Service>>({});
     const [precioMode, setPrecioMode] = useState<PrecioMode>('USD');
 
+    // Anti-drift: el PEN canónico (60) se recuerda al alternar a US$ y se restaura
+    // exacto al volver, evitando el artefacto round-trip 60 → 17.65 → 60.01.
+    const penBaseRef = useRef<number | null>(null);
+    const usdPreviewRef = useRef<number | null>(null);
+
     const resetForm = () => {
         setEditingId(null);
         setIsCreating(false);
         setEditForm({});
         setPrecioMode('USD');
+        penBaseRef.current = null;
+        usdPreviewRef.current = null;
     };
 
     const handleEdit = (service: Service) => {
@@ -42,18 +49,32 @@ export function useServiciosPanel() {
             imagenUrl: service.imagenUrl || ''
         });
         setPrecioMode(penFixed ? 'PEN' : 'USD');
+        penBaseRef.current = penFixed ? Number(service.precioPen) : null;
+        usdPreviewRef.current = null;
     };
 
     const handleCancel = () => {
         resetForm();
     };
 
-    // Convierte el valor mostrado al alternar el modo de moneda, usando la tasa vigente.
+    // Alterna la moneda de entrada CONVIRTIENDO el valor mostrado, pero sin perder
+    // el PEN canónico: al volver de US$→S/ con el campo sin editar se restaura el
+    // valor exacto (60), nunca el derivado (60.01).
     const switchPrecioMode = (next: PrecioMode) => {
         if (next === precioMode) return;
-        const raw = Number(editForm.precio) || 0;
-        const converted = next === 'PEN' ? usdToPen(raw, rate ?? 0) : penToUsd(raw, rate ?? 0);
-        setEditForm(f => ({ ...f, precio: converted }));
+        const raw = roundMoney(Number(editForm.precio) || 0);
+        if (precioMode === 'PEN') {
+            // S/ → US$: se recuerda el PEN exacto y se muestra su equivalente en dólares.
+            penBaseRef.current = raw;
+            const usd = penToUsd(raw, rate ?? 0);
+            usdPreviewRef.current = usd;
+            setEditForm(f => ({ ...f, precio: usd }));
+        } else {
+            // US$ → S/: si el campo no se editó, se restaura el PEN canónico exacto.
+            const unedited = usdPreviewRef.current != null && raw === roundMoney(usdPreviewRef.current);
+            const restored = unedited && penBaseRef.current != null ? penBaseRef.current : usdToPen(raw, rate ?? 0);
+            setEditForm(f => ({ ...f, precio: restored }));
+        }
         setPrecioMode(next);
     };
 

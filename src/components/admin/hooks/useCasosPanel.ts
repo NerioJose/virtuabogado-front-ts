@@ -39,8 +39,19 @@ export function useCasosPanel(terminoBusqueda: string) {
     }, [orders]);
 
     const visibleTotal = useMemo(() => {
-        return pagination?.total ?? 0;
-    }, [pagination]);
+        // Chip "Todos": suma del desglose global (independiente de la pestaña activa),
+        // para que los contadores conserven su identidad al cambiar de filtro.
+        const visibleStatuses = [
+            OrderStatus.PENDIENTE,
+            OrderStatus.EN_PROGRESO,
+            OrderStatus.REVISION,
+            OrderStatus.COMPLETADO,
+            OrderStatus.CANCELADO,
+            OrderStatus.FALLIDO,
+            OrderStatus.PAID,
+        ];
+        return visibleStatuses.reduce((acc, s) => acc + (countsByStatus[s] || 0), 0);
+    }, [countsByStatus]);
 
     const getStatusConfig = (status: OrderStatus) => {
         const config: Record<string, { label: string, color: string }> = {

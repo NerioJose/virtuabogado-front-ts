@@ -72,6 +72,13 @@ export async function GET(request: Request) {
             }
         }
 
+        // Desglose de contadores siempre GLOBAL (sin status/search/scop del listado),
+        // para que los chips conserven su identidad sin importar la pestaña activa.
+        const countWhere: any = { activo: { not: false } };
+        if (isAdmin && hidePendingPayment) {
+            countWhere.status = { notIn: ['PAGO_PENDIENTE', 'PAGO_RECHAZADO'] };
+        }
+
         const [totalCount, orders, settings, countsByStatus] = await Promise.all([
             prisma.order.count({ where }),
             prisma.order.findMany({
@@ -91,7 +98,7 @@ export async function GET(request: Request) {
             }),
             getCachedFinancialSettings(),
             isAdmin
-                ? prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } })
+                ? prisma.order.groupBy({ by: ['status'], where: countWhere, _count: { _all: true } })
                 : Promise.resolve([]),
         ]);
 

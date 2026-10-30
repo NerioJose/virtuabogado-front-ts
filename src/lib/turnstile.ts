@@ -5,6 +5,8 @@
  *   exitoso) se tolera como humano para no romper reintentos legítimos.
  */
 export async function verifyTurnstile(token?: string): Promise<boolean> {
+    // En desarrollo no bloqueamos el flujo por captcha.
+    if (process.env.NODE_ENV !== 'production') return true;
     const secret = process.env.TURNSTILE_SECRET_KEY;
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 

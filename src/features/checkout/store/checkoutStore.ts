@@ -1,5 +1,5 @@
+import { apiFetch, readJson } from '@/lib/api';
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
 import { CheckoutState, CheckoutStep, UserCheckoutData, PaymentData, PaymentMethod } from '../types/checkout.types';
 import type { Servicio } from '@/shared/types/entities.types';
 import { checkoutService } from '../services/checkout.service';
@@ -11,7 +11,6 @@ import { LAWYER_KEYS } from '@/features/lawyers/hooks/useLawyers';
 // import { useClientsStore } from '@/features/clients';
 import { Order, OrderStatus, PaymentMethod as OrderPaymentMethod, ORDER_KEYS } from '@/features/orders';
 import { processPaymentAction } from '../actions/processPaymentAction';
-import { ClientStatus } from '@/features/clients/types/clients.types';
 
 import { checkUserExistsAction } from '../actions/checkUserAction';
 
@@ -181,12 +180,20 @@ export const useCheckoutStore = create<CheckoutState>()(
         resendConfirmation: async (email: string, password: string, turnstileToken?: string) => {
             set({ isLoading: true, error: null });
             try {
-                const response = await fetch('/api/auth/register', {
+                const response = await apiFetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password, turnstileToken })
                 });
-                const data = await response.json().catch(() => ({}));
+                const data = await readJson<{
+                    requiresEmailConfirmation?: boolean;
+                    error?: string;
+                }>(response).catch(
+                    (): {
+                        requiresEmailConfirmation?: boolean;
+                        error?: string;
+                    } => ({}),
+                );
 
                 if (!response.ok) {
                     throw new Error(data.error || 'No se pudo reenviar el correo');
@@ -279,9 +286,16 @@ export const useCheckoutStore = create<CheckoutState>()(
                     return true;
                 }
                 return false;
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const errorCode =
+                    typeof error === 'object' && error !== null && 'code' in error
+                        ? (error as { code?: unknown }).code
+                        : undefined;
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+
                 // Usuario existente pero aún sin confirmar → pantalla de confirmación
-                if (error?.code === 'email_not_confirmed' || String(error?.message || '').toLowerCase().includes('no ha sido confirmado')) {
+                if (errorCode === 'email_not_confirmed' || errorMessage.toLowerCase().includes('no ha sido confirmado')) {
                     savePendingCheckout(get().service, userData.email);
                     set({ 
                         userData,
@@ -295,9 +309,9 @@ export const useCheckoutStore = create<CheckoutState>()(
                 }
 
                 console.error('❌ [Checkout] Error de autenticación:', error);
-                set({ 
-                    error: error.message || 'Error al validar identidad',
-                    isLoading: false 
+                set({
+                    error: errorMessage || 'Error al validar identidad',
+                    isLoading: false,
                 });
                 return false;
             }
@@ -372,16 +386,34 @@ export const useCheckoutStore = create<CheckoutState>()(
 
                 // 2. Procesar pago y crear orden en un solo paso atómico (Server Action)
                 
-                const result = await processPaymentAction({
+                interface PaymentActionResult {
+                    success: boolean;
+                    message?: string;
+                    redirectUrl?: string;
+                    order?: {
+                        id: string;
+                        status?: string;
+                        numericId?: number;
+                        paymentId?: string | null;
+                    };
+                }
+
+                const result: PaymentActionResult = await processPaymentAction({
                     serviceId: state.service.id,
-                    paymentMethodId: state.paymentMethod === 'card' ? 'mercadopago' : state.paymentMethod
+                    paymentMethodId:
+                        state.paymentMethod === 'card'
+                            ? 'mercadopago'
+                            : state.paymentMethod,
                 });
 
                 if (!result.success) {
                     throw new Error(result.message || 'Error al procesar el pago');
                 }
 
-                const order = result.order as any;
+                const order = result.order;
+                if (!order) {
+                    throw new Error('La pasarela no devolvió la orden');
+                }
                 
                 // Si es Zenobank, redirigir a la pasarela
                 if (result.redirectUrl) {
@@ -425,29 +457,37 @@ export const useCheckoutStore = create<CheckoutState>()(
                 const orderKey = ORDER_KEYS.list({ userId });
                 
                 // 1. Update the list cache for this specific user
-                queryClient.setQueryData(orderKey, (old: any) => {
-                    const currentData = old?.data || [];
+                interface OrderListCache {
+                    data: Order[];
+                    [key: string]: unknown;
+                }
+
+                queryClient.setQueryData<OrderListCache>(orderKey, (old) => {
+                    const currentData = old?.data ?? [];
                     // Avoid duplicates
-                    if (currentData.some((o: any) => o.id === orderForStore.id)) {
+                    if (currentData.some((o) => o.id === orderForStore.id)) {
                         return old;
                     }
                     return {
-                        ...old,
-                        data: [orderForStore, ...currentData]
+                        ...(old ?? { data: [] }),
+                        data: [orderForStore, ...currentData],
                     };
                 });
 
                 // 2. Update the general lists (used by admin/others if active)
-                queryClient.setQueryData(ORDER_KEYS.list({}), (old: any) => {
-                    const currentData = old?.data || [];
-                    if (currentData.some((o: any) => o.id === orderForStore.id)) {
-                        return old;
-                    }
-                    return {
-                        ...old,
-                        data: [orderForStore, ...currentData]
-                    };
-                });
+                queryClient.setQueryData<OrderListCache>(
+                    ORDER_KEYS.list({}),
+                    (old) => {
+                        const currentData = old?.data ?? [];
+                        if (currentData.some((o) => o.id === orderForStore.id)) {
+                            return old;
+                        }
+                        return {
+                            ...(old ?? { data: [] }),
+                            data: [orderForStore, ...currentData],
+                        };
+                    },
+                );
 
                 // 3. Set the detail cache for the destination page
                 queryClient.setQueryData(ORDER_KEYS.detail(orderForStore.id), orderForStore);
@@ -460,7 +500,7 @@ export const useCheckoutStore = create<CheckoutState>()(
                 // Legacy store fallback
                 useOrdersStore.getState().addOrder(orderForStore);
 
-                await checkoutService.sendConfirmationEmail(order.orderId);
+                await checkoutService.sendConfirmationEmail();
                 set({ completedAt: new Date().toISOString() });
 
             } catch (error) {

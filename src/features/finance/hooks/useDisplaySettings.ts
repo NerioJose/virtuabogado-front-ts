@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const displaySettingsKeys = {
@@ -12,7 +14,7 @@ type DisplaySettings = {
 
 async function fetchDisplaySettings(): Promise<DisplaySettings> {
     try {
-        const res = await fetch('/api/display-settings');
+        const res = await apiFetch('/api/display-settings');
         if (!res.ok) return { showUsd: true };
         const data = await res.json().catch(() => ({}));
         return { showUsd: typeof data?.showUsd === 'boolean' ? data.showUsd : true };
@@ -47,7 +49,7 @@ export function useUpdateDisplaySettings() {
 
     return useMutation<DisplaySettings, Error, boolean, { previous?: DisplaySettings }>({
         mutationFn: async (showUsd) => {
-            const res = await fetch('/api/display-settings', {
+            const res = await apiFetch('/api/display-settings', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ showUsd }),

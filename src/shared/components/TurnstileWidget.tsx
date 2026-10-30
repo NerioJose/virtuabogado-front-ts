@@ -1,10 +1,24 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { TURNSTILE_SITE_KEY } from '@/lib/turnstile-client';
+
+interface TurnstileRenderOptions {
+    sitekey: string;
+    callback: (token: string) => void;
+    'expired-callback': () => void;
+    'error-callback': () => void;
+    size?: 'normal' | 'flexible' | 'compact';
+}
+
+interface TurnstileApi {
+    render(container: HTMLElement, options: TurnstileRenderOptions): void;
+    remove(container: HTMLElement): void;
+}
 
 declare global {
     interface Window {
-        turnstile?: any;
+        turnstile?: TurnstileApi;
         onTurnstileLoad?: () => void;
     }
 }
@@ -15,16 +29,17 @@ declare global {
  */
 export const TurnstileWidget = ({ onToken }: { onToken: (token: string) => void }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    const siteKey = TURNSTILE_SITE_KEY;
     const onTokenRef = useRef(onToken);
     onTokenRef.current = onToken;
 
     useEffect(() => {
-        if (!siteKey || !containerRef.current || typeof window === 'undefined') return;
+        const container = containerRef.current;
+        if (!siteKey || !container || typeof window === 'undefined') return;
 
         const renderWidget = () => {
-            if (window.turnstile && containerRef.current) {
-                window.turnstile.render(containerRef.current, {
+            if (window.turnstile && container) {
+                window.turnstile.render(container, {
                     sitekey: siteKey,
                     callback: (token: string) => onTokenRef.current(token),
                     'expired-callback': () => onTokenRef.current(''),
@@ -51,8 +66,8 @@ export const TurnstileWidget = ({ onToken }: { onToken: (token: string) => void 
         }
 
         return () => {
-            if (window.turnstile && containerRef.current) {
-                window.turnstile.remove(containerRef.current);
+            if (window.turnstile && container) {
+                window.turnstile.remove(container);
             }
         };
     }, [siteKey]);

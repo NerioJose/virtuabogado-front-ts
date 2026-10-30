@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
 import { useCheckout } from './useCheckout';
 
@@ -6,7 +7,6 @@ const RESEND_COOLDOWN_SECONDS = 60;
 export const useUserDataStep = () => {
     const {
         userData: storeUserData,
-        setUserData,
         isLoading,
         error: storeError,
         isExistingUser,
@@ -98,7 +98,7 @@ export const useUserDataStep = () => {
 
             // 2. Verificación en vivo de deliverabilidad (formato + desechable + MX)
             try {
-                const res = await fetch(`/api/auth/validate-email?email=${encodeURIComponent(email)}`);
+                const res = await apiFetch(`/api/auth/validate-email?email=${encodeURIComponent(email)}`);
                 const data = await res.json().catch(() => ({}));
                 setEmailError(data?.ok ? null : (data?.error || null));
             } catch (err) {
@@ -164,7 +164,7 @@ export const useUserDataStep = () => {
     const handleResetPassword = async () => {
         if (!email) return;
         try {
-            const res = await fetch('/api/auth/reset-password/request', {
+            const res = await apiFetch('/api/auth/reset-password/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })

@@ -3,25 +3,34 @@
  */
 
 import { createClient } from '@/utils/supabase/client';
+import { apiFetch, readJson } from '@/lib/api';
+import { disconnectSocket, refreshSocketAuth } from '@/lib/socket';
 import { User, UserRole } from '@/shared/types/entities.types';
-import { LoginCredentials, RegisterData } from '../types/auth.types';
+import {
+    AuthApiResponse,
+    LoginCredentials,
+    RegisterData,
+    SupabaseUserLike,
+} from '../types/auth.types';
 
 export class AuthService {
     /**
      * Iniciar sesión con Supabase
      */
     async login(credentials: LoginCredentials): Promise<User> {
-        const response = await fetch('/api/auth/login', {
+        const response = await apiFetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 email: credentials.email,
                 password: credentials.password,
-                turnstileToken: (credentials as any).turnstileToken || ''
+                turnstileToken: credentials.turnstileToken || ''
             })
         });
 
-        const payload = await response.json().catch(() => ({}));
+        const payload = await readJson<AuthApiResponse>(response).catch(
+            (): AuthApiResponse => ({}),
+        );
 
         if (!response.ok) {
             throw new Error(payload.error || 'Error al iniciar sesión');
@@ -31,6 +40,24 @@ export class AuthService {
             throw new Error('No se pudo obtener el usuario');
         }
 
+        // El backend devuelve los tokens de Supabase; fijamos la sesión en el
+        // cliente para que las cookies SSR queden sincronizadas.
+        const supabase = createClient();
+        if (payload.session?.access_token && payload.session?.refresh_token) {
+            await supabase.auth.setSession({
+                access_token: payload.session.access_token,
+                refresh_token: payload.session.refresh_token,
+            });
+        } else {
+            await supabase.auth
+                .signInWithPassword({
+                    email: credentials.email,
+                    password: credentials.password,
+                })
+                .catch(() => undefined);
+        }
+        await refreshSocketAuth();
+
         return this.mapSupabaseUserToEntity(payload.user);
     }
 
@@ -39,7 +66,7 @@ export class AuthService {
      * Para clientes devuelve requiresEmailConfirmation=true; el correo se envía desde el servidor.
      */
     async register(data: RegisterData): Promise<{ user: User; requiresEmailConfirmation: boolean }> {
-        const response = await fetch('/api/auth/register', {
+        const response = await apiFetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -48,11 +75,13 @@ export class AuthService {
                 nombre: data.nombre,
                 telefono: data.telefono || '',
                 rol: data.rol,
-                turnstileToken: (data as any).turnstileToken || ''
+                turnstileToken: data.turnstileToken || ''
             })
         });
 
-        const payload = await response.json().catch(() => ({}));
+        const payload = await readJson<AuthApiResponse>(response).catch(
+            (): AuthApiResponse => ({}),
+        );
 
         if (!response.ok) {
             throw new Error(payload.error || 'Error al registrar usuario');
@@ -60,6 +89,19 @@ export class AuthService {
 
         if (!payload.user) {
             throw new Error('Error al crear usuario');
+        }
+
+        // Si no requiere confirmación (p. ej. ABOGADO), iniciamos sesión en el
+        // cliente para dejar cookies válidas y conectar Socket.IO autenticado.
+        if (!payload.requiresEmailConfirmation) {
+            const supabase = createClient();
+            await supabase.auth
+                .signInWithPassword({
+                    email: data.email,
+                    password: data.password,
+                })
+                .catch(() => undefined);
+            await refreshSocketAuth();
         }
 
         return {
@@ -74,6 +116,7 @@ export class AuthService {
     async logout(): Promise<void> {
         const supabase = createClient();
         const { error } = await supabase.auth.signOut();
+        disconnectSocket();
         if (error) {
             console.error('Error en logout:', error);
             throw new Error(error.message);
@@ -131,18 +174,32 @@ export class AuthService {
     /**
      * Helper para mapear usuario de Supabase a entidad User del dominio
      */
-    public mapSupabaseUserToEntity(supabaseUser: any): User {
+    public mapSupabaseUserToEntity(supabaseUser: SupabaseUserLike): User {
+        const metadata = supabaseUser.user_metadata;
+        const rawRole = metadata?.rol;
+        const normalizedRole = typeof rawRole === 'string' ? rawRole.toUpperCase() : 'CLIENTE';
+        const rol: UserRole =
+            normalizedRole === 'ADMIN'
+                ? UserRole.ADMIN
+                : normalizedRole === 'ABOGADO'
+                    ? UserRole.ABOGADO
+                    : UserRole.CLIENTE;
+
         return {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
-            nombre: supabaseUser.user_metadata?.nombre || '',
-            rol: ((supabaseUser.user_metadata?.rol as string)?.toUpperCase() as UserRole) || 'CLIENTE',
-            telefono: supabaseUser.user_metadata?.telefono || undefined,
-            especialidad: supabaseUser.user_metadata?.especialidad || undefined,
-            matricula: supabaseUser.user_metadata?.numeroColegiado || supabaseUser.user_metadata?.matricula || undefined,
-            experiencia: supabaseUser.user_metadata?.experienciaAnios || supabaseUser.user_metadata?.experiencia || undefined,
-            createdAt: new Date(supabaseUser.created_at),
-            updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
+            nombre: metadata?.nombre || '',
+            rol,
+            telefono: metadata?.telefono || undefined,
+            especialidad: metadata?.especialidad || undefined,
+            matricula: metadata?.numeroColegiado || metadata?.matricula || undefined,
+            experiencia: metadata?.experienciaAnios || metadata?.experiencia || undefined,
+            createdAt: supabaseUser.created_at ? new Date(supabaseUser.created_at) : new Date(),
+            updatedAt: supabaseUser.updated_at
+                ? new Date(supabaseUser.updated_at)
+                : supabaseUser.created_at
+                    ? new Date(supabaseUser.created_at)
+                    : new Date(),
         };
     }
 }

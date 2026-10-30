@@ -11,6 +11,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { User } from '@/shared/types/entities.types';
 import { useCheckoutStore } from '@/features/checkout/store/checkoutStore';
 import { useOrdersStore } from '@/features/orders/store/ordersStore';
+import { apiFetch } from '@/lib/api';
 // import { useClientsStore } from '@/features/clients/store/clientsStore';
 // import { useLawyersStore } from '@/features/lawyers/store/lawyersStore';
 
@@ -67,7 +68,7 @@ export const useAuthStore = create<AuthState>()(
             },
 
             login: (user: User) => {
-                const state = get() as any;
+                const state = get();
                 state.setUser(user);
             },
 
@@ -121,7 +122,7 @@ export const useAuthStore = create<AuthState>()(
             },
 
             updateUser: (userData: Partial<User>) => {
-                const state = get() as any;
+                const state = get();
                 const currentUser = state.user;
                 if (!currentUser) return;
 
@@ -130,7 +131,7 @@ export const useAuthStore = create<AuthState>()(
             },
 
             clearUser: () => {
-                const state = get() as any;
+                const state = get();
                 state.logout();
             },
 
@@ -157,11 +158,11 @@ export const useAuthStore = create<AuthState>()(
                         });
 
                         try {
-                                fetch('/api/auth/sync', { method: 'POST' })
+                                apiFetch('/api/auth/sync', { method: 'POST' })
                                 .then(res => res.ok ? res.json() : null)
                                 .then(syncData => {
                                     if (syncData?.success && syncData?.user) {
-                                        const currentState = get() as any;
+                                        const currentState = get();
                                         const needsUpdate: Partial<User> = {};
                                         
                                         if (syncData.user.nombre && currentState.user && currentState.user.nombre !== syncData.user.nombre) {
@@ -178,7 +179,7 @@ export const useAuthStore = create<AuthState>()(
                                     }
                                 })
                                 .catch(err => console.warn('⚠️ [Auth Sync] Falló el intento de sincronización:', err));
-                        } catch (e) {
+                        } catch {
                         }
                     } else {
                         set({
@@ -211,7 +212,7 @@ export const useAuthStore = create<AuthState>()(
         {
             name: 'virtuabogado-auth',
             storage: createJSONStorage(() => localStorage),
-            partialize: (state: AuthState & { [key: string]: any }) => ({
+            partialize: (state: AuthState) => ({
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
             }),

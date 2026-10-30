@@ -6,13 +6,14 @@ export class ApiError extends Error {
 }
 
 import { createClient } from '@/utils/supabase/client';
+import { apiUrl } from '@/lib/api';
 
 export const apiClient = {
     async get<T>(url: string, options?: RequestInit): Promise<T> {
         const supabase = createClient();
-        let { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        const response = await fetch(url, {
+        const response = await fetch(apiUrl(url), {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
@@ -25,11 +26,11 @@ export const apiClient = {
         return handleResponse<T>(response);
     },
 
-    async post<T>(url: string, body: any): Promise<T> {
+    async post<T>(url: string, body: unknown): Promise<T> {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        const response = await fetch(url, {
+        const response = await fetch(apiUrl(url), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -42,11 +43,11 @@ export const apiClient = {
         return handleResponse<T>(response);
     },
 
-    async put<T>(url: string, body: any): Promise<T> {
+    async put<T>(url: string, body: unknown): Promise<T> {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        const response = await fetch(url, {
+        const response = await fetch(apiUrl(url), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -59,11 +60,11 @@ export const apiClient = {
         return handleResponse<T>(response);
     },
 
-    async patch<T>(url: string, body: any): Promise<T> {
+    async patch<T>(url: string, body: unknown): Promise<T> {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        const response = await fetch(url, {
+        const response = await fetch(apiUrl(url), {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ export const apiClient = {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
 
-        const response = await fetch(url, {
+        const response = await fetch(apiUrl(url), {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
                 console.error('🔍 API Detail Error:', errorData.details); // Log detail for debugging
                 errorMessage += ` - ${errorData.details}`;
             }
-        } catch (e) {
+        } catch {
             // Si no es JSON, usar el status text
             errorMessage = `Error ${response.status}: ${response.statusText}`;
         }

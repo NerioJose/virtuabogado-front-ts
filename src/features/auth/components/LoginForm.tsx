@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
 import { Input } from '@/shared/components/ui/Input/Input';
 import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
+import { isTurnstileRequired } from '@/lib/turnstile-client';
 import { ROUTES } from '@/shared/constants/routes';
 import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
 
@@ -153,7 +154,7 @@ export function LoginForm() {
                         type="submit"
                         isLoading={isLoading}
                         className="w-full"
-                        disabled={!email || !password || !turnstileToken}>
+                        disabled={!email || !password || (isTurnstileRequired && !turnstileToken)}>
                         {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                     </Button>
 

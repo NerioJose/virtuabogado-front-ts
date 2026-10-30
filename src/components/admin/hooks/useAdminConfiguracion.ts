@@ -1,6 +1,11 @@
 import { useState } from 'react';
 
-export type TabType = 'perfil' | 'financiero' | 'servicios' | 'notificaciones';
+export type TabType =
+    | 'perfil'
+    | 'financiero'
+    | 'servicios'
+    | 'notificaciones'
+    | 'seguridad';
 
 export function useAdminConfiguracion() {
     const [activeTab, setActiveTab] = useState<TabType>('servicios');

@@ -39,3 +39,35 @@ export interface AuthResponse {
     user: User;
     token?: string;
 }
+
+export interface SupabaseUserMetadata {
+    nombre?: string;
+    telefono?: string;
+    especialidad?: string;
+    numeroColegiado?: string;
+    matricula?: string;
+    experienciaAnios?: number;
+    experiencia?: number;
+    rol?: string;
+    [key: string]: unknown;
+}
+
+export interface SupabaseUserLike {
+    id: string;
+    email?: string | null;
+    user_metadata?: SupabaseUserMetadata | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AuthApiResponse {
+    user?: SupabaseUserLike;
+    session?: {
+        access_token: string;
+        refresh_token: string;
+    };
+    isNewUser?: boolean;
+    requiresEmailConfirmation?: boolean;
+    emailSent?: boolean;
+    error?: string;
+}

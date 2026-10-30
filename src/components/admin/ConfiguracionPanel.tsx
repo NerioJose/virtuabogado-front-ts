@@ -1,10 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
 import {
 	FiSave,
-	FiRefreshCw,
-	FiAlertTriangle,
 	FiCheck,
 	FiDollarSign,
 	FiTrendingUp,
@@ -14,14 +11,15 @@ import {
     FiCreditCard,
     FiMessageCircle,
     FiBell,
-    FiEye
+    FiEye,
+    FiLock
 } from 'react-icons/fi';
-import { useAdminServices } from '@/features/services/hooks/useServices';
 import ServiciosPanel from './ServiciosPanel';
 import { useConfiguracionPanel } from '@/features/financial-settings/hooks/useConfiguracionPanel';
 import { useDisplaySettings, useUpdateDisplaySettings } from '@/features/finance/hooks/useDisplaySettings';
-import { useAdminConfiguracion, TabType } from './hooks/useAdminConfiguracion';
+import { useAdminConfiguracion } from './hooks/useAdminConfiguracion';
 import TelegramConnect from '@/components/notifications/TelegramConnect';
+import AuthSettingsPanel from './AuthSettingsPanel';
 import { toast } from 'sonner';
 
 // Componente para configuración financiera (Extraído por claridad)
@@ -301,6 +299,17 @@ export default function ConfiguracionPanel() {
 					</button>
 
 					<button type="button"
+						onClick={() => handleTabChange('seguridad')}
+						className={`px-8 py-5 text-sm font-bold transition flex items-center gap-3 border-r border-gray-50 ${
+							activeTab === 'seguridad'
+								? 'bg-azul-primario text-white'
+								: 'text-gray-500 hover:bg-azul-claro/20'
+						}`}
+					>
+						<FiLock size={20} /> Seguridad
+					</button>
+
+					<button type="button"
 						onClick={() => handleTabChange('perfil')}
 						className={`px-8 py-5 text-sm font-bold transition flex items-center gap-3 ${
 							activeTab === 'perfil' 
@@ -326,6 +335,7 @@ export default function ConfiguracionPanel() {
 				<div className="p-8 bg-gray-50/30">
 					{activeTab === 'servicios' && <ServiciosPanel />}
 					{activeTab === 'financiero' && <FinancialSettingsSection />}
+					{activeTab === 'seguridad' && <AuthSettingsPanel />}
 					{activeTab === 'perfil' && (
 						<div className="p-20 text-center text-gray-400 italic">
 							Módulo de configuración de perfil bajo mantenimiento

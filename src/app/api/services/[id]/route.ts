@@ -4,11 +4,7 @@ import { emit } from '@/events/eventBus';
 import { serializeFinance } from '@/lib/finance';
 import { clearCache } from '@/lib/cache';
 import { broadcastServiceUpdate } from '@/lib/broadcast';
-
-const toServiceJson = (service: any) => ({
-    ...serializeFinance(service),
-    precioPen: service.precio_pen ?? null,
-});
+import { toServiceJson } from '@/features/services/mappers/serviceJson';
 
 export async function GET(
     req: Request,

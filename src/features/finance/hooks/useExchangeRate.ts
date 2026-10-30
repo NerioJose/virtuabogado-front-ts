@@ -1,10 +1,12 @@
 'use client';
 
+import { apiFetch } from '@/lib/api';
+
 import { useQuery } from '@tanstack/react-query';
 
 async function fetchExchangeRate(): Promise<number | null> {
     try {
-        const res = await fetch('/api/exchange-rate');
+        const res = await apiFetch('/api/exchange-rate');
         if (!res.ok) return null;
         const data = await res.json().catch(() => ({}));
         return typeof data?.rate === 'number' && data.rate > 0 ? data.rate : null;

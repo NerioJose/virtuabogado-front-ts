@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { UserRole } from '@/shared/types/entities.types';
@@ -106,7 +107,7 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
-                const res = await fetch(`/api/auth/validate-email?email=${encodeURIComponent(email)}`);
+                const res = await apiFetch(`/api/auth/validate-email?email=${encodeURIComponent(email)}`);
                 const data = await res.json().catch(() => ({}));
                 if (!cancelled) setEmailError(data?.ok ? null : (data?.error || 'Correo no válido'));
             } catch (err) {
@@ -163,7 +164,7 @@ export function useRegisterForm(defaultRole: UserRole = UserRole.CLIENTE) {
     const handleResendConfirmation = async () => {
         if (resendCooldown > 0) return;
         try {
-            const res = await fetch('/api/auth/register', {
+            const res = await apiFetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

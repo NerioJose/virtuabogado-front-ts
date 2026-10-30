@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/shared/components/ui/Button/Button';
 import { Input } from '@/shared/components/ui/Input/Input';
 import { TurnstileWidget } from '@/shared/components/TurnstileWidget';
+import { isTurnstileRequired } from '@/lib/turnstile-client';
 import { useRegisterForm } from '../hooks/useRegisterForm';
 import { UserRole } from '@/shared/types/entities.types';
 import { ROUTES } from '@/shared/constants/routes';
@@ -131,7 +132,7 @@ export function RegisterForm({ defaultRole = UserRole.CLIENTE }: RegisterFormPro
                         <TurnstileWidget onToken={setTurnstileToken} />
                     </div>
 
-                    <Button type="submit" isLoading={isLoading} className="w-full" disabled={isLoading || !turnstileToken || !!emailError}>
+                    <Button type="submit" isLoading={isLoading} className="w-full" disabled={isLoading || (isTurnstileRequired && !turnstileToken) || !!emailError}>
                         Registrarse
                     </Button>
 

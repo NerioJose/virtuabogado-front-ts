@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { apiFetch, readJson } from '@/lib/api';
+
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
-    FiMail, FiLock, FiArrowLeft, FiCheckCircle, 
-    FiLoader, FiAlertCircle, FiEye, FiEyeOff, FiArrowRight 
+    FiMail, FiLock, FiArrowLeft, FiCheckCircle,
+    FiLoader, FiAlertCircle, FiEye, FiEyeOff,
 } from 'react-icons/fi';
 
 /**
@@ -54,7 +56,7 @@ function RecuperarPasswordContent() {
         setErrors({});
 
         try {
-            const response = await fetch('/api/auth/reset-password/request', {
+            const response = await apiFetch('/api/auth/reset-password/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -63,11 +65,13 @@ function RecuperarPasswordContent() {
             if (response.ok) {
                 setRequestStep('confirmation');
             } else {
-                const data = await response.json();
+                const data = await readJson<{ error?: string }>(response);
                 throw new Error(data.error || 'Error al procesar la solicitud');
             }
-        } catch (error: any) {
-            setErrors({ form: error.message });
+        } catch (error: unknown) {
+            setErrors({
+                form: error instanceof Error ? error.message : 'Error al procesar la solicitud',
+            });
         } finally {
             setIsLoading(false);
         }
@@ -84,7 +88,7 @@ function RecuperarPasswordContent() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/auth/reset-password/confirm', {
+            const response = await apiFetch('/api/auth/reset-password/confirm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: tokenFromUrl, password })
@@ -94,11 +98,13 @@ function RecuperarPasswordContent() {
                 setResetSuccess(true);
                 setTimeout(() => router.push('/login'), 4000);
             } else {
-                const data = await response.json();
+                const data = await readJson<{ error?: string }>(response);
                 throw new Error(data.error || 'Token inválido o expirado');
             }
-        } catch (error: any) {
-            setErrors({ form: error.message });
+        } catch (error: unknown) {
+            setErrors({
+                form: error instanceof Error ? error.message : 'Token inválido o expirado',
+            });
         } finally {
             setIsLoading(false);
         }

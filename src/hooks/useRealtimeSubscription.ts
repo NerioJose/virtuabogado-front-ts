@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
 import { CLIENT_KEYS } from '@/features/clients/hooks/useClients';
@@ -9,6 +9,45 @@ import { ORDER_KEYS } from '@/features/orders/hooks/useOrders';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { FINANCIAL_SETTINGS_KEYS } from '@/features/financial-settings/hooks/useFinancialSettings';
 import { useChatStore } from '@/features/chat/store/chatStore';
+import { connectSocket } from '@/lib/socket';
+interface ExchangeRateUpdatedPayload {
+    rate?: number;
+}
+
+interface DisplaySettingsUpdatedPayload {
+    showUsd?: boolean;
+}
+
+interface BroadcastPayload {
+    event?: string;
+    rate?: number;
+    showUsd?: boolean;
+}
+
+interface BroadcastEnvelope {
+    event?: string;
+    payload?: BroadcastPayload;
+}
+
+interface NewMessageEnvelope {
+    payload?: {
+        new?: {
+            id?: string;
+            orderId?: string;
+            senderId?: string;
+        };
+    };
+}
+
+interface PostgresChangePayload {
+    table?: string;
+    new?: {
+        id?: string;
+        orderId?: string;
+        senderId?: string;
+    };
+}
+
 export type RealtimeConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
 
 export const useRealtimeSubscription = () => {
@@ -22,6 +61,48 @@ export const useRealtimeSubscription = () => {
     }, [connectionStatus]);
 
     // ═══════════════════════════════════════════════
+    // F1 — Catálogo y settings vía Socket.IO (backend NestJS)
+    // El backend es el único emisor; el front ya no usa Supabase Realtime
+    // para servicios, display-settings ni exchange-rate.
+    // ═══════════════════════════════════════════════
+    useEffect(() => {
+        const socket = connectSocket();
+
+        const onServiceUpdated = () => {
+            queryClient.invalidateQueries({ queryKey: ['Service'], refetchType: 'all' });
+            queryClient.invalidateQueries({ queryKey: ['Service', 'active'], refetchType: 'all' });
+        };
+
+        const onExchangeRateUpdated = (payload: ExchangeRateUpdatedPayload) => {
+            const rate = Number(payload?.rate);
+            if (Number.isFinite(rate) && rate > 0) {
+                queryClient.setQueryData(['exchange-rate'], rate);
+            } else {
+                queryClient.invalidateQueries({ queryKey: ['exchange-rate'], refetchType: 'all' });
+            }
+            queryClient.invalidateQueries({ queryKey: FINANCIAL_SETTINGS_KEYS.all, refetchType: 'all' });
+        };
+
+        const onDisplaySettingsUpdated = (payload: DisplaySettingsUpdatedPayload) => {
+            if (typeof payload?.showUsd === 'boolean') {
+                queryClient.setQueryData(['display-settings'], { showUsd: payload.showUsd });
+            } else {
+                queryClient.invalidateQueries({ queryKey: ['display-settings'], refetchType: 'all' });
+            }
+        };
+
+        socket.on('service-updated', onServiceUpdated);
+        socket.on('exchange-rate-updated', onExchangeRateUpdated);
+        socket.on('display-settings-updated', onDisplaySettingsUpdated);
+
+        return () => {
+            socket.off('service-updated', onServiceUpdated);
+            socket.off('exchange-rate-updated', onExchangeRateUpdated);
+            socket.off('display-settings-updated', onDisplaySettingsUpdated);
+        };
+    }, [queryClient, user?.id, user?.rol]);
+
+    // ═══════════════════════════════════════════════
     // BROADCAST LISTENER - sincronización instantánea entre usuarios
     // Las mutaciones via Prisma (PATCH/POST API) no disparan WAL events.
     // La API envía broadcasts manuales (global + personal) tras cada mutación.
@@ -31,9 +112,9 @@ export const useRealtimeSubscription = () => {
     useEffect(() => {
         const supabase = createClient();
 
-        const handleUpdate = (payload: any) => {
-            const eventName = payload?.event || (payload?.payload as any)?.event;
-            const eventPayload = payload?.payload || payload;
+        const handleUpdate = (payload: BroadcastEnvelope) => {
+            const eventName = payload.event ?? payload.payload?.event;
+            const eventPayload = payload.payload ?? {};
             
             if (eventName === 'order-updated') {
                 queryClient.invalidateQueries({ queryKey: ['Order'], refetchType: 'all' });
@@ -79,25 +160,15 @@ export const useRealtimeSubscription = () => {
             }
         };
 
-        const handleNewMessage = (payload: any) => {
-            const data = payload.payload;
-            if (data.new) {
-                queryClient.invalidateQueries({ queryKey: ['chat', 'messages', data.new.orderId] });
-                if (data.new.senderId !== user?.id) {
-                    useChatStore.getState().markAsUnread(data.new.orderId, data.new.id);
+        const handleNewMessage = (payload: NewMessageEnvelope) => {
+            const data = payload.payload?.new;
+            if (data?.orderId && data.id) {
+                queryClient.invalidateQueries({ queryKey: ['chat', 'messages', data.orderId] });
+                if (data.senderId !== user?.id) {
+                    useChatStore.getState().markAsUnread(data.orderId, data.id);
                 }
             }
         };
-
-        // Canal global - SOLO eventos de catálogo (servicios/métodos de pago).
-        // F3: las órdenes/mensajes ya no se transmiten aquí (fan-out acotado):
-        // los implicados reciben su canal personal global_{id} y los admins su canal admin-updates.
-        const globalChannel = supabase.channel('app-updates');
-        globalChannel
-            .on('broadcast', { event: 'service-updated' }, handleUpdate)
-            .on('broadcast', { event: 'exchange-rate-updated' }, handleUpdate)
-            .on('broadcast', { event: 'display-settings-updated' }, handleUpdate)
-            .subscribe();
 
         // Canal personal - solo para usuarios autenticados
         const personalChannel = user?.id ? supabase.channel(`global_${user.id}`) : null;
@@ -120,7 +191,6 @@ export const useRealtimeSubscription = () => {
         }
 
         return () => { // react-doctor: cleanup-verified
-            supabase.removeChannel(globalChannel);
             if (personalChannel) supabase.removeChannel(personalChannel);
             if (adminChannel) supabase.removeChannel(adminChannel);
         };
@@ -144,9 +214,8 @@ export const useRealtimeSubscription = () => {
         
 
         // Función para manejar los cambios
-        const handleChanges = (payload: any) => {
-            
-            const { table } = payload;
+        const handleChanges = (payload: PostgresChangePayload) => {
+            const table = payload.table;
 
             switch (table) {
                 case 'User':
@@ -169,10 +238,11 @@ export const useRealtimeSubscription = () => {
                     queryClient.invalidateQueries({ queryKey: ['FinancialSummary'] });
                     queryClient.invalidateQueries({ queryKey: ['FinanceSummaryDashboard'] });
                     
-                    if (payload.new && 'id' in payload.new) {
-                        queryClient.refetchQueries({ 
-                            queryKey: ORDER_KEYS.detail(payload.new.id),
-                            type: 'active'
+                    const orderId = payload.new?.id;
+                    if (typeof orderId === 'string') {
+                        queryClient.refetchQueries({
+                            queryKey: ORDER_KEYS.detail(orderId),
+                            type: 'active',
                         });
                     }
                     break;
@@ -192,18 +262,21 @@ export const useRealtimeSubscription = () => {
                     
                     queryClient.invalidateQueries({ queryKey: ['PaymentMethod'], refetchType: 'all' });
                     break;
-                case 'Message':
-                    if (payload.new && 'orderId' in payload.new) {
+                case 'Message': {
+                    const orderId = payload.new?.orderId;
+                    const messageId = payload.new?.id;
+                    if (typeof orderId === 'string') {
                         queryClient.refetchQueries({
-                            queryKey: ['Message', payload.new.orderId],
-                            type: 'active'
+                            queryKey: ['Message', orderId],
+                            type: 'active',
                         });
-                        if (payload.new.senderId !== user?.id) {
-                            useChatStore.getState().markAsUnread(payload.new.orderId, payload.new.id);
+                        if (typeof messageId === 'string' && payload.new?.senderId !== user?.id) {
+                            useChatStore.getState().markAsUnread(orderId, messageId);
                         }
                     }
                     queryClient.invalidateQueries({ queryKey: ['Message'] });
                     break;
+                }
                 case 'LawyerPayouts':
                     
                     queryClient.invalidateQueries({ queryKey: ['PayoutHistory'], refetchType: 'all' });
@@ -242,11 +315,10 @@ export const useRealtimeSubscription = () => {
             // Message/Service/PaymentMethod quedan sin filtro (RLS + catálogo).
             let tableSubscriptions: Array<{ table: string; filter?: string }> = [];
             if (user?.rol === 'ADMIN') {
-                tableSubscriptions = ['User', 'Order', 'Service', 'FinancialSettings', 'Message', 'PaymentMethod', 'LawyerPayouts'].map(t => ({ table: t }));
+                tableSubscriptions = ['User', 'Order', 'FinancialSettings', 'Message', 'PaymentMethod', 'LawyerPayouts'].map(t => ({ table: t }));
             } else if (user?.rol === 'ABOGADO') {
                 tableSubscriptions = [
                     { table: 'Order', filter: `lawyerId=eq.${user.id}` },
-                    { table: 'Service' },
                     { table: 'Message' },
                     { table: 'PaymentMethod' },
                     { table: 'LawyerPayouts', filter: `lawyerId=eq.${user.id}` },
@@ -254,7 +326,6 @@ export const useRealtimeSubscription = () => {
             } else {
                 tableSubscriptions = [
                     { table: 'Order', filter: `userId=eq.${user.id}` },
-                    { table: 'Service' },
                     { table: 'Message' },
                     { table: 'PaymentMethod' },
                 ];
@@ -268,7 +339,7 @@ export const useRealtimeSubscription = () => {
                 }
             });
 
-            channel.subscribe((status: string, err?: any) => {
+            channel.subscribe((status: string) => {
                 if (!mounted) return;
                 switch (status) {
                     case 'SUBSCRIBED':

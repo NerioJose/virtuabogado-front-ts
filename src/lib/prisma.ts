@@ -28,7 +28,7 @@ function createPrismaClient() {
     }
 
     // Serverless: pools pequeños por instancia, el pooler se encarga de encolar
-    const maxConnections = isDev ? 10 : (usingPooler ? 5 : 3);
+    const maxConnections = isDev ? 5 : (usingPooler ? 5 : 3);
 
     const pool = new Pool({
         connectionString: dbUrl,
